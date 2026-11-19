@@ -13,6 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-110 [developer] Window mode: borderless fullscreen at desktop resolution by
+  default; windowed = 1600x900 centred, shrunk to fit the usable screen area;
+  Fullscreen toggle in the F10 menu, saved with the graphics settings.
 - T-107 [developer] Render benchmark (`game/debug/render_benchmark.gd`): GPU/CPU
   frame time per preset on a scripted locked-on flight. Baseline at 1080p on
   the GTX 1650: GPU p95 1.4 / 1.6 / 1.8 ms (low/med/high). Grey-box only;
@@ -40,6 +43,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `SCALING_3D_MODE_FSR` instead of bilinear when resolution scale < 1.0. The
   high preset is fine on the grey-box arena (T-107: GPU p95 1.8 ms); recheck
   once real content lands.
+
+- T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
+  health with grey recoverable part, ki in 4 bars, guard, burst stocks.
+- T-112 [developer] Round flow in the test arena: on `round_over`, reset
+  positions and call `start_round()`.
 
 ### Combat sim (desktop)
 

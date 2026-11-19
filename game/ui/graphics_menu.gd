@@ -11,6 +11,7 @@ var _quality_picker: OptionButton
 var _scale_slider: HSlider
 var _scale_label: Label
 var _vsync_toggle: CheckBox
+var _fullscreen_toggle: CheckBox
 
 
 func _ready() -> void:
@@ -65,6 +66,11 @@ func _build_panel() -> void:
 	_vsync_toggle.toggled.connect(_on_vsync_toggled)
 	rows.add_child(_labelled("VSync", _vsync_toggle))
 
+	_fullscreen_toggle = CheckBox.new()
+	_fullscreen_toggle.button_pressed = settings.fullscreen
+	_fullscreen_toggle.toggled.connect(_on_fullscreen_toggled)
+	rows.add_child(_labelled("Fullscreen", _fullscreen_toggle))
+
 
 func _labelled(text: String, control: Control) -> HBoxContainer:
 	var row := HBoxContainer.new()
@@ -89,6 +95,11 @@ func _on_scale_changed(value: float) -> void:
 
 func _on_vsync_toggled(enabled: bool) -> void:
 	settings.vsync_enabled = enabled
+	_apply_and_save()
+
+
+func _on_fullscreen_toggled(enabled: bool) -> void:
+	settings.fullscreen = enabled
 	_apply_and_save()
 
 
