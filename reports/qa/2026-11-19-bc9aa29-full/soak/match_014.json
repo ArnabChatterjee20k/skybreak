@@ -1,0 +1,102 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 1
+		},
+		"light_1": {
+			"3": 5,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 1,
+			"9": 5
+		},
+		"light_2": {
+			"3": 5,
+			"5": 6
+		},
+		"light_3": {
+			"5": 1,
+			"8": 6
+		}
+	},
+	"id": "1102:skyhold_ruins:1v1:brann,lyra:43",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1102,
+	"sim_ms_per_tick": 1.24572277777778,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0112320426851511,
+		"finger_pops_per_fighter_minute": 16.0088938299055,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.971095052807115,
+		"pops_per_fighter_minute": 2.00111172873819
+	},
+	"view_ms_per_frame": 1.30720055555556,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "LeftHand turned 1.96 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 0,
+			"first_tick": 225,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 225,
+			"worst_value": 1.96135437488556
+		},
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "RightLowerArm turned 1.47 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 227,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 227,
+			"worst_value": 1.47286283969879
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 445,
+			"detail": "fighters 0 and 1 overlap 1.02 m (FLYING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 425,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 651,
+			"worst_value": 1.02333625799045
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "2 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 2
+		}
+	],
+	"wall_seconds": 18.287,
+	"zone": "skyhold_ruins"
+}

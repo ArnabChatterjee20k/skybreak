@@ -8,8 +8,9 @@ var _humans: Array
 
 
 func before_each() -> void:
-	_sim = DuoMatch.new_sim(11, 2)
-	_bots = DuoMatch.new_bots(_sim, 11)
+	# Seed 12: with pushboxes (T-D29) seed 11 never has drops and shots out on the same tick.
+	_sim = DuoMatch.new_sim(12, 2)
+	_bots = DuoMatch.new_bots(_sim, 12)
 	_humans = [NetScript.new(1), NetScript.new(2)]
 
 

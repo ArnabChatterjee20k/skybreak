@@ -1,0 +1,211 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 3,
+			"10": 1
+		},
+		"launcher": {
+			"7": 9
+		},
+		"light_1": {
+			"3": 15,
+			"4": 2,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 6,
+			"8": 1,
+			"9": 2
+		},
+		"light_2": {
+			"3": 20,
+			"4": 2,
+			"5": 1
+		},
+		"light_3": {
+			"3": 12,
+			"4": 2,
+			"5": 5,
+			"8": 1
+		},
+		"light_3+counter": {
+			"7": 1
+		},
+		"revolver/projectile": {
+			"4": 1
+		},
+		"spike": {
+			"7": 3
+		},
+		"spike+counter": {
+			"11": 1
+		}
+	},
+	"id": "2220:stormfall_city:2v2:kael,vexa,brann,lyra:2544",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		5,
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2220,
+	"sim_ms_per_tick": 4.47425277777778,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.013490367680788,
+		"finger_pops_per_fighter_minute": 30.5169538632574,
+		"foot_error_p95_cm": 8.99621871613814,
+		"foot_slide_cm_per_frame": 0.750538262924183,
+		"locked_on_screen_share": 0.996664813785436,
+		"pops_per_fighter_minute": 31.5175097276265
+	},
+	"view_ms_per_frame": 3.72493222222222,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 172,
+			"detail": "lowest sole +42.9 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 774,
+			"worst_value": 0.428506989309975
+		},
+		{
+			"check": "pop",
+			"count": 16,
+			"detail": "RightLowerArm turned 3.10 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 194,
+			"worst_value": 3.09704422950745
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 607,
+			"detail": "fighters 1 and 2 overlap 1.05 m (BLOCKING vs ATTACKING)",
+			"fighter": 1,
+			"first_tick": 174,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1055,
+			"worst_value": 1.04725948320702
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 115,
+			"detail": "fighters 2 and 3 overlap 0.65 m (HITSTUN vs HITSTUN)",
+			"fighter": 2,
+			"first_tick": 187,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 328,
+			"worst_value": 0.647403894662857
+		},
+		{
+			"check": "pop",
+			"count": 3,
+			"detail": "LeftLowerArm turned 2.12 rad in one frame (HITSTUN, move )",
+			"fighter": 3,
+			"first_tick": 224,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 225,
+			"worst_value": 2.12399888038635
+		},
+		{
+			"check": "pop",
+			"count": 30,
+			"detail": "SashLower turned 3.09 rad in one frame (FLYING, move )",
+			"fighter": 1,
+			"first_tick": 235,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1297,
+			"worst_value": 3.09018731117249
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 414,
+			"detail": "fighters 0 and 3 overlap 0.93 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 238,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1037,
+			"worst_value": 0.929773796167574
+		},
+		{
+			"check": "pop",
+			"count": 14,
+			"detail": "BeardBraid turned 1.65 rad in one frame (HITSTUN, move )",
+			"fighter": 2,
+			"first_tick": 418,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 591,
+			"worst_value": 1.65380764007568
+		},
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole -6.6 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 638,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 638,
+			"worst_value": -0.0661253690140455
+		},
+		{
+			"check": "foot_ground",
+			"count": 20,
+			"detail": "lowest sole +48.2 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 1303,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1303,
+			"worst_value": 0.482026662499843
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "63 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 63
+		}
+	],
+	"wall_seconds": 37.649,
+	"zone": "stormfall_city"
+}

@@ -265,6 +265,8 @@ func present_frame(blend: float, delta: float) -> void:
 	var target := me.lock_on_target if locked else (1 if player == 0 and fighter_views.size() > 1 else 0)
 	var opponent := fighter_views[target].position
 	camera.follow(fighter_views[player].position, opponent, locked, delta)
+	for view in fighter_views:
+		view.fade_for_camera(camera.global_position)
 	opponent_marker.target = opponent
 	opponent_marker.origin = fighter_views[player].position
 	opponent_marker.locked = locked

@@ -1,0 +1,98 @@
+{
+	"hitstops": {
+		"light_1": {
+			"3": 2
+		},
+		"light_1+counter": {
+			"7": 10,
+			"9": 2
+		},
+		"light_2": {
+			"3": 11,
+			"5": 2
+		},
+		"light_3": {
+			"5": 11,
+			"8": 1
+		}
+	},
+	"id": "3102:skyhold_ruins:1v1:brann,lyra:45",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3102,
+	"sim_ms_per_tick": 1.91143,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0121629741042852,
+		"finger_pops_per_fighter_minute": 29.0161200667037,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.974986103390773,
+		"pops_per_fighter_minute": 13.0072262367982
+	},
+	"view_ms_per_frame": 2.04862222222222,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "LeftHand turned 1.97 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 0,
+			"first_tick": 268,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1429,
+			"worst_value": 1.96719264984131
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 330,
+			"detail": "fighters 0 and 1 overlap 1.03 m (BLOCKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 465,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1383,
+			"worst_value": 1.02524811655283
+		},
+		{
+			"check": "pop",
+			"count": 2,
+			"detail": "RightUpperArm turned 1.39 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 935,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1431,
+			"worst_value": 1.39103484153748
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "13 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 13
+		}
+	],
+	"wall_seconds": 23.541,
+	"zone": "skyhold_ruins"
+}

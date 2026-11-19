@@ -1,0 +1,207 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 1
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"7": 5,
+			"8": 4
+		},
+		"light_1": {
+			"3": 3,
+			"4": 5,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 1,
+			"9": 3
+		},
+		"light_2": {
+			"3": 6,
+			"4": 6,
+			"5": 4
+		},
+		"light_3": {
+			"3": 5,
+			"4": 4,
+			"8": 4
+		},
+		"light_4": {
+			"4": 1
+		},
+		"spike": {
+			"8": 1
+		}
+	},
+	"id": "3210:stormfall_city:ffa4:kael,vexa,brann,lyra:5435",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		5,
+		4,
+		3,
+		5
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3210,
+	"sim_ms_per_tick": 4.87451944444444,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0106281843036413,
+		"finger_pops_per_fighter_minute": 23.5130628126737,
+		"foot_error_p95_cm": 11.9272977601618,
+		"foot_slide_cm_per_frame": 0.385410123790573,
+		"locked_on_screen_share": 0.981622306717364,
+		"pops_per_fighter_minute": 18.0100055586437
+	},
+	"view_ms_per_frame": 4.53620833333333,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 513,
+			"detail": "fighters 0 and 2 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 991,
+			"detail": "fighters 1 and 3 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "foot_ground",
+			"count": 148,
+			"detail": "lowest sole -12.0 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": -0.120289302250066
+		},
+		{
+			"check": "foot_ground",
+			"count": 32,
+			"detail": "lowest sole -7.4 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 11,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1468,
+			"worst_value": -0.073531693014953
+		},
+		{
+			"check": "foot_ground",
+			"count": 18,
+			"detail": "lowest sole +50.5 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 160,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1455,
+			"worst_value": 0.504864539023744
+		},
+		{
+			"check": "pop",
+			"count": 3,
+			"detail": "BeardBraid turned 1.92 rad in one frame (HITSTUN, move )",
+			"fighter": 2,
+			"first_tick": 178,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1628,
+			"worst_value": 1.92377746105194
+		},
+		{
+			"check": "pop",
+			"count": 21,
+			"detail": "RightLowerArm turned 2.01 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 458,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1174,
+			"worst_value": 2.00606870651245
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "RightLowerLeg turned 2.89 rad in one frame (ATTACKING, move light_4)",
+			"fighter": 1,
+			"first_tick": 802,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1643,
+			"worst_value": 2.88957095146179
+		},
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "RightUpperArm turned 2.11 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 3,
+			"first_tick": 1272,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1272,
+			"worst_value": 2.10753703117371
+		},
+		{
+			"check": "bow_string_head",
+			"count": 1,
+			"detail": "bow string 3.4 cm from the head centre (draw 0, DASHING)",
+			"fighter": 0,
+			"first_tick": 1367,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "bow",
+			"worst_tick": 1367,
+			"worst_value": 0.0338193625211716
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "36 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 36
+		}
+	],
+	"wall_seconds": 41.049,
+	"zone": "stormfall_city"
+}

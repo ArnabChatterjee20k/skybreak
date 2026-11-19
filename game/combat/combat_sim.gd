@@ -210,12 +210,17 @@ func tick(inputs: Array[FighterInput]) -> void:
 	events = []
 	_knock_out_fallen()
 	var frozen: Array[bool] = []
+	var before := PackedVector3Array()
+	var solid_before: Array[bool] = []
 	for i in fighters.size():
+		before.append(fighters[i].position)
+		solid_before.append(not fighters[i].ignores_pushbox())
 		frozen.append(fighters[i].hitstop_ticks > 0)
 		# After the round is decided everyone, and a KO'd fighter always, gets neutral input.
 		var neutral := round_over or fighters[i].is_knocked_out()
 		_step_fighter(i, FighterInput.new() if neutral else inputs[i])
 	_follow_vanish_anchors()
+	Pushboxes.resolve(self, before, solid_before, frozen)
 	if not round_over:
 		_resolve_hits(frozen)
 	_step_projectiles()
@@ -1176,6 +1181,7 @@ func _reset_fighter(fighter: FighterState, start: Vector3) -> void:
 	fighter.consumed_presses = 0
 	fighter.hitstop_ticks = 0
 	fighter.grab_partner = -1
+	fighter.clear_pushback()
 	fighter.perfect_block_armed = false
 	fighter.perfect_block_ticks = 0
 	fighter.perfect_block_lockout = 0
@@ -1345,6 +1351,8 @@ func _apply_hit(contact: Dictionary, from_projectile: bool = false) -> void:
 		target.knockback_type = knockback
 		target.spike_bounced = false
 		target.velocity = _knockback_velocity(contact)
+		if not from_projectile:
+			_start_pushback(target_index, attacker_index, hit_tuning.hit_pushback_distance)
 		target.combo_hits = combo_hit
 		target.combo_damage = combo_damage + damage
 		target.combo_starter_percent = percent
@@ -1379,6 +1387,8 @@ func _apply_block(contact: Dictionary, from_projectile: bool = false) -> void:
 		hitstop = maxi(hitstop, hit_tuning.guard_break_hitstop_ticks)
 	else:
 		_enter_stun(target, FighterState.State.BLOCKSTUN, move.blockstun_ticks)
+		if not from_projectile:
+			_start_pushback(target_index, attacker_index, hit_tuning.block_pushback_distance)
 	_freeze(target if from_projectile else fighters[attacker_index], target, hitstop)
 	events.append(_event(EventType.BLOCK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
 	if broken:
@@ -1501,6 +1511,22 @@ func _apply_push_block(contact: Dictionary) -> void:
 	events.append(_event(EventType.PUSH_BLOCK, contact, 0, 0, MoveData.KnockbackType.NONE))
 
 
+## Slides the target distance metres straight away from the attacker over the
+## pushback ticks, after hitstop; a wall passes the rest to the attacker (Pushboxes).
+func _start_pushback(target_index: int, attacker_index: int, distance: float) -> void:
+	var target := fighters[target_index]
+	var attacker := fighters[attacker_index]
+	if distance <= 0.0 or hit_tuning.pushback_ticks <= 0:
+		return
+	var away := target.position - attacker.position
+	away.y = 0.0
+	if away.length_squared() < 0.0001:
+		away = Basis(Vector3.UP, attacker.facing_yaw) * Vector3.FORWARD
+	target.pushback_velocity = away.normalized() * (distance / (hit_tuning.pushback_ticks * TICK_SECONDS))
+	target.pushback_ticks = hit_tuning.pushback_ticks
+	target.pushback_from = attacker_index
+
+
 ## BLOCKSTUN for ticks, sliding at constant speed so it ends exactly at destination.
 func _slide_to(fighter: FighterState, destination: Vector3, ticks: int) -> void:
 	_enter_stun(fighter, FighterState.State.BLOCKSTUN, ticks)
@@ -1601,6 +1627,19 @@ func _clamp_to_arena(fighter: FighterState) -> void:
 	fighter.position = clamped
 
 
+## Puts a fighter moved from outside its own step (a pushbox) back inside the
+## arena and above the floor, and refreshes its stand height.
+func settle(fighter: FighterState) -> void:
+	_clamp_to_arena(fighter)
+	if fighter.is_grounded():
+		fighter.position.y = _stand_height(fighter)
+	fighter.stand_height = _stand_height(fighter)
+
+
+func is_on_floor(fighter: FighterState) -> bool:
+	return _is_on_floor(fighter)
+
+
 func _land_if_on_floor(fighter: FighterState) -> void:
 	var airborne := fighter.state == FighterState.State.FLYING \
 		or fighter.state == FighterState.State.FALLING
@@ -1669,7 +1708,8 @@ func _move_around_target(index: int, step: Vector3) -> bool:
 	var new_radius := radius + step.dot(out)
 	if new_radius < _MIN_ORBIT_RADIUS:
 		return false
-	var turn := Basis(Vector3.UP, step.dot(Vector3.UP.cross(out)) / radius)
+	var max_turn := deg_to_rad(tuning.max_orbit_turn_speed) * TICK_SECONDS
+	var turn := Basis(Vector3.UP, clampf(step.dot(Vector3.UP.cross(out)) / radius, -max_turn, max_turn))
 	var centre := fighters[fighter.lock_on_target].position
 	var planar := turn * out * new_radius
 	fighter.position = Vector3(centre.x + planar.x, fighter.position.y + step.y, centre.z + planar.z)

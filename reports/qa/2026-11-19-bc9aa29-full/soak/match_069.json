@@ -1,0 +1,202 @@
+{
+	"hitstops": {
+		"breaker": {
+			"10": 2
+		},
+		"breaker+counter": {
+			"11": 2
+		},
+		"hammer/light_1": {
+			"7": 1
+		},
+		"hammer/light_1+counter": {
+			"11": 3
+		},
+		"hammer/light_2": {
+			"10": 3
+		},
+		"launcher": {
+			"7": 4,
+			"8": 2
+		},
+		"light_1": {
+			"3": 8,
+			"4": 1,
+			"5": 5
+		},
+		"light_1+counter": {
+			"7": 8,
+			"8": 3,
+			"9": 2
+		},
+		"light_2": {
+			"3": 10,
+			"4": 4,
+			"5": 6
+		},
+		"light_3": {
+			"3": 4,
+			"4": 3,
+			"5": 3,
+			"8": 4
+		},
+		"spike": {
+			"8": 1
+		}
+	},
+	"id": "1521:ember_rift:2v2:vexa,brann,lyra,kael:3325",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		3,
+		3,
+		2,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1521,
+	"sim_ms_per_tick": 4.62944666666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0174699258059263,
+		"finger_pops_per_fighter_minute": 22.5125069483046,
+		"foot_error_p95_cm": 14.9485189496843,
+		"foot_slide_cm_per_frame": 0.536601972043567,
+		"locked_on_screen_share": 0.998182919442762,
+		"pops_per_fighter_minute": 17.5097276264591
+	},
+	"view_ms_per_frame": 3.98860666666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 142,
+			"detail": "lowest sole +42.0 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 951,
+			"worst_value": 0.420152065425881
+		},
+		{
+			"check": "pop",
+			"count": 14,
+			"detail": "RightToes turned 2.13 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1218,
+			"worst_value": 2.13459920883179
+		},
+		{
+			"check": "pop",
+			"count": 14,
+			"detail": "RightHand turned 2.03 rad in one frame (MOVING, move )",
+			"fighter": 3,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 2.02893877029419
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 544,
+			"detail": "fighters 0 and 2 overlap 0.88 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 197,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1388,
+			"worst_value": 0.87957275390625
+		},
+		{
+			"check": "pop",
+			"count": 6,
+			"detail": "BeardBraid turned 1.47 rad in one frame (HITSTUN, move )",
+			"fighter": 1,
+			"first_tick": 214,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 862,
+			"worst_value": 1.46935892105103
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 381,
+			"detail": "fighters 1 and 3 overlap 1.10 m (HITSTUN vs ATTACKING)",
+			"fighter": 1,
+			"first_tick": 271,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 457,
+			"worst_value": 1.09966430664063
+		},
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole +46.4 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 338,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1128,
+			"worst_value": 0.463814055655348
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -6.3 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1209,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1209,
+			"worst_value": -0.0628325326096331
+		},
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "RightLowerArm turned 1.27 rad in one frame (HITSTUN, move )",
+			"fighter": 2,
+			"first_tick": 1305,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1305,
+			"worst_value": 1.26931166648865
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "35 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 35
+		}
+	],
+	"wall_seconds": 38.176,
+	"zone": "ember_rift"
+}

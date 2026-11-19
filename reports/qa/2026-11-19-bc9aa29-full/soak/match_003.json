@@ -1,0 +1,94 @@
+{
+	"hitstops": {
+		"launcher": {
+			"8": 4
+		},
+		"light_1": {
+			"3": 1,
+			"4": 5
+		},
+		"light_1+counter": {
+			"7": 3,
+			"8": 7
+		},
+		"light_2": {
+			"3": 3,
+			"4": 9,
+			"20": 1
+		},
+		"light_2+counter": {
+			"7": 1
+		},
+		"light_3": {
+			"4": 4,
+			"5": 3
+		}
+	},
+	"id": "1003:shattered_mesa:1v1:lyra,kael:24",
+	"kos": 1,
+	"legends": [
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "KO",
+	"rounds_started": 1,
+	"seed": 1003,
+	"sim_ms_per_tick": 2.24676722222222,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0101535525172949,
+		"finger_pops_per_fighter_minute": 20.0111172873819,
+		"foot_error_p95_cm": 2.50159700641319,
+		"foot_slide_cm_per_frame": 1.74683015286079,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 17.0094496942746
+	},
+	"view_ms_per_frame": 2.12144111111111,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 17,
+			"detail": "RightLowerLeg turned 2.16 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 430,
+			"worst_value": 2.16207480430603
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 843,
+			"detail": "fighters 0 and 1 overlap 0.93 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 330,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 419,
+			"worst_value": 0.929110267322976
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "17 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 17
+		}
+	],
+	"wall_seconds": 28.263,
+	"zone": "shattered_mesa"
+}

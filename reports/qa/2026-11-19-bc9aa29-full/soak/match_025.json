@@ -1,0 +1,130 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 7
+		},
+		"light_1": {
+			"3": 8,
+			"5": 1,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 7
+		},
+		"light_2": {
+			"3": 12
+		},
+		"light_2+counter": {
+			"7": 1
+		},
+		"light_3": {
+			"3": 10
+		},
+		"light_4": {
+			"4": 3
+		}
+	},
+	"id": "1201:stormfall_city:1v1:vexa,brann:44",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "KO",
+	"rounds_started": 1,
+	"seed": 1201,
+	"sim_ms_per_tick": 1.85005444444444,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.00613381480798125,
+		"finger_pops_per_fighter_minute": 32.017787659811,
+		"foot_error_p95_cm": 9.00606090093934,
+		"foot_slide_cm_per_frame": 1.10934939285791,
+		"locked_on_screen_share": 0.966091954022989,
+		"pops_per_fighter_minute": 22.0122290161201
+	},
+	"view_ms_per_frame": 1.924625,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 131,
+			"detail": "lowest sole -9.0 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 6,
+			"worst_value": -0.0903473595016511
+		},
+		{
+			"check": "foot_ground",
+			"count": 10,
+			"detail": "lowest sole +5.5 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 12,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 14,
+			"worst_value": 0.0553194627072138
+		},
+		{
+			"check": "pop",
+			"count": 19,
+			"detail": "RightLowerLeg turned 2.89 rad in one frame (ATTACKING, move light_4)",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 349,
+			"worst_value": 2.88957142829895
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 687,
+			"detail": "fighters 0 and 1 overlap 1.05 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 266,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1203,
+			"worst_value": 1.04760238197632
+		},
+		{
+			"check": "pop",
+			"count": 3,
+			"detail": "LeftHand turned 1.97 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 1,
+			"first_tick": 480,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1246,
+			"worst_value": 1.96794629096985
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "22 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 22
+		}
+	],
+	"wall_seconds": 21.961,
+	"zone": "stormfall_city"
+}

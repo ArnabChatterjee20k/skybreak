@@ -1,0 +1,139 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 5,
+			"8": 4
+		},
+		"light_1": {
+			"3": 9,
+			"4": 8,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 5,
+			"9": 3
+		},
+		"light_2": {
+			"3": 10,
+			"4": 8,
+			"5": 2
+		},
+		"light_3": {
+			"3": 6,
+			"4": 6,
+			"5": 4,
+			"8": 2
+		},
+		"sweep": {
+			"7": 1
+		}
+	},
+	"id": "3113:skyhold_ruins:ffa4:lyra,kael,vexa,brann:2445",
+	"kos": 0,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		2,
+		4,
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3113,
+	"sim_ms_per_tick": 4.12430611111111,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0142680779099464,
+		"finger_pops_per_fighter_minute": 29.5163979988883,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.993885491939967,
+		"pops_per_fighter_minute": 24.5136186770428
+	},
+	"view_ms_per_frame": 3.73170888888889,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 915,
+			"detail": "fighters 0 and 2 overlap 0.88 m (FLYING vs FLYING)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 765,
+			"detail": "fighters 1 and 3 overlap 1.10 m (FLYING vs FLYING)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "pop",
+			"count": 25,
+			"detail": "RightLowerLeg turned 2.80 rad in one frame (ATTACKING, move light_4)",
+			"fighter": 1,
+			"first_tick": 136,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 580,
+			"worst_value": 2.79983186721802
+		},
+		{
+			"check": "pop",
+			"count": 10,
+			"detail": "BeardBraid turned 2.38 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 3,
+			"first_tick": 268,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 956,
+			"worst_value": 2.38372039794922
+		},
+		{
+			"check": "pop",
+			"count": 14,
+			"detail": "SashUpper turned 3.02 rad in one frame (FLYING, move )",
+			"fighter": 2,
+			"first_tick": 342,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1522,
+			"worst_value": 3.02039527893066
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "49 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 49
+		}
+	],
+	"wall_seconds": 38.218,
+	"zone": "skyhold_ruins"
+}

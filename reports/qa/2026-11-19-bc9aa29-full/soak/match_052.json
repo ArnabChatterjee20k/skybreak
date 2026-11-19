@@ -1,0 +1,198 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 10
+		},
+		"bow/projectile+counter": {
+			"10": 1
+		},
+		"breaker+counter": {
+			"12": 1
+		},
+		"launcher": {
+			"7": 2
+		},
+		"light_1": {
+			"3": 6,
+			"4": 8,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 2,
+			"9": 2
+		},
+		"light_2": {
+			"3": 7,
+			"4": 9,
+			"5": 5
+		},
+		"light_2+counter": {
+			"8": 1
+		},
+		"light_3": {
+			"3": 3,
+			"4": 6,
+			"5": 2,
+			"8": 6
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "1410:verdant_falls:ffa4:kael,vexa,brann,lyra:2424",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		4,
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1410,
+	"sim_ms_per_tick": 4.16214,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0105799064040184,
+		"finger_pops_per_fighter_minute": 38.5214007782101,
+		"foot_error_p95_cm": 16.8924263108622,
+		"foot_slide_cm_per_frame": 0.473831139128573,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 33.0183435241801
+	},
+	"view_ms_per_frame": 3.65151277777778,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 890,
+			"detail": "fighters 0 and 2 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 703,
+			"detail": "fighters 1 and 3 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "foot_ground",
+			"count": 93,
+			"detail": "lowest sole -12.6 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 147,
+			"worst_value": -0.125676702401037
+		},
+		{
+			"check": "foot_ground",
+			"count": 196,
+			"detail": "lowest sole -16.9 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 120,
+			"worst_value": -0.169365233252867
+		},
+		{
+			"check": "foot_ground",
+			"count": 136,
+			"detail": "lowest sole -22.8 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 1,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 526,
+			"worst_value": -0.227875749101525
+		},
+		{
+			"check": "pop",
+			"count": 27,
+			"detail": "LeftHand turned 1.94 rad in one frame (ATTACKING, move breaker)",
+			"fighter": 0,
+			"first_tick": 178,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 179,
+			"worst_value": 1.93788182735443
+		},
+		{
+			"check": "pop",
+			"count": 26,
+			"detail": "LeftHand turned 1.45 rad in one frame (HITSTUN, move )",
+			"fighter": 2,
+			"first_tick": 262,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 307,
+			"worst_value": 1.44972717761993
+		},
+		{
+			"check": "pop",
+			"count": 12,
+			"detail": "LeftUpperArm turned 1.78 rad in one frame (ATTACKING, move weapon/pickup)",
+			"fighter": 1,
+			"first_tick": 670,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1645,
+			"worst_value": 1.78317582607269
+		},
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "LeftHand turned 1.54 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 3,
+			"first_tick": 1029,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1029,
+			"worst_value": 1.53537857532501
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "66 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 66
+		}
+	],
+	"wall_seconds": 35.917,
+	"zone": "verdant_falls"
+}

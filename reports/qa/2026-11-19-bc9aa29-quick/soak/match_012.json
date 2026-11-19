@@ -1,0 +1,130 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 5,
+			"8": 3
+		},
+		"light_1": {
+			"3": 4,
+			"4": 7
+		},
+		"light_1+counter": {
+			"7": 3,
+			"8": 1
+		},
+		"light_2": {
+			"3": 7,
+			"4": 4
+		},
+		"light_3": {
+			"3": 7,
+			"4": 3
+		},
+		"spike": {
+			"7": 3
+		}
+	},
+	"id": "112:ember_rift:1v1:kael,vexa:45",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 112,
+	"sim_ms_per_tick": 0.584907083333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.010086121968925,
+		"finger_pops_per_fighter_minute": 24.0100041684035,
+		"foot_error_p95_cm": 4.0408216253276,
+		"foot_slide_cm_per_frame": 0.354151750313273,
+		"locked_on_screen_share": 0.974020054694622,
+		"pops_per_fighter_minute": 42.0175072947061
+	},
+	"view_ms_per_frame": 0.480262083333333,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 23,
+			"detail": "RightLowerLeg turned 2.09 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 2065,
+			"worst_value": 2.09060168266296
+		},
+		{
+			"check": "pop",
+			"count": 33,
+			"detail": "SashLower turned 3.02 rad in one frame (ATTACKING, move light_2)",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 627,
+			"worst_value": 3.01817870140076
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 902,
+			"detail": "fighters 0 and 1 overlap 0.95 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 218,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 804,
+			"worst_value": 0.949969482421875
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -5.4 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1331,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1331,
+			"worst_value": -0.0537862355149059
+		},
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole -6.7 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1338,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2317,
+			"worst_value": -0.0672930442482382
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "56 pops in 1.3 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 2.66555555555556,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 56
+		}
+	],
+	"wall_seconds": 18.463,
+	"zone": "ember_rift"
+}

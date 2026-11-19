@@ -1,0 +1,38 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+---  GUT  ---
+[1m[INFO]:  [0musing [/root/.local/share/godot/app_userdata/Skybreak] for temporary output.
+Godot version:  4.7.2
+GUT version:  9.7.1
+[4m
+
+res://tests/qa/test_golden_replays.gd
+[0m* test_every_canonical_golden_replays_without_drift
+* test_every_golden_file_has_a_spec_in_the_catalog
+* test_the_goldens_cover_what_their_specs_expect
+* test_the_goldens_cover_every_legend
+* test_a_recording_round_trips_through_a_saved_file
+* test_input_floats_reload_bit_identical_including_negative_zero
+* test_a_perturbed_input_is_caught_as_drift_on_the_next_tick
+* test_drift_names_the_field_that_differs
+* test_a_changed_hashed_field_list_is_reported_as_such
+[1m9/9 passed.
+[0m
+
+
+
+[33m==============================================
+[0m[33m= Run Summary
+[0m[33m==============================================
+[0m
+Totals
+------
+Scripts               1
+Tests                 9
+Passing Tests         9
+Asserts              54
+Time              5.361s
+
+
+[32m---- All tests passed! ----
+[0m

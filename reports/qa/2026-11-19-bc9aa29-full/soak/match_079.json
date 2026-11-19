@@ -1,0 +1,203 @@
+{
+	"hitstops": {
+		"breaker": {
+			"8": 1
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"7": 3
+		},
+		"light_1": {
+			"3": 5,
+			"4": 4,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 3,
+			"9": 5
+		},
+		"light_2": {
+			"3": 7,
+			"4": 6,
+			"5": 4
+		},
+		"light_3": {
+			"3": 5,
+			"4": 5,
+			"8": 3
+		},
+		"spike": {
+			"7": 2
+		}
+	},
+	"id": "1613:heartbloom_gardens:ffa4:lyra,kael,vexa,brann:4255",
+	"kos": 0,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		2,
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1613,
+	"sim_ms_per_tick": 4.48077833333333,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0506497472524643,
+		"finger_pops_per_fighter_minute": 40.0222345747638,
+		"foot_error_p95_cm": 13.9006462902501,
+		"foot_slide_cm_per_frame": 1.01301837217182,
+		"locked_on_screen_share": 0.970149253731343,
+		"pops_per_fighter_minute": 33.5186214563646
+	},
+	"view_ms_per_frame": 4.18386777777778,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 846,
+			"detail": "fighters 0 and 2 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 790,
+			"detail": "fighters 1 and 3 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "foot_ground",
+			"count": 140,
+			"detail": "lowest sole +43.5 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1239,
+			"worst_value": 0.434870046855906
+		},
+		{
+			"check": "foot_ground",
+			"count": 4,
+			"detail": "lowest sole -5.5 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 13,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1237,
+			"worst_value": -0.0554858274415437
+		},
+		{
+			"check": "foot_ground",
+			"count": 45,
+			"detail": "lowest sole +47.9 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 141,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1218,
+			"worst_value": 0.478875773845061
+		},
+		{
+			"check": "pop",
+			"count": 24,
+			"detail": "RightFoot turned 2.15 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 155,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 238,
+			"worst_value": 2.1482355594635
+		},
+		{
+			"check": "pop",
+			"count": 16,
+			"detail": "ApronFlap turned 2.06 rad in one frame (MOVING, move )",
+			"fighter": 3,
+			"first_tick": 166,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1241,
+			"worst_value": 2.062739610672
+		},
+		{
+			"check": "pop",
+			"count": 25,
+			"detail": "LeftLowerArm turned 3.14 rad in one frame (MOVING, move )",
+			"fighter": 2,
+			"first_tick": 760,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1729,
+			"worst_value": 3.1379063129425
+		},
+		{
+			"check": "pop",
+			"count": 2,
+			"detail": "RightHand turned 2.03 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 1007,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1749,
+			"worst_value": 2.03182220458984
+		},
+		{
+			"check": "arena_bounds",
+			"count": 1,
+			"detail": "outside the arena at (136.18, 272.7, -146.67) (stand 273.28, VANISHING)",
+			"fighter": 0,
+			"first_tick": 1593,
+			"legend": "lyra",
+			"limit": 290.05,
+			"weapon": "hammer",
+			"worst_tick": 1593,
+			"worst_value": 156.672561645508
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "67 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 67
+		}
+	],
+	"wall_seconds": 37.844,
+	"zone": "heartbloom_gardens"
+}
