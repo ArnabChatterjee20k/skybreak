@@ -455,7 +455,8 @@ func test_heartstring_arrows_make_the_target_smitten_and_unable_to_attack() -> v
 # Determinism and the bot match.
 
 ## A seeded match of two WeaponBots with drops on; returns [hash, weapons used].
-func _bot_match(seed_value: int, ticks: int, zone := &"skyhold_ruins") -> Array:
+func _bot_match(seed_value: int, ticks: int, zone := &"skyhold_ruins",
+		after_tick := Callable()) -> Array:
 	var sim := CombatSim.new(seed_value)
 	sim.zone = zone
 	sim.pickups_enabled = true
@@ -472,6 +473,8 @@ func _bot_match(seed_value: int, ticks: int, zone := &"skyhold_ruins") -> Array:
 		for bot in bots:
 			inputs.append(bot.next_input(sim))
 		sim.tick(inputs)
+		if after_tick.is_valid():
+			after_tick.call(sim)
 		for event in sim.events:
 			types[event.type] = true
 			if event.type in [E.FIRE, E.WEAPON_THROW]:

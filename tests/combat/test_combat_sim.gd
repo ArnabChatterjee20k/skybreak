@@ -61,7 +61,8 @@ var _coverage := {}
 ## then and makes defensive reads (block, perfect block, grab, tech, push-block),
 ## so every exchange happens. A KO starts the next round. Records states, dash
 ## kinds, moves, cancels, KOs, events and rock-paper-scissors outcomes seen.
-func _run_match(seed_value: int, ticks: int, visited: Dictionary, count := 2) -> int:
+func _run_match(seed_value: int, ticks: int, visited: Dictionary, count := 2,
+		after_tick := Callable()) -> int:
 	var sim := CombatSim.new(seed_value)
 	# A Kael variant with less health and guard, a faster charge, a Breaker
 	# that is armored through startup and wall-splats, and a slower grab, so KOs,
@@ -135,6 +136,8 @@ func _run_match(seed_value: int, ticks: int, visited: Dictionary, count := 2) ->
 		var before: Array = sim.fighters.map(
 			func(f: FighterState) -> Array: return [f.move, f.move_tick, f.state, f.attack_phase()])
 		sim.tick(inputs)
+		if after_tick.is_valid():
+			after_tick.call(sim)
 		previous = inputs
 		_record_events(sim, before, visited)
 		if sim.round_over:

@@ -944,7 +944,7 @@ func _move_on_ground(fighter: FighterState, input: FighterInput, wish: Vector3) 
 	var rate := tuning.ground_acceleration if wish != Vector3.ZERO else tuning.ground_deceleration
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
 	fighter.velocity = planar.move_toward(wish * tuning.ground_speed, rate * TICK_SECONDS)
-	if fighter.position.y > _stand_height(fighter) + _LEDGE_DROP:
+	if ground_height.is_valid() and fighter.position.y > _stand_height(fighter) + _LEDGE_DROP:
 		# Walked off a ledge (an island rim): fall.
 		fighter.enter_state(FighterState.State.FALLING)
 		return
@@ -1157,7 +1157,7 @@ func _place(fighter: FighterState, start: Vector3) -> void:
 	fighter.velocity = Vector3.ZERO
 	# Terrain-aware (T-D13): the zone's ground sampler decides where "standing" is.
 	var stand := _stand_height(fighter)
-	if start.y > stand + _FLOOR_EPSILON:
+	if start.y > stand + _floor_epsilon():
 		fighter.enter_state(FighterState.State.FLYING)
 	else:
 		fighter.position.y = stand
@@ -1715,7 +1715,12 @@ func _points_at_target(index: int, direction: Vector3) -> bool:
 
 
 func _is_on_floor(fighter: FighterState) -> bool:
-	return fighter.position.y <= _stand_height(fighter) + _FLOOR_EPSILON
+	return fighter.position.y <= _stand_height(fighter) + _floor_epsilon()
+
+
+## Touching tolerance: only terrain needs one; the flat floor compares exactly, as before T-D13.
+func _floor_epsilon() -> float:
+	return _FLOOR_EPSILON if ground_height.is_valid() else 0.0
 
 
 ## Height of a standing fighter's origin at its (x, z).
