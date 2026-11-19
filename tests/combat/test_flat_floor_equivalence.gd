@@ -1,5 +1,5 @@
 extends GutTest
-## Without injected terrain the sim must move exactly as before T-D13 (golden from f1d2dba).
+## Without injected terrain the sim must move exactly as recorded (golden re-recorded in T-D30c for the measured pushboxes).
 
 var _golden: Dictionary
 var _actual: Dictionary

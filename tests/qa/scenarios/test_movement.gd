@@ -18,7 +18,7 @@ func test_a_dash_into_an_opponent_stops_at_contact_without_passing_through() -> 
 		return
 	start([&"kael", &"vexa"], [Vector3.ZERO, Vector3(0, 0, -3)])
 	fighter(0).lock_on_target = -1
-	var bodies := fighter(0).stats.hurtbox_radius + fighter(1).stats.hurtbox_radius
+	var bodies := fighter(0).stats.pushbox_radius + fighter(1).stats.pushbox_radius
 	var closest := INF
 	var passed := false
 	held[0] = A.DASH

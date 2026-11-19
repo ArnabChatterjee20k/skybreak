@@ -83,8 +83,10 @@ func test_a_point_blank_exchange_keeps_both_fighters_clear() -> void:
 	for seed_value in [1, 2, 3]:
 		var worst := _exchange(seed_value, false)
 		gut.p("seed %d: cover %.3f, hidden %.3f, closest %.2f m" % [seed_value, worst.x, worst.y, worst.z])
-		assert_lt(worst.z, 1.06, "seed %d: the bodies met" % seed_value)
-		assert_gte(worst.z, 0.99, "seed %d: never closer than touching" % seed_value)
+		# Two default bodies touch at twice the pushbox radius.
+		var touching := (CombatSim.DEFAULT_FIGHTER_STATS as FighterStats).pushbox_radius * 2.0
+		assert_lt(worst.z, touching + 0.06, "seed %d: the bodies met" % seed_value)
+		assert_gte(worst.z, touching - 0.01, "seed %d: never closer than touching" % seed_value)
 		assert_lte(worst.x, MAX_SCREEN_COVER, "seed %d: a fighter covered %.0f%% of the screen" % [seed_value, worst.x * 100])
 		assert_lte(worst.y, MAX_OPPONENT_HIDDEN, "seed %d: the player hid %.0f%% of the opponent" % [seed_value, worst.y * 100])
 

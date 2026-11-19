@@ -112,7 +112,8 @@ func test_walking_into_each_other_stops_at_contact() -> void:
 	for _i in 120:
 		_tick([[0, Vector2(0, 1), 0], [0, Vector2(0, 1), 0]])
 	var distance := _sim.fighters[0].position.distance_to(_sim.fighters[1].position)
-	assert_almost_eq(distance, 1.0, 0.02, "two default bodies touch at 1 m")
+	var reach := _sim.fighters[0].stats.pushbox_radius + _sim.fighters[1].stats.pushbox_radius
+	assert_almost_eq(distance, reach, 0.02, "two default bodies touch at their radii")
 	assert_gt(_sim.fighters[0].position.z, _sim.fighters[1].position.z, "nobody passed through")
 	# Pressed together they stand still, so the view does not lean them into each other.
 	assert_almost_eq(_sim.fighters[0].velocity.z, 0.0, 0.01)
@@ -360,5 +361,6 @@ func test_the_aegis_and_mirror_decoys_have_no_body() -> void:
 	for _i in 30:
 		_tick([[0, Vector2(0, 1), 0]])
 	var distance := _sim.fighters[0].position.distance_to(_sim.fighters[1].position)
-	assert_almost_eq(distance, 1.0, 0.02, "an Aegis is no bigger body")
+	var reach := _sim.fighters[0].stats.pushbox_radius + _sim.fighters[1].stats.pushbox_radius
+	assert_almost_eq(distance, reach, 0.02, "an Aegis is no bigger body")
 	assert_eq(_sim.fighters.size(), 2, "decoys are gadgets, not fighters with pushboxes")

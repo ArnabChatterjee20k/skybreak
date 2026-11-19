@@ -16,6 +16,7 @@ extends Resource
 @export var hurtbox_height: float = 2.0
 ## Pushbox: the solid body other fighters cannot pass through, a vertical capsule
 ## centred on the position. Slimmer than the hurtbox so strikes still reach at contact.
+## Each legend's values come from its drawn core body in its idle stance (BodyCapsules, plus 5 cm).
 @export var pushbox_radius: float = 0.5
 ## Full pushbox height, end caps included.
 @export var pushbox_height: float = 1.8

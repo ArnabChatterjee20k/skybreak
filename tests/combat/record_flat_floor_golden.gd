@@ -1,5 +1,5 @@
 extends SceneTree
-## Writes FlatFloorSequences.record() to the golden file; run on the pre-T-D13 commit.
+## Writes FlatFloorSequences.record() to the golden file; re-record only for an intended sim change.
 
 
 func _init() -> void:
