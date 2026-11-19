@@ -450,8 +450,7 @@ func _process_modification_with_delta(delta: float) -> void:
 		delta = _frame_delta
 		_frame_delta = -1.0
 	body_to_world = skeleton.global_transform
-	# Every bone, so world transforms through bones the layers never turn (twist, spine helpers) are right.
-	for i in rotations.size():
+	for i in _used:
 		rotations[i] = skeleton.get_bone_pose_rotation(i)
 	var hips := skeleton.get_bone_pose_position(hips_id) if hips_id >= 0 else Vector3.ZERO
 	hips = process_pose(rotations, hips, delta)
@@ -885,45 +884,6 @@ func _grip_off_hand(rotations: Array[Quaternion], hips: Vector3, weight: float) 
 ## Body clearance: while the held weapon's boxes reach into the holder's torso, head or arms,
 ## move the main hand (and the weapon with it) out along the push and solve the arm again.
 func _clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
-	_clear_string(rotations, hips)
-	_clear_weapon(rotations, hips)
-
-
-## While drawing a bow, its string and arrow (limb tips to the string hand, through the grip) keep
-## CLEARANCE_GAP from the head: the bow hand moves out along the shortest way.
-func _clear_string(rotations: Array[Quaternion], hips: Vector3) -> void:
-	if arm_pose != ArmPose.BOW_DRAW or _string <= 0.01 or body == null or weapon_hand != &"LeftHand" or weapon_off_hand != Vector3.INF:
-		return
-	var main := _arm_chain(weapon_hand)
-	var off := _arm_chain(&"RightHand")
-	if main.is_empty() or off.is_empty():
-		return
-	for pass_index in CLEARANCE_PASSES:
-		_world_cache.clear()
-		var head: Array = body.capsules(func(bone: int) -> Transform3D: return _world_at(rotations, hips, bone),
-			Transform3D.IDENTITY, [&"head"]).get(&"head", [])
-		if head.is_empty():
-			return
-		var hand := _world_at(rotations, hips, main[2])
-		var bow := hand * weapon_grip
-		var nock := (_world_at(rotations, hips, off[2]) * off_hand_socket).origin
-		var top := bow * WeaponGrip.BOW_TIP
-		var bottom := bow * Vector3(WeaponGrip.BOW_TIP.x, -WeaponGrip.BOW_TIP.y, WeaponGrip.BOW_TIP.z)
-		var deepest := -INF
-		var push := Vector3.ZERO
-		for segment: Array in [[top, nock], [nock, bottom], [nock, bow.origin]]:
-			var closest := Geometry3D.get_closest_points_between_segments(segment[0], segment[1], head[0], head[1])
-			var depth := float(head[2]) - closest[0].distance_to(closest[1])
-			if depth > deepest:
-				deepest = depth
-				push = closest[0] - closest[1]
-		if deepest <= -CLEARANCE_GAP or push.length() < 1e-5:
-			return
-		var target := hand.origin + push.normalized() * (deepest + CLEARANCE_GAP + CLEARANCE_MARGIN)
-		_reach_hand(rotations, hips, main, target, hand.basis.get_rotation_quaternion(), 1.0)
-
-
-func _clear_weapon(rotations: Array[Quaternion], hips: Vector3) -> void:
 	weapon_overlap = 0.0
 	if weapon_hand == &"" or body == null or weapon_boxes.is_empty():
 		return
