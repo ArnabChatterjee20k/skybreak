@@ -104,3 +104,44 @@ Kept: the six `zone_*` shots. They pass, and none of their diffs comes from an
 intended change. `zone_skyhold_ruins` scores SSIM 0.944 / 4.2% tiles against
 the golden, and the same 0.944 between two renders of this commit: its cloud
 sea is not deterministic across renders (filed as QA-10 in `TODO.md`).
+
+## T-D34: zone shots without the HUD, re-blessed for #81
+
+The six `zone_*` shots failed on main (QA-14). Two possible causes were named: #81
+(zone readability: `lava` / `terrain_toon` shaders, zone palettes, props; merged
+in #84 without re-blessing) and #88's HUD changes, since the shots captured the HUD.
+Renders of each zone shot (gl_compatibility, 960x540, this container), compared
+with the old goldens:
+
+| Shot | main, HUD on | main with #81 reverted, HUD on |
+|---|---|---|
+| zone_ember_rift | 0.827 / 43.3% (HUD off) | 0.989 / 1.7% PASS |
+| zone_frozen_peaks | 0.876 / 88.1% (HUD off) | 0.989 / 2.1% PASS |
+| zone_shattered_mesa | 0.916 / 31.2% (HUD off) | 0.992 / 1.7% PASS |
+| zone_skyhold_ruins | 0.785 / 56.9% (HUD off) | 0.933 / 7.1% (QA-10 cloud noise) |
+| zone_stormfall_city | 0.921 / 18.8% (HUD off) | 0.985 / 0.8% PASS |
+| zone_verdant_falls | 0.891 / 31.7% (HUD off) | 0.995 / 0.6% PASS |
+
+With #81 reverted and #88's HUD still drawn, five of six pass, and the sixth only
+misses on the known Skyhold cloud noise. So the cause is #81, not the HUD. The
+remaining main-vs-reverted diff (HUD hidden on both) is the #81 change as shown in
+its own `game/world/preview/renders/zone_contrast_before_after.jpg`: lighter Ember
+Rift walls with orange lava, blue ice and darker snow on Frozen Peaks, paler
+Skyhold islands.
+
+The zone shots now hide every `CanvasLayer` in the level (`scene_only` in
+`QaShots`, `_hide_overlays` in `qa_soak.gd`), so HUD and overlay changes can no
+longer move them, and the six were re-blessed with `bless_goldens.sh --visual`.
+The eight `heartbloom_*` fighter shots still draw the HUD and were not re-blessed
+(they pass; their new renders were discarded).
+
+## T-D34: foot-slide metric v2 (feel trend re-baseline)
+
+`QaViewChecks` foot slide now only counts a planted foot over two consecutive
+presented frames of IDLE: not across a vanish (or any sim move over 0.5 m between
+frames), hidden frames, or the first 10 frames of a match or round, and only when
+the lowest sole is within `FOOT_TOLERANCE` (5 cm) of the ground. Floating or sunk
+frames are left out and counted as `foot_slide_skipped_frames`. `qa_report.py`
+tags `metrics.json` with `metric_versions` (`foot_slide_cm_per_frame: 2`), and the
+trend skips a metric whose version differs from the reference report ("re-baselined").
+The first v2 quick report is the new foot-slide reference.
