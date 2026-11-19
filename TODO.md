@@ -13,6 +13,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D32 [desktop] Cross-platform determinism: `DetMath` (fdlibm sin, cos, atan2,
+  acos, exp, log, pow on + - * / and sqrt) replaces every libm call in the sim and
+  AI, -0.0 canonicalised each tick, lint test for banned calls, goldens re-blessed,
+  `tools/diag/det_check.gd` hash chain. Open: `developer` runs det_check on Windows
+  and compares with the Linux output in the PR (acceptance gate).
 - T-D13 fix [desktop] Flat floor bit-identical to pre-terrain: floor epsilon and
   ledge drop only apply with an injected `ground_height`; golden per-tick
   fingerprints from f1d2dba (`tests/combat/test_flat_floor_equivalence.gd`).
