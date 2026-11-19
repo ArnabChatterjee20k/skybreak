@@ -1,7 +1,8 @@
 extends SceneTree
-## Objective realism metrics, OLD hand-keyed clips vs NEW mocap clips, on chunky Kael at 60 fps.
-## Prints a Markdown table.
-##   godot --headless --path . -s res://game/characters/motion/tools/motion_metrics.gd
+## Objective realism metrics, OLD clips vs NEW mocap clips as CharacterView plays them (T-D22b:
+## the integrated library with the derived launcher_up, sweep_low and hit_stagger), at 60 fps.
+## Prints a Markdown table for chunky Kael (default) or Vexa (her posed move clips are the old ones).
+##   godot --headless --path . -s res://game/characters/motion/tools/motion_metrics.gd -- [kael|vexa]
 
 const MODEL := "res://game/characters/kael_chunky/kael_chunky.glb"
 const OLD_CLIPS := "res://game/characters/kael_chunky/kael_chunky_clip_set.tres"
@@ -20,6 +21,8 @@ const PAIRS := [
 	["smash", "smash", "smash", false], ["launcher", "launcher", "launcher", false],
 	["spike", "spike", "spike", false], ["sweep", "sweep", "sweep", false],
 	["block hit", "block_hit", "block_hit", false], ["heavy hit", "hit", "hit_heavy", false],
+	["launcher (T-D22b)", "launcher", "launcher_up", false], ["sweep (T-D22b)", "sweep", "sweep_low", false],
+	["heavy hit (T-D22b)", "hit", "hit_stagger", false],
 	["KO fall", "knockdown", "ko_fall", false], ["get up", "get_up", "get_up", false],
 ]
 const BODY := [&"Hips", &"Spine", &"Chest", &"UpperChest", &"Neck", &"Head", &"LeftUpperArm", &"LeftLowerArm",
@@ -31,16 +34,46 @@ const MASS := {&"Hips": 0.25, &"Chest": 0.2, &"Head": 0.08, &"LeftUpperArm": 0.0
 const STRIKE_BONES := {
 	"light_1": &"LeftMiddleProximal", "light_2": &"RightMiddleProximal", "light_3": &"LeftMiddleProximal",
 	"light_4": &"RightToes", "smash": &"RightMiddleProximal", "launcher": &"RightMiddleProximal",
-	"spike": &"RightToes", "sweep": &"RightToes",
+	"spike": &"RightToes", "sweep": &"RightToes", "launcher (T-D22b)": &"RightMiddleProximal",
+	"sweep (T-D22b)": &"RightToes",
 }
+const SCENES := {"kael": "res://game/characters/kael_chunky/kael_chunky.tscn", "vexa": "res://game/characters/vexa/vexa.tscn"}
+## Moves whose old clip is the character's move clip (Vexa's are generated as vexa_<id>).
+const MOVE_LABELS := {"light_1": &"light_1", "light_2": &"light_2", "light_3": &"light_3", "light_4": &"light_4",
+	"smash": &"smash", "launcher": &"launcher", "spike": &"spike", "sweep": &"sweep",
+	"launcher (T-D22b)": &"launcher", "sweep (T-D22b)": &"sweep"}
+
+var _who := "kael"
+var _view: CharacterView
+var _done := false
 
 
 func _initialize() -> void:
-	var old := _character((load(OLD_CLIPS) as ClipSet).library)
-	var new := _character(load(NEW_CLIPS) as AnimationLibrary)
+	var args := OS.get_cmdline_user_args()
+	_who = args[0] if args.size() > 0 else "kael"
+	_view = (load(SCENES[_who]) as PackedScene).instantiate() as CharacterView
+	root.add_child(_view)
+
+
+func _process(_delta: float) -> bool:
+	if _done:
+		return true
+	_done = true
+	var skeleton := _view.model.get_node("%GeneralSkeleton") as Skeleton3D
+	var old_library := _view.clips.library
+	var new_library := MotionClips.for_skeleton(MotionClips.build(_view.clips.motion, skeleton), skeleton)
+	var old := {"player": null, "skeleton": skeleton, "library": old_library}
+	var new := {"player": null, "skeleton": skeleton, "library": new_library}
+	_view.set_process(false)
+	if _view.layers:
+		_view.layers.active = false
+	print("## %s" % _who)
 	var lines := ["| clip | foot slide cm/contact (old → new) | pops (old → new) | mean ang. jerk rad/s² (old → new) | CoM shift over support cm (old → new) | pelvis bob cm (old → new) | anticipation / follow-through ticks (old → new) |",
 		"|---|---|---|---|---|---|---|"]
 	for pair: Array in PAIRS:
+		if MOVE_LABELS.has(pair[0]):
+			pair = pair.duplicate()
+			pair[1] = String(_view.clips.clip_for_move(MOVE_LABELS[pair[0]]))
 		var a := _measure(old, pair[1], pair[3], false, pair[0])
 		var b := _measure(new, pair[2], pair[3], true, pair[0])
 		var phases := "–"
@@ -51,6 +84,7 @@ func _initialize() -> void:
 			a["bob"], b["bob"], phases])
 	print("\n".join(lines))
 	quit(0)
+	return true
 
 
 func _character(library: AnimationLibrary) -> Dictionary:
@@ -158,7 +192,8 @@ static func apply_clip(skeleton: Skeleton3D, animation: Animation, time: float) 
 			Animation.TYPE_ROTATION_3D:
 				skeleton.set_bone_pose_rotation(bone, animation.rotation_track_interpolate(track, time))
 			Animation.TYPE_POSITION_3D:
-				skeleton.set_bone_pose_position(bone, animation.position_track_interpolate(track, time))
+				# The mixer scales position tracks by the motion scale at runtime; so does this.
+				skeleton.set_bone_pose_position(bone, animation.position_track_interpolate(track, time) * skeleton.motion_scale)
 			Animation.TYPE_SCALE_3D:
 				skeleton.set_bone_pose_scale(bone, animation.scale_track_interpolate(track, time))
 	skeleton.force_update_all_bone_transforms()
@@ -198,7 +233,7 @@ func _foot_slide(skeleton: Skeleton3D, globals: Array[Dictionary], travel: Array
 ## Anticipation: ticks in startup where the strike point moves away from the target (wind-up).
 ## Follow-through: ticks after the peak until the strike point slows below 15% of its top speed.
 func _phases(globals: Array[Dictionary], bone: StringName, move_id: String) -> Vector2i:
-	var move := load(MOVE_DIR + move_id + ".tres") as MoveData
+	var move := load(MOVE_DIR + move_id.get_slice(" ", 0) + ".tres") as MoveData
 	var target := Vector3.ZERO
 	for offset in move.hitbox_offsets:
 		target += offset

@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="MoveSet" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_set.gd" id="1_set"]
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="2_move"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/light_1.tres" id="3_light_1"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/light_2.tres" id="4_light_2"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/light_3.tres" id="5_light_3"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/smash.tres" id="6_smash"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/charged_smash_1.tres" id="7_charged_smash_1"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/charged_smash_2.tres" id="8_charged_smash_2"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/charged_smash_3.tres" id="9_charged_smash_3"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/breaker.tres" id="10_breaker"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/launcher.tres" id="11_launcher"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/rising.tres" id="12_rising"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/spike.tres" id="13_spike"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/sweep.tres" id="14_sweep"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/push_block.tres" id="15_push_block"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/grab.tres" id="16_grab"]
+
+[resource]
+script = ExtResource("1_set")
+light_string = Array[ExtResource("2_move")]([ExtResource("3_light_1"), ExtResource("4_light_2"), ExtResource("5_light_3")])
+smash = ExtResource("6_smash")
+charged_smash = Array[ExtResource("2_move")]([ExtResource("7_charged_smash_1"), ExtResource("8_charged_smash_2"), ExtResource("9_charged_smash_3")])
+breaker = ExtResource("10_breaker")
+launcher = ExtResource("11_launcher")
+rising = ExtResource("12_rising")
+spike = ExtResource("13_spike")
+sweep = ExtResource("14_sweep")
+push_block = ExtResource("15_push_block")
+grab = ExtResource("16_grab")
