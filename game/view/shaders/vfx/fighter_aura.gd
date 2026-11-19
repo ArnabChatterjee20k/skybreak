@@ -17,7 +17,11 @@ const BLEND_RATE := 3.0
 		if is_node_ready():
 			_apply_color()
 ## Particle count scale for graphics presets: 1.0 = high (64 particles max).
-@export_range(0.0, 1.0, 0.05) var particle_quality := 1.0
+@export_range(0.0, 1.0, 0.05) var particle_quality := 1.0:
+	set(value):
+		particle_quality = clampf(value, 0.0, 1.0)
+		if is_node_ready():
+			_apply_level()
 
 ## The level currently shown, easing toward power_level.
 var shown_level := 0.0

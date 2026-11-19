@@ -398,9 +398,9 @@ func test_aura_colour_is_set_per_instance_on_shell_and_particles() -> void:
 
 func test_particle_quality_scales_the_aura_particle_share() -> void:
 	var aura := _instantiate(AURA_SCENE_PATH) as FighterAura
-	aura.particle_quality = 0.5
 	aura.power_level = 3.0
 	aura.snap()
+	aura.particle_quality = 0.5
 	assert_almost_eq((aura.get_node("Motes") as GPUParticles3D).amount_ratio, 0.5, 0.001)
 
 
