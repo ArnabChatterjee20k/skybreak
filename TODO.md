@@ -27,15 +27,32 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ### Milestone 1: flight and camera (goal: flying feels great)
 
-- T-103 [developer] Target switching (mouse wheel) and lock-on toggle (MMB/Tab).
-  Input and sim sides are done (T-001, T-D01); left: camera transition when
-  the target changes, and an on-screen lock-on marker.
-- T-104 [developer] Dash (tap = step, hold = sustained, toward target = rush)
-  and vanish step (Shift+E) feel, tuned through `MovementTuning`.
+Playtest #1 (flight and camera) scored movement 2/5, camera 1/5. Target after
+T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playtester.
+
+- T-113 [developer] Camera distance model: boom 6–10 m from the player, player
+  never below ~15% of screen height, distance changes smoothed over ≥ 0.5 s
+  (no pumping), height gaps tilt first within the 35°/25° clamp instead of
+  pulling back (replaces PR #8's pull-back; keep FOV widening ≤ +10°), edge
+  marker/reticle when the opponent can't fit. Scripted-playtest asserts.
+- T-114 [developer] Shoulder offset: player about 1/3 from the screen edge,
+  minimum lateral offset, no centre dead zone; silhouette overlap ≤ 20% of
+  frames in circle-strafe and figure-8 (asserted).
+- T-115 [developer] Camera turn limits: re-lock/target-switch yaw ≤ 180°/s;
+  teleports (vanish) glide-follow over ~0.2 s instead of the 14/s snap; no
+  frame-to-frame jump > 10° outside cuts.
+- T-103 [developer] Lock-on polish: off-screen arrow for the opponent (§4.7);
+  camera transition when the target changes; dash bank capped at about 20°
+  (the playtester saw about 45°, which looks like falling over).
+- T-104 [developer] Movement VFX: dash streaks/afterimage, small FOV kick on
+  sustained dash and rush, vanish afterimage at the old spot, rush recovery
+  pose (view side); reuse T-D09 speed lines and impact pieces once merged.
 - T-105 [developer] Camera occlusion: terrain between camera and fighters
   dithers out, no snapping, no cuts during control.
 - T-106 [developer] Grey-box arena: about 600 m × 600 m, soft ceiling at 250 m,
-  energy-dome boundary.
+  energy-dome boundary; ground grid/texture and landmarks (rock pillars,
+  towers) every ~50–100 m so speed reads; sky/horizon so the dark ground-edge
+  band disappears.
 - T-109 [developer] Debug overlay text clipped at the left edge. Likely cause:
   windowed 1920x1080 is clamped to the screen (1920x991 with the taskbar), so
   the window sits partly off-screen. Fullscreen renders a true 1080p.
@@ -51,6 +68,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ### Combat sim (desktop)
 
+- T-D01b [desktop] Movement fixes from playtest #1 (after T-D03): locked
+  strafe orbits at constant radius (no 12 → 22.7 m spiral-out); dash-away goes
+  straight back along the line to the target (no 22 m drift); rush brakes over
+  0.15 s (`MovementTuning`) instead of 80 → 0 in one tick; vanish steps keep
+  distance and height relative to the target (no 12 → 17 m drift). Regression
+  test for each.
 - T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst.
 - T-D03 [desktop] `MoveData` Resource + light string + cancels.
 - T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
