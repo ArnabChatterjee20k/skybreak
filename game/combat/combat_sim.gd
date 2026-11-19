@@ -40,6 +40,13 @@ const _UNIT := FighterState.METER_UNIT
 const _CHARGE_SAFE_ACTIONS := FighterInput.Action.CHARGE | FighterInput.Action.LOCK_TOGGLE
 ## A rush dash counts as arrived within this many metres of its stop distance.
 const _RUSH_ARRIVAL_MARGIN := 0.01
+## States whose motion circles the lock-on target: strafing keeps the planar distance.
+const _ORBIT_STATES: Array[FighterState.State] = [
+	FighterState.State.IDLE, FighterState.State.MOVING, FighterState.State.FLYING,
+	FighterState.State.BLOCKING, FighterState.State.DASHING,
+]
+## Closer than this (planar, metres) to the target, motion is in straight lines.
+const _MIN_ORBIT_RADIUS := 0.5
 ## Hitbox pitch toward a locked target is clamped to this, in radians (45 degrees).
 const _MAX_AIM_PITCH := PI / 4.0
 ## States in which the facing stays where it was.
@@ -140,6 +147,7 @@ func tick(inputs: Array[FighterInput]) -> void:
 		frozen.append(fighters[i].hitstop_ticks > 0)
 		# After a KO everyone gets neutral input until the next round.
 		_step_fighter(i, FighterInput.new() if round_over else inputs[i])
+	_follow_vanish_anchors()
 	if not round_over:
 		_resolve_hits(frozen)
 	current_tick += 1
@@ -189,11 +197,14 @@ func consume_buffered(fighter_index: int, action: FighterInput.Action) -> bool:
 
 
 ## True when DASH and BLOCK were both pressed within the buffer window, in
-## either order, even if one press already started something (vanish input).
-func has_vanish_input(fighter_index: int) -> bool:
+## either order, even if one press already started something; or when one is
+## pressed (buffered, unused) while the other is held in held_actions (vanish input).
+func has_vanish_input(fighter_index: int, held_actions: int = 0) -> bool:
 	var ages := fighters[fighter_index].press_ages
-	return ages[_action_index(_DASH)] < INPUT_BUFFER_TICKS \
-		and ages[_action_index(_BLOCK)] < INPUT_BUFFER_TICKS
+	if ages[_action_index(_DASH)] < INPUT_BUFFER_TICKS and ages[_action_index(_BLOCK)] < INPUT_BUFFER_TICKS:
+		return true
+	return (is_buffered(fighter_index, _DASH) and (held_actions & _BLOCK) != 0) \
+		or (is_buffered(fighter_index, _BLOCK) and (held_actions & _DASH) != 0)
 
 
 ## Spends amount ki (display units) if the fighter has that much. False otherwise.
@@ -316,8 +327,8 @@ func decayed_hitstun(move: MoveData, combo_hit: int) -> int:
 
 
 ## Uses up a vanish input (both presses). False if there is none.
-func consume_vanish_input(fighter_index: int) -> bool:
-	if not has_vanish_input(fighter_index):
+func consume_vanish_input(fighter_index: int, held_actions: int = 0) -> bool:
+	if not has_vanish_input(fighter_index, held_actions):
 		return false
 	var fighter := fighters[fighter_index]
 	fighter.press_ages[_action_index(_DASH)] = INPUT_BUFFER_TICKS
@@ -336,7 +347,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 	var state_before := fighter.state
 	_record_presses(fighter, input)
 	_update_lock_on(index, input)
-	var wish := _wish_direction(input)
+	var wish := _wish_direction(index, input)
 	_finish_timed_action(index, input)
 	if not round_over:
 		_start_buffered_action(index, input, wish)
@@ -368,7 +379,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		FighterState.State.VANISHING, FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN, \
 				FighterState.State.KNOCKDOWN, FighterState.State.THROWING:
 			fighter.velocity = Vector3.ZERO
-	fighter.position += fighter.velocity * TICK_SECONDS
+	_integrate(index)
 	if fighter.state == FighterState.State.HITSTUN:
 		_bounce_or_knock_down(fighter)
 	_clamp_to_arena(fighter)
@@ -461,7 +472,7 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 			if target < 0 or fighter.state_ticks >= tuning.rush_max_ticks \
 					or fighter.position.distance_to(fighters[target].position) \
 					<= tuning.rush_stop_distance + _RUSH_ARRIVAL_MARGIN:
-				# A rush stops dead in front of the target, ready for a follow-up.
+				# Braked to its stop point in front of the target, ready for a follow-up.
 				fighter.velocity = Vector3.ZERO
 				_end_dash(fighter)
 	# Sustained dashing costs ki every tick; a per-second rate is the per-tick cost in sixtieths.
@@ -477,10 +488,11 @@ func _start_buffered_action(index: int, input: FighterInput, wish: Vector3) -> v
 	var can_vanish := free or fighter.state == FighterState.State.DASHING \
 		or fighter.state == FighterState.State.BLOCKING \
 		or can_cancel_into(index, MoveData.CancelLevel.VANISH)
-	if can_vanish and has_vanish_input(index):
+	if can_vanish and has_vanish_input(index, input.held_actions):
+		# Without the ki nothing happens; with block held the guard stays up.
 		if _spend_ki(fighter, meter_tuning.vanish_step_ki_cost):
-			consume_vanish_input(index)
-			_start_vanish(fighter, input, wish)
+			consume_vanish_input(index, input.held_actions)
+			_start_vanish(index, input, wish)
 	elif free and is_buffered(index, _DASH) and not input.is_held(_BLOCK):
 		_start_dash(index, input, wish)
 
@@ -740,12 +752,19 @@ func _start_dash(index: int, input: FighterInput, wish: Vector3) -> void:
 	fighter.enter_state(FighterState.State.DASHING)
 
 
-func _start_vanish(fighter: FighterState, input: FighterInput, wish: Vector3) -> void:
+## Locked on, the step is in the target's frame: a held direction moves the
+## vanish distance (around it, toward/away, up/down), none stays put; either
+## way the fighter keeps that offset to the target while vanished.
+## Unlocked, a neutral vanish steps straight back from where the fighter faces.
+func _start_vanish(index: int, input: FighterInput, wish: Vector3) -> void:
+	var fighter := fighters[index]
 	var direction := _steer_direction(fighter, input, wish)
-	if direction == Vector3.ZERO:
-		# Neutral vanish steps straight back from where the fighter faces.
+	var target := fighter.lock_on_target
+	if target < 0 and direction == Vector3.ZERO:
 		direction = -(Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD)
-	fighter.position += direction * tuning.vanish_step_distance
+	var step := direction * tuning.vanish_step_distance
+	if not _move_around_target(index, step):
+		fighter.position += step
 	_clamp_to_arena(fighter)
 	fighter.velocity = Vector3.ZERO
 	fighter.dash_kind = FighterState.DashKind.NONE
@@ -753,6 +772,9 @@ func _start_vanish(fighter: FighterState, input: FighterInput, wish: Vector3) ->
 	# The block press went into the vanish, not a perfect block.
 	fighter.perfect_block_armed = false
 	fighter.enter_state(FighterState.State.VANISHING)
+	if target >= 0:
+		fighter.vanish_anchor = target
+		fighter.vanish_offset = fighter.position - fighters[target].position
 
 
 func _end_dash(fighter: FighterState) -> void:
@@ -799,11 +821,19 @@ func _move_falling(fighter: FighterState, input: FighterInput, wish: Vector3) ->
 	fighter.velocity.y = maxf(fighter.velocity.y - tuning.gravity * TICK_SECONDS, -tuning.max_fall_speed)
 
 
+## Planar and vertical speed change separately; letting go of ascend/descend eases out.
 func _move_flying(fighter: FighterState, input: FighterInput, wish: Vector3) -> void:
-	var climb := tuning.ascend_speed if input.vertical > 0 else tuning.descend_speed
-	var target := wish * tuning.fly_speed + Vector3.UP * (input.vertical * climb)
-	var rate := tuning.fly_acceleration if target != Vector3.ZERO else tuning.fly_deceleration
-	fighter.velocity = fighter.velocity.move_toward(target, rate * TICK_SECONDS)
+	var planar_target := wish * tuning.fly_speed
+	var rate := tuning.fly_acceleration if planar_target != Vector3.ZERO else tuning.fly_deceleration
+	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z) \
+		.move_toward(planar_target, rate * TICK_SECONDS)
+	var vertical := fighter.velocity.y
+	if input.vertical != 0:
+		var climb := tuning.ascend_speed if input.vertical > 0 else tuning.descend_speed
+		vertical = move_toward(vertical, input.vertical * climb, tuning.fly_acceleration * TICK_SECONDS)
+	else:
+		vertical = _ease_out_vertical(vertical)
+	fighter.velocity = planar + Vector3.UP * vertical
 
 
 func _move_dashing(index: int, input: FighterInput, wish: Vector3) -> void:
@@ -821,9 +851,30 @@ func _move_dashing(index: int, input: FighterInput, wish: Vector3) -> void:
 			var to_target := fighters[fighter.lock_on_target].position - fighter.position
 			if to_target != Vector3.ZERO:
 				fighter.dash_direction = to_target.normalized()
-			# Never overshoot the stop distance in one tick.
 			var room := maxf(to_target.length() - tuning.rush_stop_distance, 0.0)
-			fighter.velocity = fighter.dash_direction * minf(tuning.rush_speed, room / TICK_SECONDS)
+			fighter.velocity = fighter.dash_direction * _rush_speed_for(room)
+
+
+## Rush speed with room metres left to the stop point: full speed, then an even
+## brake that loses rush_speed / rush_brake_ticks a tick and ends exactly at the
+## stop point (the fastest speed whose brake sequence still fits in room).
+func _rush_speed_for(room: float) -> float:
+	var speed := minf(tuning.rush_speed, room / TICK_SECONDS)
+	if tuning.rush_brake_ticks > 0:
+		var step := tuning.rush_speed / tuning.rush_brake_ticks
+		# Braking from v covers (v + step) * v / (2 * step) * TICK_SECONDS metres.
+		speed = minf(speed, (sqrt(step * step + 8.0 * step * room / TICK_SECONDS) - step) * 0.5)
+	return speed
+
+
+## One tick of a released climb or dive easing to a hover: the slowdown shrinks
+## with the speed, so a full-speed climb settles in climb_ease_out_ticks.
+func _ease_out_vertical(vertical: float) -> float:
+	if vertical == 0.0 or tuning.climb_ease_out_ticks <= 0:
+		return 0.0
+	var reference := tuning.ascend_speed if vertical > 0.0 else tuning.descend_speed
+	var slowdown := 2.0 * sqrt(reference * absf(vertical)) / tuning.climb_ease_out_ticks
+	return move_toward(vertical, 0.0, slowdown)
 
 
 ## Guard drift: slow planar movement, no climbing, hovering in the air.
@@ -1291,10 +1342,69 @@ func _update_facing(index: int) -> void:
 		fighter.facing_yaw = atan2(-look.x, -look.z)
 
 
-## Camera-relative planar direction from the move input; length up to 1.
-func _wish_direction(input: FighterInput) -> Vector3:
+## Planar direction from the move input, length up to 1: relative to the line
+## to the lock-on target when locked (W toward, A/D around), else to the camera.
+func _wish_direction(index: int, input: FighterInput) -> Vector3:
 	var planar := Vector3(input.move.x, 0.0, -input.move.y).limit_length(1.0)
-	return Basis(Vector3.UP, input.view_yaw) * planar
+	var yaw := input.view_yaw
+	var to_target := _planar_to_target(index)
+	if to_target != Vector3.ZERO:
+		yaw = atan2(-to_target.x, -to_target.z)
+	return Basis(Vector3.UP, yaw) * planar
+
+
+## Planar offset from the fighter to its lock-on target; zero when unlocked or right above/below it.
+func _planar_to_target(index: int) -> Vector3:
+	var fighter := fighters[index]
+	if fighter.lock_on_target < 0:
+		return Vector3.ZERO
+	var to_target := fighters[fighter.lock_on_target].position - fighter.position
+	to_target.y = 0.0
+	return to_target if to_target.length() >= _MIN_ORBIT_RADIUS else Vector3.ZERO
+
+
+## Moves the fighter by this tick's velocity; locked-on movement goes around the target.
+func _integrate(index: int) -> void:
+	var fighter := fighters[index]
+	var step := fighter.velocity * TICK_SECONDS
+	if step == Vector3.ZERO:
+		return
+	if fighter.state in _ORBIT_STATES and fighter.dash_kind != FighterState.DashKind.RUSH \
+			and _move_around_target(index, step):
+		return
+	fighter.position += step
+
+
+## Moves by step in the lock-on frame: its part toward the target changes the
+## planar distance, its sideways part travels along the circle around the
+## target, and height adds as usual. Velocity and dash direction turn with the
+## frame, so a strafe stays a strafe. False, moving nothing, when unlocked or
+## the move would come within _MIN_ORBIT_RADIUS of the target.
+func _move_around_target(index: int, step: Vector3) -> bool:
+	var fighter := fighters[index]
+	var to_target := _planar_to_target(index)
+	if to_target == Vector3.ZERO:
+		return false
+	var radius := to_target.length()
+	var out := -to_target / radius
+	var new_radius := radius + step.dot(out)
+	if new_radius < _MIN_ORBIT_RADIUS:
+		return false
+	var turn := Basis(Vector3.UP, step.dot(Vector3.UP.cross(out)) / radius)
+	var centre := fighters[fighter.lock_on_target].position
+	var planar := turn * out * new_radius
+	fighter.position = Vector3(centre.x + planar.x, fighter.position.y + step.y, centre.z + planar.z)
+	fighter.velocity = turn * fighter.velocity
+	fighter.dash_direction = turn * fighter.dash_direction
+	return true
+
+
+## Vanished fighters keep their offset to the target they vanished around, once everyone has moved.
+func _follow_vanish_anchors() -> void:
+	for fighter in fighters:
+		if fighter.state == FighterState.State.VANISHING and fighter.vanish_anchor >= 0:
+			fighter.position = fighters[fighter.vanish_anchor].position + fighter.vanish_offset
+			_clamp_to_arena(fighter)
 
 
 ## Unit direction from move plus ascend/descend, or zero. Never into the floor.

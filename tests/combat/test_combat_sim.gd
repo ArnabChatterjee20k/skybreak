@@ -20,7 +20,7 @@ const SCRIPTED_HOLDS: Array[int] = [
 ## Seeds of the 10k-tick matches whose combined record the coverage tests
 ## check. Several matches keep rare outcomes (one or two per match) from
 ## depending on one lucky seed when tuning changes.
-const COVERAGE_SEEDS: Array[int] = [42, 43, 44]
+const COVERAGE_SEEDS: Array[int] = [42, 43, 44, 48]
 ## Chances of the bots' defensive reads (per incoming strike for the block,
 ## else per tick), so blocks, perfect blocks, grabs, techs and push-blocks all
 ## happen: a block tap before a strike lands, a grab against a guard, a light
@@ -380,3 +380,15 @@ func test_state_hash_covers_the_input_buffer() -> void:
 	var before := sim.state_hash()
 	sim.consume_buffered(0, FighterInput.Action.TRANSFORM)
 	assert_ne(sim.state_hash(), before)
+
+
+func test_state_hash_covers_the_vanish_anchor_and_offset() -> void:
+	var sim := CombatSim.new()
+	var fighter := sim.add_fighter(Vector3.ZERO)
+	sim.add_fighter(Vector3(0, 0, -10))
+	var before := sim.state_hash()
+	fighter.vanish_anchor = 1
+	var anchored := sim.state_hash()
+	assert_ne(anchored, before)
+	fighter.vanish_offset = Vector3(0, 0, 10)
+	assert_ne(sim.state_hash(), anchored)

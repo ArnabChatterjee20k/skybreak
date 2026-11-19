@@ -29,6 +29,8 @@ extends Resource
 @export var ascend_speed: float = 18.0
 ## Sinking speed while descend is held.
 @export var descend_speed: float = 22.0
+## Ticks a full-speed climb or dive takes to ease to a hover once ascend/descend is let go.
+@export var climb_ease_out_ticks: int = 24
 
 @export_group("Falling")
 ## Downward acceleration while airborne and not flying.
@@ -49,6 +51,8 @@ extends Resource
 @export var rush_alignment: float = 0.7
 ## A rush dash stops this far from the target.
 @export var rush_stop_distance: float = 2.5
+## Ticks a rush takes to brake from full speed to its stop point (9 = 0.15 s).
+@export var rush_brake_ticks: int = 9
 ## Longest a rush dash can last before it gives up.
 @export var rush_max_ticks: int = 90
 

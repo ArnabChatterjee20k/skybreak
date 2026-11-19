@@ -50,7 +50,7 @@ static func _figure_eight(index: int, tick: int) -> Dictionary:
 	if tick < 35:
 		return {"vertical": 1}
 	var rightward := ((tick - 35) / 80) % 2 == 0
-	return {"move": Vector2(1 if rightward else -1, 0.3), "vertical": 1 if rightward else -1}
+	return {"move": Vector2(1 if rightward else -1, 0), "vertical": 1 if rightward else -1}
 
 
 static func _long_dash(index: int, tick: int) -> Dictionary:
