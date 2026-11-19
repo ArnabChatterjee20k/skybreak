@@ -1,13 +1,17 @@
 extends GutTest
-## T-D22b: MotionLibrary + MotionLayers inside CharacterView, for Kael and Vexa.
+## T-D22b/c: MotionLibrary + MotionLayers inside CharacterView, for all four legends.
 
 const SCENES := {
 	&"kael": "res://game/characters/kael_chunky/kael_chunky.tscn",
 	&"vexa": "res://game/characters/vexa/vexa.tscn",
+	&"lyra": "res://game/characters/lyra/lyra.tscn",
+	&"brann": "res://game/characters/brann/brann.tscn",
 }
 const MOVE_SETS := {
 	&"kael": "res://game/combat/moves/kael/kael_move_set.tres",
 	&"vexa": "res://game/combat/moves/vexa/vexa_move_set.tres",
+	&"lyra": "res://game/combat/moves/lyra/lyra_move_set.tres",
+	&"brann": "res://game/combat/moves/brann/brann_move_set.tres",
 }
 const PLANTED_SOLE := 0.03
 const DT := 1.0 / 60.0
@@ -78,7 +82,7 @@ func _world_rotations(skeleton: Skeleton3D) -> Array[Quaternion]:
 	return out
 
 
-func test_both_characters_play_mocap_with_live_layers() -> void:
+func test_every_legend_plays_mocap_with_live_layers() -> void:
 	for who: StringName in SCENES:
 		var view := _view(who)
 		assert_not_null(view.layers, "%s runs MotionLayers" % who)
@@ -173,14 +177,22 @@ func test_a_bot_match_runs_3600_ticks_stable_finite_and_without_pops() -> void:
 		new.worst, new.where, new.over, MAX_FRAME_ROTATION, old.over, new.flinches])
 	assert_eq(new.nan_frames, 0, "no NaN, non-unit or runaway poses")
 	assert_gt(new.flinches, 0, "the bots traded hits")
-	assert_lt(new.over, maxi(old.over, 1) * 2 + 2, "no more pops than the old clips had")
+	assert_eq(new.over, 0, "no pops: no body bone turns more than %.1f rad in a frame" % MAX_FRAME_ROTATION)
 
 
-func _bot_match(motion: bool) -> Dictionary:
+func test_a_lyra_and_brann_bot_match_has_no_pops_either() -> void:
+	var new := _bot_match(true, [&"lyra", &"brann"])
+	gut.p("lyra vs brann, mocap + layers: worst %.3f rad/frame (%s), %d frames over %.1f, %d events" % [
+		new.worst, new.where, new.over, MAX_FRAME_ROTATION, new.flinches])
+	assert_eq(new.nan_frames, 0, "no NaN, non-unit or runaway poses")
+	assert_gt(new.flinches, 0, "the bots traded hits")
+	assert_eq(new.over, 0, "no pops")
+
+
+func _bot_match(motion: bool, whos: Array = [&"kael", &"vexa"]) -> Dictionary:
 	var sim := CombatSim.new(7)
 	var views: Array[CharacterView] = []
 	var bots: Array[WeaponBot] = []
-	var whos := [&"kael", &"vexa"]
 	for i in 2:
 		views.append(_view(whos[i], motion))
 		# Default stats: WeaponMoves caches weapon sets per kind from the first unarmed set it sees
@@ -354,7 +366,7 @@ func test_layers_never_feed_back_into_the_sim() -> void:
 func test_four_fighters_of_layers_fit_the_cpu_budget() -> void:
 	var views: Array[CharacterView] = []
 	for i in 4:
-		views.append(_view(&"kael" if i % 2 == 0 else &"vexa"))
+		views.append(_view(SCENES.keys()[i]))
 	var fighters: Array[FighterState] = []
 	for i in 4:
 		var f := FighterState.new()
@@ -375,5 +387,5 @@ func test_four_fighters_of_layers_fit_the_cpu_budget() -> void:
 			_layer(view)
 		total += Time.get_ticks_usec() - start
 	var ms := total / 1000.0 / frames
-	gut.p("MotionLayers + foot IK, 4 fighters: %.3f ms per frame" % ms)
+	gut.p("MotionLayers + foot IK, 4 fighters (one of each legend): %.3f ms per frame" % ms)
 	assert_lt(ms, MAX_LAYERS_MS)

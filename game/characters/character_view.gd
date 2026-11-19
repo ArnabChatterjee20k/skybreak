@@ -26,11 +26,14 @@ const MOTION_LIBRARY_NAME := &"motion"
 const LOCOMOTION_SCALE_MIN := 0.6
 const LOCOMOTION_SCALE_MAX := 2.2
 ## Share of the knockdown spent falling to the lying pose; the rest gets up.
-const KO_FALL_SHARE := 0.55
+const KO_FALL_SHARE := 0.4
+## Share of the get-up time by which the body stands in its stance (the rest settles).
+const GET_UP_DONE := 0.9
 ## Fraction of ko_fall at which the body lies flat (it holds from there).
 const KO_LIE_FRACTION := 0.8
-## Fraction of the get-up take where the body starts to rise.
-const GET_UP_START := 0.25
+## Idle turns wider than this (radians) step the feet round with turn_step.
+const TURN_STEP_ANGLE := deg_to_rad(45.0)
+const TURN_STEP_SPEED := 1.6
 ## Flinch strength per hit kind.
 const FLINCH_BLOCK := 0.5
 const FLINCH_HIT := 1.0
@@ -76,6 +79,13 @@ var _look_weight := 0.0
 ## The zone's floor, Callable(x, z, from_y) -> world height; found on the match's sim when unset.
 var ground_height: Callable
 var _ground_searched := false
+## Motion personality (clips.motion_profile, or the defaults).
+var profile: MotionProfile
+## Move id -> fitted motion clip, merged over clips.motion_moves.
+var _move_overrides: Dictionary = {}
+var _turn_yaw := 0.0
+var _turning := false
+var _impact_move := &""
 
 
 func _ready() -> void:
@@ -98,6 +108,13 @@ func _setup_motion() -> void:
 	var skeleton := model.get_node("%GeneralSkeleton") as Skeleton3D
 	_motion = MotionClips.for_skeleton(MotionClips.build(clips.motion, skeleton), skeleton)
 	_motion_windows = MotionClips.impact_windows(_motion)
+	_move_overrides = clips.motion_moves.duplicate()
+	var specs := _fit_specs()
+	_motion = MotionClips.fitted(_motion, skeleton, specs, "%s|%s" % [scene_file_path, clips.resource_path])
+	for id: StringName in specs:
+		var move: MoveData = specs[id].move
+		_move_overrides[id] = StringName("fit_%s" % id)
+		_motion_windows[_move_overrides[id]] = Vector2(move.startup_ticks, move.recovery_start_tick()) * TICK_SECONDS
 	_player.add_animation_library(MOTION_LIBRARY_NAME, _motion)
 	_setup_layers(true)
 
@@ -105,14 +122,22 @@ func _setup_motion() -> void:
 ## The live layers; without mocap only the weapon-arm and foot IK stages run.
 func _setup_layers(body_layers: bool) -> void:
 	var skeleton := model.get_node("%GeneralSkeleton") as Skeleton3D
+	profile = clips.motion_profile if clips.motion_profile != null else MotionProfile.new()
 	layers = MotionLayers.new()
 	layers.name = "MotionLayers"
+	layers.apply_profile(profile)
 	layers.body_layers = body_layers
 	skeleton.add_child(layers)
 	# First modifier, so the scarf and other secondary chains follow the layered body.
 	skeleton.move_child(layers, 0)
 	body = BodyCapsules.measure(skeleton, _meshes)
 	layers.body = body
+
+
+## Moves whose strike is fitted onto a mocap take (MotionClips.fit_specs); characters with their
+## own move set override this.
+func _fit_specs() -> Dictionary:
+	return {}
 
 
 ## Call every rendered frame. Picks the clip for the fighter's state and
@@ -195,6 +220,18 @@ func react_to_event(event: Dictionary, fighter: FighterState) -> void:
 	if away.length() < 0.01:
 		away = Basis(Vector3.UP, fighter.facing_yaw) * Vector3.BACK
 	layers.flinch(to_model(away.normalized(), fighter.facing_yaw), strength)
+
+
+## A view's procedural layer (VexaView and the others) without the lean and hover bob when
+## MotionLayers runs: the layers are the single source of both (see motion/README.md).
+func defer_to_layers(layer: Dictionary, fighter: FighterState) -> Dictionary:
+	if layers == null:
+		return layer
+	if layer.has(&"Spine"):
+		layer[&"Spine"].rotation = Quaternion.IDENTITY
+	if layer.has(&"Hips") and fighter.state == FighterState.State.FLYING:
+		layer[&"Hips"].offset.y = 0.0
+	return layer
 
 
 ## A world-space direction in the model's (skeleton's) space: facing +Z, +X to its left.
@@ -282,6 +319,13 @@ func _apply_attack(fighter: FighterState, delta: float) -> void:
 		_tick_seconds = 0.0
 	else:
 		_tick_seconds += delta
+	if layers != null and profile.impact_weight > 0.0 and fighter.move_tick >= fighter.move.startup_ticks \
+			and _impact_move != fighter.move_id():
+		# The strike lands: the hips and knees take the weight.
+		_impact_move = fighter.move_id()
+		layers.land(profile.impact_weight * clampf(fighter.move.damage / 10.0, 0.5, 1.5))
+	elif fighter.move_tick < fighter.move.startup_ticks:
+		_impact_move = &""
 	# Smooth between sim ticks, never running ahead of the next one.
 	var tick := fighter.move_tick + minf(_tick_seconds / TICK_SECONDS, 1.0)
 	_player.speed_scale = 1.0
@@ -318,7 +362,7 @@ func _play_motion(clip: StringName, from := 0.0) -> void:
 func _motion_move_clip(move_id: StringName) -> StringName:
 	if _motion == null:
 		return &""
-	var clip := MotionSlots.move_clip(move_id, clips.motion_moves)
+	var clip := MotionSlots.move_clip(move_id, _move_overrides)
 	return clip if clip != &"" and _motion.has_animation(clip) else &""
 
 
@@ -330,6 +374,7 @@ func _apply_motion_state(fighter: FighterState, delta: float, restarted: bool) -
 	var clip := MotionSlots.state_clip(fighter, local, _airborne, _clip if _playing_motion else &"", _landing)
 	if clip == &"" or not _motion.has_animation(clip):
 		return false
+	clip = _turn_clip(fighter, clip)
 	if clip == &"ko_fall" and _getting_up(fighter):
 		# Keep the get-up clip; replaying the fall every frame would re-inertialize and freeze it.
 		return _knockdown_pose(fighter, delta)
@@ -337,9 +382,12 @@ func _apply_motion_state(fighter: FighterState, delta: float, restarted: bool) -
 	var one_shot := animation.loop_mode == Animation.LOOP_NONE
 	if not _playing_motion or clip != _clip or (restarted and one_shot and clip != _landing):
 		_play_motion(clip)
-	var speed := 1.0
+	var speed := profile.timing_scale
 	if clip in MotionSlots.LOCOMOTION:
-		speed = clampf(Vector2(local.x, local.z).length() / _clip_speed(clip), LOCOMOTION_SCALE_MIN, LOCOMOTION_SCALE_MAX)
+		speed = clampf(Vector2(local.x, local.z).length() / (_clip_speed(clip) * profile.stride_scale),
+			LOCOMOTION_SCALE_MIN, LOCOMOTION_SCALE_MAX)
+	elif clip == &"turn_step":
+		speed = TURN_STEP_SPEED * profile.timing_scale
 	elif clip == &"ko_fall":
 		speed = _ko_speed(fighter, animation.length)
 	elif fighter.stun_ticks > 0 and fighter.state in [FighterState.State.HITSTUN,
@@ -355,7 +403,25 @@ func _apply_motion_state(fighter: FighterState, delta: float, restarted: bool) -
 		_player.seek(minf(_player.current_animation_position, animation.length * KO_LIE_FRACTION), true)
 	if clip == _landing and _player.current_animation_position >= animation.length - 0.001:
 		_landing = &""
+	if clip == &"turn_step" and _player.current_animation_position >= animation.length - 0.001:
+		_turning = false
 	return true
+
+
+## Idle: a turn wider than TURN_STEP_ANGLE since the last settled facing steps the feet round.
+func _turn_clip(fighter: FighterState, clip: StringName) -> StringName:
+	if clip != &"fight_idle" or not _motion.has_animation(&"turn_step"):
+		_turning = false
+		_turn_yaw = fighter.facing_yaw
+		return clip
+	if not _turning and absf(angle_difference(_turn_yaw, fighter.facing_yaw)) > TURN_STEP_ANGLE:
+		_turning = true
+		_turn_yaw = fighter.facing_yaw
+		_play_motion(&"turn_step")
+	if _turning:
+		_turn_yaw = fighter.facing_yaw
+		return &"turn_step"
+	return clip
 
 
 func _getting_up(fighter: FighterState) -> bool:
@@ -372,13 +438,13 @@ func _knockdown_pose(fighter: FighterState, delta: float) -> bool:
 		_player.advance(delta)
 		_player.seek(minf(_player.current_animation_position, _motion.get_animation(&"ko_fall").length * KO_LIE_FRACTION), true)
 		return true
-	var get_up := &"tech" if _motion.has_animation(&"tech") else &"get_up"
+	var get_up := &"get_up_full" if _motion.has_animation(&"get_up_full") else &"tech"
 	if _clip != get_up:
 		_play_motion(get_up)
 	var length := _motion.get_animation(get_up).length
 	var t := float(fighter.state_ticks - fall_ticks) / float(maxi(total - fall_ticks, 1))
-	# The take's first quarter is still lying flat; start from where the body starts to rise.
-	_player.seek(lerpf(GET_UP_START, 1.0, clampf(t, 0.0, 1.0)) * length, true)
+	# Standing in the stance by GET_UP_DONE of the window, then holding it.
+	_player.seek(clampf(t / GET_UP_DONE, 0.0, 1.0) * length, true)
 	return true
 
 
@@ -418,6 +484,7 @@ func _update_layers(fighter: FighterState, delta: float) -> void:
 		layers.burst(1.0)
 	_airborne = airborne
 	layers.velocity = local
+	layers.crouch = 0.0 if airborne or fighter.state == FighterState.State.KNOCKDOWN else profile.crouch
 	layers.flying = airborne and fighter.state in [FighterState.State.FLYING, FighterState.State.DASHING,
 		FighterState.State.VANISHING]
 	layers.foot_ik = not airborne and fighter.state != FighterState.State.KNOCKDOWN

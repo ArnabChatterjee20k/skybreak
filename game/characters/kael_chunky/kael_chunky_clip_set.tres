@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://game/characters/clip_set.gd" id="1_clips"]
 [ext_resource type="AnimationLibrary" path="res://game/characters/kael_chunky/animations/kael_chunky_clips.res" id="2_library"]
 
+[ext_resource type="Resource" path="res://game/characters/motion/profiles/kael_motion.tres" id="10_profile"]
 [resource]
 script = ExtResource("1_clips")
 library = ExtResource("2_library")
@@ -57,3 +58,4 @@ impact_windows = Dictionary[StringName, Vector2]({
 &"sweep": Vector2(0.2, 0.28333333)
 })
 motion = ExtResource("9_motion")
+motion_profile = ExtResource("10_profile")

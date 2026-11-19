@@ -4,6 +4,8 @@ extends SkeletonModifier3D
 ## superhero-flight body (pitch, bank, trailing legs, tucked or reaching arms, dash burst),
 ## hip/spine counter-rotation, look-at, critically damped secondary motion, two-bone foot IK with
 ## pelvis drop, additive hit flinches, per-weapon arm IK and inertialized clip switches.
+## Last, a pop guard: forearm and upper-arm twist is unwrapped and limited, and no body bone turns
+## faster than MAX_TURN_RATE, so retarget and IK flips never reach the screen.
 ## Everything is in skeleton space (+Y up, facing +Z). Set the inputs each frame; call
 ## inertialize() right before switching clips. Works on a Skeleton3D or, for tests, on arrays.
 
@@ -21,6 +23,13 @@ const MAX_ANKLE_TILT := deg_to_rad(35.0)
 const ARMS := [[&"LeftUpperArm", &"LeftLowerArm", &"LeftHand"], [&"RightUpperArm", &"RightLowerArm", &"RightHand"]]
 ## Flight: speed (m/s) for the full flight body, and the flutter of the trailing legs.
 const FLIGHT_FULL_SPEED := 22.0
+## Level flight pitch limit; dives go on to the profile's dive_pitch (horizontal superman).
+const MAX_FLIGHT_PITCH := deg_to_rad(78.0)
+## Twist limits about the bone (radians) and the fastest any body bone may turn (rad/s).
+const TWIST_LIMITS := {&"LeftLowerArm": 1.6, &"RightLowerArm": 1.6, &"LeftUpperArm": 1.8, &"RightUpperArm": 1.8}
+const MAX_TURN_RATE := 54.0
+## Inertialization never carries in more angular velocity than this (rad/s).
+const MAX_BLEND_SPEED := 14.0
 const FLUTTER_HZ := 2.4
 ## Arm poses for held weapons (T-D30), solved by two-bone IK on top of the clip.
 enum ArmPose { NONE, TWO_HANDED, BOW_DRAW, PISTOL_AIM, GUARD, BRACED, SWING }
@@ -97,6 +106,16 @@ var off_hand_socket := Transform3D.IDENTITY
 var body: BodyCapsules
 ## Deepest weapon-into-body overlap left after the last solve (m), for tests and QA.
 var weapon_overlap := 0.0
+## Hips lowered in grounded poses (m, from the profile); the foot IK bends the knees.
+@export var crouch := 0.0
+## Personality multipliers (see MotionProfile).
+var secondary_scale := 1.0
+var flinch_scale := 1.0
+var landing_scale := 1.0
+var hover_bob := 0.02
+var hover_bob_hz := 0.5
+var flight_arm_scale := 1.0
+var dive_pitch := deg_to_rad(95.0)
 
 var lean := Vector3.ZERO  # Current lean as a rotation vector (x pitch, z roll).
 var _lean_velocity := Vector3.ZERO
@@ -132,6 +151,17 @@ var _flutter_phase := 0.0
 var _arm := 0.0
 var _arm_velocity := 0.0
 var _arm_pose_now := ArmPose.NONE
+var _crouch := 0.0
+var _crouch_velocity := 0.0
+var _bob_phase := 0.0
+var _twists := {}
+var _poles := {}
+var _rest_rot: Array[Quaternion] = []
+var _bone_axis: Array[Vector3] = []
+# Pop guard: per body bone (index into _used), its body parent's index (-1: none) and world rotations.
+var _used_parent: PackedInt32Array = []
+var _guard_world: Array[Quaternion] = []
+var _guard_world_now: Array[Quaternion] = []
 var _world_cache: Array = []
 var _rest_parent_rot: Array[Quaternion] = []
 var _sole_cache: Array = []
@@ -173,6 +203,14 @@ func setup_bones(names: PackedStringArray, parents: PackedInt32Array, rests: Arr
 		world.append(rests[i] if parents[i] < 0 else world[parents[i]] * rests[i])
 		_rest_heights.append(world[i].origin.y)
 	_parents = parents
+	_rest_rot.clear()
+	_bone_axis.clear()
+	for i in names.size():
+		_rest_rot.append(rests[i].basis.get_rotation_quaternion())
+		_bone_axis.append(Vector3.UP)
+	for i in names.size():
+		if parents[i] >= 0 and rests[i].origin.length() > 1e-4 and _bone_axis[parents[i]] == Vector3.UP:
+			_bone_axis[parents[i]] = rests[i].origin.normalized()
 	_rest_parent_rot.clear()
 	_used.clear()
 	var body := SPINE.duplicate()
@@ -183,6 +221,15 @@ func setup_bones(names: PackedStringArray, parents: PackedInt32Array, rests: Arr
 		_rest_parent_rot.append(Quaternion.IDENTITY if parents[i] < 0 else world[parents[i]].basis.get_rotation_quaternion())
 		if body.has(_names[i]):
 			_used.append(i)
+	_used_parent.clear()
+	for k in _used.size():
+		var p := parents[_used[k]]
+		while p >= 0 and not _used.has(p):
+			p = parents[p]
+		var parent_k := _used.find(p) if p >= 0 else -1
+		# Parents come first in a skeleton; anything else is treated as a root.
+		_used_parent.append(parent_k if parent_k < k else -1)
+	_guard_world_now.resize(_used.size())
 	reset()
 
 
@@ -218,6 +265,28 @@ func reset() -> void:
 	_burst_velocity = 0.0
 	_arm = 0.0
 	_arm_velocity = 0.0
+	_crouch = 0.0
+	_crouch_velocity = 0.0
+	_twists.clear()
+	_poles.clear()
+	_guard_world.clear()
+
+
+## Takes a legend's motion personality.
+func apply_profile(profile: MotionProfile) -> void:
+	accel_lean = 0.03 * profile.lean_scale
+	velocity_lean = 0.012 * profile.lean_scale
+	lean_frequency = profile.lean_frequency
+	secondary_frequency = profile.secondary_frequency
+	secondary_scale = profile.secondary_scale
+	blend_frequency = profile.blend_frequency
+	flinch_frequency = profile.flinch_frequency
+	flinch_scale = profile.flinch_scale
+	landing_scale = profile.landing_scale
+	hover_bob = profile.hover_bob
+	hover_bob_hz = profile.hover_bob_hz
+	flight_arm_scale = profile.flight_arm_scale
+	dive_pitch = deg_to_rad(profile.dive_pitch)
 
 
 ## Blend from the last output pose into whatever the next clip gives, without a linear crossfade.
@@ -228,12 +297,12 @@ func inertialize() -> void:
 ## Additive hit flinch: the upper body snaps away from direction (skeleton space), then recovers.
 func flinch(direction: Vector3, strength := 1.0) -> void:
 	var axis := Vector3.UP.cross(direction.normalized())
-	_flinch_velocity += axis * strength * 9.0
+	_flinch_velocity += axis * strength * flinch_scale * 9.0
 
 
 ## Landing: knees and arms absorb it (strength 1 = a normal landing).
 func land(strength := 1.0) -> void:
-	_landing_velocity -= strength * 2.5
+	_landing_velocity -= strength * landing_scale * 2.5
 
 
 ## Flight dash: the body snaps into a streamlined burst pose, then springs back.
@@ -274,9 +343,11 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 		_flinch_layer(rotations, delta)
 		hips = _landing_layer(rotations, hips, delta)
 	_arm_layer(rotations, hips, delta)
+	hips = _stance_layer(hips, delta)
 	_clearance(rotations, hips)
 	if foot_ik:
 		hips = _foot_ik(rotations, hips)
+	_pop_guard(rotations, delta)
 	_prev_out = _last_out.duplicate()
 	_last_out = rotations.duplicate()
 	_prev_hips = _last_hips
@@ -318,7 +389,7 @@ func _inertialize(rotations: Array[Quaternion], delta: float) -> void:
 			_offsets[i] = rotvec(_last_out[i] * rotations[i].inverse())
 			_offset_velocity[i] = Vector3.ZERO
 			if _prev_out.size() == rotations.size():
-				_offset_velocity[i] = rotvec(_last_out[i] * _prev_out[i].inverse()) / _last_delta
+				_offset_velocity[i] = (rotvec(_last_out[i] * _prev_out[i].inverse()) / _last_delta).limit_length(MAX_BLEND_SPEED)
 		_hips_offset = Vector3(INF, 0, 0)  # Resolved against the new hips in _inertialize_hips.
 		_hips_offset_velocity = Vector3.ZERO
 	for i in rotations.size():
@@ -361,8 +432,9 @@ func _lean_layer(rotations: Array[Quaternion], delta: float) -> void:
 		# Bank into turns: roll with lateral acceleration, pitch down with speed (dive).
 		target.z = clampf(-accel.x * accel_lean * 2.0 - velocity.x * 0.03, -MAX_BANK, MAX_BANK)
 		var speed := velocity.length()
-		target.x = clampf(velocity.z * 0.035 - velocity.y * 0.02 + speed * 0.012 + _burst * 0.35,
-			-MAX_LEAN, deg_to_rad(78.0))
+		var diving := clampf((-velocity.y - 6.0) / 14.0, 0.0, 1.0)
+		target.x = clampf(velocity.z * 0.045 - velocity.y * 0.03 + speed * 0.012 + diving * 0.45 + _burst * 0.5,
+			-MAX_LEAN, lerpf(MAX_FLIGHT_PITCH, dive_pitch, diving))
 	else:
 		target.x = clampf(target.x, -MAX_LEAN, MAX_LEAN)
 		target.z = clampf(target.z, -MAX_LEAN, MAX_LEAN)
@@ -376,7 +448,7 @@ func _lean_layer(rotations: Array[Quaternion], delta: float) -> void:
 	# Counter-rotation: the chest takes back part of the hips' lean and twist, keeping the head level.
 	var chest: int = _index.get(&"Chest", -1)
 	if chest >= 0:
-		var twist := rotations[hips].get_euler().y
+		var twist := _yaw_of(rotations[hips])
 		var counter := from_rotvec(-lean * 0.35 + Vector3(0, -twist * 0.25, 0))
 		rotations[chest] = counter * rotations[chest]
 
@@ -401,7 +473,7 @@ func _flight_layer(rotations: Array[Quaternion], delta: float) -> void:
 	_flight = s[0]
 	_flight_velocity = s[1]
 	var diving := clampf((-velocity.y - 6.0) / 14.0, 0.0, 1.0) if flying else 0.0
-	var forward := clampf((velocity.z - 16.0) / 10.0, 0.0, 1.0) if flying else 0.0
+	var forward := clampf((velocity.z - 14.0) / 8.0, 0.0, 1.0) if flying else 0.0
 	s = spring(_reach, _reach_velocity, maxf(diving, forward), 6.0, delta)
 	_reach = s[0]
 	_reach_velocity = s[1]
@@ -414,23 +486,33 @@ func _flight_layer(rotations: Array[Quaternion], delta: float) -> void:
 	var f := _flight
 	var flutter := sin(_flutter_phase) * 0.07 * f
 	var b := _burst
-	# Legs: straighten in line with the body, knees soft, alternating flutter; the burst pulls them together.
+	# Legs: eased toward the straight rest pose (whatever the take's knee bend on this rig), then in
+	# line with the body, knees soft, alternating flutter; the burst pulls them together.
+	for leg: Array in LEGS:
+		for k in 2:
+			var i: int = _index.get(leg[k], -1)
+			if i >= 0:
+				rotations[i] = rotations[i].slerp(_rest_rot[i], clampf(f * (0.55 if k == 0 else 0.8) + b * 0.3, 0.0, 1.0))
 	_offset(rotations, &"LeftUpperLeg", Vector3(0.22 * f + flutter - 0.1 * b, 0, -0.05 * f))
 	_offset(rotations, &"RightUpperLeg", Vector3(0.22 * f - flutter - 0.1 * b, 0, 0.05 * f))
-	_offset(rotations, &"LeftLowerLeg", Vector3(0.18 * f + flutter * 1.5 + 0.2 * b, 0, 0))
-	_offset(rotations, &"RightLowerLeg", Vector3(0.32 * f - flutter * 1.5 + 0.2 * b, 0, 0))
+	_offset(rotations, &"LeftLowerLeg", Vector3(0.08 * f + flutter * 1.5 + 0.1 * b, 0, 0))
+	_offset(rotations, &"RightLowerLeg", Vector3(0.2 * f - flutter * 1.5 + 0.1 * b, 0, 0))
 	_offset(rotations, &"LeftFoot", Vector3(0.45 * f, 0, 0))
 	_offset(rotations, &"RightFoot", Vector3(0.45 * f, 0, 0))
 	# Arms: tucked back along the body at speed; the lead (right) arm reaches ahead in a dive.
-	var tuck := f * (1.0 - _reach) + b
-	var reach := _reach * f
-	_offset(rotations, &"LeftUpperArm", Vector3(0.55 * tuck, 0, -0.35 * tuck))
-	_offset(rotations, &"RightUpperArm", Vector3(0.55 * tuck * (1.0 - _reach) - 2.4 * reach, 0, 0.35 * tuck - 0.2 * reach))
-	_offset(rotations, &"RightLowerArm", Vector3(0.6 * reach, 0, 0))
-	_offset(rotations, &"LeftLowerArm", Vector3(0.25 * tuck, 0, 0))
+	var a := flight_arm_scale
+	var tuck := (f * (1.0 - _reach) + b) * a
+	var reach := _reach * f * a
+	# Both arms swept back along the body at speed (read from the game camera), the lead arm
+	# punched straight ahead in a dive: the superman line. The burst snaps them all the way back.
+	_offset(rotations, &"LeftUpperArm", Vector3(0.9 * tuck + 0.35 * reach, 0, -0.55 * tuck))
+	_offset(rotations, &"RightUpperArm", Vector3(0.9 * tuck * (1.0 - _reach) - 2.8 * reach, 0, 0.55 * tuck - 0.25 * reach))
+	_offset(rotations, &"RightLowerArm", Vector3(0.75 * reach, 0, 0))
+	_offset(rotations, &"LeftLowerArm", Vector3(0.45 * tuck, 0, 0))
+	_offset(rotations, &"Chest", Vector3(-0.12 * b, 0, 0))
 	# Head stays up, looking where it flies.
-	_offset(rotations, &"Neck", Vector3(-0.25 * f - 0.1 * b, 0, 0))
-	_offset(rotations, &"Head", Vector3(-0.3 * f, 0, 0))
+	_offset(rotations, &"Neck", Vector3(-0.3 * f - 0.15 * b, 0, 0))
+	_offset(rotations, &"Head", Vector3(-0.35 * f, 0, 0))
 
 
 ## Held-weapon arm pose: the main hand to its grip point with the weapon turned to the pose,
@@ -688,7 +770,7 @@ func _secondary_layer(rotations: Array[Quaternion], delta: float) -> void:
 		if i < 0:
 			continue
 		# Driven by the chest's spin: the bone lags behind, then catches up.
-		var drive := -spin * (0.012 if SECONDARY[k] == &"Head" else 0.02)
+		var drive := -spin * (0.012 if SECONDARY[k] == &"Head" else 0.02) * secondary_scale
 		var s := spring(_secondary[k], _secondary_velocity[k], drive, secondary_frequency, delta)
 		_secondary[k] = (s[0] as Vector3).limit_length(0.5)
 		_secondary_velocity[k] = s[1]
@@ -714,6 +796,81 @@ func _landing_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -
 		if i >= 0:
 			rotations[i] = Quaternion(Vector3.BACK, _landing * 1.2 * item[1]) * rotations[i]
 	return hips + Vector3(0, _landing, 0)
+
+
+## Grounded crouch (sprung, so take-offs and landings ease in and out) and the slow hover bob.
+func _stance_layer(hips: Vector3, delta: float) -> Vector3:
+	var s := spring(_crouch, _crouch_velocity, 0.0 if flying else crouch, 10.0, delta)
+	_crouch = s[0]
+	_crouch_velocity = s[1]
+	hips.y -= _crouch
+	if flying:
+		_bob_phase = fmod(_bob_phase + delta * TAU * hover_bob_hz, TAU)
+		hips.y += sin(_bob_phase) * hover_bob * (1.0 - _flight)
+	return hips
+
+
+## Yaw of a rotation about +Y (swing-twist, stable at any pitch, unlike Euler angles).
+static func _yaw_of(q: Quaternion) -> float:
+	var twist := Vector2(q.w, q.y)
+	if twist.length_squared() < 1e-10:
+		return 0.0
+	return wrapf(2.0 * atan2(q.y, q.w), -PI, PI)
+
+
+## Unwraps and limits arm twist, then caps how far any body bone turns per frame in model space
+## (parents first, so a child's limit accounts for what its parent already did): no pops.
+func _pop_guard(rotations: Array[Quaternion], delta: float) -> void:
+	for bone: StringName in TWIST_LIMITS:
+		var i: int = _index.get(bone, -1)
+		if i >= 0:
+			rotations[i] = _limit_twist(i, rotations[i], TWIST_LIMITS[bone])
+	if _last_out.size() != rotations.size() or delta <= 0.0:
+		_guard_world.clear()
+		return
+	var step := MAX_TURN_RATE * delta
+	var count := _used.size()
+	if _guard_world.size() != count:
+		_guard_world.resize(count)
+		for k in count:
+			var p := _used_parent[k]
+			_guard_world[k] = _last_out[_used[k]] if p < 0 else _guard_world[p] * _last_out[_used[k]]
+	# World rotations relative to the nearest ancestor outside the body (which the layers never turn).
+	for k in count:
+		var i := _used[k]
+		var p := _used_parent[k]
+		var world := rotations[i] if p < 0 else _guard_world_now[p] * rotations[i]
+		var last := _guard_world[k]
+		if last.dot(world) < 0.0:
+			world = -world
+		var angle := last.angle_to(world)
+		if angle > step:
+			world = last.slerp(world, step / angle).normalized()
+			rotations[i] = world if p < 0 else (_guard_world_now[p].inverse() * world).normalized()
+		_guard_world_now[k] = world
+	var swap := _guard_world
+	_guard_world = _guard_world_now
+	_guard_world_now = swap
+
+
+## A bone's local rotation with its twist about the bone (away from rest) unwrapped against the
+## last frame and clamped to limit.
+func _limit_twist(i: int, q: Quaternion, limit: float) -> Quaternion:
+	var rest := _rest_rot[i]
+	var local := rest.inverse() * q
+	var axis := _bone_axis[i]
+	var projected := axis * Vector3(local.x, local.y, local.z).dot(axis)
+	var twist := Quaternion(projected.x, projected.y, projected.z, local.w)
+	if twist.length_squared() < 1e-10:
+		return q
+	twist = twist.normalized()
+	var swing := local * twist.inverse()
+	var angle := 2.0 * atan2(Vector3(twist.x, twist.y, twist.z).dot(axis), twist.w)
+	var previous: float = _twists.get(i, 0.0)
+	angle = previous + wrapf(angle - previous, -PI, PI)
+	angle = clampf(angle, -limit, limit)
+	_twists[i] = angle
+	return rest * swing * Quaternion(axis, angle)
 
 
 func _foot_ik(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
@@ -872,7 +1029,14 @@ func _two_bone(rotations: Array[Quaternion], world: Array, up: int, lo: int, foo
 	var d := clampf(to.length(), absf(l1 - l2) + 0.001, (l1 + l2) * 0.9999)
 	var u := to.normalized()
 	var perp := (k.origin - h.origin) - u * (k.origin - h.origin).dot(u)
-	var v := perp.normalized() if perp.length() > 1e-5 else Vector3.FORWARD
+	# Bend direction: the limb's own, but kept from the last solve while the limb is near straight
+	# (there the perpendicular flips with noise and the elbow or knee would spin round).
+	var pole: Vector3 = _poles.get(lo, perp if perp.length() > 1e-5 else Vector3.FORWARD)
+	var straightness := clampf(perp.length() / (0.08 * l1), 0.0, 1.0)
+	var bend := pole.lerp(perp.normalized() if perp.length() > 1e-5 else pole, straightness)
+	bend -= u * bend.dot(u)
+	var v := bend.normalized() if bend.length() > 1e-5 else Vector3.FORWARD
+	_poles[lo] = v
 	var cos_a := clampf((l1 * l1 + d * d - l2 * l2) / (2.0 * l1 * d), -1.0, 1.0)
 	var knee := h.origin + l1 * (cos_a * u + sqrt(1.0 - cos_a * cos_a) * v)
 	var ankle := h.origin + u * d
