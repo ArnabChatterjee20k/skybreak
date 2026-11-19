@@ -13,6 +13,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D12 [desktop] World map grey-block: 2 km procedural terrain (chunked, 4 LODs),
+  six zones with landmarks, atmosphere/time of day/weather, energy dome,
+  `WorldMap` API and flythrough preview, PR #39.
+- T-D12b [desktop] Heartbloom Gardens, the 7th zone: floating cherry-blossom
+  archipelago over the map centre, Heart Arch, Wishing Fountain, lantern
+  bridges, `IslandField` second ground layer, whirlwind/fountain markers.
 - T-116 [developer] VFX prewarm at arena load behind a short loading cover.
 - T-D09b [desktop] VFX fixes from the GTX 1650 check of T-D09: shockwave no
   longer cut by the ground, aura never darkens the body, flames break into
@@ -20,6 +26,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D03 [desktop] `MoveData` Resource + light string + cancels, PR #15.
 - T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
   damage scaling, hitstun decay, knockback, hit events, PR #26.
+- T-D05 [desktop] Defense: block, perfect block + lockout, grab and tech,
+  push-block, PR #35.
 - T-D10 [desktop] First real character: Kael (CC0 VRoid body, toon look) on a
   retargeted humanoid clip library (Quaternius UAL, CC0), `CharacterView`
   driven by sim state, preview scene, PR #34. Swap into FighterView is T-122.
@@ -75,8 +83,6 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   0.15 s (`MovementTuning`) instead of 80 → 0 in one tick; vanish steps keep
   distance and height relative to the target (no 12 → 17 m drift). Regression
   test for each.
-- T-D05 [desktop] Defense: block, perfect block + lockout, grab and tech,
-  push-block.
 - T-D06 [desktop] Vanish rules: direction guess, Sense, max 2, then Clash.
 - T-D07 [desktop] Chase/tech and wall-splat.
 - T-D09b [desktop] VFX fixes from the PR #12 Windows check: shockwave clipped by

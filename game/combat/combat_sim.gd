@@ -22,6 +22,11 @@ enum EventType {
 	BLOCK, ## A hit was blocked.
 	GUARD_BREAK, ## A blocked hit broke the guard.
 	KO, ## A hit knocked the target out.
+	PERFECT_BLOCK, ## A strike was perfect-blocked: no guard damage, the attacker recovers longer.
+	GRAB, ## A grab connected; the target is held until the throw or a tech.
+	THROW, ## A held target was thrown: damage and blowback.
+	GRAB_TECH, ## A grab was teched, or two grabs clashed: both pushed apart, no damage.
+	PUSH_BLOCK, ## A push-block shoved the target out to mid range.
 }
 
 const _DASH := FighterInput.Action.DASH
@@ -29,6 +34,7 @@ const _BLOCK := FighterInput.Action.BLOCK
 const _CHARGE := FighterInput.Action.CHARGE
 const _LIGHT := FighterInput.Action.LIGHT
 const _HEAVY := FighterInput.Action.HEAVY
+const _GRAB := FighterInput.Action.GRAB
 const _UNIT := FighterState.METER_UNIT
 ## Presses that do not interrupt charging.
 const _CHARGE_SAFE_ACTIONS := FighterInput.Action.CHARGE | FighterInput.Action.LOCK_TOGGLE
@@ -40,10 +46,31 @@ const _MAX_AIM_PITCH := PI / 4.0
 const _FACING_LOCKED_STATES: Array[FighterState.State] = [
 	FighterState.State.ATTACKING, FighterState.State.HITSTUN,
 	FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN,
+	FighterState.State.GRABBED, FighterState.State.THROWING,
 ]
 ## States that cannot block even with blocking set.
 const _NO_BLOCK_STATES: Array[FighterState.State] = [
 	FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN, FighterState.State.GUARD_BROKEN,
+	FighterState.State.GRABBED, FighterState.State.THROWING,
+]
+## States in which holding block raises the guard; charging is ended by the press.
+const _BLOCK_START_STATES: Array[FighterState.State] = [
+	FighterState.State.IDLE, FighterState.State.MOVING, FighterState.State.FALLING,
+	FighterState.State.FLYING, FighterState.State.CHARGING,
+]
+## States in which a block press arms a perfect block, and a strike can be perfect-blocked.
+const _PERFECT_BLOCK_STATES: Array[FighterState.State] = [
+	FighterState.State.IDLE, FighterState.State.MOVING, FighterState.State.FALLING,
+	FighterState.State.FLYING, FighterState.State.BLOCKING,
+]
+## States a grab cannot take hold in.
+const _UNGRABBABLE_STATES: Array[FighterState.State] = [
+	FighterState.State.HITSTUN, FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN,
+	FighterState.State.GRABBED, FighterState.State.THROWING,
+]
+## States a push-block does not shove.
+const _UNPUSHABLE_STATES: Array[FighterState.State] = [
+	FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN, FighterState.State.GRABBED,
 ]
 ## Planar move input shorter than this makes a neutral heavy.
 const _HEAVY_DEADZONE := 0.5
@@ -67,10 +94,10 @@ var tuning: MovementTuning
 var meter_tuning: MeterTuning
 ## Hit constants (scaling, stun, hitstop, knockback). Configuration, like tuning.
 var hit_tuning: HitTuning
-## What happened this tick, for the view: hits, blocks, guard breaks and KOs, in
-## the order they were resolved. Each entry: {type: EventType, attacker, target,
-## position (contact point), move_id, damage (display units), hitstop,
-## knockback_type, counter}. Replaced by a new array at the start of every tick.
+## What happened this tick, for the view (every EventType), in the order it was
+## resolved. Each entry: {type: EventType, attacker, target, position (contact
+## point), move_id, damage (display units), hitstop, knockback_type, counter}.
+## Replaced by a new array at the start of every tick.
 var events: Array[Dictionary] = []
 
 
@@ -125,9 +152,15 @@ func start_round() -> void:
 	for fighter in fighters:
 		_reset_round_meters(fighter)
 		fighter.hitstop_ticks = 0
+		fighter.grab_partner = -1
+		fighter.perfect_block_armed = false
+		fighter.perfect_block_ticks = 0
+		fighter.perfect_block_lockout = 0
 		if fighter.state in [FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN,
 				FighterState.State.ATTACKING, FighterState.State.HITSTUN,
-				FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN]:
+				FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN,
+				FighterState.State.BLOCKING, FighterState.State.GRABBED, FighterState.State.THROWING]:
+			fighter.velocity = Vector3.ZERO
 			_enter_free_state(fighter)
 
 
@@ -178,9 +211,15 @@ func add_blocked_hit_ki(fighter_index: int) -> void:
 	_add_ki(fighters[fighter_index], meter_tuning.ki_per_blocked_hit * _UNIT)
 
 
-## Burst gain for a perfect block; T-D05 calls it for the blocker.
+## Burst gain for a perfect block; a perfect block calls it for the blocker.
 func add_perfect_block_burst(fighter_index: int) -> void:
 	_add_burst(fighters[fighter_index], meter_tuning.burst_per_perfect_block * _UNIT)
+
+
+## True if a projectile arriving now from from_position would be reflected
+## (a perfect block); for ki blasts and bullets.
+func reflects_projectiles(fighter_index: int, from_position: Vector3) -> bool:
+	return _perfect_blocks(fighters[fighter_index], from_position)
 
 
 ## Spends whole burst stocks if the fighter has them. False otherwise.
@@ -294,14 +333,18 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		fighter.hitstop_ticks -= 1
 		_record_presses(fighter, input, false)
 		return
+	var state_before := fighter.state
 	_record_presses(fighter, input)
 	_update_lock_on(index, input)
 	var wish := _wish_direction(input)
 	_finish_timed_action(index, input)
 	if not round_over:
 		_start_buffered_action(index, input, wish)
+		_start_block(index, input)
+		_start_grab(index)
 		_start_attack(index, input, wish)
 		_start_charging(index)
+	_track_block_press(index, input, state_before)
 	match fighter.state:
 		FighterState.State.IDLE, FighterState.State.MOVING:
 			_move_on_ground(fighter, input, wish)
@@ -315,17 +358,26 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 			_move_attacking(fighter)
 		FighterState.State.HITSTUN:
 			_move_in_hitstun(fighter)
+		FighterState.State.BLOCKING:
+			_move_blocking(fighter, wish)
+		FighterState.State.GRABBED:
+			fighter.velocity = Vector3.ZERO
+			fighter.position = _hold_position(fighters[fighter.grab_partner])
+		FighterState.State.BLOCKSTUN:
+			pass # Keeps the slide a push gave it; a plain block stands still.
 		FighterState.State.VANISHING, FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN, \
-				FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN:
+				FighterState.State.KNOCKDOWN, FighterState.State.THROWING:
 			fighter.velocity = Vector3.ZERO
 	fighter.position += fighter.velocity * TICK_SECONDS
 	if fighter.state == FighterState.State.HITSTUN:
 		_bounce_or_knock_down(fighter)
 	_clamp_to_arena(fighter)
 	_land_if_on_floor(fighter)
-	# Attacks and stuns keep the facing they started with.
-	if fighter.state not in _FACING_LOCKED_STATES:
+	# Attacks and stuns keep the facing they started with; an unlocked guard holds its facing.
+	if fighter.state not in _FACING_LOCKED_STATES \
+			and (fighter.state != FighterState.State.BLOCKING or fighter.lock_on_target >= 0):
 		_update_facing(index)
+	_update_blocking(fighter)
 	if not round_over:
 		_update_meters(fighter)
 	fighter.state_ticks += 1
@@ -359,9 +411,26 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 		FighterState.State.ATTACKING:
 			_advance_attack(index, input)
 			return
-		FighterState.State.HITSTUN, FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN:
+		FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN:
 			if fighter.state_ticks >= fighter.stun_ticks:
 				_enter_free_state(fighter)
+			return
+		FighterState.State.BLOCKSTUN:
+			if fighter.state_ticks >= fighter.stun_ticks:
+				fighter.velocity = Vector3.ZERO
+				_enter_free_state(fighter)
+			return
+		FighterState.State.BLOCKING:
+			if not input.is_held(_BLOCK):
+				_enter_free_state(fighter)
+			return
+		FighterState.State.GRABBED:
+			if fighter.state_ticks < hit_tuning.grab_tech_ticks and consume_buffered(index, _GRAB):
+				_tech_grab(index)
+			return
+		FighterState.State.THROWING:
+			if fighter.state_ticks >= hit_tuning.grab_hold_ticks and not round_over:
+				_throw(index)
 			return
 		FighterState.State.VANISHING:
 			if fighter.state_ticks >= tuning.vanish_step_ticks:
@@ -406,13 +475,78 @@ func _start_buffered_action(index: int, input: FighterInput, wish: Vector3) -> v
 	var fighter := fighters[index]
 	var free := _is_free(fighter)
 	var can_vanish := free or fighter.state == FighterState.State.DASHING \
+		or fighter.state == FighterState.State.BLOCKING \
 		or can_cancel_into(index, MoveData.CancelLevel.VANISH)
 	if can_vanish and has_vanish_input(index):
 		if _spend_ki(fighter, meter_tuning.vanish_step_ki_cost):
 			consume_vanish_input(index)
 			_start_vanish(fighter, input, wish)
-	elif free and is_buffered(index, _DASH):
+	elif free and is_buffered(index, _DASH) and not input.is_held(_BLOCK):
 		_start_dash(index, input, wish)
+
+
+## Holding block raises the guard; a hit lands on it this same tick.
+func _start_block(index: int, input: FighterInput) -> void:
+	var fighter := fighters[index]
+	if fighter.state in _BLOCK_START_STATES and input.is_held(_BLOCK):
+		fighter.enter_state(FighterState.State.BLOCKING)
+
+
+## A buffered GRAB press starts the grab from a free state.
+func _start_grab(index: int) -> void:
+	var fighter := fighters[index]
+	var grab := _move_set(fighter).grab
+	if grab == null or fighter.state not in _ATTACK_START_STATES or not consume_buffered(index, _GRAB):
+		return
+	_update_facing(index)
+	_aim_at_target(index)
+	fighter.begin_move(grab)
+
+
+## A block press arms a perfect block for the window; a window that passes
+## unused, or a second press inside it, starts the lockout. A press while an
+## opponent is vanishing is Sense (T-D06) and leaves all of this alone.
+func _track_block_press(index: int, input: FighterInput, state_before: FighterState.State) -> void:
+	var fighter := fighters[index]
+	fighter.perfect_block_lockout = maxi(fighter.perfect_block_lockout - 1, 0)
+	if fighter.perfect_block_armed:
+		fighter.perfect_block_ticks += 1
+		if fighter.perfect_block_ticks > hit_tuning.perfect_block_window_ticks:
+			_miss_perfect_block(fighter)
+	if not input.is_pressed(_BLOCK) or fighter.state == FighterState.State.VANISHING \
+			or state_before not in _PERFECT_BLOCK_STATES or _opponent_vanishing(index):
+		return
+	if fighter.perfect_block_armed:
+		_miss_perfect_block(fighter)
+	elif fighter.perfect_block_lockout == 0:
+		fighter.perfect_block_armed = true
+		fighter.perfect_block_ticks = 0
+
+
+func _miss_perfect_block(fighter: FighterState) -> void:
+	fighter.perfect_block_armed = false
+	fighter.perfect_block_lockout = hit_tuning.perfect_block_lockout_ticks
+
+
+func _opponent_vanishing(index: int) -> bool:
+	for other in fighters.size():
+		if other != index and fighters[other].state == FighterState.State.VANISHING:
+			return true
+	return false
+
+
+## The guard is up in BLOCKING and through a push-block; blockstun keeps it as it was.
+func _update_blocking(fighter: FighterState) -> void:
+	match fighter.state:
+		FighterState.State.BLOCKING:
+			fighter.blocking = true
+		FighterState.State.BLOCKSTUN:
+			pass
+		FighterState.State.ATTACKING:
+			if fighter.move.kind != MoveData.Kind.PUSH_BLOCK:
+				fighter.blocking = false
+		_:
+			fighter.blocking = false
 
 
 ## A buffered CHARGE press starts charging on the ground or in flight, not while falling.
@@ -428,6 +562,10 @@ func _start_charging(index: int) -> void:
 ## Starts a buffered attack from a free state, or a heavy that cancels the current move.
 func _start_attack(index: int, input: FighterInput, wish: Vector3) -> void:
 	var fighter := fighters[index]
+	if _can_push_block(fighter):
+		if is_buffered(index, _HEAVY):
+			_begin_push_block(index)
+		return
 	if fighter.state == FighterState.State.ATTACKING:
 		if is_buffered(index, _HEAVY) and can_cancel_into(index, MoveData.CancelLevel.HEAVY):
 			_begin_heavy(index, input, wish)
@@ -454,6 +592,26 @@ func _begin_light(index: int, number: int) -> bool:
 	return true
 
 
+## Blocking, or late in a blockstun from a block, with more guard than the cost.
+func _can_push_block(fighter: FighterState) -> bool:
+	var guarding := fighter.state == FighterState.State.BLOCKING \
+		or (fighter.state == FighterState.State.BLOCKSTUN and fighter.blocking
+			and fighter.state_ticks >= hit_tuning.push_block_from_blockstun_tick)
+	return guarding and _move_set(fighter).push_block != null \
+		and fighter.guard > hit_tuning.push_block_guard_cost * _UNIT
+
+
+func _begin_push_block(index: int) -> void:
+	var fighter := fighters[index]
+	consume_buffered(index, _HEAVY)
+	fighter.guard -= hit_tuning.push_block_guard_cost * _UNIT
+	fighter.ticks_since_block = 0
+	fighter.velocity = Vector3.ZERO
+	_update_facing(index)
+	_aim_at_target(index)
+	fighter.begin_move(_move_set(fighter).push_block)
+
+
 func _begin_heavy(index: int, input: FighterInput, wish: Vector3) -> void:
 	var fighter := fighters[index]
 	var move := _heavy_for(index, input, wish)
@@ -469,12 +627,9 @@ func _begin_heavy(index: int, input: FighterInput, wish: Vector3) -> void:
 		fighter.charge_ticks = 1
 
 
-## Push-block while blocking; else ascend/descend, then direction relative to the target.
+## Ascend/descend, then direction relative to the target.
 func _heavy_for(index: int, input: FighterInput, wish: Vector3) -> MoveData:
-	var fighter := fighters[index]
-	var moves := _move_set(fighter)
-	if fighter.blocking:
-		return moves.push_block
+	var moves := _move_set(fighters[index])
 	if input.vertical > 0:
 		return moves.rising
 	if input.vertical < 0:
@@ -521,7 +676,7 @@ func _advance_attack(index: int, input: FighterInput) -> void:
 		return
 	fighter.move_tick += 1
 	var move := fighter.move
-	if fighter.move_tick >= move.total_ticks():
+	if fighter.move_tick >= fighter.move_total_ticks():
 		_enter_free_state(fighter)
 		return
 	if move.can_charge() and fighter.move_tick < move.startup_ticks:
@@ -595,6 +750,8 @@ func _start_vanish(fighter: FighterState, input: FighterInput, wish: Vector3) ->
 	fighter.velocity = Vector3.ZERO
 	fighter.dash_kind = FighterState.DashKind.NONE
 	fighter.dash_direction = Vector3.ZERO
+	# The block press went into the vanish, not a perfect block.
+	fighter.perfect_block_armed = false
 	fighter.enter_state(FighterState.State.VANISHING)
 
 
@@ -669,6 +826,21 @@ func _move_dashing(index: int, input: FighterInput, wish: Vector3) -> void:
 			fighter.velocity = fighter.dash_direction * minf(tuning.rush_speed, room / TICK_SECONDS)
 
 
+## Guard drift: slow planar movement, no climbing, hovering in the air.
+func _move_blocking(fighter: FighterState, wish: Vector3) -> void:
+	var rate := tuning.ground_deceleration * TICK_SECONDS
+	var target := Vector3(wish.x, 0.0, wish.z) * tuning.guard_drift_speed
+	fighter.velocity = fighter.velocity.move_toward(target, rate)
+	if _is_on_floor(fighter):
+		fighter.velocity.y = 0.0
+		fighter.position.y = tuning.ground_height
+
+
+## Where a grabber holds its target: in front along its aim.
+func _hold_position(holder: FighterState) -> Vector3:
+	return holder.position + holder.aim_basis() * Vector3(0, 0, -hit_tuning.grab_hold_distance)
+
+
 ## Attacks hold position except the move's step, spread over its startup.
 func _move_attacking(fighter: FighterState) -> void:
 	var move := fighter.move
@@ -715,7 +887,8 @@ func _bounce_or_knock_down(fighter: FighterState) -> void:
 
 ## Finds every hitbox touching an opponent this tick, then applies them in
 ## fighter index order. All hits are found first, so trades happen. Fighters
-## frozen in hitstop this tick do not hit.
+## frozen in hitstop this tick do not hit. A grab fails if its grabber or its
+## target is struck on the same tick (strike beats grab).
 func _resolve_hits(frozen: Array[bool]) -> void:
 	var contacts: Array[Dictionary] = []
 	for attacker_index in fighters.size():
@@ -734,14 +907,25 @@ func _resolve_hits(frozen: Array[bool]) -> void:
 			if not contact.is_empty():
 				attacker.hit_targets |= bit
 				contacts.append(contact)
+	var struck := 0
+	for contact in contacts:
+		if contact.type != EventType.GRAB:
+			struck |= 1 << (contact.target as int)
 	for contact in contacts:
 		# Nothing more lands once the round is decided.
 		if round_over:
 			return
-		if contact.type == EventType.BLOCK:
-			_apply_block(contact)
-		else:
-			_apply_hit(contact)
+		match contact.type:
+			EventType.BLOCK:
+				_apply_block(contact)
+			EventType.PERFECT_BLOCK:
+				_apply_perfect_block(contact)
+			EventType.GRAB:
+				_apply_grab(contact, contacts, struck)
+			EventType.PUSH_BLOCK:
+				_apply_push_block(contact)
+			_:
+				_apply_hit(contact)
 
 
 ## The first hitbox touching the target's hurtbox, as a contact with everything
@@ -761,12 +945,24 @@ func _find_contact(attacker_index: int, target_index: int, shapes: Array[Diction
 		if target.is_invincible_to(target.is_upper_body(centre)):
 			return {}
 		var type := EventType.HIT
-		if _blocks(target, attacker.position):
-			type = EventType.BLOCK
-		elif target.is_armored():
-			type = EventType.ARMOR
-		elif target.attack_phase() in [FighterState.AttackPhase.STARTUP, FighterState.AttackPhase.HOLD]:
-			type = EventType.COUNTER
+		match attacker.move.kind:
+			MoveData.Kind.GRAB:
+				if target.state in _UNGRABBABLE_STATES:
+					return {}
+				type = EventType.GRAB
+			MoveData.Kind.PUSH_BLOCK:
+				if target.state in _UNPUSHABLE_STATES:
+					return {}
+				type = EventType.PUSH_BLOCK
+			_:
+				if _perfect_blocks(target, attacker.position):
+					type = EventType.PERFECT_BLOCK
+				elif _blocks(target, attacker.position):
+					type = EventType.BLOCK
+				elif target.is_armored():
+					type = EventType.ARMOR
+				elif target.attack_phase() in [FighterState.AttackPhase.STARTUP, FighterState.AttackPhase.HOLD]:
+					type = EventType.COUNTER
 		return {
 			"type": type, "attacker": attacker_index, "target": target_index,
 			"move": attacker.move, "yaw": attacker.facing_yaw, "pitch": attacker.aim_pitch,
@@ -781,10 +977,20 @@ func _find_contact(attacker_index: int, target_index: int, shapes: Array[Diction
 func _blocks(target: FighterState, from: Vector3) -> bool:
 	if not target.blocking or target.state in _NO_BLOCK_STATES:
 		return false
-	var to_attacker := from - target.position
-	to_attacker.y = 0.0
-	var forward := Basis(Vector3.UP, target.facing_yaw) * Vector3.FORWARD
-	return to_attacker.dot(forward) >= 0.0
+	return _faces(target, from)
+
+
+## An armed block press perfect-blocks from the front 180 degrees, even after letting go.
+func _perfect_blocks(target: FighterState, from: Vector3) -> bool:
+	return target.perfect_block_armed and target.state in _PERFECT_BLOCK_STATES and _faces(target, from)
+
+
+## True if from is in the fighter's front 180 degrees (planar).
+func _faces(fighter: FighterState, from: Vector3) -> bool:
+	var to_other := from - fighter.position
+	to_other.y = 0.0
+	var forward := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+	return to_other.dot(forward) >= 0.0
 
 
 ## Damage with combo scaling, then hitstun and knockback unless armored; KO ends it.
@@ -849,8 +1055,137 @@ func _apply_block(contact: Dictionary) -> void:
 		events.append(_event(EventType.GUARD_BREAK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
 
 
+## No guard damage or stun; the attacker's move gets extra recovery and its string ends.
+func _apply_perfect_block(contact: Dictionary) -> void:
+	var attacker := fighters[contact.attacker as int]
+	var target := fighters[contact.target as int]
+	target.perfect_block_armed = false
+	if attacker.state == FighterState.State.ATTACKING and attacker.move == contact.move:
+		attacker.extra_recovery_ticks = hit_tuning.perfect_block_extra_recovery_ticks
+		attacker.string_queued = false
+		attacker.string_dropped = true
+	add_perfect_block_burst(contact.target)
+	var hitstop := hit_tuning.perfect_block_hitstop_ticks
+	_freeze(attacker, target, hitstop)
+	events.append(_event(EventType.PERFECT_BLOCK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
+
+
+## The target is held in front of the grabber until the throw. Two grabs on each
+## other clash; a grab whose grabber was grabbed earlier this tick does nothing.
+func _apply_grab(contact: Dictionary, contacts: Array[Dictionary], struck: int) -> void:
+	var attacker_index: int = contact.attacker
+	var target_index: int = contact.target
+	var attacker := fighters[attacker_index]
+	var target := fighters[target_index]
+	if (struck & ((1 << attacker_index) | (1 << target_index))) != 0 \
+			or attacker.state != FighterState.State.ATTACKING or attacker.move != contact.move \
+			or target.state in _UNGRABBABLE_STATES:
+		return
+	for other in contacts:
+		var mutual: bool = other.type == EventType.GRAB and other.attacker == target_index \
+			and other.target == attacker_index
+		if mutual and target.state == FighterState.State.ATTACKING and target.move == other.move:
+			_push_apart(attacker_index, target_index)
+			events.append(_event(EventType.GRAB_TECH, contact, 0, 0, MoveData.KnockbackType.NONE))
+			return
+	var pitch := attacker.aim_pitch
+	attacker.enter_state(FighterState.State.THROWING)
+	attacker.aim_pitch = pitch
+	attacker.grab_partner = target_index
+	_enter_stun(target, FighterState.State.GRABBED, 0)
+	target.grab_partner = attacker_index
+	target.position = _hold_position(attacker)
+	var to_holder := attacker.position - target.position
+	if Vector2(to_holder.x, to_holder.z).length_squared() > 0.0001:
+		target.facing_yaw = atan2(-to_holder.x, -to_holder.z)
+	events.append(_event(EventType.GRAB, contact, 0, 0, MoveData.KnockbackType.NONE))
+
+
+## Ends a hold with the throw: damage as combo hit 1, then blowback along the grabber's aim.
+func _throw(index: int) -> void:
+	var thrower := fighters[index]
+	var target_index := thrower.grab_partner
+	var target := fighters[target_index]
+	var move := _move_set(thrower).grab
+	thrower.grab_partner = -1
+	target.grab_partner = -1
+	var contact := {
+		"type": EventType.THROW, "attacker": index, "target": target_index, "move": move,
+		"yaw": thrower.facing_yaw, "pitch": thrower.aim_pitch, "side": 1, "position": target.position,
+	}
+	var damage := scaled_damage(move, 1)
+	apply_damage(target_index, index, damage)
+	add_landed_hit_ki(index)
+	_enter_stun(target, FighterState.State.HITSTUN, decayed_hitstun(move, 1))
+	target.knockback_type = move.knockback_type
+	target.velocity = _knockback_velocity(contact)
+	target.combo_hits = 1
+	target.combo_damage = damage
+	_enter_free_state(thrower)
+	var hitstop := move.hitstop_ticks
+	var knocked_out := target.is_knocked_out()
+	if knocked_out:
+		hitstop = maxi(hitstop, hit_tuning.knockout_hitstop_ticks)
+	_freeze(thrower, target, hitstop)
+	events.append(_event(EventType.THROW, contact, damage, hitstop, move.knockback_type))
+	if knocked_out:
+		events.append(_event(EventType.KO, contact, damage, hitstop, move.knockback_type))
+
+
+## The grabbed fighter breaks free: both are pushed apart, nobody takes damage.
+func _tech_grab(index: int) -> void:
+	var holder_index := fighters[index].grab_partner
+	var contact := {
+		"type": EventType.GRAB_TECH, "attacker": holder_index, "target": index,
+		"move": _move_set(fighters[holder_index]).grab,
+		"position": (fighters[index].position + fighters[holder_index].position) * 0.5,
+	}
+	_push_apart(holder_index, index)
+	events.append(_event(EventType.GRAB_TECH, contact, 0, 0, MoveData.KnockbackType.NONE))
+
+
+## Slides two fighters apart to the tech distance, both unable to act meanwhile.
+func _push_apart(first_index: int, second_index: int) -> void:
+	var first := fighters[first_index]
+	var second := fighters[second_index]
+	first.grab_partner = -1
+	second.grab_partner = -1
+	var centre := (first.position + second.position) * 0.5
+	var apart := second.position - first.position
+	if apart.length_squared() < 0.0001:
+		apart = Basis(Vector3.UP, first.facing_yaw) * Vector3.BACK
+	var half := apart.normalized() * (hit_tuning.grab_tech_distance * 0.5)
+	_slide_to(first, centre - half, hit_tuning.grab_tech_push_ticks)
+	_slide_to(second, centre + half, hit_tuning.grab_tech_push_ticks)
+
+
+## Shoves the target straight away from the push-blocker out to the push distance.
+func _apply_push_block(contact: Dictionary) -> void:
+	var pusher := fighters[contact.attacker as int]
+	var target := fighters[contact.target as int]
+	var away := target.position - pusher.position
+	if away.length_squared() < 0.0001:
+		away = Basis(Vector3.UP, pusher.facing_yaw) * Vector3.FORWARD
+	var reach := maxf(away.length(), hit_tuning.push_block_distance)
+	_slide_to(target, pusher.position + away.normalized() * reach, hit_tuning.push_block_stun_ticks)
+	events.append(_event(EventType.PUSH_BLOCK, contact, 0, 0, MoveData.KnockbackType.NONE))
+
+
+## BLOCKSTUN for ticks, sliding at constant speed so it ends exactly at destination.
+func _slide_to(fighter: FighterState, destination: Vector3, ticks: int) -> void:
+	_enter_stun(fighter, FighterState.State.BLOCKSTUN, ticks)
+	fighter.velocity = (destination - fighter.position) / (ticks * TICK_SECONDS)
+
+
 ## Puts the fighter in a stun state for ticks; it stops dashing and stands still.
+## A grab it was part of breaks, freeing the partner.
 func _enter_stun(fighter: FighterState, stun: FighterState.State, ticks: int) -> void:
+	if fighter.grab_partner >= 0:
+		var partner := fighters[fighter.grab_partner]
+		fighter.grab_partner = -1
+		partner.grab_partner = -1
+		partner.velocity = Vector3.ZERO
+		_enter_free_state(partner)
 	fighter.dash_kind = FighterState.DashKind.NONE
 	fighter.dash_direction = Vector3.ZERO
 	fighter.velocity = Vector3.ZERO

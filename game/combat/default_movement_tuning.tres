@@ -9,6 +9,7 @@ ground_speed = 12.0
 ground_acceleration = 90.0
 ground_deceleration = 120.0
 takeoff_speed = 14.0
+guard_drift_speed = 2.5
 fly_speed = 30.0
 fly_acceleration = 70.0
 fly_deceleration = 60.0

@@ -4,6 +4,7 @@ const LIGHT := FighterInput.Action.LIGHT
 const HEAVY := FighterInput.Action.HEAVY
 const CHARGE := FighterInput.Action.CHARGE
 const DASH := FighterInput.Action.DASH
+const BLOCK := FighterInput.Action.BLOCK
 const FORWARD := Vector2(0, 1)
 const BACK := Vector2(0, -1)
 const RIGHT := Vector2(1, 0)
@@ -111,8 +112,8 @@ func test_every_charged_smash_level_goes_through_its_tick_counts() -> void:
 
 func test_push_block_goes_through_its_tick_counts() -> void:
 	_start()
-	_fighter().blocking = true
-	_heavy()
+	_drive(1, BLOCK)
+	_drive(1, BLOCK | HEAVY)
 	assert_eq(_fighter().move_id(), _moves.push_block.id)
 	_assert_frame_data(_moves.push_block, _record_until_free(_now()))
 
@@ -163,8 +164,8 @@ func test_heavy_direction_is_relative_to_the_facing_when_unlocked() -> void:
 
 func test_heavy_while_blocking_is_a_push_block() -> void:
 	_start()
-	_fighter().blocking = true
-	_heavy(FORWARD)
+	_drive(1, BLOCK, FORWARD)
+	_drive(1, BLOCK | HEAVY, FORWARD)
 	assert_eq(_fighter().move_id(), &"push_block")
 
 
