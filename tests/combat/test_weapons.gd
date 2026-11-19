@@ -277,6 +277,8 @@ func test_every_melee_weapon_swaps_in_its_own_sane_move_set() -> void:
 		var all: Array[MoveData] = []
 		all.append_array(moves.light_string)
 		all.append_array([moves.smash, moves.breaker, moves.launcher, moves.rising, moves.spike, moves.sweep])
+		# The chakram's neutral heavy throws its disc (T-D26): a projectile, no hitbox.
+		all = all.filter(func(move: MoveData) -> bool: return not WeaponMoves.is_disc_throw(move))
 		for move in all:
 			assert_true(String(move.id).begins_with(String(name) + "/"), "%s id" % move.id)
 			assert_between(move.startup_ticks, 4, 30, "%s startup" % move.id)

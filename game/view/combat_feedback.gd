@@ -84,4 +84,15 @@ static func plan_for(event: Dictionary) -> Dictionary:
 			plan.effects = [SPARK_LIGHT]
 			plan.color = ITEM_COLOR
 			plan.scale = 0.4
+		E.GADGET_EXPLODE, E.MINE_TRIGGER:
+			plan.effects = [SHOCKWAVE]
+			plan.color = ITEM_COLOR
+			plan.shake = 0.25 if event.type == E.GADGET_EXPLODE else 0.08
+		E.POWER_PICKUP, E.POWER_END, E.AEGIS_BREAK, E.GADGET_THROW, E.DECOY_POP, E.GADGET_END, \
+				E.BOW_DRAW, E.ARROW_PIN, E.TETHER, E.TETHER_YANK, E.TETHER_END, E.OVERHEAT, \
+				E.BULLET_ABSORB, E.SWAP_CANCEL, E.DISC_CATCH:
+			# T-D26 items and weapon extras: small gold sparks.
+			plan.effects = [SPARK_LIGHT]
+			plan.color = ITEM_COLOR
+			plan.scale = 0.5 if event.type in [E.AEGIS_BREAK, E.ARROW_PIN, E.TETHER_YANK] else 0.35
 	return plan

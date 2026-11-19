@@ -132,6 +132,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D26 [desktop] Powers and gadgets (Overdrive Orb, Burst Shard, Aegis, Haste, Spike Bomb, Gravity Mine, Mirror Decoy) as sky drops alternating with weapons, plus T-D14's gaps: bow draw levels and level-3 pin, Heartstring Tether and yank, chakram out-and-back disc, repeater heat/slowed fire/dash absorb, swap-cancel, C quick-swap, 80% ranged combo starters, counter-hit heavy drops, nocked arrow, `held_ammo()` for the HUD.
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
