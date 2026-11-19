@@ -1,0 +1,124 @@
+[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+uid="uid://og0b188vxpdi"
+path="res://.godot/imported/kael_body.glb-2b9013296b13530a983f11b0af95e921.scn"
+
+[deps]
+
+source_file="res://game/characters/kael/kael_body.glb"
+dest_files=["res://.godot/imported/kael_body.glb-2b9013296b13530a983f11b0af95e921.scn"]
+
+[params]
+
+nodes/root_type=""
+nodes/root_name=""
+nodes/root_script=null
+mesh_library/use_node_names_as_mesh_names=false
+array_mesh/deduplicate_surfaces=true
+nodes/apply_root_scale=true
+nodes/root_scale=1.0
+nodes/import_as_skeleton_bones=false
+nodes/use_name_suffixes=true
+nodes/use_node_type_suffixes=true
+meshes/ensure_tangents=true
+meshes/generate_lods=false
+meshes/create_shadow_meshes=true
+meshes/light_baking=1
+meshes/lightmap_texel_size=0.2
+meshes/force_disable_compression=false
+skins/use_named_skins=true
+animation/import=false
+animation/fps=30
+animation/trimming=false
+animation/remove_immutable_tracks=true
+animation/import_rest_as_RESET=false
+import_script/path=""
+materials/extract=0
+materials/extract_format=0
+materials/extract_path=""
+_subresources={
+"materials": {
+"F00_000_Hair_00_HAIR": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_hair.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_hair.tres"
+},
+"M00_000_00_EyeExtra_01_EYE": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_eye_extra.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_eye_extra.tres"
+},
+"M00_000_00_EyeHighlight_00_EYE": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_eye_highlight.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_eye_highlight.tres"
+},
+"M00_000_00_EyeIris_00_EYE": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_iris.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_iris.tres"
+},
+"M00_000_00_EyeWhite_00_EYE": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_eye_white.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_eye_white.tres"
+},
+"M00_000_00_FaceBrow_00_FACE": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_brow.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_brow.tres"
+},
+"M00_000_00_FaceEyelash_00_FACE": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_eyelash.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_eyelash.tres"
+},
+"M00_000_00_FaceEyeline_00_FACE": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_eyeline.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_eyeline.tres"
+},
+"M00_000_00_FaceMouth_00_FACE": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_mouth.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_mouth.tres"
+},
+"M00_000_00_Face_00_SKIN": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_face.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_face.tres"
+},
+"M00_001_01_Body_00_SKIN": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_skin.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_skin.tres"
+},
+"M00_001_01_Bottoms_01_CLOTH": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_bottoms.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_bottoms.tres"
+},
+"M00_001_01_Shoes_01_CLOTH": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_shoes.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_shoes.tres"
+},
+"M00_006_01_Tops_01_CLOTH": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://game/characters/kael/materials/kael_top.tres",
+"use_external/path": "res://game/characters/kael/materials/kael_top.tres"
+}
+},
+"nodes": {
+"PATH:Skeleton3D": {
+"retarget/bone_map": Resource("res://game/characters/rig/vroid_bone_map.tres"),
+"retarget/remove_tracks/unmapped_bones": true
+}
+}
+}
+gltf/naming_version=2
+gltf/embedded_image_handling=0
+gltf/texture_map_mode=1

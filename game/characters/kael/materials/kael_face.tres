@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" load_steps=4 format=3]
+
+[ext_resource type="Shader" path="res://game/view/shaders/toon.gdshader" id="1_toon"]
+[ext_resource type="Texture2D" path="res://game/characters/kael/textures/M00_000_00_Face_00_SKIN.png" id="2_albedo"]
+[ext_resource type="Material" path="res://game/characters/kael/materials/kael_outline.tres" id="3_outline"]
+
+[resource]
+resource_name = "kael_face"
+next_pass = ExtResource("3_outline")
+shader = ExtResource("1_toon")
+shader_parameter/albedo_color = Color(1, 1, 1, 1)
+shader_parameter/albedo_texture = ExtResource("2_albedo")
+shader_parameter/specular_enabled = false
+shader_parameter/shadow_tint = Color(0.78, 0.55, 0.55, 1)
