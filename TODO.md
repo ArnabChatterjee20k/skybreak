@@ -132,6 +132,18 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-123 [developer] Web build: single-threaded Compatibility/WebGL2 preset, `web` quality tier,
+  `tools/web/build_web.sh` (checksummed templates), loading/click-to-start shell, headless
+  Chromium smoke test, Appwrite Sites steps in `tools/web/DEPLOY.md` (not deployed yet). Follow-up: VFX,
+  terrain and post read `quality_value("vfx_density" / "terrain_chunk_radius" / "post_effects")`.
+- T-D16 [desktop] KO physics and round reset: KO_FALL (no flight, falls with
+  its knockback, one damped floor bounce with a slide) then KO_DOWN until the
+  round ends; KO_BOUNCE/KO_REST events; KO'd fighters unhittable and inputless;
+  FFA/teams win (`team` per fighter, friendly fire off); `start_round(spawn_points)`
+  resets positions, facing, meters (burst carries over), states, clears
+  weapons, pickups and projectiles; MatchFlow passes spawn points and credits
+  teams. Open: flat ground only (no TerrainHeightmap in the sim yet); KO clip is
+  the existing knockdown fall (MotionLibrary `ko_fall` left to T-D22b).
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,

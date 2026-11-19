@@ -40,6 +40,21 @@ extends Resource
 ## Upward speed of the one floor bounce after a spike.
 @export var spike_bounce_speed: float = 8.0
 
+@export_group("Knockout")
+## Pulls a knocked-out fighter down; it has no flight.
+@export var ko_gravity: float = 30.0
+## Slows a knocked-out fighter's planar flight while airborne.
+@export var ko_air_drag: float = 4.0
+## Share of the landing speed the one floor bounce keeps.
+@export var ko_bounce_restitution: float = 0.4
+## The bounce's upward speed stays inside these limits, so even a slow landing bounces.
+@export var ko_min_bounce_speed: float = 4.0
+@export var ko_max_bounce_speed: float = 9.0
+## Share of the planar speed kept through the bounce (the slide).
+@export var ko_bounce_slide: float = 0.5
+## Floor friction on a lying fighter's slide.
+@export var ko_slide_deceleration: float = 20.0
+
 @export_group("Perfect block")
 ## A hit landing up to this many ticks after a block press is perfect-blocked.
 @export var perfect_block_window_ticks: int = 6
