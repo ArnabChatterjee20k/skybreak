@@ -89,5 +89,6 @@ void fragment() {
 		core = alpha * (1.0 - smoothstep(0.0, 0.5, abs(p.y)));
 	}
 	vec3 hot = mix(tint.rgb * COLOR.rgb, vec3(1.0), clamp(core * core_whiteness, 0.0, 1.0));
-	ALBEDO = hot * alpha * fade * intensity;
+	// Never negative: additive layers only brighten.
+	ALBEDO = max(hot * alpha * fade * intensity, vec3(0.0));
 }
