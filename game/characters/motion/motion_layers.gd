@@ -47,13 +47,15 @@ const SWING_FROM := deg_to_rad(-55.0)
 const SWING_TO := deg_to_rad(25.0)
 const SWING_POINT := Vector3(0.0, -0.12, 0.97)
 ## Bow draw: the string hand anchors this far beside the head capsule's surface (m), at jaw height.
-const BOW_ANCHOR_GAP := 0.08
+const BOW_ANCHOR_GAP := 0.11
 const BOW_ANCHOR_DROP := 0.04
 ## Bow cant (sideways lean of its top per unit up) and the shortest bow-hand distance from the anchor (m).
 const BOW_CANT := 0.12
 const BOW_MIN_DRAW := 0.3
 ## Arm weight from which the drawn string shows (before it the string hand is still on its way).
-const BOW_SHOWN_WEIGHT := 0.97
+const BOW_SHOWN_WEIGHT := 0.95
+## Spring frequency (1/s) of the arm weight while drawing a bow.
+const BOW_DRAW_FREQUENCY := 24.0
 ## Torso turn (radians) toward the bow side at full draw.
 const BOW_TWIST := deg_to_rad(70.0)
 ## Clearance solver: passes, and the margin it leaves (m).
@@ -520,7 +522,9 @@ func _flight_layer(rotations: Array[Quaternion], delta: float) -> void:
 func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> void:
 	if arm_pose != ArmPose.NONE:
 		_arm_pose_now = arm_pose
-	var s := spring(_arm, _arm_velocity, arm_weight if arm_pose != ArmPose.NONE else 0.0, 14.0, delta)
+	# A bow draw comes up faster, so the string hand spends little time on its way to the anchor.
+	var frequency := BOW_DRAW_FREQUENCY if arm_pose == ArmPose.BOW_DRAW else 14.0
+	var s := spring(_arm, _arm_velocity, arm_weight if arm_pose != ArmPose.NONE else 0.0, frequency, delta)
 	_arm = clampf(s[0], 0.0, 1.0)
 	_arm_velocity = s[1]
 	if _arm < 0.01 or _arm_pose_now == ArmPose.NONE or weapon_hand == &"":

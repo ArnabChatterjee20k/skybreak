@@ -11,8 +11,8 @@ const OVERLAP_TOLERANCE := 0.02
 ## Ticks a forced weapon stays in hand before the next one.
 const WEAPON_EVERY := 150
 const CHECKS: Array[StringName] = [&"ground_contact", &"weapon_vs_holder", &"fighter_vs_fighter", &"bow_vs_head"]
-## Fighter-vs-fighter is pending until pushboxes (T-D29) are on main.
-const PENDING: Array[StringName] = [&"fighter_vs_fighter"]
+## Checks that only report (none: T-D29 pushboxes are on main, so fighter-vs-fighter counts).
+const PENDING: Array[StringName] = []
 const GROUNDED_STATES: Array[int] = [FighterState.State.IDLE, FighterState.State.MOVING, FighterState.State.BLOCKING]
 const EXEMPT_STATES: Array[int] = [FighterState.State.VANISHING, FighterState.State.GRABBED,
 	FighterState.State.THROWING]
