@@ -12,6 +12,8 @@ const SWEEP_STEP := 0.25
 const SWEEP_BISECTIONS := 8
 ## Overlap below this (m) counts as touching.
 const EPSILON := 0.0005
+## Same as CombatSim's floor tolerance: this close above stand height counts as on the floor.
+const FLOOR_EPSILON := 0.001
 ## Mass of a fighter that is not moved (held in a grab, or pinned to a wall).
 const IMMOVABLE := 1.0e6
 
@@ -22,12 +24,18 @@ static func resolve(sim: CombatSim, before: PackedVector3Array, solid_before: Ar
 		frozen: Array[bool]) -> void:
 	_apply_pushback(sim, frozen)
 	_stop_fast_approaches(sim, before, solid_before)
+	# Pass-through and grab pairs cannot change while resolving, so decide them once.
+	var pairs := PackedInt32Array()
+	for a in sim.fighters.size():
+		for b in range(a + 1, sim.fighters.size()):
+			if collide(sim, a, b):
+				pairs.append(a)
+				pairs.append(b)
 	for _pass in ITERATIONS:
 		var moved := false
-		for a in sim.fighters.size():
-			for b in range(a + 1, sim.fighters.size()):
-				if collide(sim, a, b) and _separate(sim, a, b):
-					moved = true
+		for i in range(0, pairs.size(), 2):
+			if _separate(sim, pairs[i], pairs[i + 1]):
+				moved = true
 		if not moved:
 			return
 
@@ -141,7 +149,7 @@ static func _separate(sim: CombatSim, a: int, b: int) -> bool:
 	var reach: float = one.radius + two.radius
 	if offset.length_squared() >= (reach - EPSILON) * (reach - EPSILON):
 		return false
-	var direction := _contact_direction(sim, first, second)
+	var direction := _direction_from(offset, first, _planar(sim, first, second))
 	var push := reach - offset.length()
 	if _planar(sim, first, second):
 		var height := absf(offset.y)
@@ -166,16 +174,22 @@ static func _contact_direction(sim: CombatSim, first: FighterState, second: Figh
 	var one := first.pushbox()
 	var two := second.pushbox()
 	var points := CombatSim._closest_points(one.start, one.end, two.start, two.end)
-	var direction: Vector3 = points[1] - points[0]
-	if _planar(sim, first, second):
+	return _direction_from(points[1] - points[0], first, _planar(sim, first, second))
+
+
+static func _direction_from(offset: Vector3, first: FighterState, planar: bool) -> Vector3:
+	var direction := offset
+	if planar:
 		direction.y = 0.0
 	if direction.length_squared() < 1.0e-8:
 		direction = Basis(Vector3.UP, first.facing_yaw) * Vector3.FORWARD
 	return direction.normalized()
 
 
-static func _planar(sim: CombatSim, first: FighterState, second: FighterState) -> bool:
-	return sim.is_on_floor(first) or sim.is_on_floor(second)
+## Either stands on the floor; stand_height is kept current by the step and by settle().
+static func _planar(_sim: CombatSim, first: FighterState, second: FighterState) -> bool:
+	return first.position.y <= first.stand_height + FLOOR_EPSILON \
+		or second.position.y <= second.stand_height + FLOOR_EPSILON
 
 
 ## Bodies in contact stop closing in: the speed toward each other along
