@@ -36,6 +36,9 @@ enum EventType {
 	WEAPON_DROP, ## fighter dropped weapon (KO, guard break, knockdown, replaced); id is the pickup.
 	FIRE, ## fighter fired weapon; id is the first projectile, count how many.
 	PROJECTILE_HIT, ## Projectile id touched target: blocked/reflected flags; HIT/BLOCK/KO follow as usual.
+	# Knockout (T-D16). Entries: {type, fighter, position}.
+	KO_BOUNCE, ## A knocked-out fighter hit the floor and bounced.
+	KO_REST, ## A knocked-out fighter landed after its bounce and lies down.
 }
 
 const _DASH := FighterInput.Action.DASH
@@ -70,6 +73,7 @@ const _FACING_LOCKED_STATES: Array[FighterState.State] = [
 	FighterState.State.ATTACKING, FighterState.State.HITSTUN,
 	FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN,
 	FighterState.State.GRABBED, FighterState.State.THROWING,
+	FighterState.State.KO_FALL, FighterState.State.KO_DOWN,
 ]
 ## States that cannot block even with blocking set.
 const _NO_BLOCK_STATES: Array[FighterState.State] = [
@@ -110,7 +114,13 @@ var rng := RandomNumberGenerator.new()
 ## True once a fighter is knocked out; inputs are ignored until start_round().
 var round_over: bool = false
 ## Index of the fighter who won the round, or -1 while it is undecided.
+## With teams it is the winning team's first fighter still standing.
 var round_winner: int = -1
+## Team that won the round, or -1 while undecided or on a double KO.
+var winning_team: int = -1
+## Where each fighter starts a round when start_round() gets no spawn points:
+## the add_fighter() positions. Configuration, like tuning.
+var spawn_points: Array[Vector3] = []
 ## Movement constants. Not part of the state hash: it is configuration.
 var tuning: MovementTuning
 ## Meter constants shared by all fighters. Configuration, like tuning.
@@ -150,15 +160,13 @@ func _init(seed_value: int = 0, movement_tuning: MovementTuning = null,
 func add_fighter(start_position: Vector3, stats: FighterStats = null) -> FighterState:
 	var fighter := FighterState.new()
 	fighter.stats = stats if stats else DEFAULT_FIGHTER_STATS as FighterStats
+	fighter.team = fighters.size()
 	_reset_round_meters(fighter)
-	fighter.position = start_position
 	for _action in FighterInput.Action.size():
 		fighter.press_ages.append(INPUT_BUFFER_TICKS)
-	if start_position.y > tuning.ground_height:
-		fighter.enter_state(FighterState.State.FLYING)
-	else:
-		fighter.position.y = tuning.ground_height
+	_place(fighter, start_position)
 	fighters.append(fighter)
+	spawn_points.append(start_position)
 	return fighter
 
 
@@ -172,43 +180,55 @@ func lock_everyone_onto_nearest() -> void:
 func tick(inputs: Array[FighterInput]) -> void:
 	assert(inputs.size() == fighters.size(), "one input per fighter")
 	events = []
+	_knock_out_fallen()
 	var frozen: Array[bool] = []
 	for i in fighters.size():
 		frozen.append(fighters[i].hitstop_ticks > 0)
-		# After a KO everyone gets neutral input until the next round.
-		_step_fighter(i, FighterInput.new() if round_over else inputs[i])
+		# After the round is decided everyone, and a KO'd fighter always, gets neutral input.
+		var neutral := round_over or fighters[i].is_knocked_out()
+		_step_fighter(i, FighterInput.new() if neutral else inputs[i])
 	_follow_vanish_anchors()
 	if not round_over:
 		_resolve_hits(frozen)
 	_step_projectiles()
+	_knock_out_fallen()
 	_step_pickups()
 	current_tick += 1
 
 
-## Starts a new round: health, grey part, ki and guard reset; burst and Last Stand carry over.
-func start_round() -> void:
+## Starts a new round. Each fighter goes back to its spawn point (spawn_points[i],
+## or the add_fighter() position when the list is empty or short), standing
+## still and facing its nearest opponent, with health, ki and guard full,
+## nothing buffered and weapons cleared. Burst and Last Stand carry over
+## (comeback rule, GAME_DESIGN §5.2). Projectiles and pickups are cleared.
+func start_round(round_spawn_points: Array[Vector3] = []) -> void:
 	round_over = false
 	round_winner = -1
+	winning_team = -1
 	projectiles = []
-	for fighter in fighters:
-		_reset_round_meters(fighter)
-		fighter.hitstop_ticks = 0
-		fighter.grab_partner = -1
-		fighter.perfect_block_armed = false
-		fighter.perfect_block_ticks = 0
-		fighter.perfect_block_lockout = 0
-		if fighter.state in [FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN,
-				FighterState.State.ATTACKING, FighterState.State.HITSTUN,
-				FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN,
-				FighterState.State.BLOCKING, FighterState.State.GRABBED, FighterState.State.THROWING]:
-			fighter.velocity = Vector3.ZERO
-			_enter_free_state(fighter)
+	pickups = []
+	next_spawn_tick = -1
+	last_spawn_kind = Weapon.Kind.NONE
+	for index in fighters.size():
+		var start := spawn_points[index]
+		if index < round_spawn_points.size():
+			start = round_spawn_points[index]
+		_reset_fighter(fighters[index], start)
+	for index in fighters.size():
+		var fighter := fighters[index]
+		if fighter.lock_on_target >= 0:
+			fighter.lock_on_target = _nearest_opponent(index)
+		var nearest := _nearest_opponent(index)
+		if nearest >= 0:
+			var look := fighters[nearest].position - fighter.position
+			if Vector2(look.x, look.z).length_squared() > 0.0001:
+				fighter.facing_yaw = atan2(-look.x, -look.z)
 
 
 ## Hash of everything that defines the sim state; equal hashes mean equal states.
 func state_hash() -> int:
 	# Events are this tick's output, but cheap to cover, so replays can compare them too.
-	var parts: Array = [current_tick, rng.state, round_over, round_winner, events,
+	var parts: Array = [current_tick, rng.state, round_over, round_winner, winning_team, events,
 		zone, pickups_enabled, next_entity_id, next_spawn_tick, last_spawn_kind]
 	for fighter in fighters:
 		parts.append_array(fighter.state_values())
@@ -390,7 +410,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 	_count_weapon_timers(fighter)
 	var wish := _wish_direction(index, input)
 	_finish_timed_action(index, input)
-	if not round_over:
+	if not round_over and not fighter.is_knocked_out():
 		_handle_weapon_inputs(index)
 		_start_buffered_action(index, input, wish)
 		_start_block(index, input)
@@ -421,10 +441,16 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		FighterState.State.VANISHING, FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN, \
 				FighterState.State.KNOCKDOWN, FighterState.State.THROWING:
 			fighter.velocity = Vector3.ZERO
+		FighterState.State.KO_FALL:
+			_move_ko_falling(fighter)
+		FighterState.State.KO_DOWN:
+			_move_ko_down(fighter)
 	_integrate(index)
 	_drift_if_smitten(fighter)
 	if fighter.state == FighterState.State.HITSTUN:
 		_bounce_or_knock_down(fighter)
+	elif fighter.state == FighterState.State.KO_FALL:
+		_bounce_or_rest(index)
 	_clamp_to_arena(fighter)
 	_land_if_on_floor(fighter)
 	# Attacks and stuns keep the facing they started with; an unlocked guard holds its facing.
@@ -432,7 +458,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 			and (fighter.state != FighterState.State.BLOCKING or fighter.lock_on_target >= 0):
 		_update_facing(index)
 	_update_blocking(fighter)
-	if not round_over:
+	if not round_over and not fighter.is_knocked_out():
 		_update_meters(fighter)
 	fighter.state_ticks += 1
 
@@ -452,6 +478,10 @@ func _record_presses(fighter: FighterState, input: FighterInput, age: bool = tru
 
 func _update_lock_on(index: int, input: FighterInput) -> void:
 	var fighter := fighters[index]
+	# A knocked-out target is dropped for the nearest opponent still fighting (FFA).
+	if not round_over and fighter.lock_on_target >= 0 \
+			and fighters[fighter.lock_on_target].is_knocked_out():
+		fighter.lock_on_target = _nearest_opponent(index)
 	if input.is_pressed(FighterInput.Action.LOCK_TOGGLE):
 		fighter.lock_on_target = -1 if fighter.lock_on_target >= 0 else _nearest_opponent(index)
 	elif fighter.lock_on_target >= 0 and input.target_switch != 0:
@@ -988,6 +1018,107 @@ func _bounce_or_knock_down(fighter: FighterState) -> void:
 	_drop_held_weapon(fighters.find(fighter))
 
 
+## Puts every newly knocked-out fighter into KO_FALL, keeping the knockback it was given.
+func _knock_out_fallen() -> void:
+	for index in fighters.size():
+		var fighter := fighters[index]
+		if fighter.is_knocked_out() and not fighter.is_ko_state():
+			_knock_out(index)
+
+
+## Flight ends and any grab breaks; the fighter falls with its current velocity.
+func _knock_out(index: int) -> void:
+	var fighter := fighters[index]
+	if fighter.grab_partner >= 0:
+		var partner := fighters[fighter.grab_partner]
+		partner.grab_partner = -1
+		fighter.grab_partner = -1
+		if partner.state == FighterState.State.GRABBED or partner.state == FighterState.State.THROWING:
+			partner.velocity = Vector3.ZERO
+			_enter_free_state(partner)
+	_drop_all_weapons(index)
+	fighter.dash_kind = FighterState.DashKind.NONE
+	fighter.dash_direction = Vector3.ZERO
+	fighter.blocking = false
+	fighter.perfect_block_armed = false
+	fighter.smitten_ticks = 0
+	fighter.smitten_by = -1
+	fighter.enter_state(FighterState.State.KO_FALL)
+
+
+## Gravity without flight, light air drag on the planar part.
+func _move_ko_falling(fighter: FighterState) -> void:
+	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z) \
+		.move_toward(Vector3.ZERO, hit_tuning.ko_air_drag * TICK_SECONDS)
+	var vertical := maxf(fighter.velocity.y - hit_tuning.ko_gravity * TICK_SECONDS, -tuning.max_fall_speed)
+	fighter.velocity = planar + Vector3.UP * vertical
+
+
+## Lying on the floor: the slide slows to a stop.
+func _move_ko_down(fighter: FighterState) -> void:
+	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
+	fighter.velocity = planar.move_toward(Vector3.ZERO, hit_tuning.ko_slide_deceleration * TICK_SECONDS)
+	fighter.position.y = tuning.ground_height
+
+
+## The first floor contact bounces (damped, keeping part of the slide); the next lays it down.
+func _bounce_or_rest(index: int) -> void:
+	var fighter := fighters[index]
+	if not _is_on_floor(fighter) or fighter.velocity.y > 0.0:
+		return
+	fighter.position.y = tuning.ground_height
+	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
+	if not fighter.ko_bounced:
+		fighter.ko_bounced = true
+		var bounce := clampf(-fighter.velocity.y * hit_tuning.ko_bounce_restitution,
+			hit_tuning.ko_min_bounce_speed, hit_tuning.ko_max_bounce_speed)
+		fighter.velocity = planar * hit_tuning.ko_bounce_slide + Vector3.UP * bounce
+		events.append(_ko_event(EventType.KO_BOUNCE, index))
+		return
+	fighter.velocity = planar
+	fighter.enter_state(FighterState.State.KO_DOWN)
+	events.append(_ko_event(EventType.KO_REST, index))
+
+
+func _ko_event(type: EventType, index: int) -> Dictionary:
+	return {"type": type, "fighter": index, "position": fighters[index].position}
+
+
+## Puts a fighter at start: hovering above the floor, standing on it otherwise.
+func _place(fighter: FighterState, start: Vector3) -> void:
+	fighter.position = start
+	fighter.velocity = Vector3.ZERO
+	if start.y > tuning.ground_height:
+		fighter.enter_state(FighterState.State.FLYING)
+	else:
+		fighter.position.y = tuning.ground_height
+		fighter.enter_state(FighterState.State.IDLE)
+
+
+## Round-start values for everything but burst, Last Stand, team and lock-on.
+func _reset_fighter(fighter: FighterState, start: Vector3) -> void:
+	_reset_round_meters(fighter)
+	_place(fighter, start)
+	fighter.dash_kind = FighterState.DashKind.NONE
+	fighter.dash_direction = Vector3.ZERO
+	for action in fighter.press_ages.size():
+		fighter.press_ages[action] = INPUT_BUFFER_TICKS
+	fighter.consumed_presses = 0
+	fighter.hitstop_ticks = 0
+	fighter.grab_partner = -1
+	fighter.perfect_block_armed = false
+	fighter.perfect_block_ticks = 0
+	fighter.perfect_block_lockout = 0
+	fighter.weapons = PackedInt32Array([0, 0, 0])
+	fighter.ammo = PackedInt32Array([0, 0, 0])
+	fighter.active_slot = -1
+	fighter.switch_lockout = 0
+	fighter.reload_ticks = 0
+	fighter.smitten_ticks = 0
+	fighter.smitten_by = -1
+	fighter.ticks_since_smitten = 1 << 20
+
+
 ## Finds every hitbox touching an opponent this tick, then applies them in
 ## fighter index order. All hits are found first, so trades happen. Fighters
 ## frozen in hitstop this tick do not hit. A grab fails if its grabber or its
@@ -1015,9 +1146,11 @@ func _resolve_hits(frozen: Array[bool]) -> void:
 		if contact.type != EventType.GRAB:
 			struck |= 1 << (contact.target as int)
 	for contact in contacts:
-		# Nothing more lands once the round is decided.
+		# Nothing more lands once the round is decided, or on a fighter already knocked out.
 		if round_over:
 			return
+		if fighters[contact.target as int].is_knocked_out():
+			continue
 		match contact.type:
 			EventType.BLOCK:
 				_apply_block(contact)
@@ -1036,7 +1169,7 @@ func _resolve_hits(frozen: Array[bool]) -> void:
 func _find_contact(attacker_index: int, target_index: int, shapes: Array[Dictionary]) -> Dictionary:
 	var attacker := fighters[attacker_index]
 	var target := fighters[target_index]
-	if not target.can_be_hit():
+	if not target.can_be_hit() or target.team == attacker.team:
 		return {}
 	var body := target.hurtbox()
 	for shape in shapes:
@@ -1494,11 +1627,12 @@ func _is_on_floor(fighter: FighterState) -> bool:
 	return fighter.position.y <= tuning.ground_height
 
 
+## Nearest fighter of another team still standing, or -1.
 func _nearest_opponent(index: int) -> int:
 	var nearest := -1
 	var best := INF
 	for other in fighters.size():
-		if other == index:
+		if not _is_opponent(index, other):
 			continue
 		var distance := fighters[index].position.distance_squared_to(fighters[other].position)
 		if distance < best:
@@ -1511,9 +1645,15 @@ func _next_opponent(index: int, current: int, step: int) -> int:
 	var candidate := current
 	for _i in fighters.size():
 		candidate = posmod(candidate + step, fighters.size())
-		if candidate != index:
+		if _is_opponent(index, candidate):
 			return candidate
 	return current
+
+
+## True if other is on another team than index and still standing.
+func _is_opponent(index: int, other: int) -> bool:
+	return other != index and fighters[other].team != fighters[index].team \
+		and not fighters[other].is_knocked_out()
 
 
 ## Passive ki or charging, grey health and guard regeneration, once per tick.
@@ -1547,15 +1687,20 @@ func _reset_round_meters(fighter: FighterState) -> void:
 	fighter.blocking = false
 
 
-## The round ends when at most one fighter is still standing.
+## The round ends when at most one team has a fighter still standing (FFA:
+## every fighter is its own team, so the last one standing wins).
 func _end_round_if_decided() -> void:
-	var standing: Array[int] = []
+	var first_standing := -1
 	for index in fighters.size():
-		if not fighters[index].is_knocked_out():
-			standing.append(index)
-	if standing.size() <= 1:
-		round_over = true
-		round_winner = standing[0] if standing.size() == 1 else -1
+		if fighters[index].is_knocked_out():
+			continue
+		if first_standing < 0:
+			first_standing = index
+		elif fighters[index].team != fighters[first_standing].team:
+			return
+	round_over = true
+	round_winner = first_standing
+	winning_team = fighters[first_standing].team if first_standing >= 0 else -1
 
 
 ## Spends cost ki in display units. False, spending nothing, if there is too little.
@@ -1611,6 +1756,7 @@ const _FIGHTER_HALF_HEIGHT := 1.0
 const _NO_DRIFT_STATES: Array[FighterState.State] = [
 	FighterState.State.GRABBED, FighterState.State.THROWING,
 	FighterState.State.VANISHING, FighterState.State.KNOCKDOWN,
+	FighterState.State.KO_FALL, FighterState.State.KO_DOWN,
 ]
 
 
@@ -1875,7 +2021,8 @@ func _step_projectiles() -> void:
 func _projectile_contact(projectile: Projectile, from: Vector3) -> bool:
 	for target_index in fighters.size():
 		var target := fighters[target_index]
-		if target_index == projectile.owner or not target.can_be_hit():
+		if target_index == projectile.owner or not target.can_be_hit() \
+				or (projectile.owner >= 0 and target.team == fighters[projectile.owner].team):
 			continue
 		var body := target.hurtbox()
 		var points := _closest_points(from, projectile.position, body.start, body.end)
