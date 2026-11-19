@@ -32,6 +32,8 @@ func _capture(scenario_name: String, scenario: Dictionary, out_dir: String) -> v
 	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
 	root.add_child(arena)
 	await process_frame
+	if not arena.vfx_prewarm.is_finished:
+		await arena.vfx_prewarm.finished
 	var settings := GraphicsSettings.new()
 	settings.vsync_enabled = false
 	settings.apply_to(root)

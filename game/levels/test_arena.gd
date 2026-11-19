@@ -11,6 +11,10 @@ var sim := CombatSim.new()
 ## func(fighter_index: int, tick: int) -> FighterInput. Replaces keyboard and idle input.
 var input_override: Callable
 
+## Compiles VFX at load behind a loading cover; scripts can await
+## vfx_prewarm.finished (or check is_finished) before capturing frames.
+var vfx_prewarm := VfxPrewarm.new()
+
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
 @onready var _player_input: KeyboardMouseInput = $KeyboardMouseInput
@@ -24,6 +28,9 @@ func _ready() -> void:
 	sim.lock_everyone_onto_nearest()
 	$DebugOverlay.sim = sim
 	opponent_marker.camera = camera
+	add_child(vfx_prewarm)
+	# After the first frame so the camera has its starting pose.
+	(func(): vfx_prewarm.start(camera)).call_deferred()
 
 
 func _physics_process(_delta: float) -> void:
