@@ -30,6 +30,50 @@ layout_mode = 2
 text = "Duo online: you and your partner vs AI"
 horizontal_alignment = 1
 
+[node name="SignInBox" type="VBoxContainer" parent="Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="EmailField" type="LineEdit" parent="Panel/SignInBox"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Email"
+
+[node name="PasswordField" type="LineEdit" parent="Panel/SignInBox"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Password"
+secret = true
+
+[node name="SignInRow" type="HBoxContainer" parent="Panel/SignInBox"]
+layout_mode = 2
+
+[node name="RememberCheck" type="CheckBox" parent="Panel/SignInBox/SignInRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Remember me"
+
+[node name="SignInButton" type="Button" parent="Panel/SignInBox/SignInRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Sign in"
+
+[node name="SignedInRow" type="HBoxContainer" parent="Panel"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="PlayerName" type="Label" parent="Panel/SignedInRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SignOutButton" type="Button" parent="Panel/SignedInRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Sign out"
+
 [node name="AiRow" type="HBoxContainer" parent="Panel"]
 layout_mode = 2
 
@@ -67,7 +111,7 @@ text = "Join"
 [node name="Status" type="Label" parent="Panel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Host a lobby, or type your partner's code and join."
+text = "Sign in, then host a lobby or type your partner's code and join."
 autowrap_mode = 3
 
 [node name="Readout" type="Label" parent="Panel"]

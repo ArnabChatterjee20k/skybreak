@@ -4,13 +4,21 @@ extends Node3D
 ## shows its facing. It leans into its movement and hides while vanished.
 ## Interpolates between the last two sim ticks so it is smooth at any fps.
 
-## Lean at full speed, in radians. Dashes lean harder.
+## Lean at full speed, in radians. Dashes lean harder. Only for the capsule and characters
+## without MotionLayers: a character with layers leans its own body (one lean source, see
+## game/characters/motion/README.md), so the body node stays upright.
 const MAX_LEAN := deg_to_rad(18.0)
 const MAX_DASH_LEAN := deg_to_rad(32.0)
 ## Speed (m/s) that gives full lean when not dashing.
 const FULL_LEAN_SPEED := 30.0
 ## How fast the lean catches up with its goal, per second.
 const LEAN_SHARPNESS := 10.0
+## Camera fade (T-D29): a body closer to the camera than FADE_FAR (m from its
+## pushbox surface) fades, down to FADED transparency at FADE_NEAR, so a
+## fighter pressed against the camera never fills the screen.
+const FADE_FAR := 1.2
+const FADE_NEAR := 0.3
+const FADED := 0.8
 
 @export var body_color := Color(0.9, 0.4, 0.15)
 ## Character model (a CharacterView scene). Empty draws the placeholder capsule.
@@ -40,6 +48,7 @@ var _lean := Vector2.ZERO
 var _body: Node3D
 var _character: CharacterView
 var _height_marker := HeightMarker.new()
+var _camera_fade := 0.0
 
 
 func _ready() -> void:
@@ -102,7 +111,7 @@ func present(blend: float, delta: float) -> void:
 	position = _previous_position.lerp(fighter.position, blend)
 	var yaw := lerp_angle(_previous_yaw, fighter.facing_yaw, blend)
 	var dashing := fighter.state == FighterState.State.DASHING
-	var goal := lean_for(fighter.velocity, fighter.facing_yaw,
+	var goal := Vector2.ZERO if leans_itself() else lean_for(fighter.velocity, fighter.facing_yaw,
 		MAX_DASH_LEAN if dashing else MAX_LEAN)
 	_lean = _lean.lerp(goal, 1.0 - exp(-LEAN_SHARPNESS * delta))
 	_body.basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, _lean.x) * Basis(Vector3.BACK, _lean.y)
@@ -110,6 +119,34 @@ func present(blend: float, delta: float) -> void:
 	_height_marker.update(position)
 	if _character != null:
 		_character.apply_state(fighter, delta)
+
+
+## Transparency for a body at body_centre seen from a camera at camera_position.
+static func camera_fade_for(camera_position: Vector3, body_centre: Vector3, stats: FighterStats) -> float:
+	var half := maxf(stats.pushbox_height * 0.5 - stats.pushbox_radius, 0.0)
+	var along := clampf(camera_position.y - body_centre.y, -half, half)
+	var surface := camera_position.distance_to(body_centre + Vector3.UP * along) - stats.pushbox_radius
+	return FADED * (1.0 - smoothstep(FADE_NEAR, FADE_FAR, surface))
+
+
+## Fades the drawn body for a camera at camera_position; call after the camera moved.
+func fade_for_camera(camera_position: Vector3) -> void:
+	var stats := fighter.stats if fighter != null else CombatSim.DEFAULT_FIGHTER_STATS as FighterStats
+	var fade := camera_fade_for(camera_position, position, stats)
+	if is_equal_approx(fade, _camera_fade):
+		return
+	_camera_fade = fade
+	for node in _body.find_children("*", "GeometryInstance3D", true, false):
+		(node as GeometryInstance3D).transparency = fade
+
+
+func camera_fade() -> float:
+	return _camera_fade
+
+
+## True when the character model leans its own body (MotionLayers), so the body node doesn't.
+func leans_itself() -> bool:
+	return _character != null and _character.layers != null
 
 
 ## Lean angles for a velocity: x = pitch (negative leans forward),

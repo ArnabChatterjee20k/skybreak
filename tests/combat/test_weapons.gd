@@ -455,7 +455,8 @@ func test_heartstring_arrows_make_the_target_smitten_and_unable_to_attack() -> v
 # Determinism and the bot match.
 
 ## A seeded match of two WeaponBots with drops on; returns [hash, weapons used].
-func _bot_match(seed_value: int, ticks: int, zone := &"skyhold_ruins") -> Array:
+func _bot_match(seed_value: int, ticks: int, zone := &"skyhold_ruins",
+		after_tick := Callable()) -> Array:
 	var sim := CombatSim.new(seed_value)
 	sim.zone = zone
 	sim.pickups_enabled = true
@@ -472,6 +473,8 @@ func _bot_match(seed_value: int, ticks: int, zone := &"skyhold_ruins") -> Array:
 		for bot in bots:
 			inputs.append(bot.next_input(sim))
 		sim.tick(inputs)
+		if after_tick.is_valid():
+			after_tick.call(sim)
 		for event in sim.events:
 			types[event.type] = true
 			if event.type in [E.FIRE, E.WEAPON_THROW]:
@@ -526,7 +529,7 @@ func test_a_3600_tick_seeded_bot_match_uses_at_least_three_weapons() -> void:
 
 func test_longer_bot_matches_land_every_weapon_event() -> void:
 	var types := {}
-	for seed_value in [3, 4]:
+	for seed_value in [3, 4, 5]:
 		types.merge(_bot_match(seed_value, 7200)[2])
 	# Bots grab every drop, so PICKUP_DESPAWN is covered by its own test above.
 	# KO_BOUNCE and later are covered by test_knockout.gd and the T-D26 tests.

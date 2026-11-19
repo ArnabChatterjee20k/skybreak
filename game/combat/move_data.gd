@@ -28,6 +28,8 @@ enum Kind {
 @export var recovery_ticks: int = 1
 ## Distance the fighter steps along its facing, spread evenly over startup; negative steps back.
 @export var step_distance: float = 0.0
+## The step passes through other fighters' pushboxes (a teleport-like step).
+@export var ignores_pushbox: bool = false
 
 @export_group("Hitboxes")
 ## One entry per active tick; a shorter list holds its last entry. Sphere or capsule centre.

@@ -86,3 +86,11 @@ extends Resource
 @export var push_block_stun_ticks: int = 16
 ## Push-block can start from blockstun from this blockstun tick on.
 @export var push_block_from_blockstun_tick: int = 4
+
+@export_group("Pushback")
+## A landed strike slides its target this far away from the attacker (m).
+@export var hit_pushback_distance: float = 0.25
+## A blocked strike slides the blocker this far away from the attacker (m).
+@export var block_pushback_distance: float = 0.6
+## Ticks the pushback slide lasts; whatever a wall stops goes to the attacker.
+@export var pushback_ticks: int = 8
