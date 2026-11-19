@@ -16,6 +16,8 @@ const PENDING: Array[StringName] = []
 const GROUNDED_STATES: Array[int] = [FighterState.State.IDLE, FighterState.State.MOVING, FighterState.State.BLOCKING]
 const EXEMPT_STATES: Array[int] = [FighterState.State.VANISHING, FighterState.State.GRABBED,
 	FighterState.State.THROWING]
+## Core body capsules: never inside another fighter's core. The rest are limbs.
+const CORE: Array[StringName] = [&"pelvis", &"chest", &"head", &"thigh_l", &"thigh_r"]
 
 var zone := &"heartbloom_gardens"
 var ticks := 3600
@@ -29,6 +31,8 @@ var worst := {}
 ## Check -> frames measured.
 var samples := {}
 var worst_frames: Array = []
+## Legend -> [Vector3(core reach, top, bottom) per frame], relative to the sim position (m).
+var core_reach := {}
 var frames := 0
 var match_node: ZoneMatch
 var ground: RenderedGround
@@ -127,6 +131,11 @@ func _measure(tick: int) -> void:
 		var all := body.capsules(pose, space)
 		capsules.append(all)
 		var fighter := sim.fighters[i]
+		var trace := OS.get_environment("VISUAL_QA_TRACE").split(":")
+		if trace.size() == 3 and int(trace[0]) == i and tick >= int(trace[1]) and tick <= int(trace[2]):
+			print("TRACE %d %s st%d pos %s vel %s stand %.2f sole %s view %s" % [tick, FighterState.State.find_key(fighter.state),
+				fighter.state_ticks, fighter.position, fighter.velocity, fighter.stand_height,
+				body.lowest_sole(pose, space), view.global_position])
 		# Ground contact.
 		if fighter.state in GROUNDED_STATES and fighter.position.y <= fighter.stand_height + 0.01:
 			var sole := body.lowest_sole(pose, space)
@@ -166,20 +175,66 @@ func _measure(tick: int) -> void:
 				"parts": [BodyCapsules.segment_depth(string.tip_top, string.nock, head),
 					BodyCapsules.segment_depth(string.nock, string.tip_bottom, head),
 					BodyCapsules.segment_depth(string.nock, string.arrow_tip, head)]})
-	# Fighter vs fighter.
+	# Fighter vs fighter: core bodies never meet; a striking fighter's limbs may reach its target.
 	for i in capsules.size():
 		for j in range(i + 1, capsules.size()):
 			if (capsules[i] as Dictionary).is_empty() or (capsules[j] as Dictionary).is_empty():
 				continue
-			if sim.fighters[i].state in EXEMPT_STATES or sim.fighters[j].state in EXEMPT_STATES:
+			var one := sim.fighters[i]
+			var two := sim.fighters[j]
+			if pair_exempt(one, two, i, j):
 				continue
-			if sim.fighters[i].position.distance_to(sim.fighters[j].position) > 4.0:
+			if one.position.distance_to(two.position) > 4.0:
 				continue
 			var deepest := -INF
-			for a: Array in (capsules[i] as Dictionary).values():
-				for b: Array in (capsules[j] as Dictionary).values():
-					deepest = maxf(deepest, BodyCapsules.capsule_depth(a, b))
-			_record(&"fighter_vs_fighter", deepest > OVERLAP_TOLERANCE, deepest, tick, i)
+			var parts := []
+			for a: StringName in capsules[i]:
+				for b: StringName in capsules[j]:
+					if (striking(one) and not CORE.has(a)) or (striking(two) and not CORE.has(b)):
+						continue
+					var depth := BodyCapsules.capsule_depth(capsules[i][a], capsules[j][b])
+					if depth > deepest:
+						deepest = depth
+						parts = [a, b]
+			_record(&"fighter_vs_fighter", deepest > OVERLAP_TOLERANCE, deepest, tick, i, {"other": j,
+				"other_legend": _legend(j), "parts": parts, "states": [FighterState.State.find_key(one.state),
+				FighterState.State.find_key(two.state)], "moves": [one.move_id(), two.move_id()],
+				"apart": one.position.distance_to(two.position)})
+	# Core body reach from the sim position, per legend (sizes the sim pushbox).
+	for i in capsules.size():
+		var fighter := sim.fighters[i]
+		if (capsules[i] as Dictionary).is_empty() or fighter.state in EXEMPT_STATES:
+			continue
+		var reach := 0.0
+		var top := -INF
+		var bottom := INF
+		for name: StringName in CORE:
+			var c: Array = capsules[i].get(name, [])
+			if c.is_empty():
+				continue
+			for end: Vector3 in [c[0], c[1]]:
+				var flat := Vector2(end.x - fighter.position.x, end.z - fighter.position.z)
+				reach = maxf(reach, flat.length() + float(c[2]))
+				top = maxf(top, end.y + float(c[2]) - fighter.position.y)
+				bottom = minf(bottom, end.y - float(c[2]) - fighter.position.y)
+		var legend := _legend(i)
+		if not core_reach.has(legend):
+			core_reach[legend] = []
+		(core_reach[legend] as Array).append(Vector3(reach, top, bottom))
+
+
+## Whether a pair of fighters is never checked: vanishing, or a grab pair mid-throw.
+static func pair_exempt(one: FighterState, two: FighterState, i: int, j: int) -> bool:
+	if one.state == FighterState.State.VANISHING or two.state == FighterState.State.VANISHING:
+		return true
+	var grabbing := [FighterState.State.GRABBED, FighterState.State.THROWING]
+	return (one.state in grabbing and one.grab_partner == j) or (two.state in grabbing and two.grab_partner == i)
+
+
+## Whether a fighter is mid-attack (startup, active or recovery): its limbs and weapon may meet the target.
+static func striking(fighter: FighterState) -> bool:
+	return fighter.state == FighterState.State.ATTACKING and fighter.attack_phase() in [
+		FighterState.AttackPhase.STARTUP, FighterState.AttackPhase.ACTIVE, FighterState.AttackPhase.RECOVERY]
 
 
 func _snapshot(skeleton: Skeleton3D, poses: Array[Transform3D]) -> void:
@@ -211,7 +266,7 @@ func _legend(fighter: int) -> StringName:
 func _held_models(i: int) -> Array[Node3D]:
 	var models: Array[Node3D] = []
 	for node: Node in match_node.weapon_layer._held[i].nodes:
-		if is_instance_valid(node) and node.get_child_count() > 0:
+		if is_instance_valid(node) and (node as Node3D).visible and node.get_child_count() > 0:
 			models.append(node.get_child(0) as Node3D)
 	return models
 
