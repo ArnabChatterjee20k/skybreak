@@ -347,7 +347,7 @@ All zones share these rules: knocked-into-ground craters (decals), destructibles
 
 | Mode | What | Why it matters |
 |---|---|---|
-| **Versus AI** | Pick fighter, arena, AI level (Easy / Normal / Hard / Brutal) | The main mode |
+| **Versus AI** | Pick your fighter, the start zone and time of day, then **choose 1–3 AI opponents**. Set each one's fighter and level (Easy / Normal / Hard / Brutal) separately, or randomise. 1 AI = a classic duel; 2–3 AIs = offline free-for-all (§8.1 rules) | The main mode |
 | **Arcade** | 6 fights in a row against escalating AI, with a short scripted story per fighter (§9). The final boss is a transformed rival. | Gives the game structure and a "finish" |
 | **Tutorial** | 10 interactive lessons (move → lock-on → light string → heavies → block → perfect block → grab → vanish → chase/tech → meters) | Teaches the deep systems step by step |
 | **Combo Trials** | 10 trials per fighter, from easy to very hard, with the input display | The mastery loop, and the main reason to keep playing |
