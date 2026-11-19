@@ -1,0 +1,132 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 10
+		},
+		"bow/projectile+counter": {
+			"10": 1
+		},
+		"light_1": {
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 2,
+			"9": 2
+		},
+		"light_2": {
+			"3": 3,
+			"5": 3
+		},
+		"light_3": {
+			"5": 2,
+			"8": 1,
+			"20": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "1502:ember_rift:1v1:brann,lyra:42",
+	"kos": 1,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		2
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "KO",
+	"rounds_started": 1,
+	"seed": 1502,
+	"sim_ms_per_tick": 1.87985833333333,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0104433754459023,
+		"finger_pops_per_fighter_minute": 15.0083379655364,
+		"foot_error_p95_cm": 16.2646058322835,
+		"foot_slide_cm_per_frame": 0.142309819275397,
+		"locked_on_screen_share": 0.998566308243728,
+		"pops_per_fighter_minute": 3.00166759310728
+	},
+	"view_ms_per_frame": 2.45594777777778,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 188,
+			"detail": "lowest sole +41.6 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 491,
+			"worst_value": 0.415957901207278
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 113,
+			"detail": "fighters 0 and 1 overlap 1.02 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 224,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1422,
+			"worst_value": 1.01919901903719
+		},
+		{
+			"check": "foot_ground",
+			"count": 16,
+			"detail": "lowest sole +46.1 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 338,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 511,
+			"worst_value": 0.461457961759166
+		},
+		{
+			"check": "pop",
+			"count": 3,
+			"detail": "RightUpperArm turned 2.34 rad in one frame (ATTACKING, move weapon/throw)",
+			"fighter": 0,
+			"first_tick": 382,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1113,
+			"worst_value": 2.33751082420349
+		},
+		{
+			"check": "bow_string_head",
+			"count": 20,
+			"detail": "bow string 5.1 cm from the head centre (draw 0, BLOCKSTUN)",
+			"fighter": 0,
+			"first_tick": 705,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "bow",
+			"worst_tick": 1070,
+			"worst_value": 0.0512177087366581
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "3 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 3
+		}
+	],
+	"wall_seconds": 23.885,
+	"zone": "ember_rift"
+}

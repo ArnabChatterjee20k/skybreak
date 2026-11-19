@@ -1,0 +1,113 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 2
+		},
+		"light_1": {
+			"3": 6,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 3
+		},
+		"light_2": {
+			"3": 3,
+			"5": 1
+		},
+		"light_3": {
+			"3": 2,
+			"8": 1
+		}
+	},
+	"id": "2101:skyhold_ruins:1v1:vexa,brann:34",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		3,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2101,
+	"sim_ms_per_tick": 2.19193166666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0555291138589382,
+		"finger_pops_per_fighter_minute": 28.0155642023346,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.987770983879933,
+		"pops_per_fighter_minute": 10.0055586436909
+	},
+	"view_ms_per_frame": 2.543775,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 1049,
+			"detail": "fighters 0 and 1 overlap 1.05 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 173,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 407,
+			"worst_value": 1.04801509245299
+		},
+		{
+			"check": "pop",
+			"count": 4,
+			"detail": "RightHand turned 1.46 rad in one frame (ATTACKING, move light_3)",
+			"fighter": 0,
+			"first_tick": 895,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1558,
+			"worst_value": 1.46228921413422
+		},
+		{
+			"check": "pop",
+			"count": 6,
+			"detail": "RightUpperArm turned 1.46 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 1156,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1156,
+			"worst_value": 1.45672416687012
+		},
+		{
+			"check": "camera_cover",
+			"count": 3,
+			"detail": "fighter 1 covers 100% of the screen",
+			"fighter": 1,
+			"first_tick": 1517,
+			"legend": "brann",
+			"limit": 0.6,
+			"weapon": "",
+			"worst_tick": 1518,
+			"worst_value": 1.0
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "10 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 10
+		}
+	],
+	"wall_seconds": 22.794,
+	"zone": "skyhold_ruins"
+}

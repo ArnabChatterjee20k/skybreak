@@ -1,0 +1,128 @@
+{
+	"hitstops": {
+		"light_1+counter": {
+			"7": 1,
+			"8": 2
+		},
+		"light_2": {
+			"3": 1,
+			"4": 2
+		},
+		"light_3": {
+			"4": 1,
+			"5": 1
+		},
+		"scatter/projectile": {
+			"3": 35
+		},
+		"scatter/projectile+counter": {
+			"7": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "3403:verdant_falls:1v1:lyra,kael:45",
+	"kos": 0,
+	"legends": [
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3403,
+	"sim_ms_per_tick": 2.996345,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0122785549610853,
+		"finger_pops_per_fighter_minute": 22.0122290161201,
+		"foot_error_p95_cm": 6.75836093166549,
+		"foot_slide_cm_per_frame": 0.441572088069127,
+		"locked_on_screen_share": 0.990084985835694,
+		"pops_per_fighter_minute": 14.0077821011673
+	},
+	"view_ms_per_frame": 2.39449333333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 92,
+			"detail": "lowest sole -9.1 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 8,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1534,
+			"worst_value": -0.0907560577531417
+		},
+		{
+			"check": "foot_ground",
+			"count": 36,
+			"detail": "lowest sole +47.4 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 54,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1300,
+			"worst_value": 0.474316373834131
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "LeftHand turned 2.18 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1248,
+			"worst_value": 2.18190622329712
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 80,
+			"detail": "fighters 0 and 1 overlap 0.92 m (FLYING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 203,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 273,
+			"worst_value": 0.922139486595988
+		},
+		{
+			"check": "pop",
+			"count": 3,
+			"detail": "RightLowerArm turned 1.92 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 0,
+			"first_tick": 385,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 385,
+			"worst_value": 1.91684758663177
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "14 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 14
+		}
+	],
+	"wall_seconds": 27.682,
+	"zone": "verdant_falls"
+}

@@ -1,0 +1,166 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 3,
+			"8": 1,
+			"10": 3
+		},
+		"breaker+counter": {
+			"11": 1,
+			"12": 1,
+			"14": 2
+		},
+		"launcher": {
+			"7": 5,
+			"20": 1
+		},
+		"light_1": {
+			"3": 19,
+			"4": 6,
+			"5": 6
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 1
+		},
+		"light_2": {
+			"3": 19,
+			"4": 6,
+			"5": 6
+		},
+		"light_2+counter": {
+			"8": 2
+		},
+		"light_3": {
+			"3": 11,
+			"4": 2,
+			"5": 5,
+			"8": 4
+		},
+		"light_3+counter": {
+			"7": 1
+		},
+		"spike": {
+			"7": 3
+		}
+	},
+	"id": "3120:skyhold_ruins:2v2:kael,vexa,brann,lyra:2532",
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		5,
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3120,
+	"sim_ms_per_tick": 4.72357444444444,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0133244711905718,
+		"finger_pops_per_fighter_minute": 21.011673151751,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.971650917176209,
+		"pops_per_fighter_minute": 21.011673151751
+	},
+	"view_ms_per_frame": 4.07620555555556,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 1099,
+			"detail": "fighters 0 and 2 overlap 1.10 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 149,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 374,
+			"worst_value": 1.09621925968677
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 534,
+			"detail": "fighters 1 and 2 overlap 1.05 m (ATTACKING vs HITSTUN)",
+			"fighter": 1,
+			"first_tick": 156,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 214,
+			"worst_value": 1.04611152615398
+		},
+		{
+			"check": "pop",
+			"count": 18,
+			"detail": "RightLowerLeg turned 1.70 rad in one frame (ATTACKING, move spike)",
+			"fighter": 1,
+			"first_tick": 194,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 472,
+			"worst_value": 1.69603061676025
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 62,
+			"detail": "fighters 2 and 3 overlap 0.61 m (ATTACKING vs HITSTUN)",
+			"fighter": 2,
+			"first_tick": 197,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 768,
+			"worst_value": 0.606876580715179
+		},
+		{
+			"check": "pop",
+			"count": 10,
+			"detail": "BeardBraid turned 2.14 rad in one frame (HITSTUN, move )",
+			"fighter": 2,
+			"first_tick": 274,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1249,
+			"worst_value": 2.14173364639282
+		},
+		{
+			"check": "pop",
+			"count": 14,
+			"detail": "LeftHand turned 1.94 rad in one frame (ATTACKING, move breaker)",
+			"fighter": 0,
+			"first_tick": 720,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 721,
+			"worst_value": 1.93788182735443
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "42 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 42
+		}
+	],
+	"wall_seconds": 39.075,
+	"zone": "skyhold_ruins"
+}

@@ -1,0 +1,190 @@
+{
+	"hitstops": {
+		"launcher": {
+			"8": 3
+		},
+		"light_1": {
+			"3": 3,
+			"4": 8,
+			"5": 1
+		},
+		"light_1+counter": {
+			"8": 4,
+			"20": 1
+		},
+		"light_2": {
+			"3": 5,
+			"4": 11,
+			"5": 2
+		},
+		"light_3": {
+			"3": 4,
+			"4": 4,
+			"8": 1
+		},
+		"revolver/projectile": {
+			"4": 16
+		},
+		"revolver/projectile+counter": {
+			"8": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "2623:heartbloom_gardens:2v2:lyra,kael,vexa,brann:2422",
+	"kos": 1,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		2,
+		4,
+		2,
+		2
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2623,
+	"sim_ms_per_tick": 4.97283055555556,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.00937641784548759,
+		"finger_pops_per_fighter_minute": 23.5130628126737,
+		"foot_error_p95_cm": 9.32938864642665,
+		"foot_slide_cm_per_frame": 0.72801623623786,
+		"locked_on_screen_share": 0.903820816864295,
+		"pops_per_fighter_minute": 17.0094496942746
+	},
+	"view_ms_per_frame": 3.95539611111111,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 146,
+			"detail": "lowest sole -9.5 cm off the visible ground (MOVING)",
+			"fighter": 3,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 125,
+			"worst_value": -0.0946744223899145
+		},
+		{
+			"check": "pop",
+			"count": 15,
+			"detail": "RightLowerLeg turned 2.80 rad in one frame (ATTACKING, move light_4)",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1082,
+			"worst_value": 2.79983186721802
+		},
+		{
+			"check": "pop",
+			"count": 13,
+			"detail": "RightToes turned 2.34 rad in one frame (MOVING, move )",
+			"fighter": 2,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 193,
+			"worst_value": 2.33693742752075
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 1131,
+			"detail": "fighters 1 and 3 overlap 1.10 m (HITSTUN vs ATTACKING)",
+			"fighter": 1,
+			"first_tick": 212,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1696,
+			"worst_value": 1.09689285946079
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 33,
+			"detail": "fighters 0 and 3 overlap 0.67 m (FLYING vs GRABBED)",
+			"fighter": 0,
+			"first_tick": 266,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1728,
+			"worst_value": 0.669271646738052
+		},
+		{
+			"check": "pop",
+			"count": 6,
+			"detail": "LeftLowerArm turned 1.40 rad in one frame (FLYING, move )",
+			"fighter": 3,
+			"first_tick": 506,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1196,
+			"worst_value": 1.40123903751373
+		},
+		{
+			"check": "foot_ground",
+			"count": 3,
+			"detail": "lowest sole +47.3 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 537,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 632,
+			"worst_value": 0.47344556942528
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 12,
+			"detail": "fighters 2 and 3 overlap 0.34 m (ATTACKING vs FLYING)",
+			"fighter": 2,
+			"first_tick": 1518,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1520,
+			"worst_value": 0.33576397895813
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "34 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 34
+		},
+		{
+			"check": "camera_on_screen",
+			"count": 1,
+			"detail": "both locked fighters on screen in 90.4% of 1518 locked frames",
+			"fighter": 0,
+			"first_tick": 1800,
+			"legend": "lyra",
+			"limit": 0.95,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 0.903820816864295
+		}
+	],
+	"wall_seconds": 42.59,
+	"zone": "heartbloom_gardens"
+}

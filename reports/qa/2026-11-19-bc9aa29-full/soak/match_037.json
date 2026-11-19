@@ -1,0 +1,111 @@
+{
+	"hitstops": {
+		"light_1": {
+			"3": 5,
+			"5": 9
+		},
+		"light_1+counter": {
+			"7": 4
+		},
+		"light_2": {
+			"3": 8,
+			"5": 8,
+			"20": 1
+		},
+		"light_3": {
+			"3": 5,
+			"8": 6
+		}
+	},
+	"id": "1301:frozen_peaks:1v1:vexa,brann:24",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "KO",
+	"rounds_started": 1,
+	"seed": 1301,
+	"sim_ms_per_tick": 1.76087666666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0198621768504381,
+		"finger_pops_per_fighter_minute": 24.0133407448583,
+		"foot_error_p95_cm": 12.5394445074491,
+		"foot_slide_cm_per_frame": 0.185961325630723,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 24.0133407448583
+	},
+	"view_ms_per_frame": 2.04870944444444,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 124,
+			"detail": "lowest sole -12.5 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 67,
+			"worst_value": -0.125494551840063
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 695,
+			"detail": "fighters 0 and 1 overlap 1.05 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 254,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 441,
+			"worst_value": 1.04889460625127
+		},
+		{
+			"check": "pop",
+			"count": 14,
+			"detail": "SashUpper turned 3.06 rad in one frame (KO_FALL, move )",
+			"fighter": 0,
+			"first_tick": 322,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1688,
+			"worst_value": 3.06265759468079
+		},
+		{
+			"check": "pop",
+			"count": 10,
+			"detail": "LeftHand turned 1.39 rad in one frame (HITSTUN, move )",
+			"fighter": 1,
+			"first_tick": 471,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1407,
+			"worst_value": 1.39108610153198
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "24 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 24
+		}
+	],
+	"wall_seconds": 22.467,
+	"zone": "frozen_peaks"
+}

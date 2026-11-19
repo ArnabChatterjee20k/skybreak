@@ -1,0 +1,140 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1
+		},
+		"gauntlets/launcher": {
+			"7": 6
+		},
+		"gauntlets/light_1": {
+			"3": 11
+		},
+		"gauntlets/light_1+counter": {
+			"7": 2
+		},
+		"gauntlets/light_2": {
+			"3": 10
+		},
+		"gauntlets/light_3": {
+			"3": 8
+		},
+		"gauntlets/spike": {
+			"8": 1
+		},
+		"light_1": {
+			"5": 2
+		},
+		"light_2": {
+			"5": 2
+		},
+		"light_3": {
+			"8": 2
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "3002:shattered_mesa:1v1:brann,lyra:25",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3002,
+	"sim_ms_per_tick": 2.50260333333333,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0114458557218313,
+		"finger_pops_per_fighter_minute": 21.011673151751,
+		"foot_error_p95_cm": 127.243050932884,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.981100611450806,
+		"pops_per_fighter_minute": 33.0183435241801
+	},
+	"view_ms_per_frame": 2.33379444444444,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 193,
+			"detail": "lowest sole +135.2 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1336,
+			"worst_value": 1.35150833413061
+		},
+		{
+			"check": "foot_ground",
+			"count": 72,
+			"detail": "lowest sole +139.5 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 44,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "gauntlets",
+			"worst_tick": 1308,
+			"worst_value": 1.39496262419659
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 475,
+			"detail": "fighters 0 and 1 overlap 1.03 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 492,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1066,
+			"worst_value": 1.02980698988657
+		},
+		{
+			"check": "pop",
+			"count": 21,
+			"detail": "CapeRightLower turned 2.12 rad in one frame (FLYING, move )",
+			"fighter": 1,
+			"first_tick": 509,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "gauntlets",
+			"worst_tick": 1204,
+			"worst_value": 2.12199592590332
+		},
+		{
+			"check": "pop",
+			"count": 12,
+			"detail": "BeardBraid turned 3.10 rad in one frame (HITSTUN, move )",
+			"fighter": 0,
+			"first_tick": 549,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 725,
+			"worst_value": 3.1005494594574
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "33 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 33
+		}
+	],
+	"wall_seconds": 25.831,
+	"zone": "shattered_mesa"
+}

@@ -1,0 +1,200 @@
+{
+	"hitstops": {
+		"chakram/launcher": {
+			"8": 1
+		},
+		"chakram/light_1": {
+			"4": 2
+		},
+		"chakram/light_2": {
+			"4": 1
+		},
+		"chakram/light_3": {
+			"6": 1
+		},
+		"launcher": {
+			"7": 1,
+			"8": 4
+		},
+		"light_1": {
+			"3": 2,
+			"4": 6,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 10,
+			"9": 1
+		},
+		"light_2": {
+			"3": 4,
+			"4": 9,
+			"5": 2,
+			"20": 1
+		},
+		"light_3": {
+			"3": 1,
+			"4": 5,
+			"5": 1,
+			"8": 2
+		},
+		"light_4": {
+			"6": 1
+		}
+	},
+	"id": "3511:ember_rift:ffa4:vexa,brann,lyra,kael:3344",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		3,
+		3,
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3511,
+	"sim_ms_per_tick": 2.51949833333333,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0302836876362562,
+		"finger_pops_per_fighter_minute": 17.5097276264591,
+		"foot_error_p95_cm": 11.8077872246232,
+		"foot_slide_cm_per_frame": 0.761648951783596,
+		"locked_on_screen_share": 0.995037220843672,
+		"pops_per_fighter_minute": 19.0105614230128
+	},
+	"view_ms_per_frame": 2.51042777777778,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 996,
+			"detail": "fighters 0 and 2 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 755,
+			"detail": "fighters 1 and 3 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "foot_ground",
+			"count": 193,
+			"detail": "lowest sole -22.8 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 539,
+			"worst_value": -0.22766125244965
+		},
+		{
+			"check": "foot_ground",
+			"count": 44,
+			"detail": "lowest sole +5.5 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 18,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 50,
+			"worst_value": 0.0552374197312275
+		},
+		{
+			"check": "foot_ground",
+			"count": 24,
+			"detail": "lowest sole +50.8 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 161,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1152,
+			"worst_value": 0.507541112047136
+		},
+		{
+			"check": "pop",
+			"count": 20,
+			"detail": "RightLowerLeg turned 2.80 rad in one frame (ATTACKING, move light_4)",
+			"fighter": 3,
+			"first_tick": 182,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 917,
+			"worst_value": 2.79983186721802
+		},
+		{
+			"check": "pop",
+			"count": 16,
+			"detail": "SashLower turned 2.12 rad in one frame (FLYING, move )",
+			"fighter": 0,
+			"first_tick": 463,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1134,
+			"worst_value": 2.11709809303284
+		},
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole -9.0 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1180,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1180,
+			"worst_value": -0.0899742476871381
+		},
+		{
+			"check": "pop",
+			"count": 2,
+			"detail": "LeftHand turned 1.96 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 1,
+			"first_tick": 1203,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1203,
+			"worst_value": 1.95879542827606
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "38 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 38
+		}
+	],
+	"wall_seconds": 25.008,
+	"zone": "ember_rift"
+}
