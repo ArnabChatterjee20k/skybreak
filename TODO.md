@@ -13,6 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-101 [developer] Flight view: fighters drawn from sim state, facing their
+  heading (visor), leaning into motion (harder while dashing), hidden while
+  vanished, interpolated between ticks. Feel tuning needs the owner's playtest.
 - T-D01 [developer, from desktop] Sim skeleton: 6-frame input buffer, sim-side
   movement (ground, flight, falling, dash step/sustained/rush, vanish step),
   `MovementTuning`, `FighterState` state machine, sim-owned lock-on (toggle,
@@ -22,8 +25,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ### Milestone 1: flight and camera (goal: flying feels great)
 
-- T-101 [developer] Free flight and ground movement in the view/controller on
-  top of sim movement: ascend/descend, camera-relative move.
 - T-103 [developer] Target switching (mouse wheel) and lock-on toggle (MMB/Tab).
   Input and sim sides are done (T-001, T-D01); left: camera transition when
   the target changes, and an on-screen lock-on marker.
@@ -36,6 +37,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-107 [developer] Performance check on the GTX 1650 with two fighters flying;
   record fps and frame time. Includes outline-pass cost and the noisy ground
   shadow edges seen in the PR #3 check.
+  Must be measured at the PC by the owner: from Claude Code's session every
+  Godot window (even an empty scene) runs at ~4.8 fps, so that measurement is
+  not trustworthy (see the T-101 PR).
 - T-109 [developer] Debug overlay text is clipped at the left edge in a
   1280x720 movie-writer capture; check anchoring at other window sizes.
 - T-108 [developer] Graphics presets follow-up (from PR #2): try
