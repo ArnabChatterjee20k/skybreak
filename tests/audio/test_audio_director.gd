@@ -80,7 +80,8 @@ func test_the_duck_dips_music_and_ambience_then_restores_them() -> void:
 	assert_lt(AudioServer.get_bus_volume_db(ambience), -6.0, "ambience ducks too")
 	assert_almost_eq(AudioServer.get_bus_volume_db(AudioServer.get_bus_index(AudioBuses.SFX)), 0.0, 0.01,
 		"sound effects never duck")
-	for _i in 60:
+	# KO duck: hold, then release at DUCK_RELEASE_DB_PER_SECOND (T-127: ~3.5 s).
+	for _i in 100:
 		_director.advance(0.05)
 	assert_almost_eq(AudioServer.get_bus_volume_db(music), base_music, 0.01, "music is back")
 	assert_almost_eq(AudioServer.get_bus_volume_db(ambience), 0.0, 0.01, "ambience is back")
