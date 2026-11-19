@@ -50,6 +50,8 @@ func _measure(quality: GraphicsSettings.Quality) -> Dictionary:
 	arena.input_override = _route_input
 	root.add_child(arena)
 	await process_frame
+	if not arena.vfx_prewarm.is_finished:
+		await arena.vfx_prewarm.finished
 	# The arena's graphics menu applies saved settings on ready; override them.
 	var settings := GraphicsSettings.new()
 	settings.quality = quality
