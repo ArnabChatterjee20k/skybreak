@@ -50,3 +50,18 @@ func test_fov_widens_for_a_big_height_gap_and_returns_when_unlocked() -> void:
 	for _frame in 240:
 		_camera.follow(player, above, false, 1.0 / 60.0)
 	assert_almost_eq(_camera.fov, _camera.base_fov, 0.05)
+
+
+func test_shoulder_side_is_frozen_while_turning_back_after_a_relock() -> void:
+	var player := Vector3.ZERO
+	var ahead := Vector3(3, 0, -15)
+	for _frame in 120:
+		_camera.follow(player, ahead, true, 1.0 / 60.0)
+	var side := _camera.shoulder_side()
+	for _frame in 10:
+		_camera.follow(player, ahead, false, 1.0 / 60.0)
+	# Re-lock onto an opponent behind and to the other side: the big turn starts.
+	var behind := Vector3(-side * 6.0, 0, 15)
+	for _frame in 20:
+		_camera.follow(player, behind, true, 1.0 / 60.0)
+		assert_eq(_camera.shoulder_side(), side, "no shoulder flip mid-turn")

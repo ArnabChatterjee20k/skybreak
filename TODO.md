@@ -41,6 +41,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D11b [desktop] Kael in the chunky Brawlhalla-style look (GAME_DESIGN §6),
   built procedurally: humanoid-profile rig + scarf chain with procedural lag,
   shared clips plus snappy own clips, stacked on T-D10.
+- T-117 [developer] Range-band framing (near side swing with ≥10% screen gap, far
+  zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
 
@@ -69,17 +71,20 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   high preset is fine on the grey-box arena (T-107: GPU p95 1.8 ms); recheck
   once real content lands.
 
-- T-117 [developer] Range-band framing: near (<10 m) shorter boom + ~25° side
-  swing with a ≥10% screen gap between fighters; mid (10–30 m) as now; far
-  (>30 m) behind and lower with the FOV narrowed (40° floor) so the opponent
-  stays ≥ ~40 px and the player ≥ 15%; bands blend over ≥ 0.5 s with
-  hysteresis (near 9/11 m); shoulder side frozen during a re-lock turn.
-  Scripted-playtest asserts for all of it.
 - T-118 [developer] Fighter identity: camera-side fill/rim light, a facing cue
   readable from behind, height drop-line + ground ring under airborne
   fighters, bigger off-screen arrow with distance and above/below/behind.
 - T-119 [developer] Playtest capture: render key motion events (re-lock, vanish,
-  rush arrival) at every frame for the playtester.
+  rush arrival) at every frame for the playtester. Add a check for Space+RMB
+  on the ground giving Rising only on the same tick (T-D03 feel note).
+- T-120 [developer] Attack pose placeholder on the capsule (lunge/scale per
+  `attack_phase()`, armor/invincibility flash) and the T-201 hitbox debug draw
+  from `active_hitboxes()`, interpolated like the fighter.
+- T-121 [developer] Combat feedback when T-D04 lands: map `CombatSim.events` to
+  the T-D09 VFX, hitstop camera shake (§5.10), hitstun/blockstun/knockdown
+  poses, combo counter on the HUD.
+- T-122 [developer] Swap the capsule for T-D10's `CharacterView` in
+  `FighterView` (after T-D10).
 - T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
   health with grey recoverable part, ki in 4 bars, guard, burst stocks.
 - T-112 [developer] Round flow in the test arena: on `round_over`, reset
@@ -91,6 +96,9 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-D07 [desktop] Chase/tech and wall-splat.
 - T-D09b [desktop] VFX fixes from the PR #12 Windows check: shockwave clipped by
   the ground, aura darkening the body at power 3, glassy flames (cloud).
+- T-D10 [desktop] Character pipeline: free-licence rigged anime humanoid + animations,
+  toon/outline materials, humanoid retarget, AnimationTree driven by
+  `FighterState`; delivers `CharacterView` (see AGENTS.md).
 - T-D08b [desktop] Outline on hard-edged props: bake smoothed normals into
   vertex colour/UV2, or use bevelled prop meshes (box outline nearly invisible
   in the PR #3 check).
@@ -120,3 +128,6 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-D09 [desktop] Aura and impact VFX, PR #12.
 - T-114 [developer] Shoulder offset: player a third from the edge, PR #16.
 - T-115 [developer] Camera turn limits and teleport glide, PR #17.
+- T-116 [developer] VFX prewarm at arena load, PR #19.
+- T-D09b [desktop] VFX fixes (ground shockwave, aura, flame tongues), PR #18.
+- T-D03 [desktop] Moves, light string and cancels, PR #15.
