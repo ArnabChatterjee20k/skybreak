@@ -99,6 +99,8 @@ func test_grounded_exchanges_keep_their_knockback() -> void:
 
 
 func test_an_air_hit_beside_the_attacker_keeps_its_knockback() -> void:
-	_start(Vector3(0, 10, -1.6), Vector3(0, 10, 0), _stats_with_light(Vector3(0, 0, -1), Knockback.BLOWBACK))
+	_start(Vector3(0, 10, -1.0), Vector3(0, 10, 0), _stats_with_light(Vector3(0, 0, -1), Knockback.BLOWBACK))
+	_sim.hit_tuning = _sim.hit_tuning.duplicate() as HitTuning
+	_sim.hit_tuning.air_knockback_separation = 0.5
 	var velocity := _land_light()
 	assert_almost_eq(velocity.z, -1.0, 0.001, "already apart: the move's own knockback")
