@@ -1,0 +1,106 @@
+{
+	"brann": {
+		"grab@air": {
+			"move": "grab",
+			"ticks": 10
+		},
+		"grab@ground": {
+			"move": "grab",
+			"ticks": 10
+		},
+		"heavy@air": {
+			"move": "smash",
+			"ticks": 19
+		},
+		"heavy@ground": {
+			"move": "smash",
+			"ticks": 19
+		},
+		"light@air": {
+			"move": "light_1",
+			"ticks": 9
+		},
+		"light@ground": {
+			"move": "light_1",
+			"ticks": 9
+		}
+	},
+	"kael": {
+		"grab@air": {
+			"move": "grab",
+			"ticks": 8
+		},
+		"grab@ground": {
+			"move": "grab",
+			"ticks": 8
+		},
+		"heavy@air": {
+			"move": "smash",
+			"ticks": 15
+		},
+		"heavy@ground": {
+			"move": "smash",
+			"ticks": 15
+		},
+		"light@air": {
+			"move": "light_1",
+			"ticks": 7
+		},
+		"light@ground": {
+			"move": "light_1",
+			"ticks": 7
+		}
+	},
+	"lyra": {
+		"grab@air": {
+			"move": "grab",
+			"ticks": 9
+		},
+		"grab@ground": {
+			"move": "grab",
+			"ticks": 9
+		},
+		"heavy@air": {
+			"move": "smash",
+			"ticks": 16
+		},
+		"heavy@ground": {
+			"move": "smash",
+			"ticks": 16
+		},
+		"light@air": {
+			"move": "light_1",
+			"ticks": 7
+		},
+		"light@ground": {
+			"move": "light_1",
+			"ticks": 7
+		}
+	},
+	"vexa": {
+		"grab@air": {
+			"move": "grab",
+			"ticks": 7
+		},
+		"grab@ground": {
+			"move": "grab",
+			"ticks": 7
+		},
+		"heavy@air": {
+			"move": "smash",
+			"ticks": 12
+		},
+		"heavy@ground": {
+			"move": "smash",
+			"ticks": 12
+		},
+		"light@air": {
+			"move": "light_1",
+			"ticks": 5
+		},
+		"light@ground": {
+			"move": "light_1",
+			"ticks": 5
+		}
+	}
+}
