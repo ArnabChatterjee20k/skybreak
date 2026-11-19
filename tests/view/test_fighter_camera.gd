@@ -215,3 +215,34 @@ func test_a_huge_teleport_cuts_to_the_new_framing() -> void:
 	var landed := Vector3(0, 20, 0)
 	camera.follow(landed, Vector3(0, 300, -12), false, 1.0 / 60.0)
 	assert_lt(camera.global_position.distance_to(landed), 12.0, "the camera is with the player at once")
+
+
+func _one_island() -> IslandField:
+	var field := IslandField.new()
+	field.add("test", Vector2(0, 0), 100.0, 30.0, 20.0, 0.0)
+	return field
+
+
+func test_the_merged_island_mesh_adds_no_zone_wide_box() -> void:
+	var obstacles := CameraObstacles.new()
+	obstacles.islands = _one_island()
+	var root := Node3D.new()
+	add_child_autofree(root)
+	var merged := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(500, 100, 400)
+	merged.mesh = mesh
+	merged.set_meta(CameraObstacles.ISLANDS_META, PackedStringArray(["test"]))
+	root.add_child(merged)
+	obstacles.add_props(root, Vector2.ZERO, INF)
+	assert_eq(obstacles.boxes.size(), 0, "islands are tested by shape, not by one box")
+	assert_false(obstacles.is_inside(Vector3(150, 120, 0)), "open sky beside the island is clear")
+
+
+func test_an_island_body_blocks_the_camera_from_below() -> void:
+	var obstacles := CameraObstacles.new()
+	obstacles.islands = _one_island()
+	assert_true(obstacles.is_inside(Vector3(0, 95, 0)), "inside the rock under the top")
+	assert_false(obstacles.is_inside(Vector3(0, 103, 0)), "above the top is clear")
+	assert_true(obstacles.blocks(Vector3(0, 103, 0), Vector3(0, 70, 0)), "rock between a player on top and a camera below")
+	assert_false(obstacles.blocks(Vector3(0, 103, 0), Vector3(0, 108, 6)), "a camera above the top is clear")

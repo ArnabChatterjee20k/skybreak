@@ -15,9 +15,13 @@ const MIN_WIDTH := 0.8
 const CLEARANCE := 0.4
 ## Terrain samples along a pivot-to-camera segment.
 const TERRAIN_SAMPLES := 12
+## Meta on the merged island mesh (HeartbloomProps).
+const ISLANDS_META := &"islands"
 
 ## func(x, z, from_y) -> ground height; null means no terrain.
 var ground_height: Callable
+## Floating island bodies (tops and undersides); null when the zone has none.
+var islands: IslandField
 var boxes: Array[AABB] = []
 var _grid: Dictionary = {}
 
@@ -26,6 +30,7 @@ var _grid: Dictionary = {}
 static func from_zone_match(zone_match: Node) -> CameraObstacles:
 	var obstacles := CameraObstacles.new()
 	obstacles.ground_height = zone_match.ground.height_at
+	obstacles.islands = zone_match.world.islands
 	var props: Node = zone_match.world.props
 	var centre: Vector2 = zone_match.sim.arena_centre
 	var reach: float = zone_match.sim.tuning.arena_half_size + 40.0
@@ -37,6 +42,9 @@ static func from_zone_match(zone_match: Node) -> CameraObstacles:
 ## Adds one box per prop instance under root within reach of centre (planar).
 func add_props(root: Node, centre: Vector2, reach: float) -> void:
 	for node in root.find_children("*", "GeometryInstance3D", true, false):
+		# One merged mesh for every island: its box spans the zone; islands covers it.
+		if islands != null and node.has_meta(ISLANDS_META):
+			continue
 		if node is MultiMeshInstance3D:
 			var mmi := node as MultiMeshInstance3D
 			var mm := mmi.multimesh
@@ -86,6 +94,8 @@ func ground_at(point: Vector3) -> float:
 func is_inside(point: Vector3) -> bool:
 	if point.y < ground_at(point):
 		return true
+	if islands != null and islands.contains(point):
+		return true
 	for index in _candidates(point, point):
 		if boxes[index].has_point(point):
 			return true
@@ -112,13 +122,15 @@ func clear_fraction(pivot: Vector3, camera: Vector3, clearance: float = CLEARANC
 		var hit = box.intersects_segment(pivot, camera)
 		if hit != null:
 			best = minf(best, pivot.distance_to(hit) / length)
-	if ground_height.is_valid():
+	var lift := Vector3.UP * clearance
+	if ground_height.is_valid() or islands != null:
 		for s in range(1, TERRAIN_SAMPLES + 1):
 			var f := float(s) / TERRAIN_SAMPLES
 			if f >= best:
 				break
 			var point := pivot + segment * f
-			if point.y < ground_at(point) + clearance:
+			var in_island := islands != null and (islands.contains(point - lift) or islands.contains(point + lift))
+			if in_island or point.y < ground_at(point) + clearance:
 				best = minf(best, float(s - 1) / TERRAIN_SAMPLES)
 				break
 	return best
