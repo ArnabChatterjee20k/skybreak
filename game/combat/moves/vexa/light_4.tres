@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_move")
 id = &"light_4"
-display_name = "Rising Knee"
+display_name = "Snap Kick"
 startup_ticks = 6
 active_ticks = 3
 recovery_ticks = 11
