@@ -16,6 +16,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D12 [desktop] World map grey-block: 2 km procedural terrain (chunked, 4 LODs),
   six zones with landmarks, atmosphere/time of day/weather, energy dome,
   `WorldMap` API and flythrough preview, PR #39.
+- T-D12b [desktop] Heartbloom Gardens, the 7th zone: floating cherry-blossom
+  archipelago over the map centre, Heart Arch, Wishing Fountain, lantern
+  bridges, `IslandField` second ground layer, whirlwind/fountain markers.
 - T-116 [developer] VFX prewarm at arena load behind a short loading cover.
 - T-D09b [desktop] VFX fixes from the GTX 1650 check of T-D09: shockwave no
   longer cut by the ground, aura never darkens the body, flames break into
