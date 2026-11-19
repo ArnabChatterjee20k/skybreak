@@ -25,9 +25,12 @@ func _ready() -> void:
 	_body.add_child(_view)
 	_view.set_energy_color(KAEL_ENERGY)
 	_entries = preview_entries(load(MOVE_SET_PATH) as MoveSet)
-	# Command line (after --): closeup, start=<entry number>.
+	# Command line (after --): closeup, side, start=<entry number>.
 	var args := OS.get_cmdline_user_args()
-	if args.has("closeup"):
+	if args.has("side"):
+		$Camera3D.position = Vector3(4.2, 1.3, -0.6)
+		$Camera3D.look_at(Vector3(0, 0.9, -0.6))
+	elif args.has("closeup"):
 		$Camera3D.position = Vector3(0.45, 1.75, -1.1)
 		$Camera3D.look_at(Vector3(0, 1.62, 0))
 	else:

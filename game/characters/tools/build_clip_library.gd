@@ -42,7 +42,8 @@ const CLIPS := {
 ## Clips whose impact window is measured (the rest have none).
 const STRIKES: Array[StringName] = [&"jab", &"cross", &"hook", &"palm_strike", &"swing_low",
 	&"swing_back", &"swing_rising", &"overhead", &"shove"]
-const EFFECTORS := ["LeftHand", "RightHand", "LeftFoot", "RightFoot"]
+## Hands only: every strike in the free libraries is a hand strike (no kicks).
+const EFFECTORS := ["LeftHand", "RightHand"]
 const SAMPLE_STEP := 1.0 / 60.0
 ## Impact window around the peak reach: the strike arriving, then a beat held.
 const WINDOW_BEFORE := 0.05
@@ -114,7 +115,7 @@ func _standing_hips_height(players: Dictionary) -> float:
 	return (idle.track_get_key_value(idle.find_track(HIPS_TRACK, Animation.TYPE_POSITION_3D), 0) as Vector3).y
 
 
-## Time of the furthest forward reach of any hand or foot, from the source rig.
+## Time of the furthest forward reach of either hand, from the source rig.
 func _impact_window(player: AnimationPlayer, source: String) -> Vector2:
 	var skeleton: Skeleton3D = player.get_node(player.root_node).get_node("%GeneralSkeleton")
 	var length := player.get_animation(source).length

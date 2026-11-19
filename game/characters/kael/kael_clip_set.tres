@@ -41,8 +41,8 @@ impact_windows = Dictionary[StringName, Vector2]({
 &"jab": Vector2(0.15, 0.23),
 &"overhead": Vector2(0.33333334, 0.41333333),
 &"palm_strike": Vector2(0.15, 0.23),
-&"shove": Vector2(1.3166667, 1.3966666),
+&"shove": Vector2(0.55, 0.63),
 &"swing_back": Vector2(0.2, 0.28),
 &"swing_low": Vector2(0.18333334, 0.26333332),
-&"swing_rising": Vector2(0.55, 0.63)
+&"swing_rising": Vector2(0.6166667, 0.69666666)
 })
