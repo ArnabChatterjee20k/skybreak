@@ -40,6 +40,7 @@ per tick (`ko_origin`, new in #89, left out so the old field set compares):
 | teams_2v2 | 127 | HIT 2->0 | f0.velocity | f0: 1.12 -> 3.00 (vy 0.99 = 0.99) | f0 6.53, f1 1.00, f2 4.76, f3 1.00 |
 
 Heights are capsule centres the tick before; standing on the floor reads 1.00.
+The planar gap between attacker and target at those hits is 0.74-1.48 m.
 Nothing drifted at any other kind of tick, so every replay was re-recorded on
 the merge (new AI inputs too: the merge also routes four `fighter_ai.gd` calls
 through `DetMath`).
