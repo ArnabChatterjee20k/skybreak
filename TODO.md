@@ -132,6 +132,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-129 [developer, built by cloud] Training room (dummy modes, record/playback, frame-data overlay, input display, refills, reset, weapon spawner, move list) and a 9-lesson tutorial with sim-driven goal checks; entry scenes `game/modes/training/training.tscn` and `game/modes/tutorial/tutorial.tscn`. Open: combo breaker, ki blasts, chase/tech and knockdown wakeup lessons once the sim has them.
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
