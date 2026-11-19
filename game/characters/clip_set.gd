@@ -15,6 +15,8 @@ extends Resource
 @export var intro_clips: Dictionary[StringName, StringName] = {}
 ## MoveData.id -> clip.
 @export var move_clips: Dictionary[StringName, StringName] = {}
+## Weapon move slots without an unarmed twin, played as this unarmed move's clip.
+const WEAPON_SLOT_CLIPS := {&"bash": &"breaker", &"throw": &"light_2", &"shot": &"light_1", &"pickup": &"light_1"}
 ## Clip played when a move has no entry.
 @export var fallback_move_clip: StringName = &"cross"
 ## Clip held while charging a chargeable move (attack phase HOLD).
@@ -39,7 +41,13 @@ func clip_for_state(state_name: StringName, airborne := false) -> StringName:
 
 
 func clip_for_move(move_id: StringName) -> StringName:
-	var clip: StringName = move_clips.get(move_id, fallback_move_clip)
+	var clip: StringName = move_clips.get(move_id, &"")
+	if clip == &"" and String(move_id).contains("/"):
+		# Weapon moves ("blade/light_1") play the clip of their slot.
+		var slot := StringName(String(move_id).get_slice("/", 1))
+		clip = move_clips.get(WEAPON_SLOT_CLIPS.get(slot, slot), &"")
+	if clip == &"":
+		clip = fallback_move_clip
 	return clip if library and library.has_animation(clip) else fallback_move_clip
 
 

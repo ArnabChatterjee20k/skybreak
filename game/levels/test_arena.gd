@@ -17,6 +17,8 @@ var vfx_prewarm := VfxPrewarm.new()
 ## Hit sparks, shake and impact frames from sim.events (T-121).
 var combat_feedback := CombatFeedback.new()
 var combo_counter := ComboCounter.new()
+## Pickups, projectiles and weapons in hand (T-D14).
+var weapon_layer := WeaponLayer.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -29,6 +31,9 @@ func _ready() -> void:
 		_fighter_views[i].fighter = sim.add_fighter(FIGHTER_STARTS[i])
 		_fighter_views[i].remember_previous_tick()
 	sim.lock_everyone_onto_nearest()
+	sim.pickups_enabled = true
+	add_child(weapon_layer)
+	weapon_layer.setup(sim, _fighter_views)
 	$DebugOverlay.sim = sim
 	opponent_marker.camera = camera
 	add_child(combat_feedback)
@@ -54,6 +59,7 @@ func _process(delta: float) -> void:
 func step_tick() -> void:
 	for view in _fighter_views:
 		view.remember_previous_tick()
+	weapon_layer.remember_previous_tick()
 	var inputs: Array[FighterInput] = []
 	if input_override.is_valid():
 		for i in sim.fighters.size():
@@ -70,6 +76,7 @@ func step_tick() -> void:
 func present_frame(blend: float, delta: float) -> void:
 	for view in _fighter_views:
 		view.present(blend, delta)
+	weapon_layer.present(blend, delta)
 	var player := sim.fighters[0]
 	var locked := player.lock_on_target >= 0
 	var opponent := _fighter_views[player.lock_on_target if locked else 1].position

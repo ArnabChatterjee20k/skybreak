@@ -116,6 +116,14 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
+  per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
+  switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
+  bow/revolver/repeater/scatter cannon/Heartstring Bow as sim projectiles,
+  procedural weapon models on Kael's hands, pickup and projectile visuals,
+  WeaponBot. Open: bow draw levels, Heartstring tether, chakram return flight,
+  perf benchmark on the GTX 1650, HUD weapon strip.
+
 - T-D00 [desktop] Game design document (`docs/GAME_DESIGN.md`), PR #1.
 - T-002 [developer] Graphics presets + resolution scale + vsync, F10 menu, PR #2.
 - T-003 [developer] Windows export preset (single exe), PR #4.
