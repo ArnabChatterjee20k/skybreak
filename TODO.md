@@ -6,11 +6,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In progress
 
-- T-107 [developer] Performance check on the GTX 1650 with two fighters flying:
-  fps and frame time, outline-pass cost, noisy ground shadow edges. Blocked:
-  needs the owner's F3 reading at the PC (Godot windows started from Claude
-  Code's session run at ~4.8 fps even for an empty scene).
-
 - T-001 [developer] Milestone 0 skeleton: Godot 4.7.2 project, combat seam
   (`FighterInput`, `CombatSim` fixed 60 Hz tick, seeded RNG, determinism
   test), keyboard/mouse bindings, debug overlay (fps, frame time), GUT, CI,
@@ -18,6 +13,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-107 [developer] Render benchmark (`game/debug/render_benchmark.gd`): GPU/CPU
+  frame time per preset on a scripted locked-on flight. Baseline at 1080p on
+  the GTX 1650: GPU p95 1.4 / 1.6 / 1.8 ms (low/med/high). Grey-box only;
+  re-run as shaders, characters and arenas land.
 - T-102b [developer] Locked camera pitch limits: at most 35° down / 25° up;
   bigger height gaps pull the camera back and widen the FOV (up to +10°).
 
@@ -34,11 +33,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   dithers out, no snapping, no cuts during control.
 - T-106 [developer] Grey-box arena: about 600 m × 600 m, soft ceiling at 250 m,
   energy-dome boundary.
-- T-109 [developer] Debug overlay text is clipped at the left edge in a
-  1280x720 movie-writer capture; check anchoring at other window sizes.
+- T-109 [developer] Debug overlay text clipped at the left edge. Likely cause:
+  windowed 1920x1080 is clamped to the screen (1920x991 with the taskbar), so
+  the window sits partly off-screen. Fullscreen renders a true 1080p.
 - T-108 [developer] Graphics presets follow-up (from PR #2): try
-  `SCALING_3D_MODE_FSR` instead of bilinear when resolution scale < 1.0, and
-  lower the high preset (4096 shadows, MSAA 4x) if it misses 60 fps in T-107.
+  `SCALING_3D_MODE_FSR` instead of bilinear when resolution scale < 1.0. The
+  high preset is fine on the grey-box arena (T-107: GPU p95 1.8 ms); recheck
+  once real content lands.
 
 ### Combat sim (desktop)
 

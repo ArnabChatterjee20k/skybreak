@@ -1,0 +1,28 @@
+extends GutTest
+
+var _previous: Array[FighterInput] = [FighterInput.new(), FighterInput.new()]
+
+
+func _climb_for_fighter_one(index: int, _tick: int) -> FighterInput:
+	var input := FighterInput.from_held(0, _previous[index])
+	input.vertical = 1 if index == 1 else 0
+	_previous[index] = input
+	return input
+
+
+func test_input_override_drives_every_fighter() -> void:
+	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
+	arena.input_override = _climb_for_fighter_one
+	add_child_autofree(arena)
+	await wait_physics_frames(30)
+	assert_eq(arena.sim.fighters[1].state, FighterState.State.FLYING, "the opponent took off")
+	assert_gt(arena.sim.fighters[1].position.y, 3.0)
+	assert_almost_eq(arena.sim.fighters[0].position.y, arena.sim.tuning.ground_height, 0.001, "the player stayed down")
+
+
+func test_both_fighters_start_locked_onto_each_other() -> void:
+	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
+	add_child_autofree(arena)
+	await wait_physics_frames(1)
+	assert_eq(arena.sim.fighters[0].lock_on_target, 1)
+	assert_eq(arena.sim.fighters[1].lock_on_target, 0)

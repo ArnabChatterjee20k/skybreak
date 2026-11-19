@@ -5,6 +5,9 @@ extends Node3D
 const FIGHTER_STARTS: Array[Vector3] = [Vector3(0, 1, 6), Vector3(0, 1, -6)]
 
 var sim := CombatSim.new()
+## Optional scripted control for benchmarks and bot playtests:
+## func(fighter_index: int, tick: int) -> FighterInput. Replaces keyboard and idle input.
+var input_override: Callable
 
 @onready var _player_input: KeyboardMouseInput = $KeyboardMouseInput
 @onready var _fighter_views: Array[FighterView] = [$Fighter1, $Fighter2]
@@ -22,10 +25,13 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	for view in _fighter_views:
 		view.remember_previous_tick()
-	var inputs: Array[FighterInput] = [
-		_player_input.read_tick(_camera.view_yaw(), _camera.orbit),
-		FighterInput.new(),
-	]
+	var inputs: Array[FighterInput] = []
+	if input_override.is_valid():
+		for i in sim.fighters.size():
+			inputs.append(input_override.call(i, sim.current_tick))
+	else:
+		inputs.append(_player_input.read_tick(_camera.view_yaw(), _camera.orbit))
+		inputs.append(FighterInput.new())
 	sim.tick(inputs)
 
 
