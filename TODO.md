@@ -13,10 +13,17 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
-- T-D01 [developer, from desktop] Sim skeleton: 6-frame input buffer, sim-side
-  movement (ground, flight, falling, dash step/sustained/rush, vanish step),
-  `MovementTuning`, `FighterState` state machine, sim-owned lock-on (toggle,
-  target switch, 1v1 starts mutually locked), determinism test over all of it.
+- T-110 [developer] Window mode: borderless fullscreen at desktop resolution by
+  default; windowed = 1600x900 centred, shrunk to fit the usable screen area;
+  Fullscreen toggle in the F10 menu, saved with the graphics settings.
+- T-107 [developer] Render benchmark (`game/debug/render_benchmark.gd`): GPU/CPU
+  frame time per preset on a scripted locked-on flight. Baseline at 1080p on
+  the GTX 1650: GPU p95 1.4 / 1.6 / 1.8 ms (low/med/high). Grey-box only;
+  re-run as shaders, characters and arenas land.
+- T-102b [developer] Locked camera pitch limits: at most 35° down / 25° up;
+  bigger height gaps pull the camera back and widen the FOV (up to +10°).
+- T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst,
+  PR #9.
 - T-D09 [desktop] Aura and impact VFX shaders, per-fighter `rim_energy_*`
   instance uniforms, PR #12.
 
@@ -24,29 +31,53 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ### Milestone 1: flight and camera (goal: flying feels great)
 
-- T-101 [developer] Free flight and ground movement in the view/controller on
-  top of sim movement: ascend/descend, camera-relative move.
-- T-103 [developer] Target switching (mouse wheel) and lock-on toggle (MMB/Tab).
-  Input and sim sides are done (T-001, T-D01); left: camera transition when
-  the target changes, and an on-screen lock-on marker.
-- T-104 [developer] Dash (tap = step, hold = sustained, toward target = rush)
-  and vanish step (Shift+E) feel, tuned through `MovementTuning`.
+Playtest #1 (flight and camera) scored movement 2/5, camera 1/5. Target after
+T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playtester.
+
+- T-113 [developer] Camera distance model: boom 6–10 m from the player, player
+  never below ~15% of screen height, distance changes smoothed over ≥ 0.5 s
+  (no pumping), height gaps tilt first within the 35°/25° clamp instead of
+  pulling back (replaces PR #8's pull-back; keep FOV widening ≤ +10°), edge
+  marker/reticle when the opponent can't fit. Scripted-playtest asserts.
+- T-114 [developer] Shoulder offset: player about 1/3 from the screen edge,
+  minimum lateral offset, no centre dead zone; silhouette overlap ≤ 20% of
+  frames in circle-strafe and figure-8 (asserted).
+- T-115 [developer] Camera turn limits: re-lock/target-switch yaw ≤ 180°/s;
+  teleports (vanish) glide-follow over ~0.2 s instead of the 14/s snap; no
+  frame-to-frame jump > 10° outside cuts.
+- T-103 [developer] Lock-on polish: off-screen arrow for the opponent (§4.7);
+  camera transition when the target changes; dash bank capped at about 20°
+  (the playtester saw about 45°, which looks like falling over).
+- T-104 [developer] Movement VFX: dash streaks/afterimage, small FOV kick on
+  sustained dash and rush, vanish afterimage at the old spot, rush recovery
+  pose (view side); reuse T-D09 speed lines and impact pieces once merged.
 - T-105 [developer] Camera occlusion: terrain between camera and fighters
   dithers out, no snapping, no cuts during control.
 - T-106 [developer] Grey-box arena: about 600 m × 600 m, soft ceiling at 250 m,
-  energy-dome boundary.
-- T-107 [developer] Performance check on the GTX 1650 with two fighters flying;
-  record fps and frame time. Includes outline-pass cost and the noisy ground
-  shadow edges seen in the PR #3 check.
-- T-109 [developer] Debug overlay text is clipped at the left edge in a
-  1280x720 movie-writer capture; check anchoring at other window sizes.
+  energy-dome boundary; ground grid/texture and landmarks (rock pillars,
+  towers) every ~50–100 m so speed reads; sky/horizon so the dark ground-edge
+  band disappears.
+- T-109 [developer] Debug overlay text clipped at the left edge. Likely cause:
+  windowed 1920x1080 is clamped to the screen (1920x991 with the taskbar), so
+  the window sits partly off-screen. Fullscreen renders a true 1080p.
 - T-108 [developer] Graphics presets follow-up (from PR #2): try
-  `SCALING_3D_MODE_FSR` instead of bilinear when resolution scale < 1.0, and
-  lower the high preset (4096 shadows, MSAA 4x) if it misses 60 fps in T-107.
+  `SCALING_3D_MODE_FSR` instead of bilinear when resolution scale < 1.0. The
+  high preset is fine on the grey-box arena (T-107: GPU p95 1.8 ms); recheck
+  once real content lands.
+
+- T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
+  health with grey recoverable part, ki in 4 bars, guard, burst stocks.
+- T-112 [developer] Round flow in the test arena: on `round_over`, reset
+  positions and call `start_round()`.
 
 ### Combat sim (desktop)
 
-- T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst.
+- T-D01b [desktop] Movement fixes from playtest #1 (after T-D03): locked
+  strafe orbits at constant radius (no 12 → 22.7 m spiral-out); dash-away goes
+  straight back along the line to the target (no 22 m drift); rush brakes over
+  0.15 s (`MovementTuning`) instead of 80 → 0 in one tick; vanish steps keep
+  distance and height relative to the target (no 12 → 17 m drift). Regression
+  test for each.
 - T-D03 [desktop] `MoveData` Resource + light string + cancels.
 - T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
   damage scaling, hitstun decay.
@@ -71,3 +102,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-003 [developer] Windows export preset (single exe), PR #4.
 - T-D08 [desktop] Toon + outline + rim shaders, PR #3.
 - T-102 [developer] Fight camera: free orbit + lock-on framing, PR #5.
+- T-D01 [developer, from desktop] Combat sim skeleton: input buffer, movement,
+  `MovementTuning`, sim-owned lock-on, PR #6.
+- T-101 [developer] Flight view: facing, lean, vanish hide, PR #7.

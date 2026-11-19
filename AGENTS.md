@@ -57,6 +57,14 @@ runtime, so everything stays rebindable. Vanish = DASH + BLOCK (Shift+E).
 - VRAM under 3 GB: textures 2K max (1K for props), VRAM-compressed; few
   shadowed lights.
 - The debug overlay (F3) shows fps and frame time; keep it working.
+- Measure render cost with the benchmark, not with fps: windows started from
+  an agent session are vsync-throttled to about 5 fps on the dev PC.
+  ```sh
+  godot --path . --fullscreen --resolution 1920x1080 --disable-vsync -s res://game/debug/render_benchmark.gd
+  ```
+  It prints GPU/CPU avg, p95 and max per preset, and exits 1 if medium misses
+  GPU p95 < 12 ms or CPU p95 < 8 ms. **Perf-affecting PRs (VFX, characters,
+  arenas, shaders, lighting) paste the benchmark output before and after.**
 
 ## Workflow
 
