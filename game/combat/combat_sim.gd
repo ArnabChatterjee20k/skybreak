@@ -5,38 +5,48 @@ extends RefCounted
 ## in ticks; use TICK_SECONDS when a duration in seconds is needed. All
 ## randomness comes from rng, so a seed plus the inputs replays a match exactly.
 
-## Things that will cost ki once meters exist (T-D02).
-enum KiCost { DASH, RUSH_DASH, SUSTAINED_DASH_TICK, VANISH_STEP }
-
 const TICKS_PER_SECOND := 60
 const TICK_SECONDS := 1.0 / TICKS_PER_SECOND
 ## A press stays buffered for this many ticks, counting the tick it happened.
 const INPUT_BUFFER_TICKS := 6
 const DEFAULT_TUNING := preload("res://game/combat/default_movement_tuning.tres")
+const DEFAULT_METER_TUNING := preload("res://game/combat/default_meter_tuning.tres")
+const DEFAULT_FIGHTER_STATS := preload("res://game/combat/default_fighter_stats.tres")
 
 const _DASH := FighterInput.Action.DASH
 const _BLOCK := FighterInput.Action.BLOCK
+const _CHARGE := FighterInput.Action.CHARGE
+const _UNIT := FighterState.METER_UNIT
+## Presses that do not interrupt charging.
+const _CHARGE_SAFE_ACTIONS := FighterInput.Action.CHARGE | FighterInput.Action.LOCK_TOGGLE
 ## A rush dash counts as arrived within this many metres of its stop distance.
 const _RUSH_ARRIVAL_MARGIN := 0.01
 
 var current_tick: int = 0
 var fighters: Array[FighterState] = []
 var rng := RandomNumberGenerator.new()
+## True once a fighter is knocked out; inputs are ignored until start_round().
+var round_over: bool = false
+## Index of the fighter who won the round, or -1 while it is undecided.
+var round_winner: int = -1
 ## Movement constants. Not part of the state hash: it is configuration.
 var tuning: MovementTuning
+## Meter constants shared by all fighters. Configuration, like tuning.
+var meter_tuning: MeterTuning
 
 
-func _init(seed_value: int = 0, movement_tuning: MovementTuning = null) -> void:
+func _init(seed_value: int = 0, movement_tuning: MovementTuning = null,
+		meters: MeterTuning = null) -> void:
 	rng.seed = seed_value
-	if movement_tuning:
-		tuning = movement_tuning
-	else:
-		tuning = DEFAULT_TUNING as MovementTuning
+	tuning = movement_tuning if movement_tuning else DEFAULT_TUNING as MovementTuning
+	meter_tuning = meters if meters else DEFAULT_METER_TUNING as MeterTuning
 
 
-## Adds a fighter. Above the floor it starts hovering, otherwise standing.
-func add_fighter(start_position: Vector3) -> FighterState:
+## Adds a fighter with round-start meters; above the floor it hovers, otherwise stands.
+func add_fighter(start_position: Vector3, stats: FighterStats = null) -> FighterState:
 	var fighter := FighterState.new()
+	fighter.stats = stats if stats else DEFAULT_FIGHTER_STATS as FighterStats
+	_reset_round_meters(fighter)
 	fighter.position = start_position
 	for _action in FighterInput.Action.size():
 		fighter.press_ages.append(INPUT_BUFFER_TICKS)
@@ -58,13 +68,24 @@ func lock_everyone_onto_nearest() -> void:
 func tick(inputs: Array[FighterInput]) -> void:
 	assert(inputs.size() == fighters.size(), "one input per fighter")
 	for i in fighters.size():
-		_step_fighter(i, inputs[i])
+		# After a KO everyone gets neutral input until the next round.
+		_step_fighter(i, FighterInput.new() if round_over else inputs[i])
 	current_tick += 1
+
+
+## Starts a new round: health, grey part, ki and guard reset; burst and Last Stand carry over.
+func start_round() -> void:
+	round_over = false
+	round_winner = -1
+	for fighter in fighters:
+		_reset_round_meters(fighter)
+		if fighter.state in [FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN]:
+			_enter_free_state(fighter)
 
 
 ## Hash of everything that defines the sim state; equal hashes mean equal states.
 func state_hash() -> int:
-	var parts: Array = [current_tick, rng.state]
+	var parts: Array = [current_tick, rng.state, round_over, round_winner]
 	for fighter in fighters:
 		parts.append_array(fighter.state_values())
 	return hash(var_to_bytes(parts))
@@ -93,6 +114,75 @@ func has_vanish_input(fighter_index: int) -> bool:
 		and ages[_action_index(_BLOCK)] < INPUT_BUFFER_TICKS
 
 
+## Spends amount ki (display units) if the fighter has that much. False otherwise.
+func try_spend_ki(fighter_index: int, amount: int) -> bool:
+	return _spend_ki(fighters[fighter_index], amount)
+
+
+## Ki gain for landing a hit; T-D04 calls it for the attacker.
+func add_landed_hit_ki(fighter_index: int) -> void:
+	_add_ki(fighters[fighter_index], meter_tuning.ki_per_landed_hit * _UNIT)
+
+
+## Ki gain for a blocked hit; T-D05 calls it.
+func add_blocked_hit_ki(fighter_index: int) -> void:
+	_add_ki(fighters[fighter_index], meter_tuning.ki_per_blocked_hit * _UNIT)
+
+
+## Burst gain for a perfect block; T-D05 calls it for the blocker.
+func add_perfect_block_burst(fighter_index: int) -> void:
+	_add_burst(fighters[fighter_index], meter_tuning.burst_per_perfect_block * _UNIT)
+
+
+## Spends whole burst stocks if the fighter has them. False otherwise.
+func try_spend_burst(fighter_index: int, stocks: int) -> bool:
+	var fighter := fighters[fighter_index]
+	var cost := stocks * meter_tuning.burst_stock_size * _UNIT
+	if fighter.burst < cost:
+		return false
+	fighter.burst -= cost
+	return true
+
+
+## Applies already-scaled damage (display units); attacker -1 means no attacker.
+func apply_damage(target_index: int, attacker_index: int, amount: int) -> void:
+	var target := fighters[target_index]
+	if round_over or amount <= 0 or target.is_knocked_out():
+		return
+	var dealt := mini(amount * _UNIT, target.health)
+	target.health -= dealt
+	# Earlier grey health is lost; this hit leaves its own grey part.
+	target.grey_health = 0 if target.is_knocked_out() \
+		else dealt * meter_tuning.grey_percent / 100
+	target.ticks_since_hit = 0
+	if target.state == FighterState.State.CHARGING:
+		_enter_free_state(target)
+	_add_burst(target, dealt * meter_tuning.burst_per_1000_damage_taken / 1000)
+	if attacker_index >= 0:
+		_add_burst(fighters[attacker_index], dealt * meter_tuning.burst_per_1000_damage_dealt / 1000)
+	if target.is_knocked_out():
+		_end_round_if_decided()
+	elif not target.last_stand_used and target.health * 100 \
+			< target.stats.max_health * _UNIT * meter_tuning.last_stand_health_percent:
+		target.last_stand_used = true
+		_add_burst(target, meter_tuning.last_stand_burst_stocks * meter_tuning.burst_stock_size * _UNIT)
+
+
+## Removes guard (display units); at 0 the fighter is stunned in GUARD_BROKEN.
+func apply_guard_damage(fighter_index: int, amount: int) -> void:
+	var fighter := fighters[fighter_index]
+	if round_over or amount <= 0:
+		return
+	fighter.guard = maxi(fighter.guard - amount * _UNIT, 0)
+	fighter.ticks_since_block = 0
+	if fighter.guard == 0:
+		fighter.blocking = false
+		fighter.velocity = Vector3.ZERO
+		fighter.dash_kind = FighterState.DashKind.NONE
+		fighter.dash_direction = Vector3.ZERO
+		fighter.enter_state(FighterState.State.GUARD_BROKEN)
+
+
 ## Uses up a vanish input (both presses). False if there is none.
 func consume_vanish_input(fighter_index: int) -> bool:
 	if not has_vanish_input(fighter_index):
@@ -110,7 +200,9 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 	_update_lock_on(index, input)
 	var wish := _wish_direction(input)
 	_finish_timed_action(index, input)
-	_start_buffered_action(index, input, wish)
+	if not round_over:
+		_start_buffered_action(index, input, wish)
+		_start_charging(index)
 	match fighter.state:
 		FighterState.State.IDLE, FighterState.State.MOVING:
 			_move_on_ground(fighter, input, wish)
@@ -120,12 +212,14 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 			_move_flying(fighter, input, wish)
 		FighterState.State.DASHING:
 			_move_dashing(index, input, wish)
-		FighterState.State.VANISHING:
+		FighterState.State.VANISHING, FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN:
 			fighter.velocity = Vector3.ZERO
 	fighter.position += fighter.velocity * TICK_SECONDS
 	_clamp_to_arena(fighter)
 	_land_if_on_floor(fighter)
 	_update_facing(index)
+	if not round_over:
+		_update_meters(fighter)
 	fighter.state_ticks += 1
 
 
@@ -149,13 +243,22 @@ func _update_lock_on(index: int, input: FighterInput) -> void:
 		fighter.lock_on_target = _next_opponent(index, fighter.lock_on_target, input.target_switch)
 
 
-## Ends dashes and vanish steps whose time is up, before new actions are read.
+## Ends dashes, vanishes, charging and guard breaks that are over, before new actions.
 func _finish_timed_action(index: int, input: FighterInput) -> void:
 	var fighter := fighters[index]
-	if fighter.state == FighterState.State.VANISHING:
-		if fighter.state_ticks >= tuning.vanish_step_ticks:
-			_enter_free_state(fighter)
-		return
+	match fighter.state:
+		FighterState.State.VANISHING:
+			if fighter.state_ticks >= tuning.vanish_step_ticks:
+				_enter_free_state(fighter)
+			return
+		FighterState.State.GUARD_BROKEN:
+			if fighter.state_ticks >= meter_tuning.guard_break_ticks:
+				_enter_free_state(fighter)
+			return
+		FighterState.State.CHARGING:
+			if not input.is_held(_CHARGE) or (input.pressed_actions & ~_CHARGE_SAFE_ACTIONS) != 0:
+				_enter_free_state(fighter)
+			return
 	if fighter.state != FighterState.State.DASHING:
 		return
 	match fighter.dash_kind:
@@ -176,25 +279,33 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 				# A rush stops dead in front of the target, ready for a follow-up.
 				fighter.velocity = Vector3.ZERO
 				_end_dash(fighter)
-	# Sustained dashing costs ki every tick it lasts.
+	# Sustained dashing costs ki every tick; a per-second rate is the per-tick cost in sixtieths.
 	if fighter.dash_kind == FighterState.DashKind.SUSTAINED \
-			and not _spend_ki(fighter, KiCost.SUSTAINED_DASH_TICK):
+			and not _spend_ki_units(fighter, meter_tuning.sustained_dash_ki_per_second):
 		_end_dash(fighter)
 
 
-## Starts a vanish step or dash if its input is buffered and the state allows it.
+## Starts a buffered vanish step or dash if affordable; a vanish never falls back to a dash.
 func _start_buffered_action(index: int, input: FighterInput, wish: Vector3) -> void:
 	var fighter := fighters[index]
-	var free := fighter.state in [
-		FighterState.State.IDLE, FighterState.State.MOVING,
-		FighterState.State.FALLING, FighterState.State.FLYING,
-	]
+	var free := _is_free(fighter)
 	var can_vanish := free or fighter.state == FighterState.State.DASHING
-	if can_vanish and has_vanish_input(index) and _spend_ki(fighter, KiCost.VANISH_STEP):
-		consume_vanish_input(index)
-		_start_vanish(fighter, input, wish)
+	if can_vanish and has_vanish_input(index):
+		if _spend_ki(fighter, meter_tuning.vanish_step_ki_cost):
+			consume_vanish_input(index)
+			_start_vanish(fighter, input, wish)
 	elif free and is_buffered(index, _DASH):
 		_start_dash(index, input, wish)
+
+
+## A buffered CHARGE press starts charging on the ground or in flight, not while falling.
+func _start_charging(index: int) -> void:
+	var fighter := fighters[index]
+	if fighter.state == FighterState.State.FALLING or not _is_free(fighter):
+		return
+	if consume_buffered(index, _CHARGE):
+		fighter.velocity = Vector3.ZERO
+		fighter.enter_state(FighterState.State.CHARGING)
 
 
 func _start_dash(index: int, input: FighterInput, wish: Vector3) -> void:
@@ -203,7 +314,7 @@ func _start_dash(index: int, input: FighterInput, wish: Vector3) -> void:
 	if direction == Vector3.ZERO:
 		direction = _neutral_dash_direction(index, input)
 	var rush := _points_at_target(index, direction)
-	if not _spend_ki(fighter, KiCost.RUSH_DASH if rush else KiCost.DASH):
+	if not _spend_ki(fighter, meter_tuning.rush_dash_ki_cost if rush else meter_tuning.dash_ki_cost):
 		return
 	consume_buffered(index, _DASH)
 	fighter.dash_kind = FighterState.DashKind.RUSH if rush else FighterState.DashKind.STEP
@@ -389,9 +500,75 @@ func _next_opponent(index: int, current: int, step: int) -> int:
 	return current
 
 
-## Ki hook: T-D02 checks and spends the fighter's ki here. Free until then.
-func _spend_ki(_fighter: FighterState, _cost: KiCost) -> bool:
+## Passive ki or charging, grey health and guard regeneration, once per tick.
+func _update_meters(fighter: FighterState) -> void:
+	var ki_rate := meter_tuning.ki_passive_per_second
+	if fighter.state == FighterState.State.CHARGING:
+		ki_rate = meter_tuning.ki_charge_per_second
+	_add_ki(fighter, ki_rate)
+	if fighter.ticks_since_hit >= meter_tuning.grey_regen_delay_ticks:
+		var regen := mini(meter_tuning.grey_regen_per_second, fighter.grey_health)
+		fighter.health += regen
+		fighter.grey_health -= regen
+	else:
+		fighter.ticks_since_hit += 1
+	if fighter.blocking:
+		fighter.ticks_since_block = 0
+	elif fighter.ticks_since_block >= meter_tuning.guard_regen_delay_ticks:
+		fighter.guard = mini(fighter.guard + meter_tuning.guard_regen_per_second,
+			fighter.stats.guard_max * _UNIT)
+	else:
+		fighter.ticks_since_block += 1
+
+
+func _reset_round_meters(fighter: FighterState) -> void:
+	fighter.health = fighter.stats.max_health * _UNIT
+	fighter.grey_health = 0
+	fighter.ki = meter_tuning.round_start_ki * _UNIT
+	fighter.guard = fighter.stats.guard_max * _UNIT
+	fighter.ticks_since_hit = 0
+	fighter.ticks_since_block = 0
+	fighter.blocking = false
+
+
+## The round ends when at most one fighter is still standing.
+func _end_round_if_decided() -> void:
+	var standing: Array[int] = []
+	for index in fighters.size():
+		if not fighters[index].is_knocked_out():
+			standing.append(index)
+	if standing.size() <= 1:
+		round_over = true
+		round_winner = standing[0] if standing.size() == 1 else -1
+
+
+## Spends cost ki in display units. False, spending nothing, if there is too little.
+func _spend_ki(fighter: FighterState, cost: int) -> bool:
+	return _spend_ki_units(fighter, cost * _UNIT)
+
+
+func _spend_ki_units(fighter: FighterState, units: int) -> bool:
+	if fighter.ki < units:
+		return false
+	fighter.ki -= units
 	return true
+
+
+func _add_ki(fighter: FighterState, units: int) -> void:
+	fighter.ki = mini(fighter.ki + units, meter_tuning.ki_max * _UNIT)
+
+
+func _add_burst(fighter: FighterState, units: int) -> void:
+	var cap := meter_tuning.burst_max_stocks * meter_tuning.burst_stock_size * _UNIT
+	fighter.burst = mini(fighter.burst + units, cap)
+
+
+## Standing, moving, falling or flying: able to start a new action.
+func _is_free(fighter: FighterState) -> bool:
+	return fighter.state in [
+		FighterState.State.IDLE, FighterState.State.MOVING,
+		FighterState.State.FALLING, FighterState.State.FLYING,
+	]
 
 
 static func _action_index(action: int) -> int:
