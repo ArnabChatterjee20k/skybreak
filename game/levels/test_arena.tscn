@@ -1,8 +1,9 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://game/levels/test_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://game/input/keyboard_mouse_input.gd" id="2_input"]
 [ext_resource type="Script" path="res://game/debug/debug_overlay.gd" id="3_overlay"]
+[ext_resource type="Script" path="res://game/ui/graphics_menu.gd" id="4_graphics"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.25, 0.45, 0.85, 1)
@@ -61,3 +62,6 @@ script = ExtResource("2_input")
 
 [node name="DebugOverlay" type="CanvasLayer" parent="."]
 script = ExtResource("3_overlay")
+
+[node name="GraphicsMenu" type="CanvasLayer" parent="."]
+script = ExtResource("4_graphics")
