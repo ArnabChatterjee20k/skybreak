@@ -13,6 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D12 [desktop] World map grey-block: 2 km procedural terrain (chunked, 4 LODs),
+  six zones with landmarks, atmosphere/time of day/weather, energy dome,
+  `WorldMap` API and flythrough preview, PR #39.
 - T-116 [developer] VFX prewarm at arena load behind a short loading cover.
 - T-D09b [desktop] VFX fixes from the GTX 1650 check of T-D09: shockwave no
   longer cut by the ground, aura never darkens the body, flames break into

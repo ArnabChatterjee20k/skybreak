@@ -1,0 +1,37 @@
+class_name ZoneData
+extends Resource
+## One fighting zone of the world map: layout, look per time of day, spawns and landmarks.
+## Per-time-of-day arrays are indexed by WorldAtmosphere.TimeOfDay (day, dusk, night).
+
+@export var id: StringName
+@export var display_name: String
+## Layout centre on the map (x, z) and rough half-size; borders come from ZoneLayout.
+@export var centre := Vector2.ZERO
+@export var extent := Vector2(350.0, 450.0)
+
+@export_group("Terrain colours")
+@export var ground_low := Color(0.5, 0.5, 0.5)
+@export var ground_high := Color(0.7, 0.7, 0.7)
+@export var rock := Color(0.4, 0.4, 0.4)
+## Height range (m) the low-to-high ramp spans.
+@export var ramp_heights := Vector2(0.0, 100.0)
+## 0..1: horizontal rock strata on slopes.
+@export var strata := 0.5
+
+@export_group("Atmosphere")
+@export var fog_colors: PackedColorArray = [Color(0.7, 0.8, 0.9), Color(0.9, 0.6, 0.5), Color(0.1, 0.12, 0.2)]
+## 0..1: 0 = clear air (fog ends ~1.2 km), 1 = storm (fog ends ~450 m).
+@export var fog_density := 0.2
+@export var sun_directions: PackedVector3Array = [Vector3(-0.4, -0.8, -0.4), Vector3(-0.8, -0.25, -0.3), Vector3(0.3, -0.7, 0.5)]
+@export var sun_colors: PackedColorArray = [Color(1, 0.96, 0.9), Color(1, 0.6, 0.4), Color(0.55, 0.65, 1)]
+@export var sun_energies: PackedFloat32Array = [1.2, 0.9, 0.35]
+@export var ambient_colors: PackedColorArray = [Color(0.55, 0.6, 0.7), Color(0.55, 0.42, 0.45), Color(0.15, 0.18, 0.3)]
+@export var sky_top_colors: PackedColorArray = [Color(0.25, 0.45, 0.85), Color(0.3, 0.25, 0.5), Color(0.02, 0.03, 0.08)]
+@export var sky_horizon_colors: PackedColorArray = [Color(0.7, 0.8, 0.95), Color(0.95, 0.55, 0.35), Color(0.08, 0.1, 0.2)]
+@export_enum("clear", "rain", "snow", "embers") var weather := 0
+
+@export_group("Gameplay")
+## Two spawn points about 40 m apart; y is a minimum, raised above the ground if needed.
+@export var spawn_points: PackedVector3Array = []
+@export var landmark_names: PackedStringArray = []
+@export var landmark_positions: PackedVector3Array = []
