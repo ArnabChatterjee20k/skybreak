@@ -162,7 +162,10 @@ func _measure(tick: int) -> void:
 				maxf(BodyCapsules.segment_depth(string.nock, string.tip_bottom, head),
 				BodyCapsules.segment_depth(string.nock, string.arrow_tip, head)))
 			_record(&"bow_vs_head", depth > 0.0, depth, tick, i, {"kind": Weapon.Kind.find_key(kind),
-				"move": fighter.move_id()})
+				"move": fighter.move_id(), "move_tick": fighter.move_tick, "phase": fighter.attack_phase(),
+				"parts": [BodyCapsules.segment_depth(string.tip_top, string.nock, head),
+					BodyCapsules.segment_depth(string.nock, string.tip_bottom, head),
+					BodyCapsules.segment_depth(string.nock, string.arrow_tip, head)]})
 	# Fighter vs fighter.
 	for i in capsules.size():
 		for j in range(i + 1, capsules.size()):

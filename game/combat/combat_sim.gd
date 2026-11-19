@@ -493,7 +493,9 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 	# Haste stretches this tick's travel without changing the stored velocity.
 	var speed := PowerRules.speed_percent(fighter) / 100.0
 	fighter.velocity *= speed
+	var before := fighter.position
 	_integrate(index)
+	_stop_at_walls(fighter, before)
 	fighter.velocity /= speed
 	_drift_if_smitten(fighter)
 	if fighter.state == FighterState.State.HITSTUN:
@@ -1642,6 +1644,23 @@ func _planar_to_target(index: int) -> Vector3:
 	return to_target if to_target.length() >= _MIN_ORBIT_RADIUS else Vector3.ZERO
 
 
+## On zone terrain a standing fighter cannot walk up a slope steeper than max_walk_slope:
+## it stays where it was, as against a wall. Flat floors never get here.
+func _stop_at_walls(fighter: FighterState, before: Vector3) -> void:
+	if not ground_height.is_valid() or fighter.state not in _WALKING_STATES:
+		return
+	var run := Vector2(fighter.position.x - before.x, fighter.position.z - before.z).length()
+	if run <= 0.0:
+		return
+	var floor_before := _ground_at(before - Vector3.UP * _FIGHTER_HALF_HEIGHT)
+	if before.y > floor_before + tuning.ground_height + _floor_epsilon():
+		return
+	var rise := _ground_at(fighter.position - Vector3.UP * _FIGHTER_HALF_HEIGHT) - floor_before
+	if rise > run * tan(deg_to_rad(tuning.max_walk_slope)) + _WALL_STEP:
+		fighter.position = Vector3(before.x, fighter.position.y, before.z)
+		fighter.velocity = Vector3(0.0, fighter.velocity.y, 0.0)
+
+
 ## Moves the fighter by this tick's velocity; locked-on movement goes around the target.
 func _integrate(index: int) -> void:
 	var fighter := fighters[index]
@@ -1860,6 +1879,10 @@ static func _action_index(action: int) -> int:
 const _FIGHTER_HALF_HEIGHT := 1.0
 ## A grounded fighter whose floor drops by more than this in a tick falls instead.
 const _LEDGE_DROP := 0.75
+## Rise a walking fighter steps up regardless of slope (m).
+const _WALL_STEP := 0.05
+const _WALKING_STATES: Array[int] = [FighterState.State.IDLE, FighterState.State.MOVING,
+	FighterState.State.BLOCKING, FighterState.State.ATTACKING, FighterState.State.CHARGING]
 ## Positions are 32-bit; a floor this close counts as touching.
 const _FLOOR_EPSILON := 0.001
 ## States a smitten fighter drifts in.

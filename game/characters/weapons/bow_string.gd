@@ -20,6 +20,7 @@ var arrow_tip := Vector3.ZERO
 var arrow: Node3D
 
 var _skeleton: Skeleton3D
+var _layers: MotionLayers
 var _hand := -1
 var _socket := Transform3D.IDENTITY
 var _rest_string: Node3D
@@ -31,6 +32,7 @@ var _lower: MeshInstance3D
 func setup(bow: Node3D, skeleton: Skeleton3D, string_hand: StringName, color: Color) -> void:
 	name = "BowString"
 	_skeleton = skeleton
+	_layers = skeleton.get_node_or_null("MotionLayers") as MotionLayers
 	_hand = skeleton.find_bone(string_hand)
 	_socket = WeaponGrip.hand_socket(skeleton, string_hand)
 	_rest_string = bow.get_node_or_null("String")
@@ -73,7 +75,9 @@ func _follow() -> void:
 	var hand := _skeleton.global_transform * _skeleton.get_bone_global_pose(_hand) * _socket
 	var back := at.basis.z.normalized()
 	var pulled := (hand.origin - at.origin).dot(back) > (at.basis * WeaponGrip.BOW_STRING_REST).length() + 0.05
-	var show := drawn and pulled
+	# The drawn string shows once the string hand has reached the anchor, not while it travels there.
+	var arrived := _layers == null or _layers.bow_at_anchor()
+	var show := drawn and pulled and arrived
 	nock = hand.origin if show else at * WeaponGrip.BOW_STRING_REST
 	var grip := at.origin
 	var along := (grip - nock).normalized()

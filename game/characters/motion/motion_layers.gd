@@ -38,6 +38,8 @@ const BOW_ANCHOR_DROP := 0.04
 ## Bow cant (sideways lean of its top per unit up) and the shortest bow-hand distance from the anchor (m).
 const BOW_CANT := 0.12
 const BOW_MIN_DRAW := 0.3
+## Arm weight from which the drawn string shows (before it the string hand is still on its way).
+const BOW_SHOWN_WEIGHT := 0.97
 ## Torso turn (radians) toward the bow side at full draw.
 const BOW_TWIST := deg_to_rad(70.0)
 ## Clearance solver: passes, and the margin it leaves (m).
@@ -491,6 +493,11 @@ func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> vo
 		_grip_off_hand(rotations, hips, _arm)
 
 
+## True once a bow draw has fully arrived: the string hand is at the anchor beside the face.
+func bow_at_anchor() -> bool:
+	return _arm_pose_now == ArmPose.BOW_DRAW and arm_pose == ArmPose.BOW_DRAW and _arm >= BOW_SHOWN_WEIGHT
+
+
 ## Archer's stance: the torso turns bow shoulder toward the target, the neck and head turn
 ## back to face it, so the bow arm reaches the line that runs beside the face.
 func _archer_stance(rotations: Array[Quaternion], weight: float) -> void:
@@ -701,6 +708,24 @@ func _foot_ik(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
 	for side in 2:
 		feet.append(_foot_contact(rotations, hips, world, side))
 	var targets: Array[Vector3] = [Vector3.INF, Vector3.INF]
+	# A foot over ground more than a step from the floor under the body (a ledge, a wall, a notch)
+	# moves in toward the body until it is over ground it can stand on.
+	if ground_probe.is_valid():
+		var centre: float = _ground_under(Vector3(hips.x, 0.0, hips.z), 0)[0]
+		for side in 2:
+			var foot: Dictionary = feet[side]
+			if foot.is_empty() or absf(float(foot.ground) - centre) <= STEP_LIMIT:
+				continue
+			var sole: Vector3 = foot.sole_point
+			var inward := Vector3(hips.x - sole.x, 0.0, hips.z - sole.z)
+			for k in range(1, 5):
+				var shift := inward * (k / 4.0)
+				var ground_y: float = _ground_under(sole + shift, side)[0]
+				if absf(ground_y - centre) <= STEP_LIMIT or k == 4:
+					foot.shift = shift
+					foot.ground = ground_y
+					foot.gap = float(foot.sole) - ground_y
+					break
 	# The foot nearest its ground is planted on it; the other plants if close, else stays above.
 	var lowest := -1
 	for side in 2:
@@ -714,9 +739,9 @@ func _foot_ik(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
 		if foot.is_empty():
 			continue
 		var ankle: Vector3 = foot.ankle
-		var target := ankle
+		var target := ankle + (foot.shift as Vector3)
 		var ground_y: float = foot.ground
-		# Over a drop past the step limit: keep the foot level with the planted one, not lower.
+		# Still over a drop past the step limit: keep the foot level with the planted one, not lower.
 		if side != lowest and ground_y < planted_floor - STEP_LIMIT:
 			ground_y = planted_floor + 0.01
 		var gap: float = foot.sole - ground_y
@@ -782,7 +807,8 @@ func _foot_contact(rotations: Array[Quaternion], hips: Vector3, world: Array, si
 				sole = p
 	probe = _ground_under(sole, side)
 	var ground_y: float = probe[0]
-	return {"ankle": ankle, "sole": sole.y, "ground": ground_y, "gap": sole.y - ground_y, "tilt": tilt}
+	return {"ankle": ankle, "sole": sole.y, "sole_point": sole, "ground": ground_y, "gap": sole.y - ground_y,
+		"tilt": tilt, "shift": Vector3.ZERO}
 
 
 ## Ground height and normal under a skeleton-space point: the probe if set, else the flat ground.

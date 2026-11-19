@@ -12,6 +12,8 @@ extends Resource
 @export var ground_acceleration: float = 90.0
 ## How fast a fighter stops on the ground once no direction is held.
 @export var ground_deceleration: float = 120.0
+## Steepest slope (degrees) a fighter walks up on zone terrain; steeper is a wall.
+@export var max_walk_slope: float = 55.0
 ## Upward speed when jumping off the ground into flight (Space on the ground).
 @export var takeoff_speed: float = 14.0
 
