@@ -13,6 +13,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D31 [desktop] Gameplay QA harness: `tools/qa/run_qa.sh --quick|--full` (AI soak over
+  every legend x zone x 1v1/FFA-4/2v2 with sim and view invariants, scenario library in
+  `tests/qa/scenarios/`, golden replays, visual goldens, feel-metric trend, markdown/JSON
+  report with frames, clips and repro commands). Found QA-1 to QA-9 below.
 - T-D18 [desktop] Vexa built natively in Godot code as a rigid action figure
   (FigureKit mesh kit, humanoid-profile rig, procedural layer), stacked on
   T-D10.
@@ -49,6 +53,16 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## Backlog
 
+- QA-1 [desktop] Bug (T-D31): KO bounce and rest snap the fighter to `tuning.ground_height` (y = 1) instead of the zone ground, so a knocked-out fighter on terrain or an island ends up inside it (`_bounce_or_rest`). Scenario `test_a_knockout_on_a_raised_island_rests_on_the_island_top`.
+- QA-2 [desktop] Bug (T-D31): Brann's air light_1/light_2 hitstun (18/19 ticks) is shorter than his spike startup (20), so the launcher → air string → spike route drops before the spike. (Lyra's spike also drops, but there the vanish ends inside the target: T-D29.) Scenarios in `tests/qa/scenarios/test_air_combos.gd`.
+- QA-3 [developer] Bug (T-D31): `ZoneMatch` keeps teams only in its own `teams` array and never sets `sim.fighters[i].team`, so in a real 2v2 the sim treats teammates as opponents (friendly fire, the round only ends with one fighter left).
+- QA-4 [developer] Bug (T-D31): `ZoneMatch._make_driver` looks for `next_input`/`setup` on `AIDriver`, which has neither, so every AI slot in a real zone match silently falls back to `WeaponBot`; the T-D23 `FighterAI` never plays there.
+- QA-5 [developer] Bug (T-D31): `ZoneMatch.spawn_positions` with more than two teams puts teams 0 and 2 (and 1 and 3) on the same spawn point with the same offset, so FFA-4 starts with fighters inside each other.
+- QA-6 [desktop] Bug (T-D31): a GRABBED fighter (held in front of the thrower) and a VANISHING fighter (step destination) are placed outside the arena box: 29 of 252 full-soak matches, up to ~90 m past the wall. Clamp the hold point and the vanish destination.
+- QA-7 [desktop] Bug (T-D31): animation pops far over budget: ~29 body-bone pops (> 1.2 rad in one frame) per fighter-minute against 2 allowed. Worst: forearms flipping ~3.1 rad in run/strafe (Kael, Vexa mocap), RightLowerLeg 2.8 rad in Kael's light_4, Vexa's sash, Lyra's cape and Brann's beard braid chains; fingers pop ~29/min too.
+- QA-8 [desktop] Bug (T-D31): feet off the visible ground while standing: Kael and Vexa sink 5–11 cm in `fight_idle`, Brann's `idle` stands 9 cm in the ground at round start; Brann and Lyra also read +41–50 cm in IDLE mid-match (cause not isolated yet). Worst: in Shattered Mesa a fighter running along a pillar is up to 3 m inside the visible rock (the sim's baked `ZoneGround` interpolates across the cliff edge). Repro commands in the QA report.
+- QA-9 [desktop] Bug (T-D31): a held bow's string passes within 1.5–8 cm of the head centre (Brann blocking, attacking or in blockstun; Kael dashing), 7 of 252 full-soak matches.
+- [desktop] Flaky on main (T-D31 baseline run): `test_re_simulating_8_frames_for_4_fighters_takes_at_most_4_ms` (4.47 ms on a 4-core cloud box) and `test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_new` (329 vs 327 nodes).
 - [desktop] Bug (found in T-D22b): `WeaponMoves.move_set(kind, unarmed)` caches by weapon kind only, so the first fighter to arm a kind (e.g. Vexa) fixes its unarmed grab/push_block for everyone after. Key the cache by the unarmed set too.
 
 
