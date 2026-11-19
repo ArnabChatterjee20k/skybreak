@@ -360,6 +360,25 @@ All zones share these rules: knocked-into-ground craters (decals), destructibles
 
 ---
 
+## 8.1 Free-for-all (the main multiplayer format)
+
+The owner chose **free-for-all from the start**. Every mode that can have more than two fighters supports it, online and against AI bots.
+
+- **Players:** 2–4 per match (humans online and/or AI bots filling empty seats). Teams (2v2) come later on the same code.
+- **Win conditions** (chosen in match setup):
+  - **Stock:** 3 lives each; the last fighter standing wins.
+  - **Timed:** 5 minutes; most KOs wins, with KO steals counting for whoever landed the final hit.
+- **Respawn after a KO (stock and timed):** 3 s later, at the spawn point furthest from the other fighters, with 2 s of invincibility (a flashing aura) and full health, 50 ki, full guard. **Burst is kept** (comeback rule, §5.2).
+- **Targeting:** lock-on picks the nearest fighter, and `Tab` cycles through targets by distance. HUD edge arrows show every off-screen fighter in their player colour. The camera frames you plus your **current** target (§4); others are shown by arrows and name tags.
+- **Third-party hits:** anyone can hit anyone, including a fighter who is in someone else's combo. That's part of the chaos. Two rules stop it feeling cheap:
+  - **Combo scaling is per victim**, so a gang-up still scales down.
+  - **Burst fills 50% faster while two or more fighters have hit you in the last 3 s**, so the combo breaker comes sooner.
+- **Hitstop** freezes only the two fighters in that exchange; everyone else keeps moving.
+- **Pickups:** spawn rate scales with player count (one more item cap per extra player).
+- **Spawns:** each zone defines 4 spawn points about 40 m apart around a centre.
+- **AI bots** use the same input interface and know about all fighters (they pick targets by threat and distance, and avoid being the third wheel too often).
+- **Online (§12.1):** rollback with up to 4 peers. Each peer sends its input to the others. The transport (Appwrite Realtime) relays them, and every peer simulates all fighters.
+
 ## 9. Scripting: story beats and dramatic moments
 
 A small data-driven **event system** lets designers script moments without code.
@@ -474,7 +493,7 @@ Tuning targets: an average round lasts 45–75 s; an average combo deals 12–20
 
 ## 15. Open questions for the owner
 
-*(Pickups and online answered by the owner on 2026-11-19: yes to Brawlhalla-style weapons and powers in the arena, and Appwrite Realtime online later.)*
+*(Free-for-all chosen by the owner on 2026-11-19 as the main multiplayer format, §8.1. Pickups and online answered on 2026-11-19: yes to Brawlhalla-style weapons and powers in the arena, and Appwrite Realtime online later.)*
 
 1. Is a 99 s round timer right, or do you want ∞ by default?
 2. Do you want **Arcade story mode** in the first full version (milestone 7), or later?
