@@ -56,6 +56,7 @@ func _measure(quality: GraphicsSettings.Quality) -> Dictionary:
 	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
 	_previous = [FighterInput.new(), FighterInput.new()]
 	arena.input_override = _route_input
+	arena.match_flow.enabled = false  # same route as before; the HUD still draws
 	root.add_child(arena)
 	_add_extra_fighters(arena)
 	await process_frame
