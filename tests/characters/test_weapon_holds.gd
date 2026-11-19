@@ -67,13 +67,19 @@ func test_airborne_is_judged_against_the_fighters_own_floor() -> void:
 	assert_true(CharacterView.is_airborne(fighter))
 
 
-func test_the_bow_draw_keeps_the_string_beside_the_face() -> void:
+func test_the_bow_draw_keeps_the_string_and_arrow_a_centimetre_beside_the_face() -> void:
 	for id: StringName in Roster.ids():
 		var view := _view(id)
 		var skeleton: Skeleton3D = view.model.get_node("%GeneralSkeleton")
 		var held := WeaponLayer.attach(skeleton, Weapon.Kind.KI_BOW)
 		var string := held[0].find_child("BowString", true, false) as BowString
 		string.drawn = true
+		# The drawn pose: bone poses once the modifiers ran (the skeleton restores the clip pose after).
+		var poses: Array[Transform3D] = []
+		skeleton.skeleton_updated.connect(func() -> void:
+			poses.resize(skeleton.get_bone_count())
+			for b in poses.size():
+				poses[b] = skeleton.get_bone_global_pose(b))
 		var fighter := FighterState.new()
 		fighter.stats = Roster.character(id).stats
 		fighter.weapons[0] = Weapon.Kind.KI_BOW
@@ -82,9 +88,19 @@ func test_the_bow_draw_keeps_the_string_beside_the_face() -> void:
 		for _f in 20:
 			view.apply_state(fighter, 1.0 / 60.0)
 			await get_tree().process_frame
-		var head: Array = view.body.capsules(func(b: int) -> Transform3D: return skeleton.get_bone_global_pose(b),
+		var head: Array = view.body.capsules(func(b: int) -> Transform3D: return poses[b],
 			skeleton.global_transform, [&"head"])[&"head"]
-		assert_lt(BodyCapsules.segment_depth(string.tip_top, string.nock, head), 0.0, "%s upper string" % id)
-		assert_lt(BodyCapsules.segment_depth(string.nock, string.tip_bottom, head), 0.0, "%s lower string" % id)
-		assert_lt(BodyCapsules.segment_depth(string.nock, string.arrow_tip, head), 0.0, "%s arrow" % id)
+		assert_lt(BodyCapsules.segment_depth(string.tip_top, string.nock, head), -0.01, "%s upper string" % id)
+		assert_lt(BodyCapsules.segment_depth(string.nock, string.tip_bottom, head), -0.01, "%s lower string" % id)
+		assert_lt(BodyCapsules.segment_depth(string.nock, string.arrow_tip, head), -0.01, "%s arrow" % id)
 		assert_gt(string.nock.distance_to(string.tip_top), 0.3, "%s string is drawn" % id)
+
+
+func test_a_drawn_bow_shows_exactly_one_arrow_on_its_string() -> void:
+	var view := _view(&"kael")
+	var skeleton: Skeleton3D = view.model.get_node("%GeneralSkeleton")
+	var held := WeaponLayer.attach(skeleton, Weapon.Kind.HEARTSTRING_BOW)
+	var string := held[0].find_child("BowString", true, false) as BowString
+	assert_eq(held[0].find_children("NockedArrow", "", true, false).size(), 1, "one nocked arrow")
+	assert_eq(string.arrow, held[0].find_child("NockedArrow", true, false), "the string carries it")
+	assert_eq(string.find_children("*", "MeshInstance3D", true, false).size(), 2, "the string draws only its two halves")

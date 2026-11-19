@@ -298,9 +298,7 @@ func _present_held(index: int) -> void:
 	if skeleton != null:
 		held.nodes = attach(skeleton, kind)
 		if Weapon.is_bow(kind) and not held.nodes.is_empty():
-			var arrow := PowerModels.nocked_arrow(kind == Weapon.Kind.HEARTSTRING_BOW)
-			(held.nodes[0] as Node).get_child(0).add_child(arrow)
-			held.arrow = arrow
+			held.arrow = (held.nodes[0] as Node).find_child("NockedArrow", true, false)
 
 
 ## The arrow on a held bow: shown while it has ammo, pulled back with the draw level.
@@ -475,9 +473,11 @@ static func attach(skeleton: Skeleton3D, kind: Weapon.Kind) -> Array[Node]:
 		attachment.add_child(model)
 		if WeaponGrip.hold_of(kind) == WeaponGrip.Hold.BOW:
 			var heart := kind == Weapon.Kind.HEARTSTRING_BOW
-			BowString.new().setup(model, skeleton, RIGHT_HAND,
-				Color(1.0, 0.85, 0.95) if heart else WeaponModels.KI_CYAN,
-				WeaponModels.PINK if heart else WeaponModels.WOOD)
+			var string := BowString.new()
+			string.setup(model, skeleton, RIGHT_HAND, Color(1.0, 0.85, 0.95) if heart else WeaponModels.KI_CYAN)
+			# One nocked arrow; the string lays it along the draw.
+			string.arrow = PowerModels.nocked_arrow(heart)
+			model.add_child(string.arrow)
 		nodes.append(attachment)
 	return nodes
 

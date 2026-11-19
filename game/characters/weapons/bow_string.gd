@@ -1,10 +1,12 @@
 class_name BowString
 extends Node3D
-## A bow's drawn string and nocked arrow (T-D30): while drawn, the string runs from both
-## limb tips to the string hand's palm and the arrow lies on it, pointing through the grip.
+## A bow's drawn string (T-D30): while drawn, the string runs from both limb tips to the
+## string hand's palm, and the bow's one nocked arrow (T-D26's) lies on it through the grip.
 ## Updated after the skeleton's modifiers so it follows the final hand pose.
 
 const ARROW_LEAD := 0.18
+## Nocked arrow length from nock to tip, in its own space (PowerModels.nocked_arrow).
+const ARROW_LENGTH := 0.92
 const STRING_RADIUS := 0.012
 
 ## Whether the bow is being drawn (set by the weapon layer).
@@ -14,6 +16,8 @@ var tip_top := Vector3.ZERO
 var nock := Vector3.ZERO
 var tip_bottom := Vector3.ZERO
 var arrow_tip := Vector3.ZERO
+## The bow's nocked arrow (a child of the bow; nock at its origin, tip along -Z), or null.
+var arrow: Node3D
 
 var _skeleton: Skeleton3D
 var _hand := -1
@@ -21,11 +25,10 @@ var _socket := Transform3D.IDENTITY
 var _rest_string: Node3D
 var _upper: MeshInstance3D
 var _lower: MeshInstance3D
-var _arrow: MeshInstance3D
 
 
 ## Hooks the bow model (which holds a "String" part) to the skeleton's string hand.
-func setup(bow: Node3D, skeleton: Skeleton3D, string_hand: StringName, color: Color, arrow_color: Color) -> void:
+func setup(bow: Node3D, skeleton: Skeleton3D, string_hand: StringName, color: Color) -> void:
 	name = "BowString"
 	_skeleton = skeleton
 	_hand = skeleton.find_bone(string_hand)
@@ -33,7 +36,6 @@ func setup(bow: Node3D, skeleton: Skeleton3D, string_hand: StringName, color: Co
 	_rest_string = bow.get_node_or_null("String")
 	_upper = _segment(color, STRING_RADIUS)
 	_lower = _segment(color, STRING_RADIUS)
-	_arrow = _segment(arrow_color, 0.022)
 	bow.add_child(self)
 	top_level = true
 	skeleton.skeleton_updated.connect(_follow)
@@ -74,15 +76,25 @@ func _follow() -> void:
 	var show := drawn and pulled
 	nock = hand.origin if show else at * WeaponGrip.BOW_STRING_REST
 	var grip := at.origin
-	arrow_tip = grip + (grip - nock).normalized() * ARROW_LEAD
+	var along := (grip - nock).normalized()
+	arrow_tip = grip + along * ARROW_LEAD
 	if _rest_string != null:
 		_rest_string.visible = not show
-	for part in [_upper, _lower, _arrow]:
+	for part in [_upper, _lower]:
 		(part as MeshInstance3D).visible = show
 	if show:
 		_place(_upper, tip_top, nock)
 		_place(_lower, tip_bottom, nock)
-		_place(_arrow, nock, arrow_tip)
+	if arrow != null and is_instance_valid(arrow):
+		if show:
+			# Nock on the string at the palm, shaft through the grip.
+			var scale := at.basis.get_scale()
+			var z := -along
+			var x := at.basis.y.normalized().cross(z).normalized()
+			arrow.global_transform = Transform3D(Basis(x, z.cross(x), z).scaled_local(scale), nock)
+			arrow_tip = arrow.global_transform * Vector3(0, 0, -ARROW_LENGTH)
+		else:
+			arrow.transform = Transform3D(Basis.IDENTITY, arrow.position)
 
 
 static func _place(part: MeshInstance3D, a: Vector3, b: Vector3) -> void:

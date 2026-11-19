@@ -13,7 +13,11 @@ const SECONDARY := [&"Head", &"LeftUpperArm", &"RightUpperArm", &"LeftLowerArm",
 const MAX_LEAN := deg_to_rad(28.0)
 const MAX_BANK := deg_to_rad(55.0)
 const PLANTED_HEIGHT := 0.06
-const MAX_PELVIS_DROP := 0.25
+const MAX_PELVIS_DROP := 0.45
+## A foot over ground this far below the planted one stays level with it (a step or ledge).
+const STEP_LIMIT := 0.45
+## Steepest slope the ankles tilt to match.
+const MAX_ANKLE_TILT := deg_to_rad(35.0)
 const ARMS := [[&"LeftUpperArm", &"LeftLowerArm", &"LeftHand"], [&"RightUpperArm", &"RightLowerArm", &"RightHand"]]
 ## Flight: speed (m/s) for the full flight body, and the flutter of the trailing legs.
 const FLIGHT_FULL_SPEED := 22.0
@@ -29,11 +33,19 @@ const ARM_POSES := {
 	ArmPose.BRACED: [Vector3(-0.3, -0.62, 0.62), Vector3(0, 1, 0), Vector3(0, 0, 1)],
 }
 ## Bow draw: the string hand anchors this far beside the head capsule's surface (m), at jaw height.
-const BOW_ANCHOR_GAP := 0.07
+const BOW_ANCHOR_GAP := 0.08
 const BOW_ANCHOR_DROP := 0.04
+## Bow cant (sideways lean of its top per unit up) and the shortest bow-hand distance from the anchor (m).
+const BOW_CANT := 0.12
+const BOW_MIN_DRAW := 0.3
+## Torso turn (radians) toward the bow side at full draw.
+const BOW_TWIST := deg_to_rad(70.0)
 ## Clearance solver: passes, and the margin it leaves (m).
-const CLEARANCE_PASSES := 10
+const CLEARANCE_PASSES := 16
 const CLEARANCE_MARGIN := 0.03
+## Swing correction: largest turn of the weapon about the wrist per pass, and the shortest lever it acts on.
+const SWING_STEP := 0.35
+const SWING_MIN_LEVER := 0.12
 ## Capsules a held weapon must stay out of, per main hand (its own forearm and hand grip it).
 const CLEAR_OF := {
 	&"RightHand": [&"pelvis", &"chest", &"head", &"upper_arm_l", &"lower_arm_l", &"upper_arm_r"],
@@ -47,8 +59,10 @@ const CLEAR_OF := {
 @export var look_target := Vector3(0, 1.5, 5)
 @export_range(0.0, 1.0) var look_weight := 0.0
 @export var foot_ik := true
-## Ground height under each foot in skeleton space (left, right).
+## Ground height under each foot in skeleton space (left, right), when there is no probe.
 @export var ground := Vector2.ZERO
+## Ground under a skeleton-space point: Callable(point) -> [height, normal], both in skeleton space.
+var ground_probe: Callable
 ## Lean per m/s^2 of acceleration and per m/s of velocity (radians).
 @export var accel_lean := 0.03
 @export var velocity_lean := 0.012
@@ -111,6 +125,7 @@ var _arm_velocity := 0.0
 var _arm_pose_now := ArmPose.NONE
 var _world_cache: Array = []
 var _rest_parent_rot: Array[Quaternion] = []
+var _sole_cache: Array = []
 ## Bones the skeleton mode reads and writes (the body; fingers and extras are left alone).
 var _used: PackedInt32Array = []
 var _scratch: Array[Quaternion] = []
@@ -428,6 +443,9 @@ func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> vo
 	var main_chain := _arm_chain(weapon_hand)
 	if main_chain.is_empty():
 		return
+	if _arm_pose_now == ArmPose.BOW_DRAW:
+		_archer_stance(rotations, _arm)
+		_world_cache.clear()
 	var shoulder := _world_at(rotations, hips, main_chain[0]).origin
 	var reach := _arm_length(main_chain)
 	var grip := weapon_grip.orthonormalized()
@@ -435,12 +453,17 @@ func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> vo
 	var goal_basis: Basis
 	if _arm_pose_now == ArmPose.BOW_DRAW:
 		var anchor := _bow_anchor(rotations, hips, frame)
-		# Bow arm straight out toward the target, in line with the anchor beside the face.
+		# Bow hand on the line from the anchor straight toward the target, at the arm's reach.
 		var aim := frame * Vector3(0, 0, 1)
-		var toward := anchor + aim * reach * 1.3 - shoulder
-		goal_point = shoulder + toward.normalized() * reach * 0.96
+		var to_anchor := anchor - shoulder
+		var r := reach * 0.97
+		var b := to_anchor.dot(aim)
+		var d := -b + sqrt(maxf(b * b - to_anchor.length_squared() + r * r, 0.0))
+		goal_point = anchor + aim * maxf(d, BOW_MIN_DRAW)
 		var forward := (goal_point - anchor).normalized()
-		var up := (frame * Vector3(0.12, 1, 0)).normalized()
+		# The bow cants its top away from the head.
+		var side := -1.0 if weapon_hand == &"LeftHand" else 1.0
+		var up := (frame * Vector3(side * BOW_CANT, 1, 0)).normalized()
 		goal_basis = _weapon_basis(up, forward)
 	elif ARM_POSES.has(_arm_pose_now):
 		var pose: Array = ARM_POSES[_arm_pose_now]
@@ -457,12 +480,25 @@ func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> vo
 		var anchor := _bow_anchor(rotations, hips, frame)
 		var string_chain := _arm_chain(&"RightHand" if weapon_hand == &"LeftHand" else &"LeftHand")
 		if not string_chain.is_empty():
+			_world_cache.clear()
 			var bow := _world_at(rotations, hips, main_chain[2]) * weapon_grip
 			var pull := (anchor - bow.origin).normalized()
-			var palm := _weapon_basis(frame * Vector3.UP, -pull)
-			_reach_hand(rotations, hips, string_chain, anchor - pull * 0.03, palm.get_rotation_quaternion(), _arm)
+			var palm := _weapon_basis(frame * Vector3.UP, -pull).orthonormalized()
+			# The palm (where the string sits), not the wrist, goes to the anchor.
+			var wrist := anchor - palm * off_hand_socket.origin
+			_reach_hand(rotations, hips, string_chain, wrist, palm.get_rotation_quaternion(), _arm)
 	else:
 		_grip_off_hand(rotations, hips, _arm)
+
+
+## Archer's stance: the torso turns bow shoulder toward the target, the neck and head turn
+## back to face it, so the bow arm reaches the line that runs beside the face.
+func _archer_stance(rotations: Array[Quaternion], weight: float) -> void:
+	var turn := BOW_TWIST * weight * (-1.0 if weapon_hand == &"LeftHand" else 1.0)
+	for bone: StringName in [&"Spine", &"Chest", &"UpperChest"]:
+		_offset(rotations, bone, Vector3(0, turn / 3.0, 0))
+	_offset(rotations, &"Neck", Vector3(0, -turn * 0.5, 0))
+	_offset(rotations, &"Head", Vector3(0, -turn * 0.5, 0))
 
 
 ## Where the bow string hand anchors: beside the head capsule on the string-hand side, at the jaw.
@@ -557,8 +593,19 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
 		if float(hit[0]) <= 0.0 or pass_index == CLEARANCE_PASSES:
 			return
 		var push: Vector3 = hit[1]
-		var target := hand.origin + push * (float(hit[0]) + CLEARANCE_MARGIN)
-		_reach_hand(rotations, hips, main, target, hand.basis.get_rotation_quaternion(), 1.0)
+		var depth := float(hit[0]) + CLEARANCE_MARGIN
+		# Swing: turn the weapon about the wrist so the overlapping part moves out along the push,
+		# then move the hand for whatever the swing did not clear.
+		var lever: Vector3 = (hit[3] as Vector3) - hand.origin
+		var hand_rotation := hand.basis.get_rotation_quaternion()
+		var moved := 0.0
+		var axis := lever.cross(push)
+		if lever.length() > SWING_MIN_LEVER and axis.length() > 1e-4:
+			var angle := minf(depth / lever.length(), SWING_STEP)
+			hand_rotation = Quaternion(axis.normalized(), angle) * hand_rotation
+			moved = angle * lever.length() * axis.length() / lever.length()
+		var target := hand.origin + push * maxf(depth - moved, CLEARANCE_MARGIN)
+		_reach_hand(rotations, hips, main, target, hand_rotation, 1.0)
 		_grip_off_hand(rotations, hips, 1.0)
 
 
@@ -650,42 +697,111 @@ func _foot_ik(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
 		return hips
 	_world_cache.clear()
 	var world := _legs_world(rotations, hips)
-	var heights := [ground.x, ground.y]
-	var targets: Array[Vector3] = []
-	var drop := 0.0
+	var feet: Array = []
 	for side in 2:
-		var up: int = _index.get(LEGS[side][0], -1)
-		var lo: int = _index.get(LEGS[side][1], -1)
-		var foot: int = _index.get(LEGS[side][2], -1)
-		if up < 0 or lo < 0 or foot < 0:
-			targets.append(Vector3.INF)
+		feet.append(_foot_contact(rotations, hips, world, side))
+	var targets: Array[Vector3] = [Vector3.INF, Vector3.INF]
+	# The foot nearest its ground is planted on it; the other plants if close, else stays above.
+	var lowest := -1
+	for side in 2:
+		if not feet[side].is_empty() and (lowest < 0 or feet[side].gap < feet[lowest].gap):
+			lowest = side
+	if lowest < 0:
+		return hips
+	var planted_floor: float = feet[lowest].ground
+	for side in 2:
+		var foot: Dictionary = feet[side]
+		if foot.is_empty():
 			continue
-		var ankle: Vector3 = (world[foot] as Transform3D).origin
-		var rest_y := _rest_heights[foot]
-		# A foot near the floor is planted: it follows the ground; others only stay above it.
+		var ankle: Vector3 = foot.ankle
 		var target := ankle
-		if ankle.y < rest_y + PLANTED_HEIGHT:
-			target.y = ankle.y + heights[side]
-		target.y = maxf(target.y, heights[side] + rest_y)
-		targets.append(target)
-		var reach := (_origins[lo].length() + _origins[foot].length()) * 0.999
-		var hip: Vector3 = (world[up] as Transform3D).origin
-		var horizontal := Vector2(target.x - hip.x, target.z - hip.z).length()
-		var need := sqrt(maxf(reach * reach - horizontal * horizontal, 0.0))
-		drop = maxf(drop, (hip.y - target.y) - need)
-	hips.y -= clampf(drop, 0.0, MAX_PELVIS_DROP)
-	_world_cache.clear()
-	world = _legs_world(rotations, hips)
+		var ground_y: float = foot.ground
+		# Over a drop past the step limit: keep the foot level with the planted one, not lower.
+		if side != lowest and ground_y < planted_floor - STEP_LIMIT:
+			ground_y = planted_floor + 0.01
+		var gap: float = foot.sole - ground_y
+		# Planted: the lowest foot, a foot the clip has on its floor (y = 0), or one at or under the ground.
+		if side == lowest or gap < PLANTED_HEIGHT or float(foot.sole) < PLANTED_HEIGHT:
+			target.y = ankle.y - gap
+		targets[side] = target
+	var drop := 0.0
 	for side in 2:
 		if targets[side] == Vector3.INF:
 			continue
-		var foot: int = _index.get(LEGS[side][2], -1)
-		if (world[foot] as Transform3D).origin.is_equal_approx(targets[side]):
+		var up: int = _index[LEGS[side][0]]
+		var lo: int = _index[LEGS[side][1]]
+		var foot_bone: int = _index[LEGS[side][2]]
+		var reach := (_origins[lo].length() + _origins[foot_bone].length()) * 0.995
+		var hip: Vector3 = (world[up] as Transform3D).origin
+		var horizontal := Vector2(targets[side].x - hip.x, targets[side].z - hip.z).length()
+		var need := sqrt(maxf(reach * reach - horizontal * horizontal, 0.0))
+		drop = maxf(drop, (hip.y - targets[side].y) - need)
+	hips.y -= clampf(drop, 0.0, MAX_PELVIS_DROP)
+	for side in 2:
+		if targets[side] == Vector3.INF:
 			continue
-		_two_bone(rotations, world, _index[LEGS[side][0]], _index[LEGS[side][1]], foot, targets[side])
 		_world_cache.clear()
 		world = _legs_world(rotations, hips)
+		var foot_bone: int = _index[LEGS[side][2]]
+		# Ankle aligned to the surface: the clip's foot rotation tilted by the ground's slope.
+		var tilt: Quaternion = feet[side].tilt
+		var aligned := Transform3D(Basis(tilt * (world[foot_bone] as Transform3D).basis.get_rotation_quaternion()),
+			(world[foot_bone] as Transform3D).origin)
+		world[foot_bone] = aligned
+		_two_bone(rotations, world, _index[LEGS[side][0]], _index[LEGS[side][1]], foot_bone, targets[side])
+	_world_cache.clear()
 	return hips
+
+
+## One foot's contact: its ankle, lowest sole point (with the foot tilted to the ground),
+## the ground under that sole and the sole's gap above it; empty without the leg's bones.
+func _foot_contact(rotations: Array[Quaternion], hips: Vector3, world: Array, side: int) -> Dictionary:
+	var up: int = _index.get(LEGS[side][0], -1)
+	var lo: int = _index.get(LEGS[side][1], -1)
+	var foot: int = _index.get(LEGS[side][2], -1)
+	if up < 0 or lo < 0 or foot < 0:
+		return {}
+	var foot_world: Transform3D = world[foot]
+	var ankle := foot_world.origin
+	var probe := _ground_under(ankle, side)
+	var normal: Vector3 = probe[1]
+	var tilt := Quaternion(Vector3.UP, normal) if normal.angle_to(Vector3.UP) <= MAX_ANKLE_TILT \
+		else Quaternion(Vector3.UP, Vector3.UP.slerp(normal, MAX_ANKLE_TILT / normal.angle_to(Vector3.UP)).normalized())
+	# Lowest sole point once the foot is tilted to the ground (toes keep their clip bend).
+	var sole := Vector3(ankle.x, ankle.y - _rest_heights[foot], ankle.z)
+	var soles: Array = _soles(side)
+	if not soles.is_empty():
+		_world_cache.clear()
+		var tilted := Transform3D(Basis(tilt), ankle) * Transform3D(Basis.IDENTITY, -ankle)
+		var low := INF
+		for item: Array in soles:
+			var bone: int = item[0]
+			var p := tilted * (_world_at(rotations, hips, bone) * (item[1] as Vector3))
+			if p.y < low:
+				low = p.y
+				sole = p
+	probe = _ground_under(sole, side)
+	var ground_y: float = probe[0]
+	return {"ankle": ankle, "sole": sole.y, "ground": ground_y, "gap": sole.y - ground_y, "tilt": tilt}
+
+
+## Ground height and normal under a skeleton-space point: the probe if set, else the flat ground.
+func _ground_under(point: Vector3, side: int) -> Array:
+	if ground_probe.is_valid():
+		return ground_probe.call(point)
+	return [ground.x if side == 0 else ground.y, Vector3.UP]
+
+
+## Sole points of one side's foot and toes: [[bone, point in bone space], ...].
+func _soles(side: int) -> Array:
+	if body == null:
+		return []
+	if _sole_cache.size() != 2:
+		_sole_cache = [[], []]
+		for item: Array in body.soles:
+			var name := String(_names[item[0]]) if int(item[0]) < _names.size() else ""
+			(_sole_cache[0 if name.begins_with("Left") else 1] as Array).append(item)
+	return _sole_cache[side]
 
 
 ## World transforms of the hips and both legs only (sparse), for the foot IK.

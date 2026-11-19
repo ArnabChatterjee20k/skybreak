@@ -1,8 +1,9 @@
 class_name ZoneGround
 extends RefCounted
 ## The sim's floor in one zone (T-D13): terrain and island tops baked once into integer
-## centimetre grids, then sampled with integer bilinear weights. No render data and no
-## float accumulation, so the same position always gives the same height.
+## centimetre grids, then sampled with integer weights: terrain on the drawn LOD 0 triangles,
+## island tops bilinear. No render data and no float accumulation, so the same position
+## always gives the same height.
 
 ## Grid spacing in metres; matches the terrain heightmap so terrain samples are exact.
 const CELL := 2.0
@@ -78,11 +79,22 @@ func height_at(x: float, z: float, from_y: float) -> float:
 	var tx := qx & (SUB - 1)
 	var tz := qz & (SUB - 1)
 	var k := row * columns + column
-	var ground := _bilinear(terrain, k, tx, tz)
+	var ground := _triangle(terrain, k, tx, tz)
 	var top := _island_top(k, tx, tz)
 	if top != NONE and top > ground and (from_y > 1.0e6 or top <= roundi(from_y * 100.0) + STEP_UP_CM):
 		ground = top
 	return float(ground) / 100.0
+
+
+# Terrain height in cm on the drawn LOD 0 triangles (a b c, b d c; see TerrainGrid).
+func _triangle(grid: PackedInt32Array, k: int, tx: int, tz: int) -> int:
+	var a := grid[k]
+	var b := grid[k + 1]
+	var c := grid[k + columns]
+	var d := grid[k + columns + 1]
+	if tx + tz <= SUB:
+		return a + (((b - a) * tx + (c - a) * tz) >> SUB_BITS)
+	return d + (((c - d) * (SUB - tx) + (b - d) * (SUB - tz)) >> SUB_BITS)
 
 
 # Integer bilinear blend of the four samples around k, in centimetres.

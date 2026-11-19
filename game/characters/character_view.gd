@@ -69,6 +69,9 @@ var _fall_speed := 0.0
 var _landing := &""
 var _look_world := Vector3.ZERO
 var _look_weight := 0.0
+## The zone's floor, Callable(x, z, from_y) -> world height; found on the match's sim when unset.
+var ground_height: Callable
+var _ground_searched := false
 
 
 func _ready() -> void:
@@ -415,11 +418,40 @@ func _update_layers(fighter: FighterState, delta: float) -> void:
 		FighterState.State.VANISHING]
 	layers.foot_ik = not airborne and fighter.state != FighterState.State.KNOCKDOWN
 	layers.ground = Vector2.ZERO
+	layers.ground_probe = _probe_ground if _zone_ground().is_valid() else Callable()
 	var to_target := to_model(_look_world - fighter.position, fighter.facing_yaw)
 	layers.look_target = to_target + Vector3(0, 1.0, 0)
 	layers.look_weight = _look_weight if fighter.state in [FighterState.State.IDLE, FighterState.State.MOVING,
 		FighterState.State.FLYING, FighterState.State.BLOCKING, FighterState.State.ATTACKING] else 0.0
 	_update_arms(fighter)
+
+
+## The zone's floor sampler: set, or the CombatSim's ground_height of the match above this view.
+func _zone_ground() -> Callable:
+	if not ground_height.is_valid() and not _ground_searched:
+		_ground_searched = true
+		var node := get_parent()
+		while node != null:
+			var sim: Variant = node.get("sim")
+			if sim is CombatSim:
+				ground_height = (sim as CombatSim).ground_height
+				break
+			node = node.get_parent()
+	return ground_height
+
+
+## Foot IK probe: the floor under a skeleton-space point, as [height, normal] in skeleton space.
+func _probe_ground(point: Vector3) -> Array:
+	var skeleton := model.get_node("%GeneralSkeleton") as Skeleton3D
+	var space := skeleton.global_transform
+	var at := space * point
+	var h: float = ground_height.call(at.x, at.z, at.y)
+	var e := 0.25
+	var normal := Vector3(
+		float(ground_height.call(at.x - e, at.z, at.y)) - float(ground_height.call(at.x + e, at.z, at.y)), 2.0 * e,
+		float(ground_height.call(at.x, at.z - e, at.y)) - float(ground_height.call(at.x, at.z + e, at.y))).normalized()
+	var local := space.affine_inverse() * Vector3(at.x, h, at.z)
+	return [local.y, (space.basis.inverse() * normal).normalized()]
 
 
 ## Per-weapon-class hold (T-D30): one-hand guard, two-hand heavies across the body, pistol aim,

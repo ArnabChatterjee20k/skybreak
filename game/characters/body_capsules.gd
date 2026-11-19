@@ -207,9 +207,9 @@ static func box_depth(a: Vector3, b: Vector3, r: float, box: Transform3D) -> Arr
 	return [deepest, push]
 
 
-## Deepest overlap of boxes with capsules ({name: [a, b, r]}): [depth, push, capsule name].
+## Deepest overlap of boxes with capsules ({name: [a, b, r]}): [depth, push, capsule name, box centre].
 static func deepest_box(capsule_set: Dictionary, boxes: Array[Transform3D]) -> Array:
-	var result := [-INF, Vector3.ZERO, &""]
+	var result := [-INF, Vector3.ZERO, &"", Vector3.ZERO]
 	for name: StringName in capsule_set:
 		var c: Array = capsule_set[name]
 		for box in boxes:
@@ -219,7 +219,7 @@ static func deepest_box(capsule_set: Dictionary, boxes: Array[Transform3D]) -> A
 				continue
 			var hit := box_depth(c[0], c[1], c[2], box)
 			if hit[0] > result[0]:
-				result = [hit[0], hit[1], name]
+				result = [hit[0], hit[1], name, box.origin]
 	return result
 
 

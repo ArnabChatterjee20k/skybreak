@@ -9,6 +9,7 @@ const MOVE_SETS := {
 	&"kael": "res://game/combat/moves/kael/kael_move_set.tres",
 	&"vexa": "res://game/combat/moves/vexa/vexa_move_set.tres",
 }
+const PLANTED_SOLE := 0.03
 const DT := 1.0 / 60.0
 const BODY: Array[StringName] = [&"Hips", &"Spine", &"Chest", &"UpperChest", &"Neck", &"Head",
 	&"LeftUpperArm", &"LeftLowerArm", &"RightUpperArm", &"RightLowerArm",
@@ -45,6 +46,16 @@ func _moves(who: StringName) -> Array[MoveData]:
 
 
 ## Runs the live layers once, as the skeleton would after apply_state.
+## Lowest sole point of one foot (with its toes) above the floor, in model space.
+func _sole_height(view: CharacterView, skeleton: Skeleton3D, foot: StringName) -> float:
+	var side := String(foot).trim_suffix("Foot")
+	var low := INF
+	for item: Array in view.body.soles:
+		if String(skeleton.get_bone_name(item[0])).begins_with(side):
+			low = minf(low, (skeleton.get_bone_global_pose(item[0]) * (item[1] as Vector3)).y)
+	return low
+
+
 func _layer(view: CharacterView, delta := DT) -> void:
 	if view.layers:
 		view.layers._process_modification_with_delta(delta)
@@ -289,7 +300,8 @@ func test_planted_feet_barely_slide_while_running() -> void:
 				var p := skeleton.get_bone_global_pose(skeleton.find_bone(foot)).origin + Vector3(0, 0, speed * frame * DT)
 				if last.has(foot) and frame > 30:
 					var step := Vector2(p.x - last[foot].x, p.z - last[foot].z).length()
-					if p.y < 0.2 and step / DT < 1.0:
+					# Planted: the foot's lowest sole point is on the floor.
+					if _sole_height(view, skeleton, foot) < PLANTED_SOLE and step / DT < 1.0:
 						slide += step
 						contacts += 1
 				last[foot] = p

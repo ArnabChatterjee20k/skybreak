@@ -29,14 +29,31 @@ func test_samples_repeat_exactly_and_are_whole_centimetres() -> void:
 		assert_almost_eq(h * 100.0, roundf(h * 100.0), 0.001, "quantised to cm")
 
 
-func test_terrain_samples_match_the_heightmap_within_a_few_centimetres() -> void:
+func test_terrain_samples_match_the_drawn_lod_0_triangles_within_a_centimetre() -> void:
 	var ground := ZoneGround.bake(heightmap, null, Vector2(650, 500), 300.0)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5
-	for i in 100:
+	for i in 200:
 		var x := rng.randf_range(360, 940)
 		var z := rng.randf_range(210, 790)
-		assert_almost_eq(ground.height_at(x, z, INF), heightmap.ground_height_at(x, z), 0.05)
+		assert_almost_eq(ground.height_at(x, z, INF), _drawn_terrain(x, z), 0.011)
+
+
+## The terrain as TerrainGrid draws it at LOD 0: cell (i, j) split into a b c and b d c.
+func _drawn_terrain(x: float, z: float) -> float:
+	var gx := (x - heightmap.origin.x) / heightmap.cell_size
+	var gz := (z - heightmap.origin.y) / heightmap.cell_size
+	var i := floori(gx)
+	var j := floori(gz)
+	var u := gx - i
+	var v := gz - j
+	var a := heightmap.height_at_sample(i, j)
+	var b := heightmap.height_at_sample(i + 1, j)
+	var c := heightmap.height_at_sample(i, j + 1)
+	var d := heightmap.height_at_sample(i + 1, j + 1)
+	if u + v <= 1.0:
+		return a + u * (b - a) + v * (c - a)
+	return d + (1.0 - u) * (c - d) + (1.0 - v) * (b - d)
 
 
 func test_island_tops_are_the_floor_from_above_and_terrain_from_below() -> void:

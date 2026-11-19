@@ -33,6 +33,8 @@ var frames := 0
 var match_node: ZoneMatch
 var ground: RenderedGround
 var _bodies: Array[BodyCapsules] = []
+## Per fighter: bone global poses as drawn, snapshotted when the skeleton finishes its modifiers.
+var _poses: Array = []
 
 
 func run() -> void:
@@ -59,6 +61,11 @@ func run() -> void:
 			body = view_node.get("body") if view_node.get("body") != null else BodyCapsules.measure(
 				view_node.model.get_node("%GeneralSkeleton"), view_node.find_children("*", "MeshInstance3D", true, false))
 		_bodies.append(body)
+		var poses: Array[Transform3D] = []
+		_poses.append(poses)
+		var skeleton := _skeleton_of(view)
+		if skeleton != null:
+			skeleton.skeleton_updated.connect(_snapshot.bind(skeleton, poses))
 	await get_tree().process_frame
 	for tick in ticks:
 		_force_weapons(tick)
@@ -110,7 +117,12 @@ func _measure(tick: int) -> void:
 		if skeleton == null or body == null or not view.visible:
 			capsules.append({})
 			continue
-		var pose := func(bone: int) -> Transform3D: return skeleton.get_bone_global_pose(bone)
+		# Bone poses after the modifiers (IK), as skinned and drawn; the skeleton restores the clip pose after.
+		var drawn: Array[Transform3D] = _poses[i]
+		if drawn.is_empty():
+			capsules.append({})
+			continue
+		var pose := func(bone: int) -> Transform3D: return drawn[bone]
 		var space := skeleton.global_transform
 		var all := body.capsules(pose, space)
 		capsules.append(all)
@@ -119,7 +131,10 @@ func _measure(tick: int) -> void:
 		if fighter.state in GROUNDED_STATES and fighter.position.y <= fighter.stand_height + 0.01:
 			var sole := body.lowest_sole(pose, space)
 			var gap := sole.y - ground.height_at(sole.x, sole.z, sole.y)
-			_record(&"ground_contact", absf(gap) > GROUND_TOLERANCE, gap, tick, i)
+			_record(&"ground_contact", absf(gap) > GROUND_TOLERANCE, gap, tick, i, {
+				"state": FighterState.State.find_key(fighter.state), "state_ticks": fighter.state_ticks,
+				"sole": sole, "sim_floor": fighter.stand_height - sim.tuning.ground_height,
+				"drawn_centre": ground.height_at(fighter.position.x, fighter.position.z, sole.y)})
 		# Weapon vs holder.
 		var models: Array[Node3D] = _held_models(i)
 		var kind := fighter.held_weapon()
@@ -136,7 +151,9 @@ func _measure(tick: int) -> void:
 				if all.has(name):
 					subset[name] = all[name]
 			var hit := BodyCapsules.deepest_box(subset, boxes)
-			_record(&"weapon_vs_holder", float(hit[0]) > OVERLAP_TOLERANCE, float(hit[0]), tick, i)
+			_record(&"weapon_vs_holder", float(hit[0]) > OVERLAP_TOLERANCE, float(hit[0]), tick, i, {
+				"kind": Weapon.Kind.find_key(kind), "state": FighterState.State.find_key(fighter.state),
+				"move": fighter.move_id(), "capsule": hit[2]})
 		# Bow string and arrow vs the head.
 		var string: BowString = match_node.weapon_layer.call("bow_string_of", i) if match_node.weapon_layer.has_method("bow_string_of") else null
 		if string != null and all.has(&"head") and string.drawn:
@@ -144,7 +161,8 @@ func _measure(tick: int) -> void:
 			var depth := maxf(BodyCapsules.segment_depth(string.tip_top, string.nock, head),
 				maxf(BodyCapsules.segment_depth(string.nock, string.tip_bottom, head),
 				BodyCapsules.segment_depth(string.nock, string.arrow_tip, head)))
-			_record(&"bow_vs_head", depth > 0.0, depth, tick, i)
+			_record(&"bow_vs_head", depth > 0.0, depth, tick, i, {"kind": Weapon.Kind.find_key(kind),
+				"move": fighter.move_id()})
 	# Fighter vs fighter.
 	for i in capsules.size():
 		for j in range(i + 1, capsules.size()):
@@ -161,7 +179,13 @@ func _measure(tick: int) -> void:
 			_record(&"fighter_vs_fighter", deepest > OVERLAP_TOLERANCE, deepest, tick, i)
 
 
-func _record(check: StringName, violated: bool, value: float, tick: int, fighter: int) -> void:
+func _snapshot(skeleton: Skeleton3D, poses: Array[Transform3D]) -> void:
+	poses.resize(skeleton.get_bone_count())
+	for bone in poses.size():
+		poses[bone] = skeleton.get_bone_global_pose(bone)
+
+
+func _record(check: StringName, violated: bool, value: float, tick: int, fighter: int, info := {}) -> void:
 	samples[check] = int(samples[check]) + 1
 	# Ground gaps count both ways; overlaps only inward.
 	var size := absf(value) if check == &"ground_contact" else value
@@ -170,7 +194,14 @@ func _record(check: StringName, violated: bool, value: float, tick: int, fighter
 	if not violated:
 		return
 	violations[check] = int(violations[check]) + 1
-	worst_frames.append({"check": check, "tick": tick, "value": value, "fighter": fighter})
+	var frame := {"check": check, "tick": tick, "value": value, "fighter": fighter,
+		"legend": _legend(fighter)}
+	frame.merge(info)
+	worst_frames.append(frame)
+
+
+func _legend(fighter: int) -> StringName:
+	return legends[(fighter + seed_value) % legends.size()]
 
 
 ## Held weapon models of fighter i: the first child of each hand attachment.

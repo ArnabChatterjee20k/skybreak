@@ -129,7 +129,9 @@ static func part_boxes(model: Node3D) -> Array[Transform3D]:
 	var boxes: Array[Transform3D] = []
 	for node in model.find_children("*", "MeshInstance3D", true, false):
 		var part := node as MeshInstance3D
-		if part.name.begins_with("String") or part.get_parent().name == "BowString" or not part.is_visible_in_tree():
+		# The string and the nocked arrow ride on the string hand; the bow-vs-head check covers them.
+		if part.name.begins_with("String") or part.get_parent().name in ["BowString", "NockedArrow"] \
+				or not part.is_visible_in_tree():
 			continue
 		var to_model := Transform3D.IDENTITY
 		var at: Node = part
