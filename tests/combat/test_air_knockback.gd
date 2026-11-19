@@ -43,6 +43,8 @@ func _stats_with_light(knockback: Vector3, type: Knockback) -> FighterStats:
 	var light := stats.move_set.light_string[0].duplicate() as MoveData
 	light.knockback = knockback
 	light.knockback_type = type
+	# Treated as a heavy for the guard's push (lights push less).
+	light.cancel_level = MoveData.CancelLevel.HEAVY
 	var string := stats.move_set.light_string.duplicate()
 	string[0] = light
 	stats.move_set.light_string = string
@@ -50,9 +52,9 @@ func _stats_with_light(knockback: Vector3, type: Knockback) -> FighterStats:
 
 
 func test_an_air_hit_drives_the_target_away_at_least_the_minimum_speed() -> void:
-	_start(Vector3(0, 10, -1.5), Vector3(0, 10, 0))
+	_start(Vector3(0, 9.4, -0.8), Vector3(0, 10, 0))
 	var velocity := _land_light()
-	assert_lte(velocity.z, -_sim.hit_tuning.air_knockback_min_out + 0.001, "away along -Z")
+	assert_lte(velocity.z, -_sim.hit_tuning.air_light_knockback_min_out + 0.001, "away along -Z, a light's push")
 	assert_gte(velocity.y, 0.0, "never down")
 
 
@@ -85,7 +87,7 @@ func test_a_juggled_target_ends_up_beside_the_attacker_not_stacked() -> void:
 func test_a_move_can_set_its_own_air_knockback_minimum() -> void:
 	var stats := _stats_with_light(Vector3(0, 0, -1), Knockback.BLOWBACK)
 	stats.move_set.light_string[0].air_knockback_min_out = 3.0
-	_start(Vector3(0, 10, -1.5), Vector3(0, 10, 0), stats)
+	_start(Vector3(0, 9.4, -0.8), Vector3(0, 10, 0), stats)
 	var velocity := _land_light()
 	assert_almost_eq(-velocity.z, 3.0, 0.001)
 
@@ -94,3 +96,9 @@ func test_grounded_exchanges_keep_their_knockback() -> void:
 	_start(Vector3(0, 0, -1.5), Vector3.ZERO, _stats_with_light(Vector3(0, 0, -1), Knockback.BLOWBACK))
 	var velocity := _land_light()
 	assert_almost_eq(velocity.z, -1.0, 0.001, "on the floor only the move's knockback")
+
+
+func test_an_air_hit_beside_the_attacker_keeps_its_knockback() -> void:
+	_start(Vector3(0, 10, -1.6), Vector3(0, 10, 0), _stats_with_light(Vector3(0, 0, -1), Knockback.BLOWBACK))
+	var velocity := _land_light()
+	assert_almost_eq(velocity.z, -1.0, 0.001, "already apart: the move's own knockback")

@@ -100,13 +100,11 @@ func test_launch_sends_the_target_straight_up_then_juggle_gravity_pulls_it_down(
 	assert_gt(_target().position.y, floor_height + 5.0)
 
 
-func test_launch_stays_upward_but_drifts_away_when_the_target_is_airborne() -> void:
+func test_launch_stays_vertical_even_when_aimed_at_a_target_above() -> void:
 	_start(Vector3(0, 1.5, -2))
 	_land_heavy(Vector2(0, -1))
-	assert_gt(_target().velocity.y, 20.0, "still a launch")
-	assert_almost_eq(_target().velocity.x, 0.0, EPSILON, "pitch does not tilt it sideways")
-	assert_almost_eq(-_target().velocity.z, maxf(-_moves.launcher.knockback.z, _sim.hit_tuning.air_knockback_min_out),
-		EPSILON, "away from the attacker, not straight over it")
+	assert_gt(_target().velocity.y, 20.0)
+	assert_almost_eq(_target().velocity.z, _moves.launcher.knockback.z, EPSILON)
 
 
 func test_blowback_follows_the_aim_pitch() -> void:

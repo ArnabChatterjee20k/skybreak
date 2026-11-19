@@ -1597,8 +1597,9 @@ func _knockback_velocity(contact: Dictionary) -> Vector3:
 	return yaw * Basis(Vector3.RIGHT, contact.pitch) * knockback
 
 
-## With either fighter off the floor, drives the target away from the attacker
-## and, for blowback-like hits, level or up to 45 degrees: never under or over it.
+## With either fighter off the floor and the pair closer than air_knockback_separation, drives
+## the target away from the attacker and, for blowback-like hits, level or up to 45 degrees:
+## never under or over it. Lights push less, so air strings still connect.
 func _air_knockback_guarded(attacker: FighterState, target: FighterState, move: MoveData,
 		velocity: Vector3) -> Vector3:
 	var target_airborne := not _is_on_floor(target)
@@ -1606,11 +1607,17 @@ func _air_knockback_guarded(attacker: FighterState, target: FighterState, move: 
 		return velocity
 	var out := target.position - attacker.position
 	out.y = 0.0
+	var separation := hit_tuning.air_knockback_separation
+	if out.length_squared() >= separation * separation:
+		return velocity
 	if out.length_squared() < 0.0001:
 		out = Basis(Vector3.UP, attacker.facing_yaw) * Vector3.FORWARD
 	out = out.normalized()
-	var min_out := move.air_knockback_min_out if move.air_knockback_min_out >= 0.0 \
-		else hit_tuning.air_knockback_min_out
+	var min_out := hit_tuning.air_knockback_min_out
+	if move.cancel_level == MoveData.CancelLevel.LIGHT:
+		min_out = hit_tuning.air_light_knockback_min_out
+	if move.air_knockback_min_out >= 0.0:
+		min_out = move.air_knockback_min_out
 	var along := velocity.dot(out)
 	if along < min_out:
 		velocity += out * (min_out - along)

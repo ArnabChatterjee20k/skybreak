@@ -39,8 +39,13 @@ extends Resource
 @export var juggle_gravity: float = 30.0
 ## Upward speed of the one floor bounce after a spike.
 @export var spike_bounce_speed: float = 8.0
+## The air guard acts only when the pair is closer than this (planar, m): a juggle beside
+## the attacker keeps its knockback, one about to stack is driven apart.
+@export var air_knockback_separation: float = 1.5
 ## Off the floor a hit drives the target at least this fast away from the attacker (planar, m/s).
 @export var air_knockback_min_out: float = 9.0
+## The same for light-string hits, small enough that the next air light still reaches.
+@export var air_light_knockback_min_out: float = 3.0
 ## Off the floor a blowback-like hit never drives the target down and lifts it by at most
 ## this much per m/s of outward speed (1 = 45 degrees): never straight over the attacker.
 @export var air_knockback_rise: float = 1.0

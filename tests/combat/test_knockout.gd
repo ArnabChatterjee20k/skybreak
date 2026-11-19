@@ -322,14 +322,14 @@ func _knock_out_with(velocity: Vector3, at := Vector3.ZERO) -> Dictionary:
 
 
 func test_a_huge_knockout_launch_travels_at_most_the_capped_distance() -> void:
-	var seen := _knock_out_with(Vector3(80, 0, 60))
+	var seen := _knock_out_with(Vector3(80, 0, 60), Vector3(0, 6, 0))
 	assert_eq(_fighter(0).state, State.KO_DOWN)
 	assert_lte(seen.farthest, _sim.hit_tuning.ko_max_travel + 0.01, "no flight into the next biome")
 	assert_gt(seen.farthest, 6.0, "still reads big")
 
 
 func test_a_huge_upward_knockout_peaks_at_most_the_capped_height() -> void:
-	var seen := _knock_out_with(Vector3(0, 60, 5))
+	var seen := _knock_out_with(Vector3(0, 60, 5), Vector3(0, 1, 0))
 	var cap := _sim.tuning.ground_height + _sim.hit_tuning.ko_max_apex
 	assert_lte(seen.highest, cap + 0.01, "apex within %.1f m of the stand height" % _sim.hit_tuning.ko_max_apex)
 	assert_gt(seen.highest, _sim.tuning.ground_height + 3.0, "still a big pop")
