@@ -1788,7 +1788,8 @@ func _stop_at_walls(fighter: FighterState, before: Vector3) -> void:
 	if before.y > floor_before + tuning.ground_height + _floor_epsilon():
 		return
 	var rise := _ground_at(fighter.position - Vector3.UP * _FIGHTER_HALF_HEIGHT) - floor_before
-	if rise > run * tan(deg_to_rad(tuning.max_walk_slope)) + _WALL_STEP:
+	var slope := deg_to_rad(tuning.max_walk_slope)
+	if rise > run * DetMath.sin(slope) / DetMath.cos(slope) + _WALL_STEP:
 		fighter.position = Vector3(before.x, fighter.position.y, before.z)
 		fighter.velocity = Vector3(0.0, fighter.velocity.y, 0.0)
 

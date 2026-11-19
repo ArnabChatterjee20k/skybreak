@@ -33,6 +33,8 @@ const MAX_FLIGHT_PITCH := deg_to_rad(78.0)
 ## Twist limits about the bone (radians) and the fastest any body bone may turn (rad/s).
 const TWIST_LIMITS := {&"LeftLowerArm": 1.6, &"RightLowerArm": 1.6, &"LeftUpperArm": 1.8, &"RightUpperArm": 1.8}
 const MAX_TURN_RATE := 54.0
+## Largest turn (rad) an arm bone may make in one frame after the late weapon clearance (pops are 1.2).
+const MAX_ARM_FRAME_TURN := 1.1
 ## Costume spring chains (hood points, sash, cape, beard braid, apron) the pop guard covers too: their
 ## springs lag the clip's pose, which the layers then move, so they can whip round in one frame.
 const CHAIN_PARTS := ["Hood", "Sash", "Cape", "Beard", "Apron"]
@@ -75,6 +77,8 @@ const BOW_TWIST := deg_to_rad(70.0)
 ## Clearance solver: passes, and the margin it leaves (m).
 const CLEARANCE_PASSES := 16
 const CLEARANCE_MARGIN := 0.03
+## Share of last frame's clearance correction carried into the next frame (the rest relaxes).
+const CLEARANCE_CARRY := 0.9
 ## Swing correction: largest turn of the weapon about the wrist per pass, and the shortest lever it acts on.
 const SWING_STEP := 0.35
 const SWING_MIN_LEVER := 0.12
@@ -146,6 +150,12 @@ var off_hand_socket := Transform3D.IDENTITY
 var body: BodyCapsules
 ## Deepest weapon-into-body overlap left after the last solve (m), for tests and QA.
 var weapon_overlap := 0.0
+# Clearance carry-over: last frame's main-hand correction (chest space), so the cleared weapon stays
+# on the side it was cleared to instead of flipping as the clip passes it through the body.
+var _carry_offset := Vector3.ZERO
+var _carry_turn := Quaternion.IDENTITY
+var _carry_from := Transform3D.IDENTITY
+var _carry_live := false
 ## Hips lowered in grounded poses (m, from the profile); the foot IK bends the knees.
 @export var crouch := 0.0
 ## Personality multipliers (see MotionProfile).
@@ -339,6 +349,8 @@ func reset() -> void:
 	_lock_offset = [Vector3.ZERO, Vector3.ZERO]
 	_lock_offset_velocity = [Vector3.ZERO, Vector3.ZERO]
 	_guard_world.clear()
+	_carry_offset = Vector3.ZERO
+	_carry_turn = Quaternion.IDENTITY
 
 
 ## Takes a legend's motion personality.
@@ -436,6 +448,7 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 		hips = _landing_layer(rotations, hips, delta)
 	_arm_layer(rotations, hips, delta)
 	hips = _stance_layer(hips, delta)
+	_carry_clearance(rotations, hips)
 	_clearance(rotations, hips)
 	hips = _separation(rotations, hips)
 	if foot_ik:
@@ -447,6 +460,12 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 	# The twist limits can bring the weapon back into the body: clear it once more, before the turn cap.
 	_clearance(rotations, hips)
 	_pop_guard(rotations, delta)
+	# The turn cap can bring the weapon back in: clear it after the cap too, under the arm pop limit.
+	_clearance(rotations, hips)
+	_arm_pop_limit(rotations)
+	_remember_clearance(rotations, hips)
+	# Next frame's turn cap starts from this output as drawn (cleared), not the pre-clearance pose.
+	_guard_world.clear()
 	_prev_out = _last_out.duplicate()
 	_last_out = rotations.duplicate()
 	_prev_hips = _last_hips
@@ -835,6 +854,45 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
 		_grip_off_hand(rotations, hips, 1.0)
 
 
+## Re-applies most of last frame's clearance correction to the main hand before this frame's solve.
+func _carry_clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
+	_carry_live = false
+	var chest: int = _index.get(&"UpperChest", _index.get(&"Chest", -1))
+	var main := _arm_chain(weapon_hand) if weapon_hand != &"" else []
+	# A bow draw places both hands on the aim line itself: nothing carries into it.
+	if body == null or weapon_boxes.is_empty() or main.is_empty() or chest < 0 or _arm_pose_now == ArmPose.BOW_DRAW:
+		_carry_offset = Vector3.ZERO
+		_carry_turn = Quaternion.IDENTITY
+		return
+	_world_cache.clear()
+	var space := _world_at(rotations, hips, chest)
+	_carry_from = space.affine_inverse() * _world_at(rotations, hips, main[2])
+	_carry_live = true
+	if _carry_offset == Vector3.ZERO and _carry_turn.is_equal_approx(Quaternion.IDENTITY):
+		return
+	var point := space * (_carry_from.origin + _carry_offset * CLEARANCE_CARRY)
+	var turn := Quaternion.IDENTITY.slerp(_carry_turn, CLEARANCE_CARRY)
+	var rotation := space.basis.get_rotation_quaternion() * turn * _carry_from.basis.get_rotation_quaternion()
+	_reach_hand(rotations, hips, main, point, rotation.normalized(), 1.0)
+	_grip_off_hand(rotations, hips, 1.0)
+
+
+## Stores this frame's main-hand correction (drawn hand against the hand before the clearance).
+func _remember_clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
+	if not _carry_live:
+		return
+	var chest: int = _index.get(&"UpperChest", _index.get(&"Chest", -1))
+	var main := _arm_chain(weapon_hand)
+	_world_cache.clear()
+	var now := _world_at(rotations, hips, chest).affine_inverse() * _world_at(rotations, hips, main[2])
+	_world_cache.clear()
+	_carry_offset = now.origin - _carry_from.origin
+	_carry_turn = (now.basis.get_rotation_quaternion() * _carry_from.basis.get_rotation_quaternion().inverse()).normalized()
+	if _carry_offset.length() < 0.002 and _carry_turn.get_angle() < 0.01:
+		_carry_offset = Vector3.ZERO
+		_carry_turn = Quaternion.IDENTITY
+
+
 ## World transforms of one chain (plus its parent), as a sparse array _two_bone can read.
 func _chain_world(rotations: Array[Quaternion], hips: Vector3, chain: Array) -> Array:
 	var out := []
@@ -1050,6 +1108,27 @@ func _pop_guard(rotations: Array[Quaternion], delta: float) -> void:
 	_guard_world_now = swap
 
 
+## Limits each arm bone's model-space turn since the last output to MAX_ARM_FRAME_TURN (parents first).
+func _arm_pop_limit(rotations: Array[Quaternion]) -> void:
+	if _last_out.size() != rotations.size():
+		return
+	for chain: Array in ARMS:
+		for bone: StringName in chain:
+			var i: int = _index.get(bone, -1)
+			if i < 0:
+				continue
+			var parent_now := _world_rotation(rotations, _parents[i]) if _parents[i] >= 0 else Quaternion.IDENTITY
+			var now := parent_now * rotations[i]
+			var last := _world_rotation(_last_out, i)
+			if last.dot(now) < 0.0:
+				now = -now
+			var angle := last.angle_to(now)
+			if angle > MAX_ARM_FRAME_TURN:
+				now = last.slerp(now, MAX_ARM_FRAME_TURN / angle).normalized()
+				rotations[i] = (parent_now.inverse() * now).normalized()
+	_world_cache.clear()
+
+
 ## A bone's local rotation with its twist about the bone (away from rest) unwrapped against the
 ## last frame and clamped to limit.
 func _limit_twist(i: int, q: Quaternion, limit: float) -> Quaternion:
@@ -1157,7 +1236,8 @@ func _foot_ik(rotations: Array[Quaternion], hips: Vector3, delta := 0.0) -> Vect
 		# Standing feet hold where they touched down (foot lock), then step back to the clip's foot.
 		var target := _locked_target(side, ankle, planted and gap < PLANTED_HEIGHT, delta) + (foot.shift as Vector3)
 		if planted:
-			target.y = ankle.y - gap + _step_lift(side)
+			# The lowest foot carries the body; only the other foot lifts as it steps back from its lock.
+			target.y = ankle.y - gap + (_step_lift(side) if side != lowest else 0.0)
 		targets[side] = target
 	var drop := 0.0
 	for side in 2:
