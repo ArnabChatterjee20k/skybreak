@@ -33,6 +33,14 @@ extends Resource
 @export var smitten_ticks: int = 90
 @export var smitten_drift_speed: float = 4.0
 @export var smitten_repeat_window_ticks: int = 360
+## Powers and gadgets alternate with weapons in the sky drops (T-D26); off drops weapons only.
+@export var powers_enabled: bool = true
+## Power kind -> weight for power drops.
+@export var power_table: Dictionary = {
+	Power.Kind.OVERDRIVE_ORB: 10, Power.Kind.BURST_SHARD: 8, Power.Kind.AEGIS: 10,
+	Power.Kind.HASTE: 10, Power.Kind.SPIKE_BOMB: 10, Power.Kind.GRAVITY_MINE: 8,
+	Power.Kind.MIRROR_DECOY: 8,
+}
 ## Weapon kind -> weight, per zone. Zones not listed use the default table.
 @export var default_table: Dictionary = {
 	Weapon.Kind.KI_GAUNTLETS: 10, Weapon.Kind.STORM_BLADE: 10, Weapon.Kind.SKY_LANCE: 10,

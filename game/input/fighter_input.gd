@@ -23,6 +23,7 @@ enum Action {
 	WEAPON_NEXT = 1 << 15, ## Cycle Unarmed -> slot 1 -> slot 2 -> slot 3.
 	WEAPON_PREVIOUS = 1 << 16,
 	THROW = 1 << 17, ## Throw the held weapon.
+	QUICK_SWAP = 1 << 18, ## C: swap to the last weapon used (T-D26).
 }
 
 ## Bitmasks of Action values: held this tick, went down this tick, went up this tick.

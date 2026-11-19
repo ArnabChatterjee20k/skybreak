@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://game/characters/clip_set.gd" id="1_clips"]
 [ext_resource type="AnimationLibrary" path="res://game/characters/animations/humanoid_clips.res" id="1_gebhv"]
 
+[ext_resource type="Resource" path="res://game/characters/motion/profiles/vexa_motion.tres" id="10_profile"]
 [resource]
 script = ExtResource("1_clips")
 library = ExtResource("1_gebhv")
@@ -54,10 +55,11 @@ impact_windows = Dictionary[StringName, Vector2]({
 })
 motion = ExtResource("9_motion")
 motion_moves = Dictionary[StringName, StringName]({
-&"breaker": &"-",
-&"grab": &"-",
-&"launcher": &"-",
-&"light_5": &"-",
-&"push_block": &"-",
-&"rising": &"-"
+&"breaker": &"fit",
+&"grab": &"fit:grab",
+&"launcher": &"fit:launcher_up",
+&"light_5": &"fit:push_block",
+&"push_block": &"fit",
+&"rising": &"fit:launcher_up"
 })
+motion_profile = ExtResource("10_profile")
