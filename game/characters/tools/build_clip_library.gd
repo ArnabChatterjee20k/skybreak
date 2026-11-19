@@ -11,13 +11,14 @@ const SOURCES := [
 const OUTPUT := "res://game/characters/animations/humanoid_clips.res"
 const CLIP_SETS := ["res://game/characters/kael/kael_clip_set.tres"]
 
-## Our clip name -> [source clip, loops].
+## Our clip name -> [source clip, loops, hips held at standing height].
+## Air clips hold the height: a swim or tuck pose would sink below the capsule.
 const CLIPS := {
 	&"idle": ["Idle", true],
 	&"run": ["Sprint", true],
-	&"hover": ["Swim_Idle", true],
-	&"fly": ["NinjaJump_Idle", true],
-	&"fall": ["Jump", true],
+	&"hover": ["Swim_Idle", true, true],
+	&"fly": ["NinjaJump_Idle", true, true],
+	&"fall": ["Jump", true, true],
 	&"dash": ["Shield_Dash", false],
 	&"charge": ["Spell_Simple_Idle", true],
 	&"block": ["Idle_Shield", true],
@@ -69,7 +70,7 @@ func _init() -> void:
 		var animation := player.get_animation(source).duplicate(true) as Animation
 		animation.resource_name = clip
 		animation.loop_mode = Animation.LOOP_LINEAR if CLIPS[clip][1] else Animation.LOOP_NONE
-		_pin_hips_horizontally(animation)
+		_pin_hips(animation, _standing_hips_height(players) if CLIPS[clip].size() > 2 else NAN)
 		library.add_animation(clip, animation)
 		if clip in STRIKES:
 			windows[clip] = _impact_window(player, source)
@@ -95,15 +96,22 @@ func _player_with(players: Dictionary, source: String) -> AnimationPlayer:
 
 
 ## No root motion: the hips keep their first-frame X/Z so the body stays on the
-## fighter's capsule (the sim moves the fighter); height and rotation stay.
-func _pin_hips_horizontally(animation: Animation) -> void:
+## fighter's capsule (the sim moves the fighter). A height (not NAN) pins Y too.
+func _pin_hips(animation: Animation, height: float) -> void:
 	var track := animation.find_track(HIPS_TRACK, Animation.TYPE_POSITION_3D)
 	if track < 0 or animation.track_get_key_count(track) == 0:
 		return
 	var first: Vector3 = animation.track_get_key_value(track, 0)
 	for key in animation.track_get_key_count(track):
 		var value: Vector3 = animation.track_get_key_value(track, key)
-		animation.track_set_key_value(track, key, Vector3(first.x, value.y, first.z))
+		var y := value.y if is_nan(height) else height
+		animation.track_set_key_value(track, key, Vector3(first.x, y, first.z))
+
+
+## Hips height of the standing idle, in the retargeted (normalised) units.
+func _standing_hips_height(players: Dictionary) -> float:
+	var idle := _player_with(players, CLIPS[&"idle"][0]).get_animation(CLIPS[&"idle"][0])
+	return (idle.track_get_key_value(idle.find_track(HIPS_TRACK, Animation.TYPE_POSITION_3D), 0) as Vector3).y
 
 
 ## Time of the furthest forward reach of any hand or foot, from the source rig.

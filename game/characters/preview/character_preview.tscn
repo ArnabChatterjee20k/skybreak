@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://game/characters/preview/character_preview.gd" id="1_preview"]
 [ext_resource type="PackedScene" path="res://game/characters/kael/kael.tscn" id="2_kael"]
-[ext_resource type="Material" path="res://game/view/shaders/materials/toon_prop.tres" id="3_ground"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.32, 0.5, 0.8, 1)
@@ -18,6 +17,9 @@ sky = SubResource("sky")
 ambient_light_source = 3
 ambient_light_energy = 0.5
 tonemap_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="ground_material"]
+albedo_color = Color(0.36, 0.4, 0.36, 1)
 
 [sub_resource type="PlaneMesh" id="ground"]
 size = Vector2(12, 12)
@@ -36,7 +38,7 @@ shadow_enabled = true
 
 [node name="Ground" type="MeshInstance3D" parent="."]
 mesh = SubResource("ground")
-surface_material_override/0 = ExtResource("3_ground")
+surface_material_override/0 = SubResource("ground_material")
 
 [node name="Body" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
