@@ -244,22 +244,35 @@ Each fighter has a clear playstyle, one strength, one weakness and one unique me
 
 ---
 
-## 7. Arenas (launch: 3)
+## 7. The world: one big map, six fighting zones
 
-All arenas are about 600 m × 600 m with a **soft ceiling** at 250 m and **boundary walls** (an energy dome) that act as wall-splat surfaces. No ring-outs: the game is about fighting, not falling.
+Fights happen on **one continuous world map** instead of small separate arenas. Knockbacks, chases and beams carry the fight across zone borders, which is the core fantasy: smashing someone through a canyon wall and finishing the fight over a volcano.
 
-| Arena | Look | Gameplay character | Destructibles | Performance notes |
-|---|---|---|---|---|
-| **Shattered Mesa** | Red desert canyon, mesas, bright day | Open sky, long sight lines: **favors zoning** | Rock pillars, mesa tops shear off | Cheapest scene; use it for tuning |
-| **Skyhold Ruins** | Floating islands, ancient stone ruins, clouds below, golden hour | Tight spaces between islands: **favors rushdown**, lots of walls for splats | Columns, arches | Clouds are layered sprites/impostors, not volumetrics |
-| **Stormfall City** | Ruined city at night, rain, neon signs, lightning | Buildings everywhere: **mixed**, using cover to break line of sight for blasts | Building corners, water towers, cars | Rain is a GPU particle shader on a camera-attached volume; lightning flashes double as dramatic lighting |
+### 7.1 Map
+- **About 2 km x 2 km**, sky ceiling at about 400 m, an energy-dome boundary at the edge that acts as a wall-splat surface. No ring-outs.
+- **Six zones**, each roughly 600–800 m across, blending into each other at the borders (terrain, colour and fog transitions over about 100 m).
+- **Match setup:** pick a **start zone** (or random) and **time of day** (day / dusk / night). Fighters spawn about 40 m apart in that zone.
+- **Navigation aids:** zone name on entering, and the off-screen opponent arrow (§4.7) always works across the map.
 
-**Arena interaction:**
-- Fighters knocked into the ground leave **craters** (decals plus a small mesh deformation).
-- Destructibles respawn after 30 s (fading back in), so a long round doesn't flatten the map.
-- Arena intro: a 4 s camera flyover (skippable) while the fighters' names appear.
+### 7.2 Zones
 
----
+| Zone | Look | Gameplay character | Destructibles / hazards |
+|---|---|---|---|
+| **Shattered Mesa** | Red desert canyons, mesas, bright sky | Open, long sight lines: favours zoning | Rock pillars, mesa tops shear off |
+| **Skyhold Ruins** | Floating stone islands over a sea of clouds, golden hour | Tight gaps between islands, many walls: favours rushdown | Columns, arches, falling island chunks |
+| **Stormfall City** | Ruined city at night, rain, neon, lightning | Buildings for cover and line-of-sight breaks | Building corners, water towers, cars |
+| **Frozen Peaks** | Glaciers, ice cliffs, snow storms | Vertical cliffs, ice shelves; visibility drops in storms | Ice spires shatter, avalanche slabs |
+| **Verdant Falls** | Jungle valley, giant trees, a huge waterfall and lake | Mixed cover; water spray hides you briefly | Giant trunks snap, waterfall curtain |
+| **Ember Rift** | Volcanic crater, lava rivers, obsidian spires, glowing at night | Open crater with hot zones: lava geysers knock fighters up | Obsidian spires, geyser vents |
+
+All zones share these rules: knocked-into-ground craters (decals), destructibles respawn after 30 s, and no instant-kill hazards (hazards deal small damage and knock up; they never decide a round on their own).
+
+### 7.3 Technical approach
+- **Terrain:** procedural, chunked heightmap meshes with distance LOD. The sim reads the **same heightmap data** for ground height, so landing and knockdowns stay deterministic (no physics engine in the sim).
+- **Props:** MultiMesh instancing for rocks, trees, debris; impostors or low LODs in the distance.
+- **Atmosphere:** per-zone fog, light and weather presets blended by position; distance fog hides the far LOD.
+- **Performance budget:** the world costs **≤ 3 ms GPU p95 at medium** on the GTX 1650 at 1080p, measured with the render benchmark on the world level.
+- **Build order:** grey-blocked layout of all six zones first (shapes, heights, landmarks), then one art pass per zone.
 
 ## 8. Game modes
 
