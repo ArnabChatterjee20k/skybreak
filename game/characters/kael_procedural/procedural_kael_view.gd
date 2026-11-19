@@ -44,8 +44,11 @@ const LOOP_CLIPS: Array[StringName] = [&"idle", &"run", &"fly_hover", &"fly_forw
 	&"charge_ki", &"fall", &"block", &"guard_broken", &"charged_smash_hold"]
 
 ## Clips that follow the sim's state_ticks instead of free-running time.
-const TICKED_CLIPS: Array[StringName] = [&"blockstun", &"hitstun_light", &"hitstun_heavy",
-	&"knockdown", &"get_up", &"guard_broken", &"victory", &"defeat"]
+const TICKED_CLIPS: Array[StringName] = [&"guard_broken", &"victory", &"defeat"]
+## Stun clips stretch over the state's stun_ticks, so the recovery pose lands as the stun ends.
+const STUN_CLIPS: Array[StringName] = [&"blockstun", &"hitstun_light", &"hitstun_heavy"]
+## Knockdown clip tick where he is already on the floor (KNOCKDOWN starts after the bounce).
+const KNOCKDOWN_FLOOR_TICK := 14
 
 ## Every clip the model ships with.
 const CLIPS: Array[StringName] = [&"idle", &"run", &"fly_hover", &"fly_forward", &"dash", &"charge_ki",
@@ -107,10 +110,20 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 		clip = &"block"
 	elif clip == &"fly_hover" and fighter.velocity.length() > FLY_FORWARD_SPEED:
 		clip = &"fly_forward"
+	if clip == &"hitstun_light" and fighter.knockback_type != MoveData.KnockbackType.NONE:
+		clip = &"hitstun_heavy"
 	if not _player.has_animation(clip):
 		clip = &"idle"
-	if clip in TICKED_CLIPS:
-		_seek_ticks(clip, maxi(fighter.state_ticks - 1, 0))
+	var tick := maxi(fighter.state_ticks - 1, 0)
+	if clip == &"knockdown":
+		_apply_knockdown(fighter, tick)
+		return
+	if clip in STUN_CLIPS and fighter.stun_ticks > 0:
+		var progress := clampf(float(tick) / fighter.stun_ticks, 0.0, 1.0)
+		_seek_ticks(clip, progress * clip_ticks(clip))
+		return
+	if clip in TICKED_CLIPS or clip in STUN_CLIPS:
+		_seek_ticks(clip, tick)
 		return
 	var speed := 1.0
 	if clip == &"run":
@@ -165,6 +178,16 @@ func _apply_attack(fighter: FighterState, delta: float) -> void:
 		_player.advance(delta)
 		return
 	_seek_ticks(clip, fighter.move_tick - 1.0 + tick_blend)
+
+
+## On the floor, then the get-up clip over the knockdown's last ticks.
+func _apply_knockdown(fighter: FighterState, tick: int) -> void:
+	var get_up := clip_ticks(&"get_up")
+	var left := fighter.stun_ticks - tick
+	if fighter.stun_ticks > 0 and left <= get_up:
+		_seek_ticks(&"get_up", get_up - left)
+	else:
+		_seek_ticks(&"knockdown", KNOCKDOWN_FLOOR_TICK + tick)
 
 
 func _seek_ticks(clip: StringName, tick: float) -> void:

@@ -121,10 +121,45 @@ func test_states_map_to_their_clips() -> void:
 		FighterState.State.DASHING: &"dash",
 		FighterState.State.CHARGING: &"charge_ki",
 		FighterState.State.GUARD_BROKEN: &"guard_broken",
+		FighterState.State.HITSTUN: &"hitstun_light",
+		FighterState.State.BLOCKSTUN: &"blockstun",
+		FighterState.State.KNOCKDOWN: &"knockdown",
 	}
 	for state: FighterState.State in expected:
 		_view.apply_state(_fighter(state), 1.0 / 60.0)
 		assert_eq(_view.current_clip(), expected[state])
+
+
+func test_hitstun_is_light_without_knockback_and_heavy_with_it() -> void:
+	var fighter := _fighter(FighterState.State.HITSTUN)
+	fighter.stun_ticks = 20
+	_view.apply_state(fighter, 1.0 / 60.0)
+	assert_eq(_view.current_clip(), &"hitstun_light")
+	fighter.knockback_type = MoveData.KnockbackType.LAUNCH
+	_view.apply_state(fighter, 1.0 / 60.0)
+	assert_eq(_view.current_clip(), &"hitstun_heavy")
+
+
+func test_stun_clips_stretch_over_the_stun_ticks() -> void:
+	var fighter := _fighter(FighterState.State.BLOCKSTUN)
+	fighter.stun_ticks = 32
+	fighter.state_ticks = 17
+	_view.apply_state(fighter, 1.0 / 60.0)
+	assert_eq(_view.current_clip(), &"blockstun")
+	assert_almost_eq(_view.clip_position() * 60.0, _view.clip_ticks(&"blockstun") * 0.5, 0.01)
+
+
+func test_knockdown_lies_on_the_floor_then_gets_up_as_it_ends() -> void:
+	var fighter := _fighter(FighterState.State.KNOCKDOWN)
+	fighter.stun_ticks = 90
+	fighter.state_ticks = 1
+	_view.apply_state(fighter, 1.0 / 60.0)
+	assert_eq(_view.current_clip(), &"knockdown")
+	assert_lt(_bone_position(&"Hips").y, -0.6, "on the floor")
+	fighter.state_ticks = 90
+	_view.apply_state(fighter, 1.0 / 60.0)
+	assert_eq(_view.current_clip(), &"get_up")
+	assert_almost_eq(_view.clip_position() * 60.0, float(_view.clip_ticks(&"get_up") - 1), 0.01)
 
 
 func test_fast_flight_leans_forward_and_blocking_raises_the_guard() -> void:
