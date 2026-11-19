@@ -132,6 +132,13 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-128 [desktop] Front end: splash, main menu over the world flythrough, character
+  select (roster read dynamically, SubViewport turntable portraits, name/title/stat
+  bars, human/AI, AI level 1-5 and team per seat; Vs AI 1-3 AIs, FFA 2-4), zone
+  select (7 zones, Heartbloom hearts), settings (bus volumes, graphics, camera
+  sensitivity, key rebinding), pause menu, results screen; `MatchConfig` autoload
+  launches `zone_match.tscn` or falls back to the test arena.
+
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
