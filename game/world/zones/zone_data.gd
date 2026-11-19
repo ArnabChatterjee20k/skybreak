@@ -2,12 +2,17 @@ class_name ZoneData
 extends Resource
 ## One fighting zone of the world map: layout, look per time of day, spawns and landmarks.
 ## Per-time-of-day arrays are indexed by WorldAtmosphere.TimeOfDay (day, dusk, night).
+## Zone gameplay markers live in metadata (see heartbloom_gardens.tres): `petal_whirlwinds`
+## and `wishing_fountain`.
 
 @export var id: StringName
 @export var display_name: String
 ## Layout centre on the map (x, z) and rough half-size; borders come from ZoneLayout.
 @export var centre := Vector2.ZERO
 @export var extent := Vector2(350.0, 450.0)
+## Floating zones only: the altitude (m) where the zone starts blending in (x) and
+## fully owns the air (y). Zero for ground zones.
+@export var altitude_band := Vector2.ZERO
 
 @export_group("Terrain colours")
 @export var ground_low := Color(0.5, 0.5, 0.5)
@@ -28,10 +33,14 @@ extends Resource
 @export var ambient_colors: PackedColorArray = [Color(0.55, 0.6, 0.7), Color(0.55, 0.42, 0.45), Color(0.15, 0.18, 0.3)]
 @export var sky_top_colors: PackedColorArray = [Color(0.25, 0.45, 0.85), Color(0.3, 0.25, 0.5), Color(0.02, 0.03, 0.08)]
 @export var sky_horizon_colors: PackedColorArray = [Color(0.7, 0.8, 0.95), Color(0.95, 0.55, 0.35), Color(0.08, 0.1, 0.2)]
-@export_enum("clear", "rain", "snow", "embers") var weather := 0
+@export_enum("clear", "rain", "snow", "embers", "petals") var weather := 0
 
 @export_group("Gameplay")
 ## Two spawn points about 40 m apart; y is a minimum, raised above the ground if needed.
 @export var spawn_points: PackedVector3Array = []
 @export var landmark_names: PackedStringArray = []
 @export var landmark_positions: PackedVector3Array = []
+
+
+func is_floating() -> bool:
+	return altitude_band != Vector2.ZERO
