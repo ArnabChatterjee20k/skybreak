@@ -137,8 +137,8 @@ static func _fist_left() -> Dictionary:
 		"LeftRingDistal": Vector3(0, 0, -55),
 		"LeftLittleProximal": Vector3(0, 0, -92), "LeftLittleIntermediate": Vector3(0, 0, -100),
 		"LeftLittleDistal": Vector3(0, 0, -55),
-		"LeftThumbMetacarpal": Vector3(10, 20, -25), "LeftThumbProximal": Vector3(0, 15, -35),
-		"LeftThumbDistal": Vector3(0, 0, -35),
+		"LeftThumbMetacarpal": Vector3(-15, 75, -30), "LeftThumbProximal": Vector3(0, 0, -40),
+		"LeftThumbDistal": Vector3(0, 0, -40),
 	}
 
 
@@ -230,14 +230,14 @@ static func _fight_stance() -> Dictionary:
 ## Wide low crouch, fists clenched at the hips, elbows flared, chest out.
 static func _power_crouch() -> Dictionary:
 	return _merge([_fists(), {
-		"drop": 0.27, "plant": ["L", "R"],
+		"drop": 0.31, "plant": ["L", "R"],
 		"Hips": Vector3(10, 0, 0),
 		"Spine": Vector3(-4, 0, 0), "Chest": Vector3(-6, 0, 0), "UpperChest": Vector3(-10, 0, 0),
 		"Neck": Vector3(-4, 0, 0), "Head": Vector3(-14, 0, 0),
 		"LeftShoulder": Vector3(0, 8, 10), "RightShoulder": Vector3(0, -8, -10),
-		"LeftUpperArm": Vector3(38, 0, -66), "LeftLowerArm": Vector3(0, -100, 0),
+		"LeftUpperArm": Vector3(36, 0, -56), "LeftLowerArm": Vector3(0, -100, 0),
 		"LeftHand": Vector3(0, 0, -10),
-		"RightUpperArm": Vector3(38, 0, 66), "RightLowerArm": Vector3(0, 100, 0),
+		"RightUpperArm": Vector3(36, 0, 56), "RightLowerArm": Vector3(0, 100, 0),
 		"RightHand": Vector3(0, 0, 10),
 		"LeftUpperLeg": Vector3(-48, 22, 24), "LeftLowerLeg": Vector3(78, 0, 0),
 		"LeftFoot": Vector3(-40, -10, -6),
@@ -248,15 +248,15 @@ static func _power_crouch() -> Dictionary:
 
 static func _power_up_start() -> Dictionary:
 	var gather := _merge([_power_crouch(), {
-		"drop": 0.2,
+		"drop": 0.24,
 		"Spine": Vector3(10, 0, 0), "Chest": Vector3(10, 0, 0), "UpperChest": Vector3(8, 0, 0),
 		"Head": Vector3(16, 0, 0),
 		"LeftUpperArm": Vector3(14, 0, -72), "RightUpperArm": Vector3(14, 0, 72),
 		"LeftLowerArm": Vector3(0, -120, 0), "RightLowerArm": Vector3(0, 120, 0),
 	}])
 	var burst := _merge([_power_crouch(), {
-		"drop": 0.29,
-		"UpperChest": Vector3(-14, 0, 0), "Head": Vector3(-12, 0, 0),
+		"drop": 0.33,
+		"UpperChest": Vector3(-18, 0, 0), "Head": Vector3(-20, 0, 0),
 	}])
 	return {
 		"frames": 20, "loop": false, "grounded": true,
@@ -268,9 +268,10 @@ static func _power_up_start() -> Dictionary:
 static func _power_up() -> Dictionary:
 	var crouch := _power_crouch()
 	var swell := _merge([crouch, {
-		"drop": 0.29,
-		"UpperChest": Vector3(-13, 0, 0), "Head": Vector3(-9, 0, 0),
-		"LeftShoulder": Vector3(0, 8, 13), "RightShoulder": Vector3(0, -8, -13),
+		"drop": 0.33,
+		"UpperChest": Vector3(-18, 0, 0), "Head": Vector3(-20, 0, 0),
+		"LeftShoulder": Vector3(0, 8, 16), "RightShoulder": Vector3(0, -8, -16),
+		"LeftUpperArm": Vector3(36, 0, -52), "RightUpperArm": Vector3(36, 0, 52),
 	}])
 	return {
 		"frames": 60, "loop": true, "grounded": true,
@@ -455,7 +456,7 @@ static func _uppercut() -> Dictionary:
 		"UpperChest": Vector3(-4, 4, 2), "Neck": Vector3(-6, 0, 0), "Head": Vector3(-10, -2, 0),
 		"LeftUpperArm": Vector3(-30, 0, -72), "LeftLowerArm": Vector3(0, -130, 0),
 		"RightShoulder": Vector3(0, 0, -14),
-		"RightUpperArm": Vector3(-122, 0, 84), "RightLowerArm": Vector3(0, 78, 0),
+		"RightUpperArm": Vector3(-76, 0, 80), "RightLowerArm": Vector3(0, 88, 0),
 		"LeftUpperLeg": Vector3(-14, 14, 8), "LeftLowerLeg": Vector3(8, 0, 0),
 		"LeftFoot": Vector3(16, 0, 0),
 		"RightUpperLeg": Vector3(14, -8, -10), "RightLowerLeg": Vector3(4, 0, 0),
@@ -463,7 +464,7 @@ static func _uppercut() -> Dictionary:
 	}])
 	var hold := _merge([strike, {
 		"drop": -0.04,
-		"Hips": Vector3(-8, 16, 0), "RightUpperArm": Vector3(-128, 0, 84),
+		"Hips": Vector3(-8, 16, 0), "RightUpperArm": Vector3(-82, 0, 80),
 	}])
 	var settle := _merge([_stance(), {"drop": 0.12, "Hips": Vector3(8, -20, 0),
 		"RightUpperArm": Vector3(-60, 0, 80), "RightLowerArm": Vector3(0, 110, 0)}])
@@ -546,10 +547,10 @@ static func _axe_kick() -> Dictionary:
 		"LeftUpperArm": Vector3(30, 0, -70), "LeftLowerArm": Vector3(0, -40, 0),
 		"RightUpperArm": Vector3(30, 0, 70), "RightLowerArm": Vector3(0, 40, 0),
 		"LeftUpperLeg": Vector3(-20, 8, 4), "LeftLowerLeg": Vector3(40, 0, 0),
-		"RightUpperLeg": Vector3(-96, 0, -6), "RightLowerLeg": Vector3(2, 0, 0),
+		"RightUpperLeg": Vector3(-110, 0, -6), "RightLowerLeg": Vector3(2, 0, 0),
 		"RightFoot": Vector3(-24, 0, 0),
 	}])
-	var chop_hold := _merge([chop, {"drop": 0.14, "RightUpperLeg": Vector3(-86, 0, -6)}])
+	var chop_hold := _merge([chop, {"drop": 0.14, "RightUpperLeg": Vector3(-100, 0, -6)}])
 	var lower := _merge([_stance(), {"drop": 0.12, "Hips": Vector3(10, -20, 0),
 		"RightUpperLeg": Vector3(-30, 0, -8), "RightLowerLeg": Vector3(40, 0, 0),
 		"RightFoot": Vector3(-10, 0, 0), "plant": ["L"]}])
