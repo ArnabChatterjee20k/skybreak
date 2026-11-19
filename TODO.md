@@ -13,9 +13,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
-- T-114 [developer] Shoulder offset: player pinned 1/3 from the screen edge
-  (yaw corrected for pitch skew), shoulder flips when the opponent crosses the
-  player rather than the screen centre, opponent-hidden metric + asserts.
+- T-115 [developer] Camera turn limits: view and orbit capped at 180°/s (≤3° per
+  frame), camera glides ~0.2 s after teleports instead of cutting.
 
 ## Backlog
 
@@ -24,9 +23,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 Playtest #1 (flight and camera) scored movement 2/5, camera 1/5. Target after
 T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playtester.
 
-- T-115 [developer] Camera turn limits: re-lock/target-switch yaw ≤ 180°/s;
-  teleports (vanish) glide-follow over ~0.2 s instead of the 14/s snap; no
-  frame-to-frame jump > 10° outside cuts.
 - T-103 [developer] Lock-on polish: camera transition when the target changes;
   dash bank capped at about 20° (playtester saw about 45°). The off-screen
   arrow (§4.7) is done in T-113 (OpponentMarker).
@@ -98,3 +94,4 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-102b [developer] Locked camera pitch limits, PR #8 (pull-back later replaced by T-113).
 - T-D02 [desktop] Meters, PR #9.
 - T-D09 [desktop] Aura and impact VFX, PR #12.
+- T-114 [developer] Shoulder offset: player a third from the edge, PR #16.
