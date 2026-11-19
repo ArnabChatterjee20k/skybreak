@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://game/levels/test_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://game/input/keyboard_mouse_input.gd" id="2_input"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://game/ui/graphics_menu.gd" id="4_graphics"]
 [ext_resource type="Script" path="res://game/view/camera/fighter_camera.gd" id="5_camera"]
 [ext_resource type="Script" path="res://game/view/fighter/fighter_view.gd" id="6_fighter_view"]
+[ext_resource type="Script" path="res://game/ui/opponent_marker.gd" id="7_marker"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.25, 0.45, 0.85, 1)
@@ -61,3 +62,16 @@ script = ExtResource("3_overlay")
 
 [node name="GraphicsMenu" type="CanvasLayer" parent="."]
 script = ExtResource("4_graphics")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="OpponentMarker" type="Control" parent="Hud"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("7_marker")

@@ -82,9 +82,20 @@ runtime, so everything stays rebindable. Vanish = DASH + BLOCK (Shift+E).
 ```sh
 # Import (first run, or after adding assets)
 godot --headless --path . --import
-# Run all tests (exits non-zero on failure)
+# Run all tests (exits non-zero on failure). Includes the scripted playtest
+# (tests/playtest/): bot flights through the real arena with camera asserts.
 godot --headless --path . -s res://addons/gut/gut_cmdln.gd
+# Only the scripted playtest
+godot --headless --path . -s res://addons/gut/gut_cmdln.gd -gdir=res://tests/playtest
+# Render the scripted flights for review by eye (contact sheets, key frames,
+# telemetry); write them outside the repo
+godot --path . --fullscreen --resolution 1920x1080 --disable-vsync -s res://game/debug/playtest_capture.gd -- <out dir>
 ```
+
+Scripted flights live in `game/debug/flight_scenarios.gd`; `FlightPlaytest`
+steps the real test arena (`step_tick()` / `present_frame()`) faster than real
+time and records camera metrics per frame. New movement or camera rules get a
+scenario there and an assert in `tests/playtest/`.
 
 On the Windows dev PC, `godot` is
 `D:\Tools\Godot\Godot_v4.7.2-stable_win64_console.exe` (self-contained mode,
