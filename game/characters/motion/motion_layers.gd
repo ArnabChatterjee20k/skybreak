@@ -1,8 +1,9 @@
 class_name MotionLayers
 extends SkeletonModifier3D
-## Procedural realism on top of any clip (prototype, not wired in): lean into acceleration and
-## velocity, banking in flight, hip/spine counter-rotation, look-at, critically damped secondary
-## motion, two-bone foot IK with pelvis drop, additive hit flinches and inertialized clip switches.
+## Procedural realism on top of any clip: lean into acceleration and velocity, a sprung
+## superhero-flight body (pitch, bank, trailing legs, tucked or reaching arms, dash burst),
+## hip/spine counter-rotation, look-at, critically damped secondary motion, two-bone foot IK with
+## pelvis drop, additive hit flinches, per-weapon arm IK and inertialized clip switches.
 ## Everything is in skeleton space (+Y up, facing +Z). Set the inputs each frame; call
 ## inertialize() right before switching clips. Works on a Skeleton3D or, for tests, on arrays.
 
@@ -13,6 +14,18 @@ const MAX_LEAN := deg_to_rad(28.0)
 const MAX_BANK := deg_to_rad(55.0)
 const PLANTED_HEIGHT := 0.06
 const MAX_PELVIS_DROP := 0.25
+const ARMS := [[&"LeftUpperArm", &"LeftLowerArm", &"LeftHand"], [&"RightUpperArm", &"RightLowerArm", &"RightHand"]]
+## Flight: speed (m/s) for the full flight body, and the flutter of the trailing legs.
+const FLIGHT_FULL_SPEED := 22.0
+const FLUTTER_HZ := 2.4
+## Arm poses for held weapons; each hand target is in chest space (+Y up, +Z forward, +X left).
+enum ArmPose { NONE, TWO_HANDED, BOW_DRAW, PISTOL_AIM }
+const ARM_POSES := {
+	# Two-handed: the left hand grips the haft just below the right hand (offset from the right hand).
+	ArmPose.TWO_HANDED: {&"LeftHand": Vector3(0.03, -0.16, -0.02)},
+	ArmPose.BOW_DRAW: {&"LeftHand": Vector3(0.12, 0.22, 0.62), &"RightHand": Vector3(-0.06, 0.26, 0.12)},
+	ArmPose.PISTOL_AIM: {&"RightHand": Vector3(-0.08, 0.22, 0.62)},
+}
 
 ## Fighter velocity in skeleton space (m/s).
 @export var velocity := Vector3.ZERO
@@ -31,6 +44,9 @@ const MAX_PELVIS_DROP := 0.25
 @export var flinch_frequency := 16.0
 ## Inertialization speed: critically damped decay rate (1/s).
 @export var blend_frequency := 18.0
+## Held-weapon arm pose and how much of it to apply (0..1, sprung).
+@export var arm_pose := ArmPose.NONE
+@export_range(0.0, 1.0) var arm_weight := 0.0
 
 var lean := Vector3.ZERO  # Current lean as a rotation vector (x pitch, z roll).
 var _lean_velocity := Vector3.ZERO
@@ -55,6 +71,22 @@ var _prev_out: Array[Quaternion] = []
 var _last_hips := Vector3.ZERO
 var _prev_hips := Vector3.ZERO
 var _last_delta := 1.0 / 60.0
+# Flight body: amount (0..1), arm reach (dive), dash burst and the flutter phase.
+var _flight := 0.0
+var _flight_velocity := 0.0
+var _reach := 0.0
+var _reach_velocity := 0.0
+var _burst := 0.0
+var _burst_velocity := 0.0
+var _flutter_phase := 0.0
+var _arm := 0.0
+var _arm_velocity := 0.0
+var _arm_pose_now := ArmPose.NONE
+var _world_cache: Array = []
+var _rest_parent_rot: Array[Quaternion] = []
+## Bones the skeleton mode reads and writes (the body; fingers and extras are left alone).
+var _used: PackedInt32Array = []
+var _scratch: Array[Quaternion] = []
 # Bones (from the skeleton or setup_bones()).
 var _names: Array[StringName] = []
 var _parents: PackedInt32Array = []
@@ -90,6 +122,16 @@ func setup_bones(names: PackedStringArray, parents: PackedInt32Array, rests: Arr
 		world.append(rests[i] if parents[i] < 0 else world[parents[i]] * rests[i])
 		_rest_heights.append(world[i].origin.y)
 	_parents = parents
+	_rest_parent_rot.clear()
+	_used.clear()
+	var body := SPINE.duplicate()
+	for chain: Array in LEGS + ARMS:
+		body.append_array(chain)
+	body.append_array([&"LeftShoulder", &"RightShoulder", &"LeftToes", &"RightToes"])
+	for i in names.size():
+		_rest_parent_rot.append(Quaternion.IDENTITY if parents[i] < 0 else world[parents[i]].basis.get_rotation_quaternion())
+		if body.has(_names[i]):
+			_used.append(i)
 	reset()
 
 
@@ -117,6 +159,14 @@ func reset() -> void:
 	_last_out.clear()
 	_prev_out.clear()
 	_pending_blend = false
+	_flight = 0.0
+	_flight_velocity = 0.0
+	_reach = 0.0
+	_reach_velocity = 0.0
+	_burst = 0.0
+	_burst_velocity = 0.0
+	_arm = 0.0
+	_arm_velocity = 0.0
 
 
 ## Blend from the last output pose into whatever the next clip gives, without a linear crossfade.
@@ -135,17 +185,25 @@ func land(strength := 1.0) -> void:
 	_landing_velocity -= strength * 2.5
 
 
+## Flight dash: the body snaps into a streamlined burst pose, then springs back.
+func burst(strength := 1.0) -> void:
+	_burst_velocity += strength * 14.0
+
+
 func _process_modification_with_delta(delta: float) -> void:
 	var skeleton := get_skeleton()
 	if skeleton == null or _names.is_empty():
 		return
-	var rotations: Array[Quaternion] = []
-	for i in _names.size():
-		rotations.append(skeleton.get_bone_pose_rotation(i))
+	if _scratch.size() != _names.size():
+		_scratch.resize(_names.size())
+		_scratch.fill(Quaternion.IDENTITY)
+	var rotations := _scratch
+	for i in _used:
+		rotations[i] = skeleton.get_bone_pose_rotation(i)
 	var hips_id: int = _index.get(&"Hips", -1)
 	var hips := skeleton.get_bone_pose_position(hips_id) if hips_id >= 0 else Vector3.ZERO
 	hips = process_pose(rotations, hips, delta)
-	for i in _names.size():
+	for i in _used:
 		skeleton.set_bone_pose_rotation(i, rotations[i])
 	if hips_id >= 0:
 		skeleton.set_bone_pose_position(hips_id, hips)
@@ -158,10 +216,12 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 	_inertialize(rotations, delta)
 	hips = _inertialize_hips(hips, delta)
 	_lean_layer(rotations, delta)
+	_flight_layer(rotations, delta)
 	_look_layer(rotations, delta)
 	_secondary_layer(rotations, delta)
 	_flinch_layer(rotations, delta)
 	hips = _landing_layer(rotations, hips, delta)
+	_arm_layer(rotations, hips, delta)
 	if foot_ik:
 		hips = _foot_ik(rotations, hips)
 	_prev_out = _last_out.duplicate()
@@ -247,7 +307,9 @@ func _lean_layer(rotations: Array[Quaternion], delta: float) -> void:
 	if flying:
 		# Bank into turns: roll with lateral acceleration, pitch down with speed (dive).
 		target.z = clampf(-accel.x * accel_lean * 2.0 - velocity.x * 0.03, -MAX_BANK, MAX_BANK)
-		target.x = clampf(velocity.z * 0.035 - velocity.y * 0.02, -MAX_LEAN, deg_to_rad(70.0))
+		var speed := velocity.length()
+		target.x = clampf(velocity.z * 0.035 - velocity.y * 0.02 + speed * 0.012 + _burst * 0.35,
+			-MAX_LEAN, deg_to_rad(78.0))
 	else:
 		target.x = clampf(target.x, -MAX_LEAN, MAX_LEAN)
 		target.z = clampf(target.z, -MAX_LEAN, MAX_LEAN)
@@ -264,6 +326,122 @@ func _lean_layer(rotations: Array[Quaternion], delta: float) -> void:
 		var twist := rotations[hips].get_euler().y
 		var counter := from_rotvec(-lean * 0.35 + Vector3(0, -twist * 0.25, 0))
 		rotations[chest] = counter * rotations[chest]
+
+
+## Rotation by euler (radians) about axes of the model's rest frame, applied in bone i's parent.
+func _rest_frame(i: int, euler: Vector3) -> Quaternion:
+	var p := _rest_parent_rot[i]
+	return p.inverse() * Quaternion.from_euler(euler) * p
+
+
+func _offset(rotations: Array[Quaternion], bone: StringName, euler: Vector3) -> void:
+	var i: int = _index.get(bone, -1)
+	if i >= 0 and euler != Vector3.ZERO:
+		rotations[i] = _rest_frame(i, euler) * rotations[i]
+
+
+## Superhero flight: legs trail and flutter, arms tuck at speed or reach in a dive, dash bursts.
+func _flight_layer(rotations: Array[Quaternion], delta: float) -> void:
+	var speed := velocity.length()
+	var amount := clampf(speed / FLIGHT_FULL_SPEED, 0.0, 1.0) if flying else 0.0
+	var s := spring(_flight, _flight_velocity, amount, 7.0, delta)
+	_flight = s[0]
+	_flight_velocity = s[1]
+	var diving := clampf((-velocity.y - 6.0) / 14.0, 0.0, 1.0) if flying else 0.0
+	var forward := clampf((velocity.z - 16.0) / 10.0, 0.0, 1.0) if flying else 0.0
+	s = spring(_reach, _reach_velocity, maxf(diving, forward), 6.0, delta)
+	_reach = s[0]
+	_reach_velocity = s[1]
+	s = spring(_burst, _burst_velocity, 0.0, 9.0, delta)
+	_burst = clampf(s[0], -0.3, 1.2)
+	_burst_velocity = s[1]
+	if _flight < 0.002 and absf(_burst) < 0.002:
+		return
+	_flutter_phase = fmod(_flutter_phase + delta * TAU * FLUTTER_HZ * (0.6 + _flight), TAU)
+	var f := _flight
+	var flutter := sin(_flutter_phase) * 0.07 * f
+	var b := _burst
+	# Legs: straighten in line with the body, knees soft, alternating flutter; the burst pulls them together.
+	_offset(rotations, &"LeftUpperLeg", Vector3(0.22 * f + flutter - 0.1 * b, 0, -0.05 * f))
+	_offset(rotations, &"RightUpperLeg", Vector3(0.22 * f - flutter - 0.1 * b, 0, 0.05 * f))
+	_offset(rotations, &"LeftLowerLeg", Vector3(0.18 * f + flutter * 1.5 + 0.2 * b, 0, 0))
+	_offset(rotations, &"RightLowerLeg", Vector3(0.32 * f - flutter * 1.5 + 0.2 * b, 0, 0))
+	_offset(rotations, &"LeftFoot", Vector3(0.45 * f, 0, 0))
+	_offset(rotations, &"RightFoot", Vector3(0.45 * f, 0, 0))
+	# Arms: tucked back along the body at speed; the lead (right) arm reaches ahead in a dive.
+	var tuck := f * (1.0 - _reach) + b
+	var reach := _reach * f
+	_offset(rotations, &"LeftUpperArm", Vector3(0.55 * tuck, 0, -0.35 * tuck))
+	_offset(rotations, &"RightUpperArm", Vector3(0.55 * tuck * (1.0 - _reach) - 2.4 * reach, 0, 0.35 * tuck - 0.2 * reach))
+	_offset(rotations, &"RightLowerArm", Vector3(0.6 * reach, 0, 0))
+	_offset(rotations, &"LeftLowerArm", Vector3(0.25 * tuck, 0, 0))
+	# Head stays up, looking where it flies.
+	_offset(rotations, &"Neck", Vector3(-0.25 * f - 0.1 * b, 0, 0))
+	_offset(rotations, &"Head", Vector3(-0.3 * f, 0, 0))
+
+
+## Held-weapon arm pose: two-bone IK of the hands to chest-space targets, blended by weight.
+func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> void:
+	if arm_pose != ArmPose.NONE:
+		_arm_pose_now = arm_pose
+	var s := spring(_arm, _arm_velocity, arm_weight if arm_pose != ArmPose.NONE else 0.0, 14.0, delta)
+	_arm = clampf(s[0], 0.0, 1.0)
+	_arm_velocity = s[1]
+	if _arm < 0.01 or not ARM_POSES.has(_arm_pose_now):
+		return
+	var chest: int = _index.get(&"UpperChest", _index.get(&"Chest", -1))
+	if chest < 0:
+		return
+	var targets: Dictionary = ARM_POSES[_arm_pose_now]
+	_world_cache.clear()
+	var chest_world := _world_at(rotations, hips, chest)
+	for chain: Array in ARMS:
+		if not targets.has(chain[2]):
+			continue
+		var up: int = _index.get(chain[0], -1)
+		var lo: int = _index.get(chain[1], -1)
+		var hand: int = _index.get(chain[2], -1)
+		if up < 0 or lo < 0 or hand < 0:
+			continue
+		var before := [rotations[up], rotations[lo], rotations[hand]]
+		var world := _chain_world(rotations, hips, [up, lo, hand])
+		var target: Vector3 = chest_world * (targets[chain[2]] as Vector3)
+		if _arm_pose_now == ArmPose.TWO_HANDED:
+			var right: int = _index.get(&"RightHand", -1)
+			if right < 0:
+				continue
+			target = _world_at(rotations, hips, right).origin + chest_world.basis.orthonormalized() * (targets[chain[2]] as Vector3)
+		_two_bone(rotations, world, up, lo, hand, target)
+		rotations[up] = (before[0] as Quaternion).slerp(rotations[up], _arm)
+		rotations[lo] = (before[1] as Quaternion).slerp(rotations[lo], _arm)
+		rotations[hand] = before[2]
+		_world_cache.clear()
+
+
+## World transforms of one chain (plus its parent), as a sparse array _two_bone can read.
+func _chain_world(rotations: Array[Quaternion], hips: Vector3, chain: Array) -> Array:
+	var out := []
+	out.resize(_names.size())
+	var top: int = chain[0]
+	if _parents[top] >= 0:
+		out[_parents[top]] = _world_at(rotations, hips, _parents[top])
+	for i: int in chain:
+		out[i] = _world_at(rotations, hips, i)
+	return out
+
+
+## One bone's world transform, cached per pass (clear _world_cache when rotations change).
+func _world_at(rotations: Array[Quaternion], hips: Vector3, bone: int) -> Transform3D:
+	if _world_cache.size() != _names.size():
+		_world_cache.resize(_names.size())
+		_world_cache.fill(null)
+	if _world_cache[bone] != null:
+		return _world_cache[bone]
+	var origin: Vector3 = hips if _names[bone] == &"Hips" else _origins[bone]
+	var local := Transform3D(Basis(rotations[bone]), origin)
+	var result := local if _parents[bone] < 0 else _world_at(rotations, hips, _parents[bone]) * local
+	_world_cache[bone] = result
+	return result
 
 
 func _look_layer(rotations: Array[Quaternion], delta: float) -> void:
@@ -326,7 +504,8 @@ func _foot_ik(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
 	var hips_id: int = _index.get(&"Hips", -1)
 	if hips_id < 0 or flying:
 		return hips
-	var world := _world(rotations, hips)
+	_world_cache.clear()
+	var world := _legs_world(rotations, hips)
 	var heights := [ground.x, ground.y]
 	var targets: Array[Vector3] = []
 	var drop := 0.0
@@ -351,7 +530,8 @@ func _foot_ik(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
 		var need := sqrt(maxf(reach * reach - horizontal * horizontal, 0.0))
 		drop = maxf(drop, (hip.y - target.y) - need)
 	hips.y -= clampf(drop, 0.0, MAX_PELVIS_DROP)
-	world = _world(rotations, hips)
+	_world_cache.clear()
+	world = _legs_world(rotations, hips)
 	for side in 2:
 		if targets[side] == Vector3.INF:
 			continue
@@ -359,8 +539,23 @@ func _foot_ik(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
 		if (world[foot] as Transform3D).origin.is_equal_approx(targets[side]):
 			continue
 		_two_bone(rotations, world, _index[LEGS[side][0]], _index[LEGS[side][1]], foot, targets[side])
-		world = _world(rotations, hips)
+		_world_cache.clear()
+		world = _legs_world(rotations, hips)
 	return hips
+
+
+## World transforms of the hips and both legs only (sparse), for the foot IK.
+func _legs_world(rotations: Array[Quaternion], hips: Vector3) -> Array:
+	var out := []
+	out.resize(_names.size())
+	for leg: Array in LEGS:
+		for bone: StringName in leg:
+			var i: int = _index.get(bone, -1)
+			if i >= 0:
+				out[i] = _world_at(rotations, hips, i)
+				if _parents[i] >= 0 and out[_parents[i]] == null:
+					out[_parents[i]] = _world_at(rotations, hips, _parents[i])
+	return out
 
 
 func _two_bone(rotations: Array[Quaternion], world: Array, up: int, lo: int, foot: int, target: Vector3) -> void:

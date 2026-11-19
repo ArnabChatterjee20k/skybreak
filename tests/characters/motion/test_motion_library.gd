@@ -21,10 +21,11 @@ var _skeleton: Skeleton3D
 
 
 func before_all() -> void:
-	_library = load(LIBRARY_PATH) as MotionLibrary
 	_model = (load(MODEL_PATH) as PackedScene).instantiate() as Node3D
 	add_child(_model)
 	_skeleton = _model.get_node("%GeneralSkeleton") as Skeleton3D
+	# As CharacterView plays it: hips heights fitted to the rig (the mixer scales them by motion_scale).
+	_library = MotionClips.for_skeleton(load(LIBRARY_PATH) as MotionLibrary, _skeleton)
 
 
 func after_all() -> void:
