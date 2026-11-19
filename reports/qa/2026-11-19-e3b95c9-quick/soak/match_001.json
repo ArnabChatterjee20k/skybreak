@@ -1,0 +1,97 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 4,
+			"8": 1
+		},
+		"launcher": {
+			"7": 1,
+			"8": 6
+		},
+		"light_1": {
+			"3": 9,
+			"4": 10,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 10,
+			"8": 7,
+			"9": 1,
+			"20": 1
+		},
+		"light_2": {
+			"3": 11,
+			"4": 8,
+			"5": 2
+		},
+		"light_3": {
+			"3": 2,
+			"4": 7,
+			"5": 8,
+			"8": 2,
+			"20": 1
+		},
+		"light_4": {
+			"6": 1
+		}
+	},
+	"id": "101:skyhold_ruins:ffa4:kael,vexa,brann,lyra:4235",
+	"kos": 2,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		2,
+		3,
+		5
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 101,
+	"sim_ms_per_tick": 1.18196083333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.012331654317677,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.965502734539335,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.8323425,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 35,
+			"detail": "fighters 1 and 3 overlap 0.15 m (FLYING vs ATTACKING)",
+			"fighter": 1,
+			"first_tick": 252,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1760,
+			"worst_value": 0.149704818725586
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 18,
+			"detail": "fighters 0 and 3 overlap 0.18 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 2199,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 2202,
+			"worst_value": 0.17500572681427
+		}
+	],
+	"wall_seconds": 18.301,
+	"zone": "skyhold_ruins"
+}

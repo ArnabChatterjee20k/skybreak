@@ -1,0 +1,125 @@
+{
+	"hitstops": {
+		"breaker": {
+			"8": 1
+		},
+		"launcher": {
+			"7": 8,
+			"20": 1
+		},
+		"light_1": {
+			"3": 14,
+			"4": 1,
+			"5": 5,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 7,
+			"8": 4,
+			"9": 5
+		},
+		"light_2": {
+			"3": 11,
+			"4": 4,
+			"5": 8
+		},
+		"light_2+counter": {
+			"7": 1
+		},
+		"light_3": {
+			"3": 11,
+			"4": 1,
+			"5": 1,
+			"8": 7
+		},
+		"spike": {
+			"7": 2
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "113:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:2553",
+	"kos": 2,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		5,
+		5,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 113,
+	"sim_ms_per_tick": 1.072055,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0106354122981429,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.1842901384739,
+		"foot_slide_cm_per_frame": 0.000793626530317387,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.76158,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 17,
+			"detail": "lowest sole +25.8 cm off the visible ground (IDLE, clip land)",
+			"fighter": 0,
+			"first_tick": 192,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1102,
+			"worst_value": 0.258364251591672
+		},
+		{
+			"check": "foot_ground",
+			"count": 5,
+			"detail": "lowest sole +85.9 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 1,
+			"first_tick": 331,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 745,
+			"worst_value": 0.858884504313892
+		},
+		{
+			"check": "foot_ground",
+			"count": 3,
+			"detail": "lowest sole +49.5 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 3,
+			"first_tick": 799,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1437,
+			"worst_value": 0.494802218771497
+		},
+		{
+			"check": "arena_bounds",
+			"count": 1,
+			"detail": "outside the arena at (124.95, 273.59, -137.37) (stand 273.67, GRABBED)",
+			"fighter": 3,
+			"first_tick": 1012,
+			"legend": "lyra",
+			"limit": 290.05,
+			"weapon": "",
+			"worst_tick": 1012,
+			"worst_value": 147.367584228516
+		}
+	],
+	"wall_seconds": 17.861,
+	"zone": "heartbloom_gardens"
+}

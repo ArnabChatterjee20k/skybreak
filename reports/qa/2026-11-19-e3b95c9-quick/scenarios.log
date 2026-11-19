@@ -1,0 +1,126 @@
+ERROR: No GDExtension library found for current OS and architecture (linux.x86_64) in configuration file: res://addons/webrtc_native/webrtc_native.gdextension
+   at: parse_gdextension_file (core/extension/gdextension_library_loader.cpp:369)
+ERROR: GDExtension dynamic library not found: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: open_library (core/extension/gdextension.cpp:810)
+ERROR: Error loading extension: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: load_extensions (core/extension/gdextension_manager.cpp:333)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+---  GUT  ---
+[1m[INFO]:  [0musing [/root/.local/share/godot/app_userdata/Skybreak] for temporary output.
+Godot version:  4.7.2
+GUT version:  9.7.1
+[4m
+
+res://tests/qa/scenarios/test_air_combos.gd
+[0m* test_kael_lands_lights_launcher_air_light_and_spike_as_one_combo
+    kael: combo 6, hits [&"light_1", &"light_2", &"launcher", &"light_1", &"light_2", &"spike"]
+* test_vexa_lands_lights_launcher_air_light_and_spike_as_one_combo
+    vexa: combo 6, hits [&"light_1", &"light_2", &"launcher", &"light_1", &"light_2", &"spike"]
+* test_lyra_lands_lights_launcher_air_light_and_spike_as_one_combo
+    lyra: combo 6, hits [&"light_1", &"light_2", &"launcher", &"light_1", &"light_2", &"spike"]
+* test_brann_lands_lights_launcher_air_light_and_spike_as_one_combo
+    brann: combo 5, hits [&"light_1", &"light_2", &"launcher", &"light_1", &"light_2", &"spike"]
+[31m    [Failed]:  [0m[5] expected to be >= than [6]:  one unbroken combo, launcher to spike
+      at line 134
+[1m3/4 passed.
+[0m[4m
+
+res://tests/qa/scenarios/test_defense.gd
+[0m* test_a_perfect_block_then_a_light_punishes_the_attacker_in_its_recovery
+* test_a_grab_teched_in_time_pushes_both_apart_without_damage
+* test_a_grab_teched_too_late_ends_in_a_throw
+* test_blocking_strike_after_strike_breaks_the_guard_and_the_next_hit_lands
+* test_a_light_into_a_heavy_startup_is_a_counter_hit_and_stops_the_heavy
+* test_brann_armour_absorbs_a_light_and_his_smash_still_lands
+* test_lyra_star_step_passes_through_an_arrow
+[1m7/7 passed.
+[0m[4m
+
+res://tests/qa/scenarios/test_movement.gd
+[0m* test_a_dash_into_an_opponent_stops_at_contact_without_passing_through
+* test_a_locked_rush_brakes_in_front_of_the_opponent
+* test_a_vanish_behind_an_unturned_blocker_lands_a_light_through_its_guard
+* test_walking_off_a_raised_island_falls_then_ascend_takes_flight
+* test_a_push_block_into_the_arena_wall_stops_the_attacker_at_the_wall
+* test_a_blowback_into_the_arena_wall_stops_the_target_at_the_wall
+[1m6/6 passed.
+[0m[4m
+
+res://tests/qa/scenarios/test_pause.gd
+[0m* test_pausing_the_match_freezes_the_sim_and_resuming_continues_it
+[1m1/1 passed.
+[0m[4m
+
+res://tests/qa/scenarios/test_rounds.gd
+[0m* test_a_knockout_in_the_air_falls_bounces_rests_then_round_two_starts_at_the_spawns
+* test_a_knockout_on_a_raised_island_rests_on_the_island_top
+[31m    [Failed]:  [0m[1.00000000000000000000] expected to equal [7.0] +/- [0.05]:  lies on the island, not inside it
+      at line 74
+* test_the_round_clock_running_out_gives_the_round_to_the_healthier_fighter
+* test_grey_health_from_a_combo_regenerates_after_a_quiet_spell
+* test_a_four_fighter_free_for_all_ends_with_the_last_one_standing
+    FFA: winner 3 after 529 ticks
+[1m4/5 passed.
+[0m[4m
+
+res://tests/qa/scenarios/test_tutorial.gd
+[0m* test_the_move_lesson_is_completed_by_its_autopilot
+    move: 99 ticks
+* test_the_light_lesson_is_completed_by_its_autopilot
+    light: 55 ticks
+* test_the_heavy_lesson_is_completed_by_its_autopilot
+    heavy: 193 ticks
+* test_the_air_lesson_is_completed_by_its_autopilot
+    air: 112 ticks
+* test_the_defense_lesson_is_completed_by_its_autopilot
+    defense: 302 ticks
+* test_the_grab_lesson_is_completed_by_its_autopilot
+    grab: 119 ticks
+* test_the_dash_lesson_is_completed_by_its_autopilot
+    dash: 24 ticks
+* test_the_meters_lesson_is_completed_by_its_autopilot
+    meters: 290 ticks
+* test_the_weapons_lesson_is_completed_by_its_autopilot
+    weapons: 47 ticks
+[1m9/9 passed.
+[0m[4m
+
+res://tests/qa/scenarios/test_weapons.gd
+[0m* test_a_level_three_bow_arrow_pins_the_target_to_the_wall
+* test_a_heartstring_tether_yanks_the_target_in_for_a_follow_up
+* test_pick_up_two_weapons_switch_back_and_throw_one_into_the_opponent
+* test_a_knockout_drops_every_weapon_the_loser_carried
+* test_a_thrown_spike_bomb_explodes_on_the_opponent_and_launches_it
+* test_an_aegis_pickup_absorbs_the_next_hit_then_the_one_after_lands
+[1m6/6 passed.
+[0m
+
+
+
+[33m==============================================
+[0m[33m= Run Summary
+[0m[33m==============================================
+[0m[4m
+res://tests/qa/scenarios/test_air_combos.gd
+[0m- test_brann_lands_lights_launcher_air_light_and_spike_as_one_combo
+[31m    [Failed]:  [0m[5] expected to be >= than [6]:  one unbroken combo, launcher to spike
+          at line 134
+[4m
+res://tests/qa/scenarios/test_rounds.gd
+[0m- test_a_knockout_on_a_raised_island_rests_on_the_island_top
+[31m    [Failed]:  [0m[1.00000000000000000000] expected to equal [7.0] +/- [0.05]:  lies on the island, not inside it
+          at line 74
+
+Totals
+------
+Scripts               7
+Tests                38
+Passing Tests        36
+Failing Tests         2
+Asserts           323/325
+Time              4.922s
+
+
+[31m---- 2 failing tests ----
+[0m

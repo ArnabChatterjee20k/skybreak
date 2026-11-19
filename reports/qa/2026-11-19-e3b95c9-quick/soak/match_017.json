@@ -1,0 +1,149 @@
+{
+	"hitstops": {
+		"blade/breaker": {
+			"8": 1
+		},
+		"blade/launcher": {
+			"8": 3
+		},
+		"blade/light_1": {
+			"4": 7
+		},
+		"blade/light_1+counter": {
+			"8": 1
+		},
+		"blade/light_2": {
+			"4": 8
+		},
+		"blade/light_3": {
+			"4": 6
+		},
+		"blade/light_4": {
+			"7": 2
+		},
+		"breaker": {
+			"8": 3
+		},
+		"breaker+counter": {
+			"11": 2
+		},
+		"light_1": {
+			"3": 2,
+			"4": 2,
+			"5": 4
+		},
+		"light_1+counter": {
+			"7": 3,
+			"9": 4
+		},
+		"light_2": {
+			"3": 4,
+			"4": 2,
+			"5": 3
+		},
+		"light_3": {
+			"3": 2,
+			"4": 1,
+			"5": 2,
+			"8": 3
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		3,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 117,
+	"sim_ms_per_tick": 1.08110916666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0112863099202514,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 4.61643341590587,
+		"foot_slide_cm_per_frame": 0.000221619010029923,
+		"locked_on_screen_share": 0.996665277198833,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.77074375,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 10,
+			"detail": "lowest sole +63.0 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 728,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 872,
+			"worst_value": 0.629829145446024
+		},
+		{
+			"check": "foot_ground",
+			"count": 7,
+			"detail": "lowest sole +13.6 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 3,
+			"first_tick": 800,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1971,
+			"worst_value": 0.13647342328909
+		},
+		{
+			"check": "foot_ground",
+			"count": 4,
+			"detail": "lowest sole +31.1 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 1,
+			"first_tick": 808,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1187,
+			"worst_value": 0.311420866102225
+		},
+		{
+			"check": "foot_ground",
+			"count": 14,
+			"detail": "lowest sole +33.1 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 2,
+			"first_tick": 848,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "blade",
+			"worst_tick": 1167,
+			"worst_value": 0.330702126035703
+		},
+		{
+			"check": "camera_cover",
+			"count": 3,
+			"detail": "fighter 1 covers 100% of the screen",
+			"fighter": 1,
+			"first_tick": 1794,
+			"legend": "brann",
+			"limit": 0.6,
+			"weapon": "",
+			"worst_tick": 1795,
+			"worst_value": 1.0
+		}
+	],
+	"wall_seconds": 17.392,
+	"zone": "frozen_peaks"
+}
