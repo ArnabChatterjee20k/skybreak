@@ -23,7 +23,8 @@ void fragment() {
 		float frame = floor(TIME * 24.0);
 		float pick = vfx_hash21(vec2(slot, frame));
 		float on = step(pick, 0.55);
-		float start = 0.18 + 0.25 * vfx_hash21(vec2(slot + 31.0, frame)) + 0.25 * (1.0 - amount);
+		// Lines stay in the outer band: the fighters around the centre are never crossed.
+		float start = 0.34 + 0.2 * vfx_hash21(vec2(slot + 31.0, frame)) + 0.2 * (1.0 - amount);
 		float taper = smoothstep(start, start + 0.2, r);
 		float width = 0.18 * taper;
 		float line = 1.0 - smoothstep(width, width + 0.1, abs(fract(a) - 0.5));
@@ -34,7 +35,8 @@ void fragment() {
 		float lum = dot(scene, vec3(0.299, 0.587, 0.114));
 		float lit = step(0.62, lum + 0.12 * (1.0 - smoothstep(0.0, 0.3, r)));
 		vec3 frame_color = mix(ink.rgb, mix(color.rgb, vec3(1.0), 0.6), lit);
-		COLOR = vec4(frame_color, amount);
+		// Partial: the contact area around the centre keeps its real colours.
+		COLOR = vec4(frame_color, amount * smoothstep(0.16, 0.42, r));
 	} else if (mode == 2) {
 		// KO colour pop: punchy contrast toward the sky tint, vignette in ink.
 		vec3 scene = textureLod(screen_texture, SCREEN_UV, 0.0).rgb;
@@ -46,6 +48,7 @@ void fragment() {
 		graded = mix(graded, ink.rgb, vignette * 0.7);
 		COLOR = vec4(clamp(graded, 0.0, 1.0), amount);
 	} else {
-		COLOR = vec4(color.rgb, amount * (1.0 - 0.4 * smoothstep(0.0, 0.8, r)));
+		// Edge flash: clear in the middle where the fighters are, brightest at the frame.
+		COLOR = vec4(color.rgb, amount * smoothstep(0.22, 0.75, r));
 	}
 }

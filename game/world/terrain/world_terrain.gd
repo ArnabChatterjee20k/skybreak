@@ -28,7 +28,7 @@ func build(map: TerrainHeightmap, zones: Array[ZoneData]) -> void:
 		high.append(_vec4(zone.ground_high))
 		rock.append(_vec4(zone.rock))
 		params.append(Vector4(zone.ramp_heights.x, zone.ramp_heights.y, zone.strata,
-			1.0 if zone.id == &"stormfall_city" else 0.0))
+			float(zone.ground_pattern)))
 	for lod in TerrainGrid.LOD_COUNT:
 		var material := ShaderMaterial.new()
 		material.shader = SHADER

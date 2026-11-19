@@ -33,12 +33,14 @@ func test_light_hits_add_nothing_on_top_of_the_feedback_spark() -> void:
 	assert_eq(MatchVfx.screen_for(_event(E.HIT, 4)), &"")
 
 
-func test_heavy_hits_and_counters_get_an_anime_burst_and_an_impact_frame() -> void:
+func test_plain_heavies_add_nothing_and_only_heavy_counters_or_long_combo_enders_earn_an_impact_frame() -> void:
 	for type in [E.HIT, E.THROW]:
-		assert_eq(MatchVfx.effects_for(_event(type, 8), &""), [&"anime_burst"] as Array[StringName])
-		assert_eq(MatchVfx.screen_for(_event(type, 8)), &"impact")
+		assert_eq(MatchVfx.effects_for(_event(type, 8), &""), [] as Array[StringName], "#77: the heavy spark is enough")
+		assert_eq(MatchVfx.screen_for(_event(type, 8)), &"")
+		assert_eq(MatchVfx.screen_for(_event(type, 8), ImpactFrameGate.LONG_COMBO), &"impact")
 	assert_eq(MatchVfx.effects_for(_event(E.COUNTER, 4), &""), [&"anime_burst"] as Array[StringName])
-	assert_eq(MatchVfx.screen_for(_event(E.COUNTER, 4)), &"impact")
+	assert_eq(MatchVfx.screen_for(_event(E.COUNTER, 4)), &"", "a light counter")
+	assert_eq(MatchVfx.screen_for(_event(E.COUNTER, 9)), &"impact")
 
 
 func test_guard_break_shatters_with_burst_lines() -> void:
@@ -56,7 +58,7 @@ func test_heartbloom_hits_sparkle_and_heavy_ones_shed_petals() -> void:
 	var light := MatchVfx.effects_for(_event(E.HIT, 4), &"heartbloom_gardens")
 	var heavy := MatchVfx.effects_for(_event(E.HIT, 8), &"heartbloom_gardens")
 	assert_eq(light, [&"sparkles"] as Array[StringName])
-	assert_true(heavy.has(&"petals") and heavy.has(&"sparkles") and heavy.has(&"anime_burst"))
+	assert_true(heavy.has(&"petals") and heavy.has(&"sparkles") and not heavy.has(&"anime_burst"))
 	assert_false(MatchVfx.effects_for(_event(E.BLOCK, 4), &"heartbloom_gardens").has(&"sparkles"), "blocks are not hits")
 
 
@@ -139,9 +141,9 @@ func test_react_plays_the_ko_finisher_and_screen_pop() -> void:
 	assert_false(vfx.screen().is_active(VfxScreen.Mode.POP), "the pop fades out")
 
 
-func test_heavy_hit_shows_a_two_frame_impact_frame() -> void:
+func test_a_heavy_counter_shows_a_two_frame_impact_frame() -> void:
 	var vfx := _vfx_with_sim()
-	var events: Array[Dictionary] = [_event(E.HIT, 8)]
+	var events: Array[Dictionary] = [_event(E.COUNTER, 9)]
 	vfx.react(events)
 	assert_true(vfx.screen().is_active(VfxScreen.Mode.IMPACT))
 	assert_true(vfx.screen().is_active(VfxScreen.Mode.LINES))
@@ -283,6 +285,9 @@ func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_outside_t
 	var plays := {}
 	var nodes_after_warmup := 0
 	var pooled_after_warmup := 0
+	# Pools may grow lazily up to capacity; fill them so only real leaks count.
+	for pool in vfx.pools():
+		pool.fill(pool.capacity)
 	for tick in 3600:
 		var inputs: Array[FighterInput] = []
 		for bot in bots:
@@ -308,3 +313,87 @@ func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_outside_t
 		vfx.advance(TICK)
 	for pool in vfx.pools():
 		assert_eq(pool.playing_count(), 0, "%s all despawned" % pool.kind)
+
+
+func test_ko_flash_lasts_at_most_four_rendered_frames_even_in_slow_mo() -> void:
+	var vfx := _vfx_with_sim()
+	var events: Array[Dictionary] = [_event(E.KO, 20)]
+	vfx.react(events)
+	var lit := 0
+	# Slow-mo shrinks delta; the flash counts frames, not seconds.
+	for i in 30:
+		if vfx.screen().is_active(VfxScreen.Mode.FLASH):
+			lit += 1
+		vfx.advance(TICK * 0.3)
+	assert_between(lit, 1, VfxScreen.MAX_FLASH_FRAMES)
+
+
+func test_ko_colour_pop_is_capped_and_subtle() -> void:
+	var screen := VfxScreen.new()
+	add_child_autofree(screen)
+	screen.color_pop(VfxScreen.SKY_POP, 0.6, 0.9)
+	var rect := screen.get_child(VfxScreen.Mode.POP) as ColorRect
+	assert_lte(float((rect.material as ShaderMaterial).get_shader_parameter("amount")), VfxScreen.MAX_POP)
+
+
+func test_ko_dome_is_an_outline_drawn_behind_the_fighters() -> void:
+	var dome := VfxCatalog.build(&"ko_dome")
+	autofree(dome)
+	var looks: Array = []
+	for mesh in dome.meshes():
+		looks.append(mesh.material_override.get_meta(&"look"))
+		if mesh.material_override.get_meta(&"look") == &"dome":
+			var material := mesh.material_override as ShaderMaterial
+			assert_true(material.get_shader_parameter("back_faces_only"), "only the far half draws")
+			assert_gte(float(material.get_shader_parameter("rim_power")), 4.0, "a thin rim, not a filled bubble")
+	assert_true(looks.has(&"dome"))
+	assert_false(looks.has(&"flash") or looks.has(&"spikes"), "nothing bright sits on the bodies")
+
+
+func test_hit_effects_are_short_and_sized_to_the_fighters() -> void:
+	# A fighter is about 2 m tall; heavy effects last at most 10 frames.
+	for kind: StringName in [&"anime_burst"]:
+		var effect := VfxCatalog.build(kind)
+		autofree(effect)
+		assert_lte(effect.lifetime, 10.0 / 60.0 + 0.001, kind)
+		for mesh in effect.meshes():
+			assert_lte((mesh.mesh as QuadMesh).size.x, 1.2, "%s sprite size" % kind)
+	for scene: PackedScene in [CombatFeedback.SPARK_LIGHT, CombatFeedback.SPARK_HEAVY, CombatFeedback.COUNTER]:
+		var spark := scene.instantiate() as ImpactEffect
+		autofree(spark)
+		assert_lte(spark.lifetime, 10.0 / 60.0 + 0.001, scene.resource_path)
+		for mesh in spark.find_children("*", "MeshInstance3D", true, false):
+			assert_lte(((mesh as MeshInstance3D).mesh as QuadMesh).size.x, 0.75, scene.resource_path)
+
+
+func test_hit_effects_sit_beside_the_target_not_on_its_torso() -> void:
+	var fighters: Array[FighterState] = []
+	var sim := CombatSim.new(1)
+	fighters.append(sim.add_fighter(Vector3(0, 1, 1)))
+	fighters.append(sim.add_fighter(Vector3(0, 1, -1)))
+	var contact := Vector3(0, 1.3, -0.58)
+	var hit := {"type": E.HIT, "attacker": 0, "target": 1, "position": contact}
+	var point := MatchVfx.spark_point(hit, fighters)
+	assert_almost_eq(point.distance_to(contact), MatchVfx.SPARK_STANDOFF, 0.001)
+	assert_gt(Vector2(point.x, point.z).distance_to(Vector2(0, -1)), Vector2(contact.x, contact.z).distance_to(Vector2(0, -1)), "pushed away from the target")
+	var throw := {"type": E.THROW, "attacker": 0, "target": 1, "position": fighters[1].position}
+	assert_gt(MatchVfx.spark_point(throw, fighters).z, fighters[1].position.z, "a throw at the body centre falls back toward the attacker")
+	var pickup := {"type": E.PICKUP, "position": contact}
+	assert_eq(MatchVfx.spark_point(pickup, fighters), contact)
+
+
+func test_ffa_shrinks_effects_and_the_feedback_caps_live_sparks() -> void:
+	var vfx := _vfx_with_sim()
+	assert_eq(vfx.crowd_scale(), 1.0)
+	vfx.sim.add_fighter(Vector3(6, 1, 0))
+	assert_eq(vfx.crowd_scale(), MatchVfx.CROWD_SCALE)
+	var feedback := CombatFeedback.new()
+	add_child_autofree(feedback)
+	var blocks: Array[Dictionary] = []
+	for i in 20:
+		blocks.append({"type": E.BLOCK, "attacker": 0, "target": 1, "position": Vector3(0, 2, -3), "hitstop": 4})
+	feedback.react(blocks)
+	assert_eq(feedback.live_sparks(), CombatFeedback.MAX_LIVE_SPARKS, "minor sparks stop at the cap")
+	var hit: Array[Dictionary] = [_event(E.HIT, 9)]
+	feedback.react(hit)
+	assert_eq(feedback.live_sparks(), CombatFeedback.MAX_LIVE_SPARKS + 1, "a real hit always shows")
