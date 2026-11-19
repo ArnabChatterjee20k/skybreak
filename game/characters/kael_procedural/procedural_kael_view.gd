@@ -149,7 +149,8 @@ func current_clip() -> StringName:
 	return _clip
 
 
-func clip_position() -> float:
+## Position in the current clip, seconds (same name as T-D10's CharacterView).
+func current_clip_time() -> float:
 	return _player.current_animation_position
 
 

@@ -146,7 +146,7 @@ func test_stun_clips_stretch_over_the_stun_ticks() -> void:
 	fighter.state_ticks = 17
 	_view.apply_state(fighter, 1.0 / 60.0)
 	assert_eq(_view.current_clip(), &"blockstun")
-	assert_almost_eq(_view.clip_position() * 60.0, _view.clip_ticks(&"blockstun") * 0.5, 0.01)
+	assert_almost_eq(_view.current_clip_time() * 60.0, _view.clip_ticks(&"blockstun") * 0.5, 0.01)
 
 
 func test_knockdown_lies_on_the_floor_then_gets_up_as_it_ends() -> void:
@@ -159,7 +159,7 @@ func test_knockdown_lies_on_the_floor_then_gets_up_as_it_ends() -> void:
 	fighter.state_ticks = 90
 	_view.apply_state(fighter, 1.0 / 60.0)
 	assert_eq(_view.current_clip(), &"get_up")
-	assert_almost_eq(_view.clip_position() * 60.0, float(_view.clip_ticks(&"get_up") - 1), 0.01)
+	assert_almost_eq(_view.current_clip_time() * 60.0, float(_view.clip_ticks(&"get_up") - 1), 0.01)
 
 
 func test_fast_flight_leans_forward_and_blocking_raises_the_guard() -> void:
@@ -191,7 +191,7 @@ func test_attack_clips_are_seeked_by_move_tick() -> void:
 	for tick in [0, 5, 7, 12]:
 		_view.apply_state(_attacking(MOVE_SET.light_string[0], tick), 1.0 / 60.0)
 		assert_eq(_view.current_clip(), &"light_1")
-		assert_almost_eq(_view.clip_position(), tick / 60.0, 0.0001)
+		assert_almost_eq(_view.current_clip_time(), tick / 60.0, 0.0001)
 
 
 func test_holding_a_charge_plays_the_hold_clip_by_phase_tick() -> void:
@@ -200,7 +200,7 @@ func test_holding_a_charge_plays_the_hold_clip_by_phase_tick() -> void:
 	fighter.charge_ticks = 11
 	_view.apply_state(fighter, 1.0 / 60.0)
 	assert_eq(_view.current_clip(), ProceduralKaelView.HOLD_CLIP)
-	assert_almost_eq(_view.clip_position(), 10 / 60.0, 0.0001)
+	assert_almost_eq(_view.current_clip_time(), 10 / 60.0, 0.0001)
 
 
 func test_apply_state_never_moves_or_turns_the_view() -> void:
