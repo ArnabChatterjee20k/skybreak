@@ -505,6 +505,8 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		_bounce_or_knock_down(fighter)
 	elif fighter.state == FighterState.State.KO_FALL:
 		_bounce_or_rest(index)
+	if fighter.is_ko_state():
+		_bounce_off_arena_walls(fighter)
 	_clamp_to_arena(fighter)
 	_land_if_on_floor(fighter)
 	fighter.stand_height = _stand_height(fighter)
@@ -1116,6 +1118,9 @@ func _knock_out(index: int) -> void:
 	fighter.smitten_ticks = 0
 	fighter.smitten_by = -1
 	fighter.enter_state(FighterState.State.KO_FALL)
+	fighter.ko_origin = fighter.position
+	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z).limit_length(hit_tuning.ko_max_launch_speed)
+	fighter.velocity = planar + Vector3.UP * minf(fighter.velocity.y, hit_tuning.ko_max_rise_speed)
 
 
 ## Gravity without flight, light air drag on the planar part.
@@ -1123,13 +1128,40 @@ func _move_ko_falling(fighter: FighterState) -> void:
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z) \
 		.move_toward(Vector3.ZERO, hit_tuning.ko_air_drag * TICK_SECONDS)
 	var vertical := maxf(fighter.velocity.y - hit_tuning.ko_gravity * TICK_SECONDS, -tuning.max_fall_speed)
-	fighter.velocity = planar + Vector3.UP * vertical
+	var apex := maxf(_stand_height(fighter) + hit_tuning.ko_max_apex, fighter.ko_origin.y)
+	if vertical > 0.0 and fighter.position.y + vertical * TICK_SECONDS > apex:
+		vertical = maxf(apex - fighter.position.y, 0.0) / TICK_SECONDS
+	fighter.velocity = _ko_travel_capped(fighter, planar) + Vector3.UP * vertical
+
+
+## Drops the outward part of a KO slide that would carry it past ko_max_travel.
+func _ko_travel_capped(fighter: FighterState, planar: Vector3) -> Vector3:
+	var from_origin := fighter.position + planar * TICK_SECONDS - fighter.ko_origin
+	from_origin.y = 0.0
+	var limit := hit_tuning.ko_max_travel
+	if from_origin.length_squared() <= limit * limit:
+		return planar
+	var outward := from_origin.normalized()
+	var along := planar.dot(outward)
+	return planar - outward * maxf(along, 0.0) if along > 0.0 else planar
+
+
+## A knocked-out fighter flung into an arena wall bounces back off it instead of sticking.
+func _bounce_off_arena_walls(fighter: FighterState) -> void:
+	var half := tuning.arena_half_size
+	var centre := Vector3(arena_centre.x, 0.0, arena_centre.y)
+	for axis: int in [0, 2]:
+		var offset := fighter.position[axis] - centre[axis]
+		if absf(offset) >= half and fighter.velocity[axis] * offset > 0.0:
+			fighter.position[axis] = centre[axis] + signf(offset) * half
+			fighter.velocity[axis] *= -hit_tuning.ko_wall_restitution
 
 
 ## Lying on the floor: the slide slows to a stop.
 func _move_ko_down(fighter: FighterState) -> void:
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
-	fighter.velocity = planar.move_toward(Vector3.ZERO, hit_tuning.ko_slide_deceleration * TICK_SECONDS)
+	planar = planar.move_toward(Vector3.ZERO, hit_tuning.ko_slide_deceleration * TICK_SECONDS)
+	fighter.velocity = _ko_travel_capped(fighter, planar)
 	fighter.position.y = tuning.ground_height
 
 
@@ -1350,7 +1382,7 @@ func _apply_hit(contact: Dictionary, from_projectile: bool = false) -> void:
 		_enter_stun(target, FighterState.State.HITSTUN, decayed_hitstun(move, combo_hit))
 		target.knockback_type = knockback
 		target.spike_bounced = false
-		target.velocity = _knockback_velocity(contact)
+		target.velocity = _air_knockback_guarded(attacker, target, move, _knockback_velocity(contact))
 		if not from_projectile:
 			_start_pushback(target_index, attacker_index, hit_tuning.hit_pushback_distance)
 		target.combo_hits = combo_hit
@@ -1563,6 +1595,33 @@ func _knockback_velocity(contact: Dictionary) -> Vector3:
 			return yaw * Vector3.RIGHT * (side * Vector2(knockback.x, knockback.z).length()) \
 				+ Vector3.UP * knockback.y
 	return yaw * Basis(Vector3.RIGHT, contact.pitch) * knockback
+
+
+## With either fighter off the floor, drives the target away from the attacker
+## and, for blowback-like hits, level or up to 45 degrees: never under or over it.
+func _air_knockback_guarded(attacker: FighterState, target: FighterState, move: MoveData,
+		velocity: Vector3) -> Vector3:
+	var target_airborne := not _is_on_floor(target)
+	if not target_airborne and _is_on_floor(attacker):
+		return velocity
+	var out := target.position - attacker.position
+	out.y = 0.0
+	if out.length_squared() < 0.0001:
+		out = Basis(Vector3.UP, attacker.facing_yaw) * Vector3.FORWARD
+	out = out.normalized()
+	var min_out := move.air_knockback_min_out if move.air_knockback_min_out >= 0.0 \
+		else hit_tuning.air_knockback_min_out
+	var along := velocity.dot(out)
+	if along < min_out:
+		velocity += out * (min_out - along)
+		along = min_out
+	# Spikes still drive down and launches still go up; the outward push above separates them.
+	if not target_airborne or move.knockback_type in [MoveData.KnockbackType.SPIKE, MoveData.KnockbackType.LAUNCH]:
+		return velocity
+	var rise := move.air_knockback_rise if move.air_knockback_rise >= 0.0 \
+		else hit_tuning.air_knockback_rise
+	velocity.y = clampf(velocity.y, 0.0, along * rise)
+	return velocity
 
 
 ## Freezes both fighters of an exchange for at least ticks.

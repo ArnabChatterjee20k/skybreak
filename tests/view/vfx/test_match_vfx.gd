@@ -385,3 +385,40 @@ func test_ffa_shrinks_effects_and_the_feedback_caps_live_sparks() -> void:
 	var hit: Array[Dictionary] = [_event(E.HIT, 9)]
 	feedback.react(hit)
 	assert_eq(feedback.live_sparks(), CombatFeedback.MAX_LIVE_SPARKS + 1, "a real hit always shows")
+
+
+func test_speed_lines_skip_tapped_dashes_and_keep_long_dashes_boost_and_top_speed() -> void:
+	var tuning := MovementTuning.new()
+	var fighter := FighterState.new()
+	fighter.state = S.DASHING
+	fighter.dash_kind = FighterState.DashKind.STEP
+	fighter.state_ticks = 3
+	fighter.velocity = Vector3(48, 0, 0)
+	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "a tapped dash")
+	fighter.dash_kind = FighterState.DashKind.SUSTAINED
+	assert_true(MatchVfx.wants_speed_lines(fighter, tuning), "a flight boost")
+	fighter.dash_kind = FighterState.DashKind.RUSH
+	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "a short rush")
+	fighter.state_ticks = tuning.dash_step_ticks
+	assert_true(MatchVfx.wants_speed_lines(fighter, tuning), "a long rush")
+	fighter.state = S.FLYING
+	fighter.velocity = Vector3(tuning.fly_speed * 0.8, 0, 0)
+	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "cruising flight")
+	fighter.velocity = Vector3(tuning.fly_speed, 0, 0)
+	assert_true(MatchVfx.wants_speed_lines(fighter, tuning), "top speed")
+
+
+func test_speed_lines_are_rate_limited_fainter_and_short_lived() -> void:
+	var trail := FlightTrail.new()
+	add_child_autofree(trail)
+	var fast := Vector3(50, 0, 0)
+	var frame := 1.0 / 60.0
+	# Dash on and off every 6 frames for two seconds.
+	for i in 120:
+		trail.follow(Vector3.ZERO, fast if (i / 6) % 2 == 0 else Vector3.ZERO, Color.WHITE, frame)
+	assert_lte(trail.starts, ceili(2.0 / FlightTrail.RESTART_SECONDS) + 1, "at most one stream per restart window")
+	assert_gt(trail.starts, 0)
+	assert_lt(trail.lifetime, 0.28, "shorter than the old 0.28 s")
+	var tint: Color = (trail.material_override as ShaderMaterial).get_shader_parameter(&"tint")
+	assert_almost_eq(tint.a, FlightTrail.OPACITY, 0.001, "lower opacity")
+	assert_lt(FlightTrail.OPACITY, 1.0)

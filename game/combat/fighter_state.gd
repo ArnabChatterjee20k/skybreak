@@ -137,6 +137,8 @@ var knockback_type: MoveData.KnockbackType = MoveData.KnockbackType.NONE
 var spike_bounced: bool = false
 ## A knocked-out fighter already bounced off the floor; the next landing lays it down.
 var ko_bounced: bool = false
+## Where the knockout started: the KO flight is capped around it.
+var ko_origin: Vector3 = Vector3.ZERO
 ## Hits and scaled damage (display units) of the combo being taken; 0 outside HITSTUN.
 var combo_hits: int = 0
 var combo_damage: int = 0
@@ -379,7 +381,7 @@ func state_values() -> Array:
 		extra_recovery_ticks,
 		weapons, ammo, active_slot, switch_lockout, reload_ticks,
 		smitten_ticks, smitten_by, ticks_since_smitten,
-		team, ko_bounced,
+		team, ko_bounced, ko_origin,
 		pushback_velocity, pushback_ticks, pushback_from,
 		last_slot, heat, overheated, draw_ticks, pin_ticks, pinned,
 		tether_partner, tether_ticks, tether_length, combo_starter_percent,
