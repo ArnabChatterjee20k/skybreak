@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="ZoneData" format=3]
+
+[ext_resource type="Script" path="res://game/world/zones/zone_data.gd" id="1_3rfvd"]
+
+[resource]
+script = ExtResource("1_3rfvd")
+id = &"heartbloom_gardens"
+display_name = "Heartbloom Gardens"
+centre = Vector2(0, 10)
+extent = Vector2(330, 230)
+altitude_band = Vector2(215, 245)
+ground_low = Color(0.5, 0.74, 0.34, 1)
+ground_high = Color(0.62, 0.82, 0.4, 1)
+rock = Color(0.8, 0.6, 0.58, 1)
+ramp_heights = Vector2(250, 320)
+strata = 0.3
+fog_colors = PackedColorArray(1, 0.82, 0.78, 1, 0.98, 0.66, 0.6, 1, 0.26, 0.15, 0.36, 1)
+fog_density = 0.05
+sun_directions = PackedVector3Array(-0.72, -0.5, -0.48, -0.88, -0.24, -0.4, 0.35, -0.62, 0.7)
+sun_colors = PackedColorArray(1, 0.9, 0.8, 1, 1, 0.72, 0.56, 1, 0.8, 0.8, 1, 1)
+sun_energies = PackedFloat32Array(0.92, 0.84, 0.42)
+ambient_colors = PackedColorArray(0.6, 0.54, 0.62, 1, 0.58, 0.44, 0.52, 1, 0.3, 0.27, 0.46, 1)
+sky_top_colors = PackedColorArray(0.58, 0.64, 0.95, 1, 0.6, 0.36, 0.68, 1, 0.08, 0.04, 0.2, 1)
+sky_horizon_colors = PackedColorArray(1, 0.78, 0.6, 1, 1, 0.6, 0.46, 1, 0.36, 0.18, 0.44, 1)
+weather = 4
+spawn_points = PackedVector3Array(120, 0, -96, 160, 0, -96)
+landmark_names = PackedStringArray("Heart Arch", "Wishing Fountain", "Lantern Rise", "Blossom Falls")
+landmark_positions = PackedVector3Array(0, 288, -26, -150, 278.6, 72, 152, 282, 76, -170, 298, -112)
+metadata/petal_whirlwinds = [{
+"centre": Vector3(3, 236, 100),
+"height": 80.0,
+"lift": 14.0,
+"radius": 9.0
+}, {
+"centre": Vector3(148, 236, -4),
+"height": 80.0,
+"lift": 14.0,
+"radius": 9.0
+}, {
+"centre": Vector3(-138, 236, -18),
+"height": 80.0,
+"lift": 14.0,
+"radius": 9.0
+}]
+metadata/wishing_fountain = {
+"centre": Vector3(-150, 278.64, 72),
+"heal_per_second": 120,
+"radius": 9.0
+}

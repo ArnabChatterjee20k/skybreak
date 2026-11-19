@@ -39,3 +39,35 @@ extends Resource
 @export var juggle_gravity: float = 30.0
 ## Upward speed of the one floor bounce after a spike.
 @export var spike_bounce_speed: float = 8.0
+
+@export_group("Perfect block")
+## A hit landing up to this many ticks after a block press is perfect-blocked.
+@export var perfect_block_window_ticks: int = 6
+## A missed perfect block bars the next attempt for this long.
+@export var perfect_block_lockout_ticks: int = 20
+## Recovery added to the attacker's move by a perfect block.
+@export var perfect_block_extra_recovery_ticks: int = 16
+## Hitstop of a perfect block.
+@export var perfect_block_hitstop_ticks: int = 10
+
+@export_group("Grab")
+## How long the target is held before the throw.
+@export var grab_hold_ticks: int = 30
+## Distance in front of the grabber where the target is held.
+@export var grab_hold_distance: float = 1.2
+## A GRAB press within this many ticks of being grabbed techs it.
+@export var grab_tech_ticks: int = 10
+## A tech or grab clash pushes both fighters this far apart.
+@export var grab_tech_distance: float = 3.0
+## Ticks the tech or clash push lasts; both are unable to act meanwhile.
+@export var grab_tech_push_ticks: int = 10
+
+@export_group("Push-block")
+## Guard spent on a push-block, in display units.
+@export var push_block_guard_cost: int = 10
+## A push-block shoves its target out to this distance.
+@export var push_block_distance: float = 8.0
+## Ticks the push lasts; the target is unable to act meanwhile.
+@export var push_block_stun_ticks: int = 16
+## Push-block can start from blockstun from this blockstun tick on.
+@export var push_block_from_blockstun_tick: int = 4

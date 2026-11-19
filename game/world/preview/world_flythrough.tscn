@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/world/preview/world_flythrough.gd" id="1_fly"]
+[ext_resource type="PackedScene" path="res://game/world/world_map.tscn" id="2_world"]
+
+[node name="WorldFlythrough" type="Node3D"]
+script = ExtResource("1_fly")
+
+[node name="WorldMap" parent="." instance=ExtResource("2_world")]
+
+[node name="Camera" type="Camera3D" parent="."]
+current = true
+fov = 70.0
+far = 1300.0
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="Hud"]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 900.0
+offset_bottom = 40.0
