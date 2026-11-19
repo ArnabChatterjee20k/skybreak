@@ -4,6 +4,9 @@ extends Node3D
 ## under FighterView's body node, never moves or turns itself and uses no root
 ## motion. Origin at the capsule centre (1 m above the feet), facing -Z.
 ## One generic script; each character is a scene that sets clips and the model.
+## With clips.motion set it plays mocap (MotionSlots picks the clip, ClipSet clips are the
+## fallback per slot), switches clips by inertialization and runs MotionLayers live on top.
+## Everything here reads the sim; nothing is written back.
 
 ## Hover clip below this speed (m/s), fast-flight clip above it.
 const FLY_FAST_SPEED := 14.0
@@ -18,6 +21,24 @@ const TICK_SECONDS := 1.0 / 60.0
 const ENERGY_COLOR_PARAM := &"rim_energy_color"
 const ENERGY_MIX_PARAM := &"rim_energy_mix"
 const LIBRARY_NAME := &"humanoid"
+const MOTION_LIBRARY_NAME := &"motion"
+## Ground clips play this much faster than their stun fill rate allows, within these limits.
+const LOCOMOTION_SCALE_MIN := 0.6
+const LOCOMOTION_SCALE_MAX := 2.2
+## Share of the knockdown spent falling to the lying pose; the rest gets up.
+const KO_FALL_SHARE := 0.55
+## Fraction of ko_fall at which the body lies flat (it holds from there).
+const KO_LIE_FRACTION := 0.8
+## Fraction of the get-up take where the body starts to rise.
+const GET_UP_START := 0.25
+## Flinch strength per hit kind.
+const FLINCH_BLOCK := 0.5
+const FLINCH_HIT := 1.0
+const FLINCH_KNOCKBACK := 1.8
+const FLINCH_KO := 2.4
+const TWO_HANDED: Array[Weapon.Kind] = [Weapon.Kind.SKY_LANCE, Weapon.Kind.TITAN_HAMMER,
+	Weapon.Kind.EMBER_SCYTHE, Weapon.Kind.STORM_REPEATER, Weapon.Kind.SCATTER_CANNON]
+const BOWS: Array[Weapon.Kind] = [Weapon.Kind.KI_BOW, Weapon.Kind.HEARTSTRING_BOW]
 ## Height (capsule centre) above which a fighter counts as airborne; the sim
 ## stands fighters at MovementTuning.ground_height.
 const AIRBORNE_MARGIN := 0.05
@@ -35,6 +56,17 @@ var _state_ticks := 0
 var _move_id := &""
 var _move_tick := -1
 var _tick_seconds := 0.0
+## Live realism layer (null without clips.motion).
+var layers: MotionLayers
+var _motion: MotionLibrary
+var _motion_windows: Dictionary[StringName, Vector2] = {}
+var _motion_speeds := {}
+var _playing_motion := false
+var _airborne := false
+var _fall_speed := 0.0
+var _landing := &""
+var _look_world := Vector3.ZERO
+var _look_weight := 0.0
 
 
 func _ready() -> void:
@@ -46,7 +78,21 @@ func _ready() -> void:
 	_player.add_animation_library(LIBRARY_NAME, clips.library)
 	for node in model.find_children("*", "MeshInstance3D", true, false):
 		_meshes.append(node as MeshInstance3D)
+	if clips.motion != null:
+		_setup_motion()
 	_play(clips.clip_for_state(&"IDLE"), 0.0)
+
+
+func _setup_motion() -> void:
+	var skeleton := model.get_node("%GeneralSkeleton") as Skeleton3D
+	_motion = MotionClips.for_skeleton(MotionClips.build(clips.motion, skeleton), skeleton)
+	_motion_windows = MotionClips.impact_windows(_motion)
+	_player.add_animation_library(MOTION_LIBRARY_NAME, _motion)
+	layers = MotionLayers.new()
+	layers.name = "MotionLayers"
+	skeleton.add_child(layers)
+	# First modifier, so the scarf and other secondary chains follow the layered body.
+	skeleton.move_child(layers, 0)
 
 
 ## Call every rendered frame. Picks the clip for the fighter's state and
@@ -58,10 +104,14 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 	var restarted := fighter.state != _state or fighter.state_ticks < _state_ticks
 	_state = fighter.state
 	_state_ticks = fighter.state_ticks
+	if layers != null:
+		_update_layers(fighter, delta)
 	if fighter.state == FighterState.State.ATTACKING and fighter.move != null:
 		_apply_attack(fighter, delta)
 		return
 	_move_id = &""
+	if _motion != null and _apply_motion_state(fighter, delta, restarted):
+		return
 	var clip := _clip_for(fighter, state_name)
 	_player.speed_scale = _speed_scale(fighter, clip)
 	if clip != _clip or (restarted and not _loops(clip)):
@@ -80,14 +130,60 @@ func set_vanished(vanished: bool) -> void:
 	model.visible = not vanished
 
 
-## Clip playing now, for tests and the preview.
+## Clip playing now, for tests and the preview (a motion clip when is_playing_motion()).
 func current_clip() -> StringName:
 	return _clip
 
 
+## True if clip is in the character's clips or its motion library.
+func has_clip(clip: StringName) -> bool:
+	return clips.library.has_animation(clip) or (_motion != null and _motion.has_animation(clip))
+
+
+func is_playing_motion() -> bool:
+	return _playing_motion
+
+
+## Where the head and chest turn to (world space), e.g. the lock-on target; weight 0 stops.
+func set_look_target(world_point: Vector3, weight := 1.0) -> void:
+	_look_world = world_point
+	_look_weight = weight
+
+
+## Reacts to one CombatSim event aimed at this fighter (event.target is its index): a hit
+## or block flinches the upper body away from the contact point.
+func react_to_event(event: Dictionary, fighter: FighterState) -> void:
+	if layers == null:
+		return
+	var strength := 0.0
+	match event.get("type", -1):
+		CombatSim.EventType.HIT, CombatSim.EventType.COUNTER, CombatSim.EventType.THROW:
+			strength = FLINCH_KNOCKBACK if event.get("knockback_type", 0) != MoveData.KnockbackType.NONE else FLINCH_HIT
+		CombatSim.EventType.BLOCK, CombatSim.EventType.PERFECT_BLOCK, CombatSim.EventType.ARMOR:
+			strength = FLINCH_BLOCK
+		CombatSim.EventType.GUARD_BREAK:
+			strength = FLINCH_KNOCKBACK
+		CombatSim.EventType.KO:
+			strength = FLINCH_KO
+	if strength <= 0.0:
+		return
+	var away: Vector3 = fighter.position - (event.get("position", fighter.position) as Vector3)
+	away.y = 0.0
+	if away.length() < 0.01:
+		away = Basis(Vector3.UP, fighter.facing_yaw) * Vector3.BACK
+	layers.flinch(to_model(away.normalized(), fighter.facing_yaw), strength)
+
+
+## A world-space direction in the model's (skeleton's) space: facing +Z, +X to its left.
+static func to_model(world: Vector3, facing_yaw: float) -> Vector3:
+	var local := Basis(Vector3.UP, -facing_yaw) * world
+	return Vector3(-local.x, local.y, -local.z)
+
+
 ## Position in the current clip, seconds.
 func current_clip_time() -> float:
-	return _player.current_animation_position if _player.has_animation(_qualified(_clip)) else 0.0
+	var qualified := StringName("%s/%s" % [MOTION_LIBRARY_NAME, _clip]) if _playing_motion else _qualified(_clip)
+	return _player.current_animation_position if _player.has_animation(qualified) else 0.0
 
 
 func _clip_for(fighter: FighterState, state_name: StringName) -> StringName:
@@ -143,14 +239,18 @@ func _knockdown_split(fighter: FighterState) -> int:
 func _apply_attack(fighter: FighterState, delta: float) -> void:
 	if fighter.attack_phase() == FighterState.AttackPhase.HOLD:
 		if _clip != clips.charge_hold_clip:
-			_play(clips.charge_hold_clip, clips.blend_time)
+			_play(clips.charge_hold_clip, 0.0 if layers else clips.blend_time)
 		_player.speed_scale = 1.0
 		_player.advance(delta)
 		return
-	var clip := clips.clip_for_move(fighter.move_id())
+	var motion_clip := _motion_move_clip(fighter.move_id())
+	var clip := motion_clip if motion_clip != &"" else clips.clip_for_move(fighter.move_id())
 	if fighter.move_id() != _move_id or fighter.move_tick < _move_tick:
 		_move_id = fighter.move_id()
-		_play(clip, 0.0)
+		if motion_clip != &"":
+			_play_motion(clip)
+		else:
+			_play(clip, 0.0)
 	if fighter.move_tick != _move_tick:
 		_move_tick = fighter.move_tick
 		_tick_seconds = 0.0
@@ -159,15 +259,169 @@ func _apply_attack(fighter: FighterState, delta: float) -> void:
 	# Smooth between sim ticks, never running ahead of the next one.
 	var tick := fighter.move_tick + minf(_tick_seconds / TICK_SECONDS, 1.0)
 	_player.speed_scale = 1.0
-	_player.seek(clips.attack_clip_time(clip, fighter.move, tick), true)
+	if _playing_motion:
+		var length := _motion.get_animation(clip).length
+		var window: Vector2 = _motion_windows.get(clip, Vector2(length * 0.4, length * 0.5))
+		_player.seek(ClipSet.phase_clip_time(length, window, fighter.move, tick), true)
+	else:
+		_player.seek(clips.attack_clip_time(clip, fighter.move, tick), true)
 
 
 func _play(clip: StringName, blend: float) -> void:
+	if layers != null:
+		# Inertialization replaces the crossfade.
+		layers.inertialize()
+		blend = 0.0
 	_clip = clip
+	_playing_motion = false
 	_move_tick = -1
 	_player.play(_qualified(clip), blend)
 	if blend <= 0.0:
 		_player.seek(0.0, true)
+
+
+func _play_motion(clip: StringName, from := 0.0) -> void:
+	layers.inertialize()
+	_clip = clip
+	_playing_motion = true
+	_move_tick = -1
+	_player.play(StringName("%s/%s" % [MOTION_LIBRARY_NAME, clip]), 0.0)
+	_player.seek(from, true)
+
+
+func _motion_move_clip(move_id: StringName) -> StringName:
+	if _motion == null:
+		return &""
+	var clip := MotionSlots.move_clip(move_id, clips.motion_moves)
+	return clip if clip != &"" and _motion.has_animation(clip) else &""
+
+
+## Plays the motion clip for a non-attacking state. False when the slot has no mocap.
+func _apply_motion_state(fighter: FighterState, delta: float, restarted: bool) -> bool:
+	if fighter.state == FighterState.State.CHARGING:
+		return false
+	var local := to_model(fighter.velocity, fighter.facing_yaw)
+	var clip := MotionSlots.state_clip(fighter, local, _airborne, _clip if _playing_motion else &"", _landing)
+	if clip == &"" or not _motion.has_animation(clip):
+		return false
+	if clip == &"ko_fall" and _getting_up(fighter):
+		# Keep the get-up clip; replaying the fall every frame would re-inertialize and freeze it.
+		return _knockdown_pose(fighter, delta)
+	var animation := _motion.get_animation(clip)
+	var one_shot := animation.loop_mode == Animation.LOOP_NONE
+	if not _playing_motion or clip != _clip or (restarted and one_shot and clip != _landing):
+		_play_motion(clip)
+	var speed := 1.0
+	if clip in MotionSlots.LOCOMOTION:
+		speed = clampf(Vector2(local.x, local.z).length() / _clip_speed(clip), LOCOMOTION_SCALE_MIN, LOCOMOTION_SCALE_MAX)
+	elif clip == &"ko_fall":
+		speed = _ko_speed(fighter, animation.length)
+	elif fighter.stun_ticks > 0 and fighter.state in [FighterState.State.HITSTUN,
+			FighterState.State.BLOCKSTUN, FighterState.State.GUARD_BROKEN]:
+		speed = clampf(animation.length / (fighter.stun_ticks * TICK_SECONDS), STUN_SPEED_SCALE_MIN, STUN_SPEED_SCALE_MAX)
+	elif clip == &"jump":
+		speed = 1.3
+	_player.speed_scale = speed
+	if fighter.state == FighterState.State.KNOCKDOWN and not (fighter.stats != null and fighter.is_knocked_out()):
+		return _knockdown_pose(fighter, delta)
+	_player.advance(delta)
+	if clip == &"ko_fall":
+		_player.seek(minf(_player.current_animation_position, animation.length * KO_LIE_FRACTION), true)
+	if clip == _landing and _player.current_animation_position >= animation.length - 0.001:
+		_landing = &""
+	return true
+
+
+func _getting_up(fighter: FighterState) -> bool:
+	if fighter.state != FighterState.State.KNOCKDOWN or (fighter.stats != null and fighter.is_knocked_out()):
+		return false
+	return fighter.state_ticks >= maxi(int((fighter.state_ticks + fighter.stun_ticks) * KO_FALL_SHARE), 1)
+
+
+## Knockdown: fall to the lying pose, lie, then get up, all timed to the stun.
+func _knockdown_pose(fighter: FighterState, delta: float) -> bool:
+	var total := maxi(fighter.state_ticks + fighter.stun_ticks, 1)
+	var fall_ticks := maxi(int(total * KO_FALL_SHARE), 1)
+	if fighter.state_ticks < fall_ticks:
+		_player.advance(delta)
+		_player.seek(minf(_player.current_animation_position, _motion.get_animation(&"ko_fall").length * KO_LIE_FRACTION), true)
+		return true
+	var get_up := &"tech" if _motion.has_animation(&"tech") else &"get_up"
+	if _clip != get_up:
+		_play_motion(get_up)
+	var length := _motion.get_animation(get_up).length
+	var t := float(fighter.state_ticks - fall_ticks) / float(maxi(total - fall_ticks, 1))
+	# The take's first quarter is still lying flat; start from where the body starts to rise.
+	_player.seek(lerpf(GET_UP_START, 1.0, clampf(t, 0.0, 1.0)) * length, true)
+	return true
+
+
+func _ko_speed(fighter: FighterState, length: float) -> float:
+	if fighter.state != FighterState.State.KNOCKDOWN or (fighter.stats != null and fighter.is_knocked_out()):
+		return 1.0
+	var fall_ticks := maxi(int((fighter.state_ticks + fighter.stun_ticks) * KO_FALL_SHARE), 1)
+	return clampf(length * KO_LIE_FRACTION / (fall_ticks * TICK_SECONDS), 0.8, 3.0)
+
+
+## A locomotion clip's own ground speed (m/s), from its root motion.
+func _clip_speed(clip: StringName) -> float:
+	if not _motion_speeds.has(clip):
+		var curve: PackedVector3Array = _motion.root_motion.get(clip, PackedVector3Array())
+		var speed := RUN_CLIP_SPEED
+		if curve.size() > 1:
+			var travel := Vector2(curve[-1].x - curve[0].x, curve[-1].y - curve[0].y).length()
+			speed = maxf(travel / _motion.get_animation(clip).length, 0.5)
+		_motion_speeds[clip] = speed
+	return _motion_speeds[clip]
+
+
+## Feeds the live layers from the sim: velocity, flight, ground, landings, look target, weapon arms.
+func _update_layers(fighter: FighterState, delta: float) -> void:
+	var airborne := is_airborne(fighter)
+	var local := to_model(fighter.velocity, fighter.facing_yaw)
+	if _airborne and not airborne:
+		var strength := clampf(_fall_speed / 10.0, 0.3, 2.0)
+		layers.land(strength)
+		if fighter.state == FighterState.State.IDLE:
+			_landing = &"heavy_land" if _fall_speed > MotionSlots.HEAVY_LANDING_SPEED else &"land"
+	if airborne:
+		_fall_speed = maxf(-fighter.velocity.y, 0.0)
+	if fighter.state != FighterState.State.IDLE:
+		_landing = &""
+	if fighter.state == FighterState.State.DASHING and fighter.state_ticks <= 1 and airborne:
+		layers.burst(1.0)
+	_airborne = airborne
+	layers.velocity = local
+	layers.flying = airborne and fighter.state in [FighterState.State.FLYING, FighterState.State.DASHING,
+		FighterState.State.VANISHING]
+	layers.foot_ik = not airborne and fighter.state != FighterState.State.KNOCKDOWN
+	layers.ground = Vector2.ZERO
+	var to_target := to_model(_look_world - fighter.position, fighter.facing_yaw)
+	layers.look_target = to_target + Vector3(0, 1.0, 0)
+	layers.look_weight = _look_weight if fighter.state in [FighterState.State.IDLE, FighterState.State.MOVING,
+		FighterState.State.FLYING, FighterState.State.BLOCKING, FighterState.State.ATTACKING] else 0.0
+	_update_arms(fighter)
+
+
+## Per-weapon-class arm overlay: two-handed hold, bow draw, pistol aim.
+func _update_arms(fighter: FighterState) -> void:
+	var kind := fighter.held_weapon()
+	var attacking := fighter.state == FighterState.State.ATTACKING
+	var reacting := fighter.state in [FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN,
+		FighterState.State.GRABBED, FighterState.State.GUARD_BROKEN]
+	layers.arm_pose = MotionLayers.ArmPose.NONE
+	layers.arm_weight = 0.0
+	if reacting or kind == Weapon.Kind.NONE:
+		return
+	if kind in TWO_HANDED:
+		layers.arm_pose = MotionLayers.ArmPose.TWO_HANDED
+		layers.arm_weight = 0.85
+	elif kind in BOWS and attacking:
+		layers.arm_pose = MotionLayers.ArmPose.BOW_DRAW
+		layers.arm_weight = 1.0
+	elif kind == Weapon.Kind.ARC_REVOLVER and attacking:
+		layers.arm_pose = MotionLayers.ArmPose.PISTOL_AIM
+		layers.arm_weight = 1.0
 
 
 func _loops(clip: StringName) -> bool:

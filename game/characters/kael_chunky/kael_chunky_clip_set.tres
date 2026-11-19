@@ -1,5 +1,6 @@
 [gd_resource type="Resource" script_class="ClipSet" format=3]
 
+[ext_resource type="Resource" path="res://game/characters/motion/motion_library.res" id="9_motion"]
 [ext_resource type="Script" path="res://game/characters/clip_set.gd" id="1_clips"]
 [ext_resource type="AnimationLibrary" path="res://game/characters/kael_chunky/animations/kael_chunky_clips.res" id="2_library"]
 
@@ -53,3 +54,4 @@ impact_windows = Dictionary[StringName, Vector2]({
 &"spike": Vector2(0.25, 0.3),
 &"sweep": Vector2(0.2, 0.28333333)
 })
+motion = ExtResource("9_motion")
