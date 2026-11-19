@@ -271,6 +271,11 @@ Rules that keep ranged weapons fair in a melee-first game:
 - **Losing a weapon:** you drop it on guard break, knockdown, or when hit by a counter-hit heavy. Dropped weapons stay on the map for 10 s and anyone can grab them.
 - Each weapon is a `MoveSet` (the same data as unarmed), so balance is pure data tuning.
 
+**Zone-exclusive weapon: Heartstring Bow** (spawns only in Heartbloom Gardens):
+- **Shots (LMB):** arrows that make the target **Smitten** for 1.5 s: it drifts toward the shooter with hearts over its head and can't attack (it can still block). Repeat Smitten within 6 s lasts half as long, so it can't be chained.
+- **Charged shot (hold LMB):** a **Heartstring Tether**, a glowing string linking shooter and target for 4 s. Neither can move further apart than the string's length at the moment it hit. Either fighter can **yank** the other closer with RMB, which sets up combos for whoever yanks first.
+- 8 arrows, then auto-thrown like other weapons. Pink-gold projectiles, so they still read as an item colour (§11).
+
 **Carrying several weapons (inventory):**
 - You always have **Unarmed** plus **two weapon slots**. Any mix works: two melee, two ranged, or one of each.
 - **Switching:**
@@ -319,7 +324,7 @@ Fights happen on **one continuous world map** instead of small separate arenas. 
 
 ### 7.1 Map
 - **About 2 km x 2 km**, sky ceiling at about 400 m, an energy-dome boundary at the edge that acts as a wall-splat surface. No ring-outs.
-- **Six zones**, each roughly 600–800 m across, blending into each other at the borders (terrain, colour and fog transitions over about 100 m).
+- **Seven zones** (six main zones plus the special Heartbloom Gardens), each roughly 600–800 m across, blending into each other at the borders (terrain, colour and fog transitions over about 100 m).
 - **Match setup:** pick a **start zone** (or random) and **time of day** (day / dusk / night). Fighters spawn about 40 m apart in that zone.
 - **Navigation aids:** zone name on entering, and the off-screen opponent arrow (§4.7) always works across the map.
 
@@ -333,6 +338,7 @@ Fights happen on **one continuous world map** instead of small separate arenas. 
 | **Frozen Peaks** | Glaciers, ice cliffs, snow storms | Vertical cliffs, ice shelves; visibility drops in storms | Ice spires shatter, avalanche slabs |
 | **Verdant Falls** | Jungle valley, giant trees, a huge waterfall and lake | Mixed cover; water spray hides you briefly | Giant trunks snap, waterfall curtain |
 | **Ember Rift** | Volcanic crater, lava rivers, obsidian spires, glowing at night | Open crater with hot zones: lava geysers knock fighters up | Obsidian spires, geyser vents |
+| **Heartbloom Gardens** (special) | Floating islands of cherry-blossom trees, a pink-gold sunset sky, a slow river of falling petals, lantern bridges, a big heart-shaped stone arch; fireflies and glowing lanterns at night; softer music | Romantic, playful zone made for the owner and his partner: open sky between islands, lots of mid-range space | Petal whirlwinds lift fighters (no damage); the Wishing Fountain slowly heals whoever stands in its spray; lanterns and blossom branches break into petal bursts |
 
 All zones share these rules: knocked-into-ground craters (decals), destructibles respawn after 30 s, and no instant-kill hazards (hazards deal small damage and knock up; they never decide a round on their own).
 
