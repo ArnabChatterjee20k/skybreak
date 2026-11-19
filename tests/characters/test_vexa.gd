@@ -34,8 +34,9 @@ func _moves() -> Array[MoveData]:
 	moves.append_array(move_set.light_string)
 	moves.append_array(move_set.charged_smash)
 	for move: MoveData in [move_set.smash, move_set.breaker, move_set.launcher, move_set.rising,
-			move_set.spike, move_set.sweep, move_set.push_block]:
-		moves.append(move)
+			move_set.spike, move_set.sweep, move_set.push_block, move_set.grab]:
+		if move:
+			moves.append(move)
 	return moves
 
 
@@ -153,6 +154,15 @@ func test_apply_state_handles_every_state() -> void:
 			_fighter.state_ticks += 1
 			_view.apply_state(_fighter, FRAME)
 		assert_ne(_view.current_clip(), &"", "%s plays a clip" % FighterState.State.find_key(state_value))
+
+
+func test_vexa_maps_every_state_kael_maps() -> void:
+	var kael := load("res://game/characters/kael/kael_clip_set.tres") as ClipSet
+	for state_name: StringName in kael.state_clips:
+		assert_true(_view.clips.state_clips.has(state_name), "%s is mapped" % state_name)
+	for state_name: String in FighterState.State.keys():
+		if state_name != "ATTACKING":
+			assert_true(_view.clips.state_clips.has(StringName(state_name)), "sim state %s is mapped" % state_name)
 
 
 func test_every_kael_stand_in_move_has_a_clip() -> void:
