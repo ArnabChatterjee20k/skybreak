@@ -49,7 +49,7 @@ script = ExtResource("6_fighter_view")
 body_color = Color(0.2, 0.45, 0.95, 1)
 
 [node name="FighterCamera" type="Camera3D" parent="."]
-fov = 75.0
+base_fov = 75.0
 far = 2000.0
 script = ExtResource("5_camera")
 

@@ -13,11 +13,12 @@ func _half_fovs() -> Vector2:
 
 
 ## True if the point is in front of the camera and inside 90% of the view.
-func _on_screen(camera: Transform3D, point: Vector3) -> bool:
+func _on_screen(camera: Transform3D, point: Vector3, vertical_fov: float = VERTICAL_FOV) -> bool:
 	var local := camera.affine_inverse() * point
 	if local.z >= 0.0:
 		return false
-	var half := _half_fovs() * 0.9
+	var half_vertical := vertical_fov / 2.0
+	var half := Vector2(atan(tan(half_vertical) * ASPECT), half_vertical) * 0.9
 	return absf(atan2(local.x, -local.z)) < half.x and absf(atan2(local.y, -local.z)) < half.y
 
 
@@ -91,3 +92,37 @@ func test_free_pose_pitch_is_clamped() -> void:
 	var pivot := PLAYER + Vector3.UP * LockOnFraming.FREE_LOOK_HEIGHT
 	var elevation := asin((pose.origin - pivot).normalized().y)
 	assert_almost_eq(elevation, LockOnFraming.MAX_FREE_PITCH, 0.001)
+
+
+## Camera view pitch in radians: negative looks down.
+func _view_pitch(camera: Transform3D) -> float:
+	return asin(clampf(-camera.basis.z.y, -1.0, 1.0))
+
+
+func test_view_pitch_stays_inside_limits_for_big_height_gaps() -> void:
+	for flat_distance in [2.0, 5.0, 12.0, 40.0]:
+		for height in [-60.0, -20.0, -8.0, 8.0, 20.0, 60.0]:
+			var target := PLAYER + Vector3(0, height, -flat_distance)
+			var pose := LockOnFraming.locked_pose(PLAYER, target, 1.0, Vector2.ZERO)
+			var pitch := _view_pitch(pose)
+			var where := "flat=%s height=%s pitch=%.1f" % [flat_distance, height, rad_to_deg(pitch)]
+			assert_gte(pitch, -LockOnFraming.MAX_VIEW_PITCH_DOWN - 0.001, "not steeper down " + where)
+			assert_lte(pitch, LockOnFraming.MAX_VIEW_PITCH_UP + 0.001, "not steeper up " + where)
+
+
+func test_both_fighters_on_screen_for_big_height_gaps_with_widened_fov() -> void:
+	for flat_distance in [2.0, 5.0, 12.0, 40.0]:
+		for height in [-60.0, -20.0, 20.0, 60.0]:
+			var target := PLAYER + Vector3(0, height, -flat_distance)
+			var pose := LockOnFraming.locked_pose(PLAYER, target, 1.0, Vector2.ZERO)
+			var fov := deg_to_rad(LockOnFraming.locked_fov(75.0, PLAYER, target))
+			var where := "flat=%s height=%s" % [flat_distance, height]
+			assert_true(_on_screen(pose, PLAYER, fov), "player visible " + where)
+			assert_true(_on_screen(pose, target, fov), "target visible " + where)
+
+
+func test_fov_widens_only_for_big_height_gaps_and_at_most_ten_degrees() -> void:
+	assert_eq(LockOnFraming.locked_fov(75.0, PLAYER, PLAYER + Vector3(0, 0, -10)), 75.0)
+	var steep := LockOnFraming.locked_fov(75.0, PLAYER, PLAYER + Vector3(0, 60, -2))
+	assert_gt(steep, 75.0)
+	assert_lte(steep, 75.0 + LockOnFraming.MAX_FOV_BOOST)
