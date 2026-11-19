@@ -74,7 +74,8 @@ func test_zone_centre_uses_that_zone_preset() -> void:
 	world.set_time_of_day(DAY)
 	for id in world.zone_ids():
 		var zone := world.zone(id)
-		var blend := world.atmosphere.blend_at(zone.centre.x, zone.centre.y)
+		var y := zone.altitude_band.y + 40.0 if zone.is_floating() else -INF
+		var blend := world.atmosphere.blend_at(zone.centre.x, zone.centre.y, y)
 		assert_almost_eq(blend.sun_energy, zone.sun_energies[DAY], 0.001, "%s sun" % id)
 		assert_lt(_color_step(blend.fog_color, zone.fog_colors[DAY]), 0.001, "%s fog" % id)
 
@@ -143,9 +144,66 @@ func test_zone_weights_sum_to_one_everywhere() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 3
 	for i in 300:
-		var w := world.layout.weights_at(rng.randf_range(-1000, 1000), rng.randf_range(-1000, 1000))
+		var w := world.layout.weights_at(rng.randf_range(-1000, 1000), rng.randf_range(-1000, 1000), rng.randf_range(-50, 400))
 		var total := 0.0
 		for v in w:
 			assert_between(v, 0.0, 1.0)
 			total += v
 		assert_almost_eq(total, 1.0, 0.0001)
+
+
+func _walk_3d(from: Vector3, to: Vector3) -> Dictionary:
+	var atmosphere := world.atmosphere
+	var steps := int(from.distance_to(to))
+	var previous := atmosphere.blend_at(from.x, from.z, from.y)
+	var worst := {"fog": 0.0, "sun": 0.0, "energy": 0.0}
+	for i in range(1, steps + 1):
+		var p := from.lerp(to, float(i) / float(steps))
+		var current := atmosphere.blend_at(p.x, p.z, p.y)
+		worst.fog = maxf(worst.fog, _color_step(previous.fog_color, current.fog_color))
+		worst.sun = maxf(worst.sun, _color_step(previous.sun_color, current.sun_color))
+		worst.energy = maxf(worst.energy, absf(previous.sun_energy - current.sun_energy))
+		previous = current
+	return worst
+
+
+func test_blending_into_heartbloom_is_continuous_from_below_and_from_the_side() -> void:
+	var walks := [
+		[Vector3(0, 100, 10), Vector3(0, 330, 10)],
+		[Vector3(-600, 300, 10), Vector3(0, 300, 10)],
+		[Vector3(0, 300, -600), Vector3(0, 300, 10)],
+	]
+	for tod in [DAY, DUSK, NIGHT]:
+		world.set_time_of_day(tod)
+		for walk in walks:
+			var worst := _walk_3d(walk[0], walk[1])
+			assert_lt(worst.fog, 0.03, "%s fog colour" % [walk])
+			assert_lt(worst.sun, 0.03, "%s sun colour" % [walk])
+			assert_lt(worst.energy, 0.03, "%s sun energy" % [walk])
+
+
+func test_heartbloom_has_a_pink_gold_sky_by_day_and_dusk_and_violet_at_night() -> void:
+	var zone := world.zone(&"heartbloom_gardens")
+	for tod in [DAY, DUSK]:
+		var horizon := zone.sky_horizon_colors[tod]
+		assert_gt(horizon.r, horizon.b, "warm horizon")
+		assert_gt(zone.fog_colors[tod].r, 0.9, "pink-gold fog")
+	var night := zone.sky_top_colors[NIGHT]
+	assert_gt(night.b, night.g, "violet night sky")
+	assert_gt(night.r, night.g)
+
+
+func test_petals_fall_in_heartbloom_and_only_there() -> void:
+	var petals: GPUParticles3D = world.atmosphere.weather[WorldAtmosphere.WEATHER_PETALS]
+	world.atmosphere.apply_at(Vector3(0, 300, 10))
+	assert_true(petals.emitting, "petals over the islands")
+	assert_almost_eq(petals.global_position, Vector3(0, 300, 10), Vector3.ONE * 0.01, "petals follow the camera")
+	world.atmosphere.apply_at(Vector3(0, 60, 10))
+	assert_false(petals.emitting, "no petals on the ground below")
+
+
+func test_the_map_overview_ignores_the_floating_zone() -> void:
+	world.set_overview(true)
+	world.atmosphere.apply_at(Vector3(0, 1600, 0))
+	assert_eq(world.atmosphere.current.weather.get(WorldAtmosphere.WEATHER_PETALS, 0.0), 0.0)
+	world.set_overview(false)

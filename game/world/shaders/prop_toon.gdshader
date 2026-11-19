@@ -10,7 +10,9 @@ uniform float windows = 0.0;
 uniform vec4 window_color : source_color = vec4(1.0, 0.85, 0.5, 1.0);
 uniform vec4 emission_color : source_color = vec4(0.0, 0.0, 0.0, 1.0);
 uniform float emission_strength = 0.0;
-// 0 day, 1 night: windows light up.
+// Extra glow at night, tinted by the instance colour (paper lanterns).
+uniform float night_emission = 0.0;
+// 0 day, 1 night: windows and lanterns light up.
 uniform float night = 0.0;
 uniform vec4 shadow_tint : source_color = vec4(0.45, 0.42, 0.6, 1.0);
 uniform vec4 rim_color : source_color = vec4(1.0, 0.95, 0.85, 1.0);
@@ -36,7 +38,7 @@ void fragment() {
 		float band = step(0.5, fract(world_pos.y / strata_spacing));
 		col *= mix(1.0, 0.8 + 0.2 * band, strata);
 	}
-	vec3 glow = emission_color.rgb * emission_strength;
+	vec3 glow = emission_color.rgb * (emission_strength + night_emission * night) * mix(vec3(1.0), COLOR.rgb, step(0.001, night_emission));
 	if (windows > 0.0 && abs(world_normal.y) < 0.3) {
 		// Window grid on walls: 4 m floors, 3 m bays.
 		float along = abs(world_normal.x) > abs(world_normal.z) ? world_pos.z : world_pos.x;

@@ -12,6 +12,11 @@ const VIEWS := [
 	["mesa floor across the canyons", Vector3(490, 25, 490), Vector3(900, 40, 800)],
 	["verdant valley towards the falls", Vector3(-640, 30, 700), Vector3(-660, 60, 300)],
 	["frozen valley", Vector3(-450, 90, -520), Vector3(-900, 90, -560)],
+	["Heartbloom: lawn before the Heart Arch", Vector3(-6, 296, 78), Vector3(0, 306, -26)],
+	["Heartbloom: across the islands to the arch", Vector3(-236, 297, 52), Vector3(-60, 296, 10)],
+	["Heartbloom: spawn on Picnic Meadow towards the map", Vector3(140, 276, -96), Vector3(-300, 200, 300)],
+	["Heartbloom: from below the archipelago", Vector3(-320, 200, -190), Vector3(-70, 282, 10)],
+	["Heartbloom: high over the islands looking down", Vector3(0, 390, 260), Vector3(0, 250, -40)],
 ]
 
 var world: WorldMap
@@ -78,6 +83,7 @@ func test_repeated_props_use_multimeshes() -> void:
 	for node in world.props.find_children("*", "MeshInstance3D", true, false):
 		singles += 1
 	assert_gt(instances, 1500, "thousands of props")
+	gut.p("prop nodes: %d multimeshes, %d single meshes" % [multimeshes.size(), singles])
 	assert_lt(multimeshes.size() + singles, 40, "but only a few dozen nodes draw them")
 
 

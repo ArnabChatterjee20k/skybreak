@@ -1,7 +1,9 @@
 class_name WorldMap
 extends Node3D
-## The world map: 2 km terrain with six fighting zones, props, boundary dome and
-## atmosphere. A drop-in level background; read-only queries for gameplay below.
+## The world map: 2 km terrain with six ground zones, the floating Heartbloom Gardens,
+## props, boundary dome and atmosphere. A drop-in level background; read-only queries
+## for gameplay below. Ground has two layers: the terrain heightmap and the floating
+## islands (IslandField); `ground_height_at` merges them.
 
 const HEIGHTMAP_PATH := "res://game/world/terrain/terrain_heightmap.res"
 const SKY_SHADER := preload("res://game/world/shaders/world_sky.gdshader")
@@ -22,8 +24,12 @@ const UNSHADED_LEVELS: Array[float] = [1.0, 0.8, 0.38]
 
 var heightmap: TerrainHeightmap
 var layout: ZoneLayout
+## Second ground layer: Heartbloom's floating islands.
+var islands: IslandField
 var unshaded_materials: Array[ShaderMaterial] = []
 var _night_materials: Array[ShaderMaterial] = []
+## Shown only at night (fireflies).
+var _night_nodes: Array[Node3D] = []
 
 @onready var environment_node: WorldEnvironment = $WorldEnvironment
 @onready var sun: DirectionalLight3D = $Sun
@@ -36,7 +42,8 @@ var _night_materials: Array[ShaderMaterial] = []
 func _ready() -> void:
 	heightmap = load(HEIGHTMAP_PATH)
 	layout = ZoneLayout.load_default()
-	terrain.build(heightmap, layout.zones)
+	islands = IslandField.heartbloom()
+	terrain.build(heightmap, layout.ground_zones())
 	_build_props()
 	_build_planes()
 	var sky_material := ShaderMaterial.new()
@@ -54,13 +61,16 @@ func bounds() -> AABB:
 	return WorldBoundary.bounds()
 
 
-## Bilinear ground height at world (x, z), from the baked heightmap.
-func ground_height_at(x: float, z: float) -> float:
-	return heightmap.ground_height_at(x, z)
+## Highest ground at world (x, z) at or below `from_y`: an island top if one is there
+## (and not above `from_y`), else the bilinear terrain height from the baked heightmap.
+## Pass a fighter's height as `from_y` so fighters under an island land on the terrain.
+func ground_height_at(x: float, z: float, from_y: float = INF) -> float:
+	return maxf(heightmap.ground_height_at(x, z), islands.surface_at(x, z, from_y))
 
 
-func zone_at(x: float, z: float) -> ZoneData:
-	return layout.zones[layout.index_at(x, z)]
+## Zone at (x, z) and altitude `y`; on the ground (default y) only ground zones.
+func zone_at(x: float, z: float, y: float = -INF) -> ZoneData:
+	return layout.zones[layout.index_at(x, z, y)]
 
 
 func zone_ids() -> Array[StringName]:
@@ -85,6 +95,11 @@ func spawn_points(zone_id: StringName) -> Array[Vector3]:
 
 func set_time_of_day(id: int) -> void:
 	atmosphere.set_time_of_day(id)
+	var night := atmosphere.time_of_day == WorldAtmosphere.TimeOfDay.NIGHT
+	for node in _night_nodes:
+		node.visible = night
+		if node is GPUParticles3D:
+			(node as GPUParticles3D).emitting = night
 	for material in unshaded_materials:
 		material.set_shader_parameter("light_level", UNSHADED_LEVELS[atmosphere.time_of_day])
 
@@ -92,6 +107,7 @@ func set_time_of_day(id: int) -> void:
 ## Overview (top-down map) mode: whole map drawn, no distance culling, no fog.
 func set_overview(enabled: bool) -> void:
 	terrain.set_overview(enabled)
+	atmosphere.ground_only = enabled
 	environment_node.environment.fog_enabled = not enabled
 	for node in props.find_children("*", "GeometryInstance3D", true, false):
 		var gi := node as GeometryInstance3D
@@ -101,7 +117,7 @@ func set_overview(enabled: bool) -> void:
 
 func _build_props() -> void:
 	var kit := PropKit.new(heightmap, PROP_SEED)
-	for zone_data in layout.zones:
+	for zone_data in layout.ground_zones():
 		for p in zone_data.spawn_points:
 			kit.keep_clear.append(Vector3(p.x, p.z, SPAWN_CLEAR_RADIUS))
 	for zone_data in layout.zones:
@@ -122,6 +138,10 @@ func _build_props() -> void:
 				unshaded_materials.append_array(VerdantFallsProps.build(group, kit, zone_data, layout))
 			&"ember_rift":
 				EmberRiftProps.build(group, kit, zone_data, layout)
+			&"heartbloom_gardens":
+				var built := HeartbloomProps.build(group, kit, zone_data, islands)
+				unshaded_materials.append_array(built.unshaded)
+				_night_nodes.append_array(built.night_nodes)
 	_night_materials = kit.night_materials
 
 

@@ -48,7 +48,7 @@ func material(key: String, color: Color, params: Dictionary = {}) -> ShaderMater
 	m.set_shader_parameter("albedo_color", color)
 	for p in params:
 		m.set_shader_parameter(p, params[p])
-	if params.has("windows"):
+	if params.has("windows") or params.has("night_emission"):
 		night_materials.append(m)
 	materials[key] = m
 	return m
@@ -92,6 +92,21 @@ static func merged_boxes(boxes: Array[AABB]) -> ArrayMesh:
 			st.set_normal(normals[i])
 			st.add_vertex(b.get_center() + verts[i] * b.size)
 	return st.commit()
+
+
+## Appends a mesh's first surface to `st`, transformed and tinted (flat normals).
+static func append_mesh(st: SurfaceTool, mesh: Mesh, xform: Transform3D, color: Color) -> void:
+	var arrays := (mesh as PrimitiveMesh).get_mesh_arrays() if mesh is PrimitiveMesh else mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+	if indices.is_empty():
+		indices.resize(verts.size())
+		for i in verts.size():
+			indices[i] = i
+	st.set_smooth_group(-1)
+	st.set_color(color)
+	for i in indices:
+		st.add_vertex(xform * verts[i])
 
 
 ## One MultiMeshInstance3D for many copies of a mesh; `colors` tints each copy.
