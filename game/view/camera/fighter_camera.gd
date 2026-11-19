@@ -35,6 +35,11 @@ extends Camera3D
 ## The player's centre is kept inside this fraction of the half-screen, so a
 ## capped re-lock turn can never swing them out of frame.
 @export var player_frame_limit := 0.8
+## Hit shake: largest camera offset (m) at full trauma, and trauma lost per
+## second. Offset only, never rotation, and it scales with trauma squared so
+## light hits barely move the view.
+@export var max_shake_offset := 0.25
+@export var shake_decay := 2.5
 ## Seconds without mouse movement before the orbit starts springing back.
 @export var orbit_return_delay := 0.2
 
@@ -58,6 +63,8 @@ var _band := LockOnFraming.Band.MID
 ## True from a re-lock until the view has turned onto the new framing; the
 ## shoulder side stays fixed meanwhile so it can't flip mid-swing.
 var _relock_turning := false
+var _trauma := 0.0
+var _shake_time := 0.0
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -77,6 +84,16 @@ func add_mouse_motion(relative: Vector2) -> void:
 	free_pitch += turn.y
 	orbit = LockOnFraming.clamp_orbit(orbit + Vector2(-turn.x, turn.y))
 	_seconds_since_mouse_moved = 0.0
+
+
+## Adds hit shake; trauma 0-1, capped at 1 in total.
+func shake(trauma: float) -> void:
+	_trauma = minf(_trauma + trauma, 1.0)
+
+
+## Current shake trauma, 0 when still.
+func shake_trauma() -> float:
+	return _trauma
 
 
 ## Which shoulder the camera is heading for: -1 left, +1 right.
@@ -169,6 +186,19 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	var total := rotation_from.angle_to(kept)
 	if total > max_turn:
 		global_basis = Basis(rotation_from.slerp(kept, max_turn / total))
+	_apply_shake(delta)
+
+
+## Offsets the camera by the shake; the next frame starts again from the
+## unshaken pose (position comes from _anchor + _offset), so it never drifts.
+func _apply_shake(delta: float) -> void:
+	if _trauma <= 0.0:
+		return
+	_shake_time += delta
+	var amount := max_shake_offset * _trauma * _trauma
+	var jitter := Vector3(sin(_shake_time * 71.0), sin(_shake_time * 53.0 + 1.3), 0.0)
+	global_position += global_basis * jitter * amount
+	_trauma = maxf(_trauma - shake_decay * delta, 0.0)
 
 
 ## Follows the player rigidly, but glides over ~0.2 s after a teleport so a

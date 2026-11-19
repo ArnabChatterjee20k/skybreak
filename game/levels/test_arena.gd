@@ -14,6 +14,9 @@ var input_override: Callable
 ## Compiles VFX at load behind a loading cover; scripts can await
 ## vfx_prewarm.finished (or check is_finished) before capturing frames.
 var vfx_prewarm := VfxPrewarm.new()
+## Hit sparks, shake and impact frames from sim.events (T-121).
+var combat_feedback := CombatFeedback.new()
+var combo_counter := ComboCounter.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -28,6 +31,12 @@ func _ready() -> void:
 	sim.lock_everyone_onto_nearest()
 	$DebugOverlay.sim = sim
 	opponent_marker.camera = camera
+	add_child(combat_feedback)
+	combat_feedback.camera = camera
+	var impact_frame: ImpactFrame = preload("res://game/view/shaders/screen/impact_frame.tscn").instantiate()
+	$Hud.add_child(impact_frame)
+	combat_feedback.impact_frame = impact_frame
+	$Hud.add_child(combo_counter)
 	add_child(vfx_prewarm)
 	# After the first frame so the camera has its starting pose.
 	(func(): vfx_prewarm.start(camera)).call_deferred()
@@ -53,6 +62,8 @@ func step_tick() -> void:
 		inputs.append(_player_input.read_tick(camera.view_yaw(), camera.orbit))
 		inputs.append(FighterInput.new())
 	sim.tick(inputs)
+	# sim.events holds only this tick's events, so read them every tick.
+	combat_feedback.react(sim.events)
 
 
 ## Draws one frame: fighters at blend between the last two ticks, then the camera.
@@ -66,3 +77,4 @@ func present_frame(blend: float, delta: float) -> void:
 	opponent_marker.target = opponent
 	opponent_marker.origin = _fighter_views[0].position
 	opponent_marker.locked = locked
+	combo_counter.show_combo(sim.fighters, delta)
