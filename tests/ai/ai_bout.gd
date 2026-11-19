@@ -12,14 +12,15 @@ var winner: int = -1
 var ticks: int = 0
 
 
-## levels: AI level per slot (0 = an idle dummy).
-func _init(seed_value: int, levels: Array, pickups := false) -> void:
+## levels: AI level per slot (0 = an idle dummy); characters: legend id per slot (default Kael).
+func _init(seed_value: int, levels: Array, pickups := false, characters: Array = []) -> void:
 	sim = CombatSim.new(seed_value)
 	sim.pickups_enabled = pickups
 	var fighters: Array = []
 	for slot in levels.size():
-		sim.add_fighter(STARTS[slot])
-		fighters.append({"character": &"kael", "team": slot, "is_ai": levels[slot] > 0,
+		var character: StringName = characters[slot] if slot < characters.size() else &"kael"
+		sim.add_fighter(STARTS[slot], EngagementBand.stats_for(character))
+		fighters.append({"character": character, "team": slot, "is_ai": levels[slot] > 0,
 			"ai_level": levels[slot]})
 	sim.lock_everyone_onto_nearest()
 	driver = AIDriver.for_sim(sim, fighters)

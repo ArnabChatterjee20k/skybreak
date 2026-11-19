@@ -87,7 +87,7 @@ func _run_match(seed_value: int, ticks: int, visited: Dictionary, count := 2,
 	var guarding: Array[bool] = []
 	var ticks_left: Array[int] = []
 	for i in count:
-		sim.add_fighter(Basis(Vector3.UP, TAU * i / count) * Vector3(0, 1, 6), stats)
+		sim.add_fighter(DetMath.rotate_y(Vector3(0, 1, 6), TAU * i / count), stats)
 		previous.append(FighterInput.new())
 		intents.append(FighterInput.new())
 		approaching.append(false)
@@ -169,7 +169,7 @@ func _steer_toward(plan: FighterInput, fighter: FighterState, opponent: FighterS
 		previous: FighterInput) -> void:
 	const ATTACKS := FighterInput.Action.LIGHT | FighterInput.Action.HEAVY
 	var to_opponent := opponent.position - fighter.position
-	plan.view_yaw = atan2(-to_opponent.x, -to_opponent.z)
+	plan.view_yaw = DetMath.atan2(-to_opponent.x, -to_opponent.z)
 	if _continues_string(fighter):
 		# Released for a tick first if it was held, so the next tick is a press.
 		if previous.is_held(FighterInput.Action.LIGHT):

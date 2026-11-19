@@ -38,6 +38,7 @@ var _night_nodes: Array[Node3D] = []
 
 @onready var environment_node: WorldEnvironment = $WorldEnvironment
 @onready var sun: DirectionalLight3D = $Sun
+@onready var rim_light: DirectionalLight3D = $RimLight
 @onready var terrain: WorldTerrain = $Terrain
 @onready var props: Node3D = $Props
 @onready var boundary: WorldBoundary = $Boundary
@@ -56,7 +57,8 @@ func _ready() -> void:
 	var sky_material := ShaderMaterial.new()
 	sky_material.shader = SKY_SHADER
 	environment_node.environment.sky.sky_material = sky_material
-	atmosphere.setup(layout, environment_node.environment, sun, sky_material)
+	_move_to_world_layers()
+	atmosphere.setup(layout, environment_node.environment, sun, sky_material, rim_light)
 	atmosphere.night_materials.append_array(_night_materials)
 	set_time_of_day(start_time_of_day)
 	var focus := spawn_points(&"stormfall_city")[0]
@@ -123,6 +125,13 @@ func set_overview(enabled: bool) -> void:
 		var gi := node as GeometryInstance3D
 		gi.visibility_range_end = 0.0 if enabled else PropKit.PROP_VISIBILITY_END
 
+
+
+# Terrain and props leave the fighters' layer so the rim light skips them.
+func _move_to_world_layers() -> void:
+	for parent: Node in [terrain, props]:
+		for node in parent.find_children("*", "VisualInstance3D", true, false):
+			(node as VisualInstance3D).layers = WorldAtmosphere.WORLD_LAYERS
 
 
 # Far from the focus zone only the lowest LOD stays, drawn from any distance.
@@ -213,3 +222,4 @@ func _build_planes() -> void:
 			unshaded_materials.append(material)
 		if spec[1] == "lava":
 			node.set_meta("hazard", "lava")
+			_night_materials.append(material)

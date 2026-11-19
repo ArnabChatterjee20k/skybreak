@@ -87,11 +87,15 @@ func test_repeated_props_use_multimeshes() -> void:
 	assert_lt(multimeshes.size() + singles, 40, "but only a few dozen nodes draw them")
 
 
-func test_one_directional_light_with_a_modest_shadow_distance() -> void:
+func test_one_shadowed_sun_with_a_modest_shadow_distance_and_an_unshadowed_rim() -> void:
 	var lights := world.find_children("*", "DirectionalLight3D", true, false)
-	assert_eq(lights.size(), 1)
-	var sun := lights[0] as DirectionalLight3D
+	assert_eq(lights.size(), 2, "sun and rim light")
+	var shadowed := lights.filter(func(l: DirectionalLight3D) -> bool: return l.shadow_enabled)
+	assert_eq(shadowed.size(), 1, "only the sun casts shadows")
+	var sun := shadowed[0] as DirectionalLight3D
+	assert_eq(sun, world.sun)
 	assert_lte(sun.directional_shadow_max_distance, 200.0)
+	assert_eq(world.rim_light.light_cull_mask, WorldAtmosphere.RIM_LAYERS, "rim lights fighters only")
 	assert_eq(world.find_children("*", "OmniLight3D", true, false).size(), 0)
 	assert_eq(world.find_children("*", "SpotLight3D", true, false).size(), 0)
 
