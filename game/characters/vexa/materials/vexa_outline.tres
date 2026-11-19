@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://game/view/shaders/outline.gdshader" id="1_outline"]
+
+[resource]
+resource_name = "vexa_outline"
+shader = ExtResource("1_outline")
+shader_parameter/outline_width = 2.5
