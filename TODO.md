@@ -13,15 +13,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
-- T-002 [developer] Graphics settings: low/med/high presets + resolution scale,
-  saved to user settings. Menu on F10.
+- T-003 [developer] Export preset for a Windows .exe build: `export_presets.cfg`,
+  single exe with embedded pck, tests and GUT left out.
 
 ## Backlog
-
-### Milestone 0: setup
-
-- T-003 [developer] Export preset for a Windows .exe build (export templates in
-  `D:\Tools\Godot\editor_data`).
 
 ### Milestone 1: flight and camera (goal: flying feels great)
 
@@ -39,6 +34,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   energy-dome boundary.
 - T-107 [developer] Performance check on the GTX 1650 with two fighters flying;
   record fps and frame time.
+- T-108 [developer] Graphics presets follow-up (from PR #2): try
+  `SCALING_3D_MODE_FSR` instead of bilinear when resolution scale < 1.0, and
+  lower the high preset (4096 shadows, MSAA 4x) if it misses 60 fps in T-107.
 
 ### Combat sim (desktop)
 
@@ -63,3 +61,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+
+- T-D00 [desktop] Game design document (`docs/GAME_DESIGN.md`), PR #1.
+- T-002 [developer] Graphics presets + resolution scale + vsync, F10 menu, PR #2.
