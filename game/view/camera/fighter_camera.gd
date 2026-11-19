@@ -23,6 +23,19 @@ extends Camera3D
 @export var near_catch_up_turn_speed := 300.0
 ## How fast the cap itself changes, in deg/s per second (180 -> 300 in 0.5 s).
 @export var turn_cap_ramp := 240.0
+## A player jump longer than this in one frame (m) cuts to the new framing.
+@export var cut_distance := 20.0
+## Most the view's turn speed may grow per second (deg/s^2), so turns ease in
+## instead of snapping from still to full speed in one frame (issue #75).
+@export var max_turn_acceleration := 2000.0
+## A target position jump longer than this in one frame (m) is a target switch
+## or teleport; the framing glides to it over ~0.3 s instead of cutting.
+@export var target_switch_distance := 3.0
+@export var target_glide_sharpness := 12.0
+## How fast the camera eases back out after an obstacle pulled it in (m/s).
+@export var obstacle_release_speed := 6.0
+## Closest the camera gets pulled toward the player by an obstacle (m).
+@export var obstacle_min_distance := 1.2
 ## A player jump longer than this in one frame (m) is a teleport, e.g. a vanish
 ## step; normal movement tops out around 1.3 m per frame.
 @export var teleport_distance := 3.0
@@ -73,6 +86,13 @@ var _trauma := 0.0
 ## Last fighter-to-fighter direction measured while not stacked; the stacked
 ## framing keeps it, since their horizontal direction is noise then (T-117b).
 var _held_facing := Vector3.ZERO
+## Terrain and props to keep out of (zone matches); null means open space.
+var obstacles: CameraObstacles
+var _turn_speed := 0.0
+var _target := Vector3.ZERO
+var _target_gliding := false
+var _clip_length := INF
+var _last_player := Vector3.ZERO
 const LAG_EXTRA_FOV := 10.0
 const LAG_EXTRA_BOOM := 0.25
 const LAG_SHARPNESS := 3.0
@@ -140,6 +160,14 @@ func view_yaw() -> float:
 ## Moves the camera toward its framing for this frame. target is ignored when unlocked.
 func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> void:
 	_seconds_since_mouse_moved += delta
+	# A jump this big (e.g. a KO'd fighter snapped to the ground far below an
+	# island) is a new shot: cut to it rather than glide through empty sky.
+	if _has_pose and player.distance_to(_last_player) > cut_distance:
+		_has_pose = false
+		_clip_length = INF
+		_turn_speed = 0.0
+	_last_player = player
+	target = _follow_target(target, delta)
 	var goal: Transform3D
 	var fov_goal := base_fov
 	if locked:
@@ -193,27 +221,30 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	_was_locked = locked
 
 	if not _has_pose:
+		_anchor = player
+		_offset = goal.origin - player
+		goal.origin = _keep_clear(player, goal.origin, delta)
 		global_transform = goal
 		fov = fov_goal
-		_offset = goal.origin - player
-		_anchor = player
 		_has_pose = true
 		return
 	fov = lerpf(fov, fov_goal, _blend(fov_sharpness, delta))
 	var catch_up := locked and _band == LockOnFraming.Band.NEAR and not _relock_turning 		and not LockOnFraming.is_in_view(global_transform, fov, target)
 	_turn_cap = move_toward(_turn_cap, near_catch_up_turn_speed if catch_up else max_turn_speed,
 		turn_cap_ramp * delta)
+	# Turn speed may only grow by max_turn_acceleration per second: turns ease
+	# in. Slowing down is free (the smoothing already decelerates).
+	var max_turn := minf(deg_to_rad(_turn_cap), _turn_speed + deg_to_rad(max_turn_acceleration) * delta) * delta
 	# The offset turns around the player (never through or over them), capped
 	# like the view turn so the two stay in step.
 	_offset = step_offset(_offset, goal.origin - player, _blend(position_sharpness, delta),
-		_blend(boom_sharpness, delta), deg_to_rad(_turn_cap) * delta)
+		_blend(boom_sharpness, delta), max_turn)
 	_follow_anchor(player, delta)
-	var position_now := _anchor + _offset
+	var position_now := _keep_clear(_anchor, _anchor + _offset, delta)
 	var rotation_from := global_basis.get_rotation_quaternion()
 	var rotation_now := rotation_from.slerp(
 		goal.basis.get_rotation_quaternion(), _blend(rotation_sharpness, delta))
 	var turn := rotation_from.angle_to(rotation_now)
-	var max_turn := deg_to_rad(_turn_cap) * delta
 	if turn > max_turn:
 		rotation_now = rotation_from.slerp(rotation_now, max_turn / turn)
 	global_transform = Transform3D(Basis(rotation_now), position_now)
@@ -223,7 +254,45 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	var total := rotation_from.angle_to(kept)
 	if total > max_turn:
 		global_basis = Basis(rotation_from.slerp(kept, max_turn / total))
+	_turn_speed = rotation_from.angle_to(global_basis.get_rotation_quaternion()) / maxf(delta, 0.0001)
 	_apply_shake(delta)
+
+
+## The framing target: follows the real one rigidly, but glides over ~0.3 s
+## after a jump (target switch, teleport) so the view never cuts.
+func _follow_target(target: Vector3, delta: float) -> Vector3:
+	if not _has_pose:
+		_target = target
+		return target
+	if not _target_gliding and _target.distance_to(target) > target_switch_distance:
+		_target_gliding = true
+	if not _target_gliding:
+		_target = target
+		return target
+	_target = _target.lerp(target, _blend(target_glide_sharpness, delta))
+	if _target.distance_to(target) < 0.05:
+		_target = target
+		_target_gliding = false
+	return _target
+
+
+## Pulls the camera in front of terrain and props between it and the player
+## (at once), eases back out when they clear, and keeps it above the ground.
+func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
+	if obstacles == null:
+		return wanted
+	var look_from := pivot + Vector3.UP * 0.5
+	var length := look_from.distance_to(wanted)
+	if length < 0.001:
+		return wanted
+	var safe := maxf(obstacles.clear_fraction(look_from, wanted) * length, obstacle_min_distance)
+	if safe < _clip_length:
+		_clip_length = safe
+	else:
+		_clip_length = minf(move_toward(_clip_length, safe, obstacle_release_speed * delta), safe)
+	var position := look_from + (wanted - look_from) / length * minf(length, _clip_length)
+	position.y = maxf(position.y, obstacles.ground_at(position) + CameraObstacles.CLEARANCE)
+	return position
 
 
 ## Offsets the camera by the shake; the next frame starts again from the
