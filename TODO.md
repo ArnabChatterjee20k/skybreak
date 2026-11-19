@@ -13,8 +13,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
-- T-115 [developer] Camera turn limits: view and orbit capped at 180°/s (≤3° per
-  frame), camera glides ~0.2 s after teleports instead of cutting.
+- T-116 [developer] VFX prewarm at arena load behind a short loading cover.
 
 ## Backlog
 
@@ -43,8 +42,17 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   high preset is fine on the grey-box arena (T-107: GPU p95 1.8 ms); recheck
   once real content lands.
 
-- T-116 [developer] Prewarm VFX materials and particle pipelines at match load
-  (first impact costs ~396 ms, first shockwave ~88 ms on the GTX 1650).
+- T-117 [developer] Range-band framing: near (<10 m) shorter boom + ~25° side
+  swing with a ≥10% screen gap between fighters; mid (10–30 m) as now; far
+  (>30 m) behind and lower with the FOV narrowed (40° floor) so the opponent
+  stays ≥ ~40 px and the player ≥ 15%; bands blend over ≥ 0.5 s with
+  hysteresis (near 9/11 m); shoulder side frozen during a re-lock turn.
+  Scripted-playtest asserts for all of it.
+- T-118 [developer] Fighter identity: camera-side fill/rim light, a facing cue
+  readable from behind, height drop-line + ground ring under airborne
+  fighters, bigger off-screen arrow with distance and above/below/behind.
+- T-119 [developer] Playtest capture: render key motion events (re-lock, vanish,
+  rush arrival) at every frame for the playtester.
 - T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
   health with grey recoverable part, ki in 4 bars, guard, burst stocks.
 - T-112 [developer] Round flow in the test arena: on `round_over`, reset
@@ -95,3 +103,4 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-D02 [desktop] Meters, PR #9.
 - T-D09 [desktop] Aura and impact VFX, PR #12.
 - T-114 [developer] Shoulder offset: player a third from the edge, PR #16.
+- T-115 [developer] Camera turn limits and teleport glide, PR #17.
