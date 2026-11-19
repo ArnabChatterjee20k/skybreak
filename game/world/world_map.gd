@@ -21,6 +21,11 @@ const SPAWN_CLEAR_RADIUS := 26.0
 const UNSHADED_LEVELS: Array[float] = [1.0, 0.8, 0.38]
 
 @export var start_time_of_day := WorldAtmosphere.TimeOfDay.DAY
+## Zone match (T-106): set before adding to the tree to build only this zone's props,
+## keep far terrain at its lowest LOD and pin the atmosphere to this zone. Empty builds all.
+@export var focus_zone: StringName = &""
+## Around the focus zone, terrain within this distance keeps every LOD.
+const FOCUS_TERRAIN_RADIUS := 900.0
 
 var heightmap: TerrainHeightmap
 var layout: ZoneLayout
@@ -44,6 +49,8 @@ func _ready() -> void:
 	layout = ZoneLayout.load_default()
 	islands = IslandField.heartbloom()
 	terrain.build(heightmap, layout.ground_zones())
+	if focus_zone != &"":
+		_trim_terrain(zone(focus_zone).centre)
 	_build_props()
 	_build_planes()
 	var sky_material := ShaderMaterial.new()
@@ -53,6 +60,9 @@ func _ready() -> void:
 	atmosphere.night_materials.append_array(_night_materials)
 	set_time_of_day(start_time_of_day)
 	var focus := spawn_points(&"stormfall_city")[0]
+	if focus_zone != &"":
+		atmosphere.pin_zone(layout.index_of(focus_zone))
+		focus = spawn_points(focus_zone)[0]
 	atmosphere.apply_at(focus)
 
 
@@ -115,12 +125,29 @@ func set_overview(enabled: bool) -> void:
 
 
 
+# Far from the focus zone only the lowest LOD stays, drawn from any distance.
+func _trim_terrain(centre: Vector2) -> void:
+	var last := TerrainGrid.LOD_COUNT - 1
+	for chunk: MeshInstance3D in terrain.get_children():
+		var box := chunk.custom_aabb
+		var middle := Vector2(chunk.position.x + box.size.x * 0.5, chunk.position.z + box.size.z * 0.5)
+		if middle.distance_to(centre) <= FOCUS_TERRAIN_RADIUS:
+			continue
+		if int(chunk.get_meta("lod")) == last:
+			chunk.visibility_range_begin = 0.0
+		else:
+			terrain.remove_child(chunk)
+			chunk.free()
+
+
 func _build_props() -> void:
 	var kit := PropKit.new(heightmap, PROP_SEED)
 	for zone_data in layout.ground_zones():
 		for p in zone_data.spawn_points:
 			kit.keep_clear.append(Vector3(p.x, p.z, SPAWN_CLEAR_RADIUS))
 	for zone_data in layout.zones:
+		if focus_zone != &"" and zone_data.id != focus_zone:
+			continue
 		var group := Node3D.new()
 		group.name = zone_data.display_name.replace(" ", "")
 		group.set_meta("zone_id", zone_data.id)
@@ -157,6 +184,8 @@ func _build_planes() -> void:
 	var weights_a: Texture2D = terrain.materials[0].get_shader_parameter("zone_weights_a")
 	var weights_b: Texture2D = terrain.materials[0].get_shader_parameter("zone_weights_b")
 	for spec in specs:
+		if focus_zone != &"" and spec[2] != focus_zone:
+			continue
 		var zone_data := zone(spec[2])
 		var material := ShaderMaterial.new()
 		material.shader = PLANE_SHADERS[spec[1]]
