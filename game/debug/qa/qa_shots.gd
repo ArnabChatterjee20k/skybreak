@@ -18,8 +18,9 @@ static func all() -> Array[Dictionary]:
 	for zone in ZoneLayout.ZONE_IDS:
 		if zone == &"heartbloom_gardens":
 			continue
+		# Scene only: HUD and overlay changes must not move the zone shots.
 		shots.append({"name": "zone_%s" % zone, "spec": "7:%s:1v1:kael,brann:33" % zone,
-			"tick": SHOT_TICK, "plan": idle})
+			"tick": SHOT_TICK, "plan": idle, "scene_only": true})
 	return shots
 
 

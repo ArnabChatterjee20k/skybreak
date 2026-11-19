@@ -32,6 +32,12 @@ METRICS = {
     "view_ms_per_frame": True,
 }
 REGRESSION = 0.15
+# Metric -> definition version. Bump it when a metric's definition changes; the trend then
+# skips that metric against older reports (shown as "re-baselined") and this run becomes its
+# new reference. Reports without "metric_versions" are version 1.
+# foot_slide_cm_per_frame v2 (T-D34): no slide across teleports, hidden frames or the first
+# frames of a round, and only feet within FOOT_TOLERANCE of the ground (floating ones skipped).
+METRIC_VERSIONS = {"foot_slide_cm_per_frame": 2}
 # Visual goldens: tiles of TILE px; a tile changes when its mean abs delta (0-255) passes
 # TILE_DELTA; a shot fails when SSIM < SSIM_MIN or more than TILE_SHARE of tiles change.
 TILE = 32
@@ -118,6 +124,7 @@ def metrics_of(matches, feel):
                 vals[k].append(v)
     out = {k: (statistics.mean(v) if v else None) for k, v in vals.items()}
     out["hitstop_consistency"], _ = hitstop_consistency(matches)
+    out["metric_versions"] = dict(METRIC_VERSIONS)
     out["latency_ticks"] = {legend: {probe: r["ticks"] for probe, r in per.items()}
                             for legend, per in (feel or {}).items()}
     return out
@@ -136,8 +143,12 @@ def previous_metrics(reports_dir, current_run, mode):
 
 def trend(current, previous):
     rows = []
+    then_versions = (previous or {}).get("metric_versions", {})
     for k, higher_worse in METRICS.items():
         now, then = current.get(k), (previous or {}).get(k)
+        if then is not None and then_versions.get(k, 1) != METRIC_VERSIONS.get(k, 1):
+            rows.append((k, now, then, "rebaselined", False))
+            continue
         if now is None or then is None or then == 0:
             rows.append((k, now, then, None, False))
             continue
@@ -337,7 +348,8 @@ def main():
     for k, now, then, change, worse in trend_rows:
         fmt = lambda x: "-" if x is None else ("%.4g" % x)
         md.append("| %s | %s | %s | %s%s |" % (k, fmt(now), fmt(then),
-            "-" if change is None else "%+.0f%%" % (change * 100), " **REGRESSION**" if worse else ""))
+            "-" if change is None else ("re-baselined (v%d)" % METRIC_VERSIONS[k] if change == "rebaselined"
+            else "%+.0f%%" % (change * 100)), " **REGRESSION**" if worse else ""))
     if metrics.get("latency_ticks"):
         md.append("\nPress to first active frame (ticks at 60 Hz):\n")
         probes = sorted(next(iter(metrics["latency_ticks"].values())).keys())

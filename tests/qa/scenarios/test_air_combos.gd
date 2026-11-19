@@ -129,6 +129,4 @@ func test_lyra_lands_lights_launcher_air_light_and_spike_as_one_combo() -> void:
 
 
 func test_brann_lands_lights_launcher_air_light_and_spike_as_one_combo() -> void:
-	if known_issue(&"QA-2", "Brann's air light_1/light_2 hitstun (18/19) is shorter than his spike startup (20): the spike drops the combo"):
-		return
 	_air_route(&"brann")

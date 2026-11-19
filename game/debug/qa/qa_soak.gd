@@ -105,6 +105,8 @@ func _capture(spec: QaMatchSpec, at: int, frames: int, fighter: int, out_dir: St
 func _shots(out_dir: String) -> void:
 	_size_window()
 	for shot in QaShots.all():
+		if _args.has("only") and not (shot.name as String).begins_with(_args.only):
+			continue
 		var spec := QaMatchSpec.parse(shot.spec)
 		var run := QaMatchRun.new(spec)
 		run.check_view = false
@@ -112,6 +114,8 @@ func _shots(out_dir: String) -> void:
 		run.level.match_flow.enabled = false
 		# Live fps text would differ every run.
 		(run.level.get_node(^"DebugOverlay") as CanvasLayer).visible = false
+		if shot.get("scene_only", false):
+			_hide_overlays(run.level)
 		var plan: Callable = shot.plan
 		run.level.input_override = func(slot: int, t: int) -> FighterInput: return plan.call(run.level.sim, slot, t)
 		await process_frame
@@ -138,3 +142,9 @@ func _prewarm(level: ZoneMatch) -> void:
 func _size_window() -> void:
 	root.size = CAPTURE_SIZE
 	DisplayServer.window_set_size(CAPTURE_SIZE)
+
+
+## Hides every 2D layer (HUD, menus, overlays) so a shot shows only the 3D scene.
+static func _hide_overlays(level: Node) -> void:
+	for layer: CanvasLayer in level.find_children("*", "CanvasLayer", true, false):
+		layer.visible = false
