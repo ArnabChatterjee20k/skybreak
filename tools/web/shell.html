@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+<title>$GODOT_PROJECT_NAME</title>
+<style>
+:root { --sky: #0b1430; --glow: #6fd3ff; --ember: #ff8a3d; --text: #e8f1ff; }
+html, body, #canvas { margin: 0; padding: 0; border: 0; }
+body { background: var(--sky); color: var(--text); overflow: hidden; touch-action: none;
+	font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; }
+#canvas { display: block; }
+#canvas:focus { outline: none; }
+#cover { position: absolute; inset: 0; display: flex; flex-direction: column;
+	align-items: center; justify-content: center; gap: 1.5rem; z-index: 1;
+	background: radial-gradient(ellipse at 50% 110%, #2a3f86 0%, var(--sky) 60%, #050913 100%); }
+#title { font-size: clamp(2.5rem, 9vw, 6rem); font-weight: 900; letter-spacing: 0.3em;
+	margin: 0 0 0 0.3em; background: linear-gradient(180deg, #fff 20%, var(--glow) 60%, var(--ember));
+	-webkit-background-clip: text; background-clip: text; color: transparent;
+	filter: drop-shadow(0 0 18px rgba(111, 211, 255, 0.45)); }
+#bar { width: min(420px, 70vw); height: 6px; border-radius: 3px; background: rgba(255,255,255,0.12); overflow: hidden; }
+#fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--glow), var(--ember)); transition: width 0.15s; }
+#label { font-size: 0.95rem; opacity: 0.8; min-height: 1.2em; text-align: center; white-space: pre-line; }
+#start { font: inherit; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.15em; color: var(--sky);
+	background: var(--glow); border: 0; border-radius: 999px; padding: 0.8rem 2.4rem; cursor: pointer;
+	box-shadow: 0 0 24px rgba(111, 211, 255, 0.6); }
+#start:hover { background: #fff; }
+#start[hidden] { display: none; }
+</style>
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+<canvas id="canvas">Your browser does not support the canvas tag.</canvas>
+<noscript>Skybreak needs JavaScript.</noscript>
+<div id="cover">
+	<h1 id="title">SKYBREAK</h1>
+	<div id="bar"><div id="fill"></div></div>
+	<div id="label">Loading…</div>
+	<button id="start" type="button">CLICK TO START</button>
+</div>
+<script src="$GODOT_URL"></script>
+<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+
+(function () {
+	const cover = document.getElementById('cover');
+	const fill = document.getElementById('fill');
+	const label = document.getElementById('label');
+	const startButton = document.getElementById('start');
+	let loaded = false;
+	let clicked = false;
+	let failed = false;
+
+	function fail(err) {
+		console.error(err);
+		failed = true;
+		startButton.hidden = true;
+		label.textContent = 'Could not start Skybreak:\n' + (err && err.message ? err.message : String(err));
+	}
+
+	function megabytes(bytes) {
+		return (bytes / 1048576).toFixed(1) + ' MB';
+	}
+
+	// Starts once the files are in and the player has clicked (the click unlocks audio).
+	function maybeStart() {
+		if (!loaded || !clicked || failed) {
+			return;
+		}
+		label.textContent = 'Starting…';
+		engine.start().then(() => cover.remove(), fail);
+	}
+
+	const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
+	if (missing.length !== 0) {
+		fail(new Error('This browser is missing: ' + missing.join(', ') + '. Try a recent Chrome, Edge or Firefox.'));
+		return;
+	}
+
+	startButton.addEventListener('click', () => {
+		clicked = true;
+		startButton.hidden = true;
+		// Opening a context inside the gesture gives the page sticky audio activation.
+		const AudioCtx = window.AudioContext || window.webkitAudioContext;
+		if (AudioCtx) {
+			const ctx = new AudioCtx();
+			ctx.resume().finally(() => ctx.close());
+		}
+		label.textContent = loaded ? 'Starting…' : 'Loading…';
+		maybeStart();
+	});
+
+	const exe = GODOT_CONFIG.executable;
+	const pack = GODOT_CONFIG.mainPack || exe + '.pck';
+	const engine = new Engine(Object.assign({}, GODOT_CONFIG, {
+		args: ['--main-pack', pack].concat(GODOT_CONFIG.args || []),
+		onProgress: (current, total) => {
+			if (current > 0 && total > 0) {
+				fill.style.width = (100 * current / total).toFixed(1) + '%';
+				if (!clicked) {
+					label.textContent = 'Loading ' + megabytes(current) + ' / ' + megabytes(total);
+				}
+			}
+		},
+	}));
+	Promise.all([engine.init(exe), engine.preloadFile(pack, pack)]).then(() => {
+		loaded = true;
+		fill.style.width = '100%';
+		if (!clicked) {
+			label.textContent = 'Ready';
+		}
+		maybeStart();
+	}, fail);
+}());
+</script>
+</body>
+</html>
