@@ -75,8 +75,10 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 | Transform | `T` | Costs burst. Drains ki over time |
 | **Vanish** | `Shift + E` | While blocking or in the first frames of hitstun = vanish counter (§5.5) |
 | Combo breaker | `X` | While in hitstun. Costs 1 burst stock |
-| Lock-on toggle | `Middle Mouse` or `Tab` | |
-| Switch target | `Mouse Wheel` | For later multi-opponent modes |
+| Lock-on toggle | `Middle Mouse` | |
+| Switch target | `Tab` | For later multi-opponent modes |
+| Cycle weapons | `Mouse Wheel` | Unarmed → slot 1 → slot 2 (wraps) |
+| Quick-swap weapon | `C` | Toggles between the current and the last-used weapon |
 | Camera | Mouse movement | Free orbit when unlocked; small offset orbit when locked (§4) |
 | Pause / menu | `Esc` | |
 
@@ -268,6 +270,18 @@ Rules that keep ranged weapons fair in a melee-first game:
 - **Throwing:** `G` while holding a weapon throws it at the target as a fast projectile (damage plus a short stun). It's the classic "throw it before you lose it" play.
 - **Losing a weapon:** you drop it on guard break, knockdown, or when hit by a counter-hit heavy. Dropped weapons stay on the map for 10 s and anyone can grab them.
 - Each weapon is a `MoveSet` (the same data as unarmed), so balance is pure data tuning.
+
+**Carrying several weapons (inventory):**
+- You always have **Unarmed** plus **two weapon slots**. Any mix works: two melee, two ranged, or one of each.
+- **Switching:**
+  - `Mouse Wheel` cycles Unarmed → slot 1 → slot 2.
+  - `C` quick-swaps between the current weapon and the last one you used, the fastest way to flip between, say, a revolver and a blade.
+- **Swap speed:** a swap takes **6 ticks** from neutral (no attacks during it) and is **buffered** like any press, so it comes out the moment you're free.
+- **Swap-cancel (the mastery tool):** during a move's cancel window, **after contact**, you can swap weapons for **10 ki** and immediately use the new weapon's next move. It sits at the SPECIAL level in the cancel hierarchy (§5.3), so it goes after heavies and before vanish and ultimate. A combo like "blade string → swap-cancel → revolver fan → vanish" becomes possible, at a meter cost.
+- **Picking up with full slots:** the new weapon replaces the weapon **in your hand** (that one drops to the ground). If you're unarmed, it fills the first empty slot, or slot 1 when both are full.
+- **Ammo** is kept per weapon, so you can swap out of an empty-ish revolver and come back to it later.
+- **Throwing (`G`)** throws only the weapon in your hand. **Losing weapons** on guard break, knockdown or a counter-hit heavy drops only the one in your hand; the other slot is safe.
+- **HUD:** a small three-icon strip (Unarmed / slot 1 / slot 2) near your meters, with ammo counts on ranged weapons and the active one highlighted.
 
 **Powers** (instant, timed buffs that show as an aura colour):
 - **Overdrive Orb:** ki regen ×3 for 10 s.
