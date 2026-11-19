@@ -1,12 +1,15 @@
 extends Node3D
 ## Preview only: cycles a character through every mapped state and Kael move
 ## on a fake FighterState at 60 ticks a second. Space skips, Left/Right turns.
+## `-- clip=<name>` loops one library clip instead (e.g. unmapped clips).
 
 const MOVE_SET_PATH := "res://game/combat/moves/kael/kael_move_set.tres"
 const STATE_SECONDS := 2.0
 ## Ticks shown after a move ends before the next entry.
 const MOVE_TAIL_TICKS := 20
 const KAEL_ENERGY := Color(1.0, 0.6, 0.2, 0.6)
+## Capsule-centre height of an airborne preview fighter (the floor is at 1).
+const AIR_HEIGHT := 4.0
 
 @export var character_scene: PackedScene
 
@@ -16,6 +19,7 @@ var _entries: Array[Dictionary] = []
 var _index := -1
 var _entry_ticks := 0
 var _tick_time := 0.0
+var _solo_clip := &""
 @onready var _body: Node3D = $Body
 @onready var _label: Label = $Overlay/Label
 
@@ -25,11 +29,15 @@ func _ready() -> void:
 	_body.add_child(_view)
 	_view.set_energy_color(KAEL_ENERGY)
 	_entries = preview_entries(load(MOVE_SET_PATH) as MoveSet)
-	# Command line (after --): closeup, side, start=<entry number>.
+	# Command line (after --): closeup, side, front, start=<entry number>,
+	# clip=<library clip>.
 	var args := OS.get_cmdline_user_args()
 	if args.has("side"):
 		$Camera3D.position = Vector3(4.2, 1.3, -0.6)
 		$Camera3D.look_at(Vector3(0, 0.9, -0.6))
+	elif args.has("front"):
+		$Camera3D.position = Vector3(0, 1.3, -4.8)
+		$Camera3D.look_at(Vector3(0, 0.9, 0))
 	elif args.has("closeup"):
 		$Camera3D.position = Vector3(0.45, 1.75, -1.1)
 		$Camera3D.look_at(Vector3(0, 1.62, 0))
@@ -38,6 +46,8 @@ func _ready() -> void:
 	for arg in args:
 		if arg.begins_with("start="):
 			_index = int(arg.trim_prefix("start=")) - 2
+		elif arg.begins_with("clip="):
+			_solo_clip = StringName(arg.trim_prefix("clip="))
 	_next_entry()
 
 
@@ -52,6 +62,8 @@ static func preview_entries(move_set: MoveSet) -> Array[Dictionary]:
 			entries.append({"label": "FLYING fast", "state": FighterState.State.FLYING, "velocity": Vector3(0, 0, -25)})
 		if state_name == "MOVING":
 			entries.append({"label": "blocking", "state": FighterState.State.IDLE, "blocking": true})
+		if state_name == "DASHING":
+			entries.append({"label": "DASHING air", "state": FighterState.State.DASHING, "airborne": true})
 	var moves: Array[MoveData] = []
 	moves.append_array(move_set.light_string)
 	moves.append_array([move_set.smash, move_set.breaker, move_set.launcher, move_set.rising,
@@ -65,6 +77,9 @@ static func preview_entries(move_set: MoveSet) -> Array[Dictionary]:
 
 
 func _process(delta: float) -> void:
+	if _solo_clip != &"":
+		_play_solo(delta)
+		return
 	_tick_time += delta
 	while _tick_time >= 1.0 / 60.0:
 		_tick_time -= 1.0 / 60.0
@@ -116,6 +131,21 @@ func _next_entry() -> void:
 	if entry.state == FighterState.State.MOVING:
 		_fighter.velocity = Vector3(0, 0, -12)
 	_fighter.blocking = entry.get("blocking", false)
+	# The fighter's body sits at the floor; only the airborne test sees this.
+	_fighter.position.y = AIR_HEIGHT if entry.get("airborne", false) else 1.0
+
+
+## Loops one library clip on the character's own player.
+func _play_solo(delta: float) -> void:
+	var player := _view.get_node("AnimationPlayer") as AnimationPlayer
+	var qualified := StringName("%s/%s" % [CharacterView.LIBRARY_NAME, _solo_clip])
+	if player.current_animation != qualified:
+		player.play(qualified, 0.0)
+	elif not player.is_playing():
+		player.play(qualified, 0.0)
+		player.seek(0.0, true)
+	player.advance(delta)
+	_label.text = "clip: %s  %.2fs" % [_solo_clip, player.current_animation_position]
 
 
 func _phase_text() -> String:

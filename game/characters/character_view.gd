@@ -18,6 +18,10 @@ const TICK_SECONDS := 1.0 / 60.0
 const ENERGY_COLOR_PARAM := &"rim_energy_color"
 const ENERGY_MIX_PARAM := &"rim_energy_mix"
 const LIBRARY_NAME := &"humanoid"
+## Height (capsule centre) above which a fighter counts as airborne; the sim
+## stands fighters at MovementTuning.ground_height.
+const AIRBORNE_MARGIN := 0.05
+static var _ground_height := MovementTuning.new().ground_height
 
 @export var clips: ClipSet
 ## The model's root (holds the retargeted %GeneralSkeleton).
@@ -94,7 +98,16 @@ func _clip_for(fighter: FighterState, state_name: StringName) -> StringName:
 		return clips.fly_fast_clip
 	if fighter.state == FighterState.State.KNOCKDOWN and fighter.state_ticks >= _knockdown_split(fighter):
 		return clips.get_up_clip
-	return clips.clip_for_state(state_name)
+	var clip := clips.clip_for_state(state_name, is_airborne(fighter))
+	var intro: StringName = clips.intro_clips.get(clip, &"")
+	if intro != &"" and fighter.state_ticks * TICK_SECONDS < clips.library.get_animation(intro).length:
+		return intro
+	return clip
+
+
+## Off the floor: flying, falling or dashing in the air.
+static func is_airborne(fighter: FighterState) -> bool:
+	return fighter.position.y > _ground_height + AIRBORNE_MARGIN
 
 
 func _speed_scale(fighter: FighterState, clip: StringName) -> float:
