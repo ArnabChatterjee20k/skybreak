@@ -1,0 +1,99 @@
+{
+	"hitstops": {
+		"light_1": {
+			"3": 2,
+			"5": 8
+		},
+		"light_1+counter": {
+			"7": 6,
+			"9": 1
+		},
+		"light_2": {
+			"3": 9,
+			"5": 7
+		},
+		"light_3": {
+			"3": 8,
+			"8": 7
+		}
+	},
+	"id": "1101:skyhold_ruins:1v1:vexa,brann:24",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1101,
+	"sim_ms_per_tick": 1.53826833333333,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0117869190871716,
+		"finger_pops_per_fighter_minute": 27.0150083379655,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.982212340188994,
+		"pops_per_fighter_minute": 19.0105614230128
+	},
+	"view_ms_per_frame": 2.03804166666667,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 859,
+			"detail": "fighters 0 and 1 overlap 1.05 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 192,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1342,
+			"worst_value": 1.04868960294407
+		},
+		{
+			"check": "pop",
+			"count": 15,
+			"detail": "SashUpper turned 1.62 rad in one frame (ATTACKING, move light_2)",
+			"fighter": 0,
+			"first_tick": 303,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1603,
+			"worst_value": 1.62454569339752
+		},
+		{
+			"check": "pop",
+			"count": 4,
+			"detail": "RightUpperArm turned 1.47 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 380,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 380,
+			"worst_value": 1.46553444862366
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "19 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 19
+		}
+	],
+	"wall_seconds": 23.038,
+	"zone": "skyhold_ruins"
+}

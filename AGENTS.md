@@ -110,6 +110,52 @@ On the Windows dev PC, `godot` is
 `D:\Tools\Godot\Godot_v4.7.2-stable_win64_console.exe` (self-contained mode,
 editor data stays in `D:\Tools\Godot\editor_data`).
 
+## QA
+
+The gameplay QA harness (T-D31) plays the game like e2e tests. One command:
+
+```sh
+tools/qa/run_qa.sh --quick   # 21 AI matches (every zone x mode, all legends), ~10 min
+tools/qa/run_qa.sh --full    # 252 matches (4 legends x 7 zones x 1v1/FFA-4/2v2, 3 seeds)
+tools/qa/run_qa.sh --repro '<seed:zone:mode:legends:levels>' --tick T   # one violation's frames + clip
+```
+
+It writes `reports/qa/<date>-<sha>-<mode>.md` (PASS/FAIL per section, top 10
+violations with frames, 2 s clips and repro commands) and `report.json` /
+`metrics.json` in the run folder; exit 1 on any FAIL. Linux, needs Godot
+4.7.2 (`$GODOT`), `xvfb-run`, python3 with numpy + Pillow, ffmpeg optional.
+
+- **Invariant soak** (`game/debug/qa/`): the real `ZoneMatch` level with
+  `AIDriver` (levels 2-5) on every slot, weapons and powers on, one tick per
+  frame, headless (dummy renderer: animation, skeletons and camera still run).
+  Sim (`QaSimChecks`, every tick): finite state, meters in range, no state
+  stuck past its limit (`STUCK_SECONDS`), inside the arena box (5 cm slack),
+  capsules overlapping < 10 cm (pending until T-D29 pushboxes), at most 96
+  projectiles / 12 pickups / 12 gadgets, KO -> new round resets health, spawns
+  and entities. View (`QaViewChecks`, every frame): lowest sole within 5 cm of
+  the visible ground while standing (IDLE/BLOCKING/CHARGING; MOVING only may not
+  sink), < 25% of a held weapon inside a 10 cm torso capsule, bow string > 10 cm
+  from the head centre, finite bones, pops (a non-finger bone turning > 1.2 rad
+  in one frame) at most 2 per fighter-minute, both locked fighters on screen in
+  >= 95% of locked frames, no fighter covering > 60% of the screen.
+- **Scenarios** (`tests/qa/scenarios/`): scripted-input checks, part of the
+  normal GUT run. A scenario blocked by a filed bug or missing lane calls
+  `known_issue(id, why)`: pending in CI, FAIL under `run_qa.sh`
+  (`SKYBREAK_QA_STRICT=1`). Ids live in `QaKnownIssues.ISSUES` and `TODO.md`.
+- **Golden replays** (`tests/qa/goldens/replays/`): recorded AI inputs plus a
+  per-tick `state_hash`; any drift fails `tests/qa/test_golden_replays.gd` and
+  names the first tick and field.
+- **Visual goldens** (`tests/qa/goldens/visual/`, shots in `QaShots`): 960x540
+  gl_compatibility renders compared by SSIM (>= 0.90) and 32 px tiles (fail when
+  > 5% change by > 12/255), side-by-side diffs in the run folder.
+- **Feel metrics**: hitstop consistency, press-to-active latency per legend and
+  attack, camera jerk, foot slide, pops, sim and view ms per tick. Compared with
+  the newest `reports/qa/*/metrics.json`; worse by > 15% is a regression.
+
+Intended sim, animation, camera or art changes re-bless in the same PR, with a
+line in the PR on why: `tools/qa/bless_goldens.sh --replays|--visual|--all`.
+Never loosen a threshold to make a run pass; file the bug in `TODO.md` instead.
+
 ## Conventions
 
 - GDScript style guide: tabs, `snake_case` files and functions, `PascalCase`

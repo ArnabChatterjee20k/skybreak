@@ -10,6 +10,7 @@ startup_ticks = 8
 active_ticks = 4
 recovery_ticks = 22
 step_distance = -4.5
+ignores_pushbox = true
 hitbox_offsets = PackedVector3Array(0, -0.2, -4.6, 0, 0.1, -4.6, 0, 0.4, -4.6, 0, 0.6, -4.6)
 hitbox_radii = PackedFloat32Array(0.7, 0.7, 0.7, 0.7)
 hitbox_lengths = PackedFloat32Array(2.2, 2.2, 2.2, 2.2)

@@ -1,0 +1,94 @@
+{
+	"hitstops": {
+		"launcher": {
+			"8": 4
+		},
+		"light_1": {
+			"3": 2,
+			"4": 3
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 5,
+			"20": 1
+		},
+		"light_2": {
+			"3": 5,
+			"4": 8
+		},
+		"light_3": {
+			"4": 5,
+			"5": 4
+		},
+		"spike": {
+			"8": 1
+		}
+	},
+	"id": "3103:skyhold_ruins:1v1:lyra,kael:55",
+	"kos": 1,
+	"legends": [
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "KO",
+	"rounds_started": 1,
+	"seed": 3103,
+	"sim_ms_per_tick": 2.29831555555556,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0128473015502095,
+		"finger_pops_per_fighter_minute": 22.0122290161201,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.966827503015682,
+		"pops_per_fighter_minute": 20.0111172873819
+	},
+	"view_ms_per_frame": 2.20990277777778,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 513,
+			"detail": "fighters 0 and 1 overlap 0.93 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 185,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1073,
+			"worst_value": 0.926415822533891
+		},
+		{
+			"check": "pop",
+			"count": 20,
+			"detail": "RightLowerLeg turned 1.56 rad in one frame (ATTACKING, move spike)",
+			"fighter": 1,
+			"first_tick": 221,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 710,
+			"worst_value": 1.55720961093903
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "20 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 20
+		}
+	],
+	"wall_seconds": 23.375,
+	"zone": "skyhold_ruins"
+}

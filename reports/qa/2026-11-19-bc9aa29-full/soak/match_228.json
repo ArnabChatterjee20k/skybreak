@@ -1,0 +1,138 @@
+{
+	"hitstops": {
+		"launcher": {
+			"8": 6
+		},
+		"light_1": {
+			"4": 13
+		},
+		"light_1+counter": {
+			"7": 1,
+			"8": 2
+		},
+		"light_2": {
+			"3": 1,
+			"4": 13
+		},
+		"light_3": {
+			"3": 2,
+			"4": 6,
+			"20": 1
+		}
+	},
+	"id": "3500:ember_rift:1v1:kael,vexa:42",
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		2
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 3500,
+	"sim_ms_per_tick": 2.52719166666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.00464653829112649,
+		"finger_pops_per_fighter_minute": 22.0122290161201,
+		"foot_error_p95_cm": 4.74330082265411,
+		"foot_slide_cm_per_frame": 1.17346706725855,
+		"locked_on_screen_share": 0.982705373687461,
+		"pops_per_fighter_minute": 28.0155642023346
+	},
+	"view_ms_per_frame": 2.37311722222222,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 22,
+			"detail": "RightHand turned 2.03 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1359,
+			"worst_value": 2.02918362617493
+		},
+		{
+			"check": "pop",
+			"count": 6,
+			"detail": "RightLowerArm turned 3.13 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 187,
+			"worst_value": 3.13108038902283
+		},
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole -5.5 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 180,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 180,
+			"worst_value": -0.0552774436504109
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 755,
+			"detail": "fighters 0 and 1 overlap 0.95 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 211,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 755,
+			"worst_value": 0.949006419675425
+		},
+		{
+			"check": "foot_ground",
+			"count": 15,
+			"detail": "lowest sole +5.6 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1277,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1284,
+			"worst_value": 0.056124687708575
+		},
+		{
+			"check": "arena_bounds",
+			"count": 1,
+			"detail": "outside the arena at (661.68, 35.37, -432.56) (stand 35.91, GRABBED)",
+			"fighter": 0,
+			"first_tick": 1575,
+			"legend": "kael",
+			"limit": 300.05,
+			"weapon": "",
+			"worst_tick": 1575,
+			"worst_value": 87.438720703125
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "28 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 28
+		}
+	],
+	"wall_seconds": 28.214,
+	"zone": "ember_rift"
+}

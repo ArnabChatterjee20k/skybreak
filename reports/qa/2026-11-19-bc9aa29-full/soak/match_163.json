@@ -1,0 +1,197 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 2,
+			"8": 6
+		},
+		"light_1": {
+			"3": 8,
+			"4": 8
+		},
+		"light_1+counter": {
+			"7": 1,
+			"8": 2
+		},
+		"light_2": {
+			"3": 4,
+			"4": 8,
+			"5": 1
+		},
+		"light_3": {
+			"3": 2,
+			"4": 7,
+			"5": 1,
+			"8": 1
+		},
+		"spike": {
+			"8": 2
+		}
+	},
+	"id": "2613:heartbloom_gardens:ffa4:lyra,kael,vexa,brann:5532",
+	"kos": 0,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		5,
+		5,
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2613,
+	"sim_ms_per_tick": 4.82251222222222,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0527951680123806,
+		"finger_pops_per_fighter_minute": 23.0127848804892,
+		"foot_error_p95_cm": 15.6324701751942,
+		"foot_slide_cm_per_frame": 1.30296285817879,
+		"locked_on_screen_share": 0.974940334128878,
+		"pops_per_fighter_minute": 29.5163979988883
+	},
+	"view_ms_per_frame": 4.62643944444444,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 1096,
+			"detail": "fighters 0 and 2 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 791,
+			"detail": "fighters 1 and 3 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "foot_ground",
+			"count": 157,
+			"detail": "lowest sole +43.2 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1183,
+			"worst_value": 0.432155243931334
+		},
+		{
+			"check": "foot_ground",
+			"count": 3,
+			"detail": "lowest sole -6.6 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 13,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1614,
+			"worst_value": -0.0664214090317614
+		},
+		{
+			"check": "pop",
+			"count": 41,
+			"detail": "RightLowerArm turned 3.10 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 136,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1214,
+			"worst_value": 3.09626936912537
+		},
+		{
+			"check": "foot_ground",
+			"count": 89,
+			"detail": "lowest sole +47.2 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 140,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1604,
+			"worst_value": 0.472226960659327
+		},
+		{
+			"check": "pop",
+			"count": 6,
+			"detail": "RightHand turned 1.83 rad in one frame (MOVING, move )",
+			"fighter": 2,
+			"first_tick": 847,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 852,
+			"worst_value": 1.82746636867523
+		},
+		{
+			"check": "pop",
+			"count": 8,
+			"detail": "ApronFlap turned 3.09 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 3,
+			"first_tick": 875,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 875,
+			"worst_value": 3.09246134757996
+		},
+		{
+			"check": "pop",
+			"count": 4,
+			"detail": "CapeRightUpper turned 2.26 rad in one frame (FLYING, move )",
+			"fighter": 0,
+			"first_tick": 1331,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1538,
+			"worst_value": 2.25762248039246
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 8,
+			"detail": "fighters 2 and 3 overlap 0.48 m (ATTACKING vs ATTACKING)",
+			"fighter": 2,
+			"first_tick": 1793,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 0.482216942310333
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "59 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 59
+		}
+	],
+	"wall_seconds": 42.818,
+	"zone": "heartbloom_gardens"
+}

@@ -1,0 +1,196 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 7
+		},
+		"light_1": {
+			"3": 14,
+			"4": 2,
+			"5": 4,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 4,
+			"9": 4
+		},
+		"light_2": {
+			"3": 12,
+			"4": 4,
+			"5": 4
+		},
+		"light_3": {
+			"3": 8,
+			"4": 4,
+			"5": 3,
+			"8": 3
+		}
+	},
+	"id": "3311:frozen_peaks:ffa4:vexa,brann,lyra,kael:5422",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		5,
+		4,
+		2,
+		2
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3311,
+	"sim_ms_per_tick": 5.13343666666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0112852156162262,
+		"finger_pops_per_fighter_minute": 26.514730405781,
+		"foot_error_p95_cm": 12.1969935885772,
+		"foot_slide_cm_per_frame": 1.64553352562551,
+		"locked_on_screen_share": 0.975815523059617,
+		"pops_per_fighter_minute": 19.5108393551973
+	},
+	"view_ms_per_frame": 4.50678944444444,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 779,
+			"detail": "fighters 0 and 1 overlap 1.01 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1778,
+			"worst_value": 1.01182569488883
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 1181,
+			"detail": "fighters 1 and 3 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "foot_ground",
+			"count": 69,
+			"detail": "lowest sole -13.6 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 232,
+			"worst_value": -0.136017330531558
+		},
+		{
+			"check": "foot_ground",
+			"count": 332,
+			"detail": "lowest sole -23.2 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 616,
+			"worst_value": -0.231695872631093
+		},
+		{
+			"check": "foot_ground",
+			"count": 77,
+			"detail": "lowest sole -16.2 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 1,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 358,
+			"worst_value": -0.161595267328138
+		},
+		{
+			"check": "foot_ground",
+			"count": 19,
+			"detail": "lowest sole -5.7 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 31,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1522,
+			"worst_value": -0.0567000070291073
+		},
+		{
+			"check": "pop",
+			"count": 15,
+			"detail": "RightLowerArm turned 2.00 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 140,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 140,
+			"worst_value": 1.99543190002441
+		},
+		{
+			"check": "pop",
+			"count": 6,
+			"detail": "LeftLowerArm turned 1.97 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 1,
+			"first_tick": 141,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1505,
+			"worst_value": 1.96656584739685
+		},
+		{
+			"check": "pop",
+			"count": 16,
+			"detail": "RightToes turned 2.15 rad in one frame (MOVING, move )",
+			"fighter": 3,
+			"first_tick": 255,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 263,
+			"worst_value": 2.14776611328125
+		},
+		{
+			"check": "pop",
+			"count": 2,
+			"detail": "CapeRightUpper turned 2.46 rad in one frame (KO_FALL, move )",
+			"fighter": 2,
+			"first_tick": 1233,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1639,
+			"worst_value": 2.46267032623291
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "39 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 39
+		}
+	],
+	"wall_seconds": 44.372,
+	"zone": "frozen_peaks"
+}

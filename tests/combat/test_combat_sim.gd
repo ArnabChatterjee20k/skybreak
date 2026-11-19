@@ -296,6 +296,8 @@ func test_a_scripted_4_fighter_free_for_all_is_deterministic_and_has_every_defen
 	var visited := {}
 	var first := _run_match(12, 10_000, visited, 4)
 	assert_eq(first, _run_match(12, 10_000, {}, 4))
+	# A second match, so a rare defense does not hang on one seed's luck.
+	_run_match(11, 10_000, visited, 4)
 	for type in [CombatSim.EventType.BLOCK, CombatSim.EventType.PERFECT_BLOCK, CombatSim.EventType.GRAB,
 			CombatSim.EventType.THROW, CombatSim.EventType.GRAB_TECH, CombatSim.EventType.PUSH_BLOCK]:
 		assert_true(visited.has("event %d" % type), "a %s event" % CombatSim.EventType.keys()[type])

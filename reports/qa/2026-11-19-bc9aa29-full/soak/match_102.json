@@ -1,0 +1,138 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 2
+		},
+		"launcher": {
+			"7": 1,
+			"8": 6
+		},
+		"light_1": {
+			"3": 12,
+			"4": 8,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 3,
+			"9": 1
+		},
+		"light_2": {
+			"3": 13,
+			"4": 6,
+			"5": 2
+		},
+		"light_3": {
+			"3": 4,
+			"4": 6,
+			"5": 5
+		}
+	},
+	"id": "2112:skyhold_ruins:ffa4:brann,lyra,kael,vexa:3532",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		3,
+		5,
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2112,
+	"sim_ms_per_tick": 4.46773222222222,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0142170730978251,
+		"finger_pops_per_fighter_minute": 29.0161200667037,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.991106170094497,
+		"pops_per_fighter_minute": 21.011673151751
+	},
+	"view_ms_per_frame": 4.37957833333333,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 951,
+			"detail": "fighters 0 and 2 overlap 1.10 m (FLYING vs FLYING)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 742,
+			"detail": "fighters 1 and 3 overlap 0.88 m (FLYING vs FLYING)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "pop",
+			"count": 10,
+			"detail": "RightHand turned 1.46 rad in one frame (ATTACKING, move light_3)",
+			"fighter": 3,
+			"first_tick": 135,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1235,
+			"worst_value": 1.46261608600616
+		},
+		{
+			"check": "pop",
+			"count": 20,
+			"detail": "RightHand turned 1.36 rad in one frame (ATTACKING, move launcher)",
+			"fighter": 2,
+			"first_tick": 174,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 522,
+			"worst_value": 1.35680675506592
+		},
+		{
+			"check": "pop",
+			"count": 12,
+			"detail": "LeftLowerArm turned 1.97 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 0,
+			"first_tick": 1110,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1110,
+			"worst_value": 1.9666793346405
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "42 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 42
+		}
+	],
+	"wall_seconds": 40.075,
+	"zone": "skyhold_ruins"
+}

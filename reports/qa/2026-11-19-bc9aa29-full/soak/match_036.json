@@ -1,0 +1,103 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 6,
+			"8": 1
+		},
+		"light_1": {
+			"3": 7,
+			"4": 1
+		},
+		"light_1+counter": {
+			"7": 7,
+			"8": 1
+		},
+		"light_2": {
+			"3": 12,
+			"4": 1
+		},
+		"light_3": {
+			"3": 6,
+			"4": 1
+		}
+	},
+	"id": "1300:frozen_peaks:1v1:kael,vexa:33",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1300,
+	"sim_ms_per_tick": 1.93074166666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0145746497437358,
+		"finger_pops_per_fighter_minute": 27.0150083379655,
+		"foot_error_p95_cm": 3.8593516280514,
+		"foot_slide_cm_per_frame": 0.177739080275249,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 31.0172317954419
+	},
+	"view_ms_per_frame": 1.95413166666667,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 22,
+			"detail": "RightLowerLeg turned 2.16 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1195,
+			"worst_value": 2.16207480430603
+		},
+		{
+			"check": "pop",
+			"count": 9,
+			"detail": "RightLowerArm turned 2.00 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 1.99663400650024
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 658,
+			"detail": "fighters 0 and 1 overlap 0.95 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 281,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1634,
+			"worst_value": 0.948877882258967
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "31 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 31
+		}
+	],
+	"wall_seconds": 24.424,
+	"zone": "frozen_peaks"
+}

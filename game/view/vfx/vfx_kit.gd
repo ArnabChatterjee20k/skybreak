@@ -24,7 +24,7 @@ const LOOKS := {
 	&"shell": {"pass": Pass.ENERGY, "shape": 5, "billboard": false, "start_scale": 1.0, "end_scale": 1.0, "edge_width": 0.15, "fade_power": 1.2, "intensity": 1.8, "core_whiteness": 0.4},
 	&"glow": {"pass": Pass.ENERGY, "shape": 0, "start_scale": 1.0, "end_scale": 1.0, "fade_power": 0.0, "intensity": 0.8, "core_whiteness": 0.25},
 	&"flare": {"pass": Pass.ENERGY, "shape": 5, "billboard": false, "start_scale": 0.7, "end_scale": 1.7, "edge_width": 0.05, "fade_power": 1.8, "intensity": 1.6, "core_whiteness": 0.5},
-	&"dome": {"pass": Pass.ENERGY, "shape": 5, "billboard": false, "start_scale": 0.3, "end_scale": 1.0, "edge_width": 0.0, "fade_power": 2.0, "intensity": 0.7, "core_whiteness": 0.3},
+	&"dome": {"pass": Pass.ENERGY, "shape": 5, "billboard": false, "start_scale": 0.3, "end_scale": 1.0, "edge_width": 0.0, "rim_power": 5.0, "back_faces_only": true, "fade_power": 2.0, "intensity": 0.6, "core_whiteness": 0.3},
 	&"flat_ring": {"pass": Pass.ENERGY, "shape": 1, "billboard": false, "start_scale": 0.3, "end_scale": 1.0, "edge_width": 0.1, "fade_power": 1.3, "intensity": 1.8, "core_whiteness": 0.6},
 	&"beam": {"pass": Pass.ENERGY, "shape": 6, "billboard": false, "fade_power": 0.0, "scroll_speed": 6.0, "intensity": 0.9, "core_whiteness": 0.75},
 	&"beam_halo": {"pass": Pass.ENERGY, "shape": 6, "billboard": false, "fade_power": 0.0, "scroll_speed": 9.0, "intensity": 0.3, "core_whiteness": 0.0},

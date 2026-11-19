@@ -1,0 +1,226 @@
+{
+	"hitstops": {
+		"blade/launcher": {
+			"8": 3
+		},
+		"blade/light_1": {
+			"4": 4
+		},
+		"blade/light_1+counter": {
+			"8": 2
+		},
+		"blade/light_2": {
+			"4": 4
+		},
+		"blade/light_3": {
+			"4": 4
+		},
+		"breaker": {
+			"10": 2
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"7": 3,
+			"9": 1
+		},
+		"light_1": {
+			"3": 7,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 6,
+			"8": 1,
+			"9": 1
+		},
+		"light_2": {
+			"3": 8,
+			"5": 2
+		},
+		"light_3": {
+			"3": 3,
+			"5": 2,
+			"8": 1
+		}
+	},
+	"id": "2011:shattered_mesa:ffa4:vexa,brann,lyra,kael:3555",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		3,
+		5,
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2011,
+	"sim_ms_per_tick": 4.43173388888889,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0123504307121038,
+		"finger_pops_per_fighter_minute": 38.5214007782101,
+		"foot_error_p95_cm": 13.561614652507,
+		"foot_slide_cm_per_frame": 1.67159941753476,
+		"locked_on_screen_share": 0.983957219251337,
+		"pops_per_fighter_minute": 22.5125069483046
+	},
+	"view_ms_per_frame": 4.24948444444444,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 649,
+			"detail": "fighters 0 and 2 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 362,
+			"detail": "fighters 1 and 3 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "foot_ground",
+			"count": 199,
+			"detail": "lowest sole +42.1 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1169,
+			"worst_value": 0.421162154298486
+		},
+		{
+			"check": "foot_ground",
+			"count": 13,
+			"detail": "lowest sole -8.2 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 11,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1370,
+			"worst_value": -0.0819680381841223
+		},
+		{
+			"check": "pop",
+			"count": 17,
+			"detail": "LeftHand turned 2.18 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 3,
+			"first_tick": 173,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 268,
+			"worst_value": 2.18190622329712
+		},
+		{
+			"check": "arena_bounds",
+			"count": 1,
+			"detail": "outside the arena at (530.0, 17.04, 488.16) (stand 17.40, GRABBED)",
+			"fighter": 1,
+			"first_tick": 223,
+			"legend": "brann",
+			"limit": 300.05,
+			"weapon": "",
+			"worst_tick": 223,
+			"worst_value": 120.0
+		},
+		{
+			"check": "pop",
+			"count": 9,
+			"detail": "RightLowerArm turned 3.13 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 234,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 415,
+			"worst_value": 3.12770867347717
+		},
+		{
+			"check": "pop",
+			"count": 14,
+			"detail": "LeftLowerArm turned 1.97 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 1,
+			"first_tick": 234,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1056,
+			"worst_value": 1.96602618694305
+		},
+		{
+			"check": "pop",
+			"count": 5,
+			"detail": "RightLowerArm turned 1.92 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 2,
+			"first_tick": 428,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1757,
+			"worst_value": 1.91695666313171
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -7.7 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 1124,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "blade",
+			"worst_tick": 1124,
+			"worst_value": -0.0770674616012954
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +51.7 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 1224,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1224,
+			"worst_value": 0.516592270903693
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "45 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 45
+		}
+	],
+	"wall_seconds": 38.378,
+	"zone": "shattered_mesa"
+}

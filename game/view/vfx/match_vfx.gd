@@ -37,8 +37,16 @@ const SMEAR_BY_WEAPON := {
 	Weapon.Kind.EMBER_SCYTHE: &"smear_scythe",
 }
 
+## Metres a hit effect sits out from the target's body axis past the contact, so it
+## flares beside the torso instead of on it.
+const SPARK_STANDOFF := 0.4
+## Effect scale when more than two fighters share the screen (FFA).
+const CROWD_SCALE := 0.8
+
 ## Read-only. Found among the ancestors (the arena's `sim`) when not set.
 var sim: CombatSim
+## Rations the screen-wide impact moments (shared with CombatFeedback).
+var impact_gate := ImpactFrameGate.new()
 ## Energy colour per fighter: yours warm, the opponent cool (GAME_DESIGN §11).
 var energy_colors: Array[Color] = [Color(1.0, 0.55, 0.2), Color(0.35, 0.8, 1.0)]
 
@@ -67,6 +75,7 @@ func _ready() -> void:
 func react(events: Array[Dictionary]) -> void:
 	if sim == null:
 		sim = _find_sim()
+	impact_gate.tick()
 	var zone: StringName = sim.zone if sim != null else &""
 	for event in events:
 		_play_event(event, zone)
@@ -146,10 +155,8 @@ static func effects_for(event: Dictionary, zone: StringName) -> Array[StringName
 	var move := String(event.get("move_id", &""))
 	var hit := type == E.HIT or type == E.THROW or type == E.COUNTER or type == E.KO
 	match type:
-		E.HIT, E.THROW:
-			if heavy:
-				found.append(&"anime_burst")
 		E.COUNTER:
+			# Plain heavies get the heavy spark only; the burst is kept for counters.
 			found.append(&"anime_burst")
 		E.GUARD_BREAK:
 			found.append(&"guard_shatter")
@@ -166,20 +173,18 @@ static func effects_for(event: Dictionary, zone: StringName) -> Array[StringName
 	return found
 
 
-## Screen overlay for one event: &"impact" (heavy, counter), &"lines" (guard break),
-## &"ko" (finisher) or &"".
-static func screen_for(event: Dictionary) -> StringName:
-	var heavy: bool = event.get("hitstop", 0) >= HEAVY_HITSTOP
+## Screen overlay an event earns (ImpactFrameGate.earns): &"impact" (heavy counter, long
+## combo's heavy finisher), &"lines" (guard break), &"ko" (finisher) or &"".
+## react() still plays at most one per ImpactFrameGate.COOLDOWN_TICKS.
+static func screen_for(event: Dictionary, combo_hits: int = 0) -> StringName:
+	if not ImpactFrameGate.earns(event, combo_hits):
+		return &""
 	match event.get("type", -1):
 		E.KO:
 			return &"ko"
-		E.COUNTER:
-			return &"impact"
-		E.HIT, E.THROW:
-			return &"impact" if heavy else &""
 		E.GUARD_BREAK:
 			return &"lines"
-	return &""
+	return &"impact"
 
 
 ## Smear kind for a fighter's attack, or &"" (ranged weapons, unarmed lights, grabs).
@@ -192,35 +197,71 @@ static func smear_for(weapon: Weapon.Kind, move_id: StringName) -> StringName:
 	return kind
 
 
+## Where a hit's spark goes: pushed out from the target's body axis past the contact
+## point, so the flare sits beside the torso it hit. Other events keep their position.
+static func spark_point(event: Dictionary, fighters: Array[FighterState]) -> Vector3:
+	var where: Vector3 = event.get("position", Vector3.ZERO)
+	var target: int = event.get("target", -1)
+	if not event.get("type", -1) in [E.HIT, E.THROW, E.COUNTER, E.KO, E.ARMOR, E.BLOCK, E.GUARD_BREAK] \
+			or target < 0 or target >= fighters.size():
+		return where
+	var out := where - fighters[target].position
+	out.y = 0.0
+	var attacker: int = event.get("attacker", -1)
+	if out.length_squared() < 0.01 and attacker >= 0 and attacker < fighters.size():
+		out = fighters[attacker].position - fighters[target].position
+		out.y = 0.0
+	if out.length_squared() < 0.0001:
+		return where
+	return where + out.normalized() * SPARK_STANDOFF
+
+
 ## Dust colour, debris colour and extra effect for landings in a zone.
 static func ground_for(zone: StringName) -> Array:
 	return ZONE_GROUND.get(zone, ZONE_GROUND[&"skyhold_ruins"])
 
 
+## Effect scale for the current crowd: smaller when more than two fighters fight.
+func crowd_scale() -> float:
+	return CROWD_SCALE if sim != null and sim.fighters.size() > 2 else 1.0
+
+
 func _play_event(event: Dictionary, zone: StringName) -> void:
 	var where: Vector3 = event.get("position", Vector3.ZERO)
 	var color := color_of(event.get("attacker", -1))
+	var size := crowd_scale()
+	var spark := spark_point(event, sim.fighters) if sim != null else where
 	for kind in effects_for(event, zone):
 		match kind:
 			&"guard_shatter", &"petals", &"sparkles":
-				spawn(kind, where)
+				spawn(kind, spark, Color.TRANSPARENT, size)
 			&"ko_dome":
 				spawn(kind, where, color.lerp(Color.WHITE, 0.5))
 			&"lightning":
 				spawn(kind, Vector3(where.x, where.y - FEET, where.z), Color.TRANSPARENT, 1.0, _facing_camera(where))
 			_:
-				spawn(kind, where, color)
+				spawn(kind, spark, color, size)
+	var combo := _combo_hits(event.get("target", -1))
+	var overlay := screen_for(event, combo)
+	if overlay == &"" or not impact_gate.try_fire(event, combo):
+		return
 	var center := _screen_point(where)
-	match screen_for(event):
+	match overlay:
 		&"impact":
 			_screen.impact(color, center, 2)
-			_screen.burst_lines(center, Color.WHITE, 0.3)
+			_screen.burst_lines(center, Color.WHITE, 0.25)
 		&"lines":
-			_screen.burst_lines(center, Color(1.0, 0.85, 0.85), 0.35)
+			_screen.burst_lines(center, Color(1.0, 0.85, 0.85), 0.3)
 		&"ko":
-			_screen.flash(0.15, 0.85)
-			_screen.color_pop(VfxScreen.SKY_POP, 1.2)
-			_screen.burst_lines(center, Color.WHITE, 0.6)
+			_screen.flash(VfxScreen.MAX_FLASH_FRAMES, 0.4)
+			_screen.color_pop(VfxScreen.SKY_POP, 0.6, 0.25)
+			_screen.burst_lines(center, Color.WHITE, 0.35)
+
+
+func _combo_hits(target: int) -> int:
+	if sim == null or target < 0 or target >= sim.fighters.size():
+		return 0
+	return sim.fighters[target].combo_hits
 
 
 func _watch_fighters() -> void:
