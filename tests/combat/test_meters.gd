@@ -107,7 +107,7 @@ func test_a_new_hit_restarts_the_grey_regen_wait() -> void:
 	assert_eq(_fighter().health, 8_500 * UNIT, "the wait started over")
 
 
-func test_the_grey_part_is_lost_when_hit_again() -> void:
+func test_the_grey_part_is_lost_when_a_new_combo_starts() -> void:
 	_start()
 	_sim.apply_damage(0, 1, 1_000)
 	_drive(_meters.grey_regen_delay_ticks + 10)
@@ -115,6 +115,15 @@ func test_the_grey_part_is_lost_when_hit_again() -> void:
 	var health_after_hit := 9_000 * UNIT + 10 * _meters.grey_regen_per_second - 500 * UNIT
 	assert_eq(_fighter().health, health_after_hit)
 	assert_eq(_fighter().grey_health, 200 * UNIT, "only the new hit's grey part is left")
+
+
+func test_the_grey_part_builds_up_across_hits_while_in_hitstun() -> void:
+	_start()
+	_sim.apply_damage(0, 1, 1_000)
+	_fighter().enter_state(FighterState.State.HITSTUN)
+	_sim.apply_damage(0, 1, 500)
+	assert_eq(_fighter().health, 8_500 * UNIT)
+	assert_eq(_fighter().grey_health, 600 * UNIT, "40% of the whole combo")
 
 
 # Charging
@@ -274,11 +283,12 @@ func test_guard_regenerates_only_after_60_ticks_without_blocking() -> void:
 func test_blocking_holds_guard_regeneration_back() -> void:
 	_start()
 	_sim.apply_guard_damage(0, 30)
-	_fighter().blocking = true
-	_drive(200)
+	_drive(200, BLOCK)
+	assert_true(_fighter().blocking)
 	assert_eq(_fighter().guard, 70 * UNIT)
-	_fighter().blocking = false
-	_drive(_meters.guard_regen_delay_ticks)
+	_drive(1)
+	assert_false(_fighter().blocking)
+	_drive(_meters.guard_regen_delay_ticks - 1)
 	assert_eq(_fighter().guard, 70 * UNIT)
 	_drive(1)
 	assert_gt(_fighter().guard, 70 * UNIT)

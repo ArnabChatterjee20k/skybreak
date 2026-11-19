@@ -3,7 +3,7 @@ extends RefCounted
 ## Simulation state of one fighter. Presentation reads it; only CombatSim
 ## writes it. Add new fields to state_values() so the state hash covers them.
 
-## What the fighter is doing. Later tasks add hitstun, blockstun etc.
+## What the fighter is doing.
 enum State {
 	IDLE, ## Standing on the ground.
 	MOVING, ## Running or sliding on the ground.
@@ -14,6 +14,12 @@ enum State {
 	CHARGING, ## Charging ki in place; any other action or a hit ends it.
 	GUARD_BROKEN, ## Stunned after the guard meter ran out.
 	ATTACKING, ## Performing a move; attack_phase() says which part.
+	HITSTUN, ## Hit: unable to act for stun_ticks, flying with the knockback (a juggle when airborne).
+	BLOCKSTUN, ## Blocked a hit, or pushed (push-block, grab tech): unable to act for stun_ticks, sliding with velocity.
+	KNOCKDOWN, ## On the floor after a spike bounce, for stun_ticks; cannot be hit.
+	BLOCKING, ## Holding block: guard up, slow drift only, no attacks except push-block.
+	GRABBED, ## Held by grab_partner until the throw or a tech.
+	THROWING, ## Holding grab_partner before throwing it.
 }
 
 ## Part of the current move, derived from move_tick.
@@ -47,6 +53,10 @@ var facing_yaw: float = 0.0
 var dash_kind: DashKind = DashKind.NONE
 ## Unit direction of the current dash, zero when not dashing.
 var dash_direction: Vector3 = Vector3.ZERO
+## Index of the fighter a vanish step is anchored to, or -1; the step keeps vanish_offset from it.
+var vanish_anchor: int = -1
+## Where a vanished fighter sits relative to its anchor until it reappears.
+var vanish_offset: Vector3 = Vector3.ZERO
 ## Ticks since each action was last pressed, indexed by Action bit; capped at the buffer length.
 var press_ages: Array[int] = []
 ## Action bits whose latest press was already consumed from the input buffer.
@@ -65,10 +75,23 @@ var burst: int = 0
 var ticks_since_hit: int = 0
 ## Ticks since the last block or guard damage, counted up to the guard regen delay.
 var ticks_since_block: int = 0
-## True while blocking; T-D05 sets it. Blocking pauses guard regeneration.
+## True while the guard is up: BLOCKING, blockstun from a block, and push-block.
+## Blocking pauses guard regeneration.
 var blocking: bool = false
 ## Last Stand gives its free burst once per match.
 var last_stand_used: bool = false
+
+# Perfect block.
+## A block press is live: a strike landing now is perfect-blocked.
+var perfect_block_armed: bool = false
+## Ticks since the live block press, 0 on the press tick.
+var perfect_block_ticks: int = 0
+## Ticks left in which a block press cannot perfect-block (anti-mash).
+var perfect_block_lockout: int = 0
+
+# Grab.
+## The fighter held (THROWING) or holding this one (GRABBED), or -1.
+var grab_partner: int = -1
 
 # Attack, all reset when the fighter leaves ATTACKING.
 ## The move being performed, or null.
@@ -90,15 +113,46 @@ var string_queued: bool = false
 ## The current move touched an opponent (set through CombatSim.register_contact).
 var contact_hit: bool = false
 var contact_blocked: bool = false
+## Bit i is set once the current move hit, or was blocked by, fighter i.
+var hit_targets: int = 0
+## Hitbox pitch in radians (up is positive), captured when the attack starts; 0 when not attacking.
+var aim_pitch: float = 0.0
+## Side a SWEEP pushes the target to: 1 right, -1 left, from the move input at attack start.
+var aim_side: int = 1
+## Recovery added to the current move (a perfect block against it).
+var extra_recovery_ticks: int = 0
+
+# Being hit.
+## Length of the current HITSTUN, BLOCKSTUN or KNOCKDOWN in ticks.
+var stun_ticks: int = 0
+## Ticks left frozen in hitstop; nothing advances for this fighter until it is 0.
+var hitstop_ticks: int = 0
+## How the last hit threw this fighter; drives its flight in HITSTUN.
+var knockback_type: MoveData.KnockbackType = MoveData.KnockbackType.NONE
+## A spiked fighter already bounced off the floor; the next landing knocks it down.
+var spike_bounced: bool = false
+## Hits and scaled damage (display units) of the combo being taken; 0 outside HITSTUN.
+var combo_hits: int = 0
+var combo_damage: int = 0
 
 
 ## Switches to new_state and restarts the tick counter, even if it is the same state.
-## Leaving ATTACKING clears the attack.
+## Leaving ATTACKING clears the attack; leaving HITSTUN ends the combo. Any change drops the vanish anchor.
 func enter_state(new_state: State) -> void:
 	state = new_state
 	state_ticks = 0
+	stun_ticks = 0
+	vanish_anchor = -1
+	vanish_offset = Vector3.ZERO
 	if new_state != State.ATTACKING:
 		_clear_attack()
+		aim_pitch = 0.0
+		aim_side = 1
+	if new_state != State.HITSTUN:
+		knockback_type = MoveData.KnockbackType.NONE
+		spike_bounced = false
+		combo_hits = 0
+		combo_damage = 0
 
 
 ## Starts performing new_move from its first startup tick.
@@ -125,6 +179,11 @@ func attack_phase() -> AttackPhase:
 	return AttackPhase.RECOVERY
 
 
+## Ticks the current move lasts, extra recovery included; 0 when not attacking.
+func move_total_ticks() -> int:
+	return move.total_ticks() + extra_recovery_ticks if move else 0
+
+
 ## Ticks into the current attack phase, 0 on its first tick. HOLD counts from the button press.
 func phase_tick() -> int:
 	match attack_phase():
@@ -144,7 +203,7 @@ func active_hitboxes() -> Array[Dictionary]:
 	var shapes: Array[Dictionary] = []
 	if move == null or holding_charge:
 		return shapes
-	var to_world := Transform3D(Basis(Vector3.UP, facing_yaw), position)
+	var to_world := Transform3D(aim_basis(), position)
 	for shape in move.hitboxes_at(move_tick):
 		shapes.append({
 			"start": to_world * (shape.start as Vector3),
@@ -152,6 +211,27 @@ func active_hitboxes() -> Array[Dictionary]:
 			"radius": shape.radius,
 		})
 	return shapes
+
+
+## Rotation of the hitboxes: facing yaw, then the aim pitch.
+func aim_basis() -> Basis:
+	return Basis(Vector3.UP, facing_yaw) * Basis(Vector3.RIGHT, aim_pitch)
+
+
+## The body as a vertical capsule centred on position, as {start, end, radius}.
+func hurtbox() -> Dictionary:
+	var half := Vector3.UP * maxf(stats.hurtbox_height * 0.5 - stats.hurtbox_radius, 0.0)
+	return {"start": position - half, "end": position + half, "radius": stats.hurtbox_radius}
+
+
+## True if a hitbox centred at point hits the upper body (above mid-height).
+func is_upper_body(point: Vector3) -> bool:
+	return point.y > position.y
+
+
+## False while knocked down or vanished: hits pass through.
+func can_be_hit() -> bool:
+	return state != State.KNOCKDOWN and state != State.VANISHING
 
 
 ## True while hits do not interrupt the current move (armor).
@@ -202,11 +282,15 @@ func burst_display() -> float:
 func state_values() -> Array:
 	return [
 		position, velocity, lock_on_target, state, state_ticks, facing_yaw,
-		dash_kind, dash_direction, press_ages, consumed_presses,
+		dash_kind, dash_direction, vanish_anchor, vanish_offset, press_ages, consumed_presses,
 		health, grey_health, ki, guard, burst, ticks_since_hit, ticks_since_block,
 		blocking, last_stand_used,
 		move_id(), move_tick, holding_charge, charge_ticks, charge_level,
 		string_index, string_dropped, string_queued, contact_hit, contact_blocked,
+		hit_targets, aim_pitch, aim_side, stun_ticks, hitstop_ticks, knockback_type, spike_bounced,
+		combo_hits, combo_damage,
+		perfect_block_armed, perfect_block_ticks, perfect_block_lockout, grab_partner,
+		extra_recovery_ticks,
 	]
 
 
@@ -221,3 +305,5 @@ func _clear_attack() -> void:
 	string_queued = false
 	contact_hit = false
 	contact_blocked = false
+	hit_targets = 0
+	extra_recovery_ticks = 0

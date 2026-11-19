@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="ClipSet" format=3]
+
+[ext_resource type="Script" path="res://game/characters/clip_set.gd" id="1_clips"]
+[ext_resource type="AnimationLibrary" path="res://game/characters/animations/humanoid_clips.res" id="1_gebhv"]
+
+[resource]
+script = ExtResource("1_clips")
+library = ExtResource("1_gebhv")
+state_clips = Dictionary[StringName, StringName]({
+&"BLOCKING": &"block",
+&"BLOCKSTUN": &"block_hit",
+&"CHARGING": &"power_up",
+&"DASHING": &"dash",
+&"FALLING": &"fall",
+&"FLYING": &"fly_hover",
+&"GRABBED": &"guard_broken",
+&"GUARD_BROKEN": &"guard_broken",
+&"HITSTUN": &"hit",
+&"IDLE": &"fight_stance",
+&"KNOCKDOWN": &"knockdown",
+&"MOVING": &"run",
+&"THROWING": &"overhead",
+&"VANISHING": &"dash"
+})
+air_state_clips = Dictionary[StringName, StringName]({
+&"DASHING": &"air_dash",
+&"VANISHING": &"air_dash"
+})
+intro_clips = Dictionary[StringName, StringName]({
+&"power_up": &"power_up_start"
+})
+move_clips = Dictionary[StringName, StringName]({
+&"breaker": &"swing_back",
+&"charged_smash_1": &"hook",
+&"charged_smash_2": &"hook",
+&"charged_smash_3": &"palm_strike",
+&"launcher": &"uppercut",
+&"light_1": &"jab",
+&"light_2": &"cross",
+&"light_3": &"hook",
+&"light_4": &"roundhouse_kick",
+&"push_block": &"shove",
+&"rising": &"flip_kick",
+&"smash": &"cross",
+&"spike": &"axe_kick",
+&"sweep": &"low_sweep_kick"
+})
+charge_hold_clip = &"power_up"
+fly_fast_clip = &"fly_forward"
+impact_windows = Dictionary[StringName, Vector2]({
+&"axe_kick": Vector2(0.25, 0.3),
+&"cross": Vector2(0.25, 0.33),
+&"flip_kick": Vector2(0.15, 0.21666667),
+&"front_kick": Vector2(0.2, 0.25),
+&"hook": Vector2(0.21666667, 0.29666665),
+&"jab": Vector2(0.15, 0.23),
+&"knee_strike": Vector2(0.15, 0.2),
+&"low_sweep_kick": Vector2(0.2, 0.28333333),
+&"overhead": Vector2(0.33333334, 0.41333333),
+&"palm_strike": Vector2(0.15, 0.23),
+&"roundhouse_kick": Vector2(0.16666667, 0.21666667),
+&"shove": Vector2(0.55, 0.63),
+&"swing_back": Vector2(0.2, 0.28),
+&"swing_low": Vector2(0.18333334, 0.26333332),
+&"swing_rising": Vector2(0.6166667, 0.69666666),
+&"uppercut": Vector2(0.21666667, 0.26666668)
+})

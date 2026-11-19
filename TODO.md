@@ -13,6 +13,34 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D12 [desktop] World map grey-block: 2 km procedural terrain (chunked, 4 LODs),
+  six zones with landmarks, atmosphere/time of day/weather, energy dome,
+  `WorldMap` API and flythrough preview, PR #39.
+- T-D12b [desktop] Heartbloom Gardens, the 7th zone: floating cherry-blossom
+  archipelago over the map centre, Heart Arch, Wishing Fountain, lantern
+  bridges, `IslandField` second ground layer, whirlwind/fountain markers.
+- T-116 [developer] VFX prewarm at arena load behind a short loading cover.
+- T-D09b [desktop] VFX fixes from the GTX 1650 check of T-D09: shockwave no
+  longer cut by the ground, aura never darkens the body, flames break into
+  tongues, PR #18.
+- T-D03 [desktop] `MoveData` Resource + light string + cancels, PR #15.
+- T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
+  damage scaling, hitstun decay, knockback, hit events, PR #26.
+- T-D05 [desktop] Defense: block, perfect block + lockout, grab and tech,
+  push-block, PR #35.
+- T-D10 [desktop] First real character: Kael (CC0 VRoid body, toon look) on a
+  retargeted humanoid clip library (Quaternius UAL, CC0), `CharacterView`
+  driven by sim state, preview scene, PR #34. Swap into FighterView is T-122.
+- T-D01b [desktop] Movement fixes from playtest #1: locked strafe orbits at
+  constant radius, dash-away goes straight back, rush brakes over 0.15 s,
+  vanish keeps distance and height to the target, climb eases out, held
+  BLOCK + DASH press vanishes. PR #40.
+- T-D10b [desktop] Original fighting clips authored as keyframes in code
+  (stance, power-up, superhero flight, air dash, kicks, uppercut); Kael
+  remapped to them. Stacked on PR #34.
+- T-D11b [desktop] Kael in the chunky Brawlhalla-style look (GAME_DESIGN §6),
+  built procedurally: humanoid-profile rig + scarf chain with procedural lag,
+  shared clips plus snappy own clips, stacked on T-D10.
 - T-117 [developer] Range-band framing (near side swing with ≥10% screen gap, far
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
@@ -64,16 +92,6 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ### Combat sim (desktop)
 
-- T-D01b [desktop] Movement fixes from playtest #1 (after T-D03): locked
-  strafe orbits at constant radius (no 12 → 22.7 m spiral-out); dash-away goes
-  straight back along the line to the target (no 22 m drift); rush brakes over
-  0.15 s (`MovementTuning`) instead of 80 → 0 in one tick; vanish steps keep
-  distance and height relative to the target (no 12 → 17 m drift). Regression
-  test for each.
-- T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
-  damage scaling, hitstun decay.
-- T-D05 [desktop] Defense: block, perfect block + lockout, grab and tech,
-  push-block.
 - T-D06 [desktop] Vanish rules: direction guess, Sense, max 2, then Clash.
 - T-D07 [desktop] Chase/tech and wall-splat.
 - T-D09b [desktop] VFX fixes from the PR #12 Windows check: shockwave clipped by

@@ -4,15 +4,23 @@ extends Resource
 ## the move's first startup tick (tick 0); end ticks are exclusive. Distances
 ## in metres; offsets in the fighter's local space (-Z forward, +Y up, +X right).
 
-## How a hit throws the target; T-D04 and T-D07 act on it.
+## How a hit throws the target. WALL_SPLAT acts as BLOWBACK until T-D07.
 enum KnockbackType { NONE, BLOWBACK, LAUNCH, SPIKE, WALL_SPLAT, SWEEP }
 
 ## Cancel hierarchy: a move can be cancelled only into a higher level.
 enum CancelLevel { LIGHT = 1, HEAVY, SPECIAL, VANISH, ULTIMATE }
 
+## What the move's hitbox does on contact.
+enum Kind {
+	STRIKE, ## Damage, or blocked by a guard.
+	GRAB, ## Ignores blocking; holds the target, then throws it.
+	PUSH_BLOCK, ## No damage; shoves the target out to mid range.
+}
+
 ## Stable name used in the state hash, replays and the view.
 @export var id: StringName = &""
 @export var display_name: String = ""
+@export var kind: Kind = Kind.STRIKE
 
 @export_group("Timing")
 @export var startup_ticks: int = 1
@@ -43,6 +51,8 @@ enum CancelLevel { LIGHT = 1, HEAVY, SPECIAL, VANISH, ULTIMATE }
 @export var guard_damage: int = 0
 ## On block, the guard breaks outright if it is below this (0 = never).
 @export var guard_break_below: int = 0
+## May hit the same target again on later active ticks; otherwise one hit per target.
+@export var multi_hit: bool = false
 
 @export_group("Meters")
 ## Ki spent to start the move; it does not start without it.

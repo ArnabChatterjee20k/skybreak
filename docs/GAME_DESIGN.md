@@ -67,6 +67,7 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 | **Block** | `E` (hold) | **Tap** just before a hit = perfect block (§5.4) |
 | **Dash** | `Left Shift` + direction | Tap = short step. Hold = sustained flight-dash. Toward the target while locked = rush dash |
 | Grab | `F` | Beats block. Loses to strikes |
+| Pick up / throw item | `G` | Tap near an item to pick it up. Tap while holding a weapon to throw it at the target |
 | Ki blast | `Q` | Tap = rapid shot. Hold = charged blast |
 | Charge ki | `R` (hold) | Fast ki gain, but you're vulnerable |
 | Specials 1 / 2 / 3 | `1` `2` `3` | Character-specific (cost ki) |
@@ -74,8 +75,10 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 | Transform | `T` | Costs burst. Drains ki over time |
 | **Vanish** | `Shift + E` | While blocking or in the first frames of hitstun = vanish counter (§5.5) |
 | Combo breaker | `X` | While in hitstun. Costs 1 burst stock |
-| Lock-on toggle | `Middle Mouse` or `Tab` | |
-| Switch target | `Mouse Wheel` | For later multi-opponent modes |
+| Lock-on toggle | `Middle Mouse` | |
+| Switch target | `Tab` | For later multi-opponent modes |
+| Cycle weapons | `Mouse Wheel` | Unarmed → slot 1 → slot 2 (wraps) |
+| Quick-swap weapon | `C` | Toggles between the current and the last-used weapon |
 | Camera | Mouse movement | Free orbit when unlocked; small offset orbit when locked (§4) |
 | Pause / menu | `Esc` | |
 
@@ -227,6 +230,77 @@ Every wakeup has 6 f of invincibility, then is vulnerable. The attacker reads it
 
 ---
 
+### 5.11 Pickups: weapons, powers and gadgets
+
+Inspired by platform fighters like Brawlhalla, adapted to 3D flight: items **drop from the sky during the fight** and change how you fight for a while. Every pickup creates a decision: grab it, deny it to the opponent, or keep pressing your advantage. All of it can be switched off in match setup ("pure duel").
+
+**Spawning (deterministic, in the sim):**
+- Every 12–18 s (seeded rng), an item spawns 25–60 m from the midpoint between the fighters, above the ground, with a **2 s telegraph**: a light pillar from the sky plus a sound, visible on the HUD as an edge marker when off-screen.
+- At most 3 items on the map at once. Items despawn after 30 s. Weapons and powers alternate, so each type appears about evenly.
+- Picking up takes `G` within 2.5 m. The pickup is instant but has 6 f of recovery, so grabbing in front of the opponent is a risk.
+
+**Weapons** (each replaces your unarmed move set while held; unarmed stays fully viable):
+
+| Weapon | Style | Strength | Weakness |
+|---|---|---|---|
+| **Ki Gauntlets** | Fast, short, combo-heavy | Longest strings, quick cancels | Short reach |
+| **Storm Blade** | Balanced sword arcs | Good reach and speed | No standout tool |
+| **Sky Lance** | Long pokes, a dash-thrust | Best range control | Slow recovery on whiff |
+| **Titan Hammer** | Slow, huge hits | Guard crush, wall-splats | Easy to punish |
+| **Orbit Chakram** | Thrown and returning disc | Hits from mid range twice (out and back) | Weak up close |
+| **Ember Scythe** | Wide sweeping arcs | Pulls opponents in, hits sidesteppers | Long startup |
+
+**Ranged weapons** (same pickup rules; each has an ammo count and is auto-thrown when empty):
+
+| Weapon | Fire | Ammo | Strength | Counterplay |
+|---|---|---|---|---|
+| **Ki Bow** | Hold LMB to draw (3 levels), release to fire; level 3 arrow pierces and pins the target to walls | 12 arrows | Long-range punish and wall pins | Slow draw is loud and visible; sidestep or rush during the draw |
+| **Arc Revolver** | LMB single shots (hard hitstun); RMB "fan" fires 3 fast shots | 6 per cylinder, 18 total, 1.2 s reload | Precise mid-range pressure and combo starters | The reload is a big punish window; perfect block **reflects** shots |
+| **Storm Repeater** | Hold LMB for sustained fire, low damage per bullet, lots of guard chip | 120 rounds; overheats after 2 s of fire (1.5 s cool-down) | Area denial, guard pressure | You move at 60% speed while firing; **dash absorbs** its bullets (like tap blasts, +2 ki each) |
+| **Scatter Cannon** | LMB short-range spread blast with strong knockback | 8 shells | Close-range burst; knocks fighters into walls | Useless past ~12 m; long recovery |
+
+Rules that keep ranged weapons fair in a melee-first game:
+- **Projectiles, not hitscan.** Every shot travels (fast, but dodgeable) and is a deterministic sim projectile, which also keeps rollback simple.
+- **Aim:** along the lock-on line with a small, seeded spread. When unlocked, aim follows the camera.
+- **Defense works:** all shots can be blocked (guard damage). A perfect block reflects arrows and revolver shots and deflects repeater bullets. Sidestepping beats aimed single shots.
+- **Combo scaling:** ranged hits start combos at 80% damage, so the strongest punishes stay melee.
+- **Melee while holding a gun:** RMB heavies become a weak weapon-bash, so a ranged fighter who gets rushed should throw (`G`) or vanish out.
+- **Readability:** tracers and projectiles use the gold item colour family, never fighter energy colours.
+
+- **Throwing:** `G` while holding a weapon throws it at the target as a fast projectile (damage plus a short stun). It's the classic "throw it before you lose it" play.
+- **Losing a weapon:** you drop it on guard break, knockdown, or when hit by a counter-hit heavy. Dropped weapons stay on the map for 10 s and anyone can grab them.
+- Each weapon is a `MoveSet` (the same data as unarmed), so balance is pure data tuning.
+
+**Zone-exclusive weapon: Heartstring Bow** (spawns only in Heartbloom Gardens):
+- **Shots (LMB):** arrows that make the target **Smitten** for 1.5 s: it drifts toward the shooter with hearts over its head and can't attack (it can still block). Repeat Smitten within 6 s lasts half as long, so it can't be chained.
+- **Charged shot (hold LMB):** a **Heartstring Tether**, a glowing string linking shooter and target for 4 s. Neither can move further apart than the string's length at the moment it hit. Either fighter can **yank** the other closer with RMB, which sets up combos for whoever yanks first.
+- 8 arrows, then auto-thrown like other weapons. Pink-gold projectiles, so they still read as an item colour (§11).
+
+**Carrying several weapons (inventory):**
+- You always have **Unarmed** plus **two weapon slots**. Any mix works: two melee, two ranged, or one of each.
+- **Switching:**
+  - `Mouse Wheel` cycles Unarmed → slot 1 → slot 2.
+  - `C` quick-swaps between the current weapon and the last one you used, the fastest way to flip between, say, a revolver and a blade.
+- **Swap speed:** a swap takes **6 ticks** from neutral (no attacks during it) and is **buffered** like any press, so it comes out the moment you're free.
+- **Swap-cancel (the mastery tool):** during a move's cancel window, **after contact**, you can swap weapons for **10 ki** and immediately use the new weapon's next move. It sits at the SPECIAL level in the cancel hierarchy (§5.3), so it goes after heavies and before vanish and ultimate. A combo like "blade string → swap-cancel → revolver fan → vanish" becomes possible, at a meter cost.
+- **Picking up with full slots:** the new weapon replaces the weapon **in your hand** (that one drops to the ground). If you're unarmed, it fills the first empty slot, or slot 1 when both are full.
+- **Ammo** is kept per weapon, so you can swap out of an empty-ish revolver and come back to it later.
+- **Throwing (`G`)** throws only the weapon in your hand. **Losing weapons** on guard break, knockdown or a counter-hit heavy drops only the one in your hand; the other slot is safe.
+- **HUD:** a small three-icon strip (Unarmed / slot 1 / slot 2) near your meters, with ammo counts on ranged weapons and the active one highlighted.
+
+**Powers** (instant, timed buffs that show as an aura colour):
+- **Overdrive Orb:** ki regen ×3 for 10 s.
+- **Burst Shard:** +50 burst.
+- **Aegis:** absorbs the next hit completely (shield flash).
+- **Haste:** +20% movement and dash speed for 8 s.
+
+**Gadgets** (one-shot throwables, thrown with `G`):
+- **Spike Bomb:** explodes after 1.5 s or on contact; launches.
+- **Gravity Mine:** placed in the air; pulls nearby fighters in for 2 s.
+- **Mirror Decoy:** spawns a fake that copies your last action for 3 s.
+
+**Readability:** weapons and items have bold silhouettes and their own colour family (gold), so they never get confused with fighter energy colours (§11).
+
 ## 6. Fighters (launch roster: 4)
 
 Each fighter has a clear playstyle, one strength, one weakness and one unique mechanic. All are **original characters**.
@@ -238,34 +312,62 @@ Each fighter has a clear playstyle, one strength, one weakness and one unique me
 | **Brann** | Heavy / grappler | Huge damage, armored heavies (absorb 1 hit), command grabs | Slowest flight, vanishes cost 35/55 ki, big hurtbox | **Unstoppable:** charged smash has full armor at level 3 | *Titan*: red-bronze; grabs become unblockable rushes |
 | **Lyra** | Zoner / trapper | Best ki blasts and beams, places floating mines | Weak at close range, low guard (80) | **Seal mines:** up to 3 mines in the air that detonate on contact or on command | *Starlight*: blue-white; blasts home, beams split |
 
+**Art direction for fighters (owner's decision: Brawlhalla-style, not DBZ-style):**
+- **Proportions:** chunky and stylized, about **4.5 heads tall**: big head, broad shoulders, **oversized hands and feet**, compact torso and short legs. A toy-like, instantly readable silhouette from any angle at fight distance.
+- **Shapes:** simple, bold forms with few small details. Every fighter has **one big silhouette feature** (hat, hood, horns, cape, scarf, pauldrons).
+- **Colour:** bright, saturated, 2–3 main colours per fighter plus an accent. Thick ink outlines (our outline shader) and 2–3 cel bands.
+- **Theme:** a roster of **fantasy "legends"** from different worlds and eras (knight, rogue, brawler, mage and so on), each with a **signature weapon pair** that matches the pickup weapons (§5.11). Fighters can use any weapon; their pair is their best fit and appears on their idle pose.
+- **Animation:** snappy and exaggerated, with big anticipation and squash/stretch on impacts. Read at a glance, not realistic.
+- **Originality:** inspired by the *style* of platform fighters like Brawlhalla, but **no existing character, costume or name is copied**. Every design is checked against well-known characters before it's built.
+
+**Launch roster looks (original):**
+- **Kael** (all-rounder; signature weapons: Storm Blade + Arc Revolver): a young **sky-knight adventurer** with silver-white tufted hair under brass flight goggles, a short teal-and-gold armoured coat over a charcoal tunic, oversized gold gauntlets, chunky orange boots, and a **long orange scarf** that trails in flight. Energy colour orange-white.
+- **Vexa** (speed/trickster; Ki Gauntlets + Orbit Chakram): a masked **shadow rogue** with a deep violet hood with long ear-like points, a cropped silver jacket, wrapped arms, and a mischievous visor-mask with glowing eyes.
+- **Brann** (heavy grappler; Titan Hammer + Scatter Cannon): a huge **stone-forged blacksmith** with mossy rock shoulders, a leather apron, a braided ember-red beard, and anvil-sized fists.
+- **Lyra** (zoner; Ki Bow + Sky Lance): a **star-cartographer mage** with a wide-brimmed midnight-blue hat dotted with constellation lights, a flowing star-map cape and floating brass astrolabe rings.
+
 **Balance target:** in AI-vs-AI simulations and playtests, no fighter wins more than 55% of matches against any other.
 
 **Character presentation:** 2 intro poses, 2 victory poses, a defeat pose, 6 voice lines (from free voice packs or TTS) and a color palette with 4 alternate colors per fighter.
 
 ---
 
-## 7. Arenas (launch: 3)
+## 7. The world: one big map, six fighting zones
 
-All arenas are about 600 m × 600 m with a **soft ceiling** at 250 m and **boundary walls** (an energy dome) that act as wall-splat surfaces. No ring-outs: the game is about fighting, not falling.
+Fights happen on **one continuous world map** instead of small separate arenas. Knockbacks, chases and beams carry the fight across zone borders, which is the core fantasy: smashing someone through a canyon wall and finishing the fight over a volcano.
 
-| Arena | Look | Gameplay character | Destructibles | Performance notes |
-|---|---|---|---|---|
-| **Shattered Mesa** | Red desert canyon, mesas, bright day | Open sky, long sight lines: **favors zoning** | Rock pillars, mesa tops shear off | Cheapest scene; use it for tuning |
-| **Skyhold Ruins** | Floating islands, ancient stone ruins, clouds below, golden hour | Tight spaces between islands: **favors rushdown**, lots of walls for splats | Columns, arches | Clouds are layered sprites/impostors, not volumetrics |
-| **Stormfall City** | Ruined city at night, rain, neon signs, lightning | Buildings everywhere: **mixed**, using cover to break line of sight for blasts | Building corners, water towers, cars | Rain is a GPU particle shader on a camera-attached volume; lightning flashes double as dramatic lighting |
+### 7.1 Map
+- **About 2 km x 2 km**, sky ceiling at about 400 m, an energy-dome boundary at the edge that acts as a wall-splat surface. No ring-outs.
+- **Seven zones** (six main zones plus the special Heartbloom Gardens), each roughly 600–800 m across, blending into each other at the borders (terrain, colour and fog transitions over about 100 m).
+- **Match setup:** pick a **start zone** (or random) and **time of day** (day / dusk / night). Fighters spawn about 40 m apart in that zone.
+- **Navigation aids:** zone name on entering, and the off-screen opponent arrow (§4.7) always works across the map.
 
-**Arena interaction:**
-- Fighters knocked into the ground leave **craters** (decals plus a small mesh deformation).
-- Destructibles respawn after 30 s (fading back in), so a long round doesn't flatten the map.
-- Arena intro: a 4 s camera flyover (skippable) while the fighters' names appear.
+### 7.2 Zones
 
----
+| Zone | Look | Gameplay character | Destructibles / hazards |
+|---|---|---|---|
+| **Shattered Mesa** | Red desert canyons, mesas, bright sky | Open, long sight lines: favours zoning | Rock pillars, mesa tops shear off |
+| **Skyhold Ruins** | Floating stone islands over a sea of clouds, golden hour | Tight gaps between islands, many walls: favours rushdown | Columns, arches, falling island chunks |
+| **Stormfall City** | Ruined city at night, rain, neon, lightning | Buildings for cover and line-of-sight breaks | Building corners, water towers, cars |
+| **Frozen Peaks** | Glaciers, ice cliffs, snow storms | Vertical cliffs, ice shelves; visibility drops in storms | Ice spires shatter, avalanche slabs |
+| **Verdant Falls** | Jungle valley, giant trees, a huge waterfall and lake | Mixed cover; water spray hides you briefly | Giant trunks snap, waterfall curtain |
+| **Ember Rift** | Volcanic crater, lava rivers, obsidian spires, glowing at night | Open crater with hot zones: lava geysers knock fighters up | Obsidian spires, geyser vents |
+| **Heartbloom Gardens** (special) | Floating islands of cherry-blossom trees, a pink-gold sunset sky, a slow river of falling petals, lantern bridges, a big heart-shaped stone arch; fireflies and glowing lanterns at night; softer music | Romantic, playful zone made for the owner and their partner: open sky between islands, lots of mid-range space | Petal whirlwinds lift fighters (no damage); the Wishing Fountain slowly heals whoever stands in its spray; lanterns and blossom branches break into petal bursts |
+
+All zones share these rules: knocked-into-ground craters (decals), destructibles respawn after 30 s, and no instant-kill hazards (hazards deal small damage and knock up; they never decide a round on their own).
+
+### 7.3 Technical approach
+- **Terrain:** procedural, chunked heightmap meshes with distance LOD. The sim reads the **same heightmap data** for ground height, so landing and knockdowns stay deterministic (no physics engine in the sim).
+- **Props:** MultiMesh instancing for rocks, trees, debris; impostors or low LODs in the distance.
+- **Atmosphere:** per-zone fog, light and weather presets blended by position; distance fog hides the far LOD.
+- **Performance budget:** the world costs **≤ 3 ms GPU p95 at medium** on the GTX 1650 at 1080p, measured with the render benchmark on the world level.
+- **Build order:** grey-blocked layout of all six zones first (shapes, heights, landmarks), then one art pass per zone.
 
 ## 8. Game modes
 
 | Mode | What | Why it matters |
 |---|---|---|
-| **Versus AI** | Pick fighter, arena, AI level (Easy / Normal / Hard / Brutal) | The main mode |
+| **Versus AI** | Pick your fighter, the start zone and time of day, then **choose 1–3 AI opponents**. Set each one's fighter and level (Easy / Normal / Hard / Brutal) separately, or randomise. 1 AI = a classic duel; 2–3 AIs = offline free-for-all (§8.1 rules) | The main mode |
 | **Arcade** | 6 fights in a row against escalating AI, with a short scripted story per fighter (§9). The final boss is a transformed rival. | Gives the game structure and a "finish" |
 | **Tutorial** | 10 interactive lessons (move → lock-on → light string → heavies → block → perfect block → grab → vanish → chase/tech → meters) | Teaches the deep systems step by step |
 | **Combo Trials** | 10 trials per fighter, from easy to very hard, with the input display | The mastery loop, and the main reason to keep playing |
@@ -277,6 +379,37 @@ All arenas are about 600 m × 600 m with a **soft ceiling** at 250 m and **bound
 **Progression (light, for personal replay value):** clearing trials, Arcade and Survival milestones unlocks alternate colors, a title card, arena variants (Stormfall at dawn, Mesa at night) and music tracks. No grinding.
 
 ---
+
+## 8.1 Free-for-all (the main multiplayer format)
+
+The owner chose **free-for-all from the start**. Every mode that can have more than two fighters supports it, online and against AI bots.
+
+- **Players:** 2–4 per match (humans online and/or AI bots filling empty seats). Teams (2v2) come later on the same code.
+- **Win conditions** (chosen in match setup):
+  - **Stock:** 3 lives each; the last fighter standing wins.
+  - **Timed:** 5 minutes; most KOs wins, with KO steals counting for whoever landed the final hit.
+- **Respawn after a KO (stock and timed):** 3 s later, at the spawn point furthest from the other fighters, with 2 s of invincibility (a flashing aura) and full health, 50 ki, full guard. **Burst is kept** (comeback rule, §5.2).
+- **Targeting:** lock-on picks the nearest fighter, and `Tab` cycles through targets by distance. HUD edge arrows show every off-screen fighter in their player colour. The camera frames you plus your **current** target (§4); others are shown by arrows and name tags.
+- **Third-party hits:** anyone can hit anyone, including a fighter who is in someone else's combo. That's part of the chaos. Two rules stop it feeling cheap:
+  - **Combo scaling is per victim**, so a gang-up still scales down.
+  - **Burst fills 50% faster while two or more fighters have hit you in the last 3 s**, so the combo breaker comes sooner.
+- **Hitstop** freezes only the two fighters in that exchange; everyone else keeps moving.
+- **Pickups:** spawn rate scales with player count (one more item cap per extra player).
+- **Spawns:** each zone defines 4 spawn points about 40 m apart around a centre.
+- **AI bots** use the same input interface and know about all fighters (they pick targets by threat and distance, and avoid being the third wheel too often).
+- **Online (§12.1):** rollback with up to 4 peers. Each peer sends its input to the others. The transport (Appwrite Realtime) relays them, and every peer simulates all fighters.
+
+## 8.2 Duo mode (co-op: two players vs AI, online)
+
+The owner's priority mode: **the owner and their partner, each on their own device (Windows PC and/or the web build), as one team against AI fighters.**
+
+- **Teams:** 2 humans on team A against **1–4 AI fighters** on team B (or split into AI teams). Each AI's fighter and level can be set separately.
+- **Friendly fire:** off by default (teammates' hitboxes pass through each other), with a toggle in match setup.
+- **Team stocks:** each team shares a pool (default 6 lives for the duo). While one partner respawns (§8.1 rules), the other holds on. The team that runs out first loses.
+- **Team assists:** a hit on an enemy that is in your partner's combo **continues that combo** (shared combo count, shared scaling) instead of starting a new one, so partners can extend each other's combos. Burst gains for both.
+- **Shared camera rules:** each player's camera works as usual (you plus your target). The partner gets a coloured marker and name tag, and an arrow when off-screen.
+- **Pickups:** item spawn rate as in §8.1; the Heartstring Bow appears in Heartbloom Gardens as usual.
+- **Online path:** this mode is the first online mode to ship. AI fighters must be **computed inside the deterministic sim** from sim state and the seeded rng, so every peer simulates the same AI inputs without sending them (§12.1).
 
 ## 9. Scripting: story beats and dramatic moments
 
@@ -349,6 +482,42 @@ Key rules:
 
 ---
 
+## 12.1 Online play (future: Appwrite Realtime)
+
+Online versus is planned for later, using **Appwrite** (auth, lobbies, presence) with **Appwrite Realtime** as the transport. Design for it now so nothing has to be rebuilt:
+
+- **Netcode model: rollback with input delay.** Only inputs travel. Each peer runs the same deterministic sim, predicts the remote input, and rolls back and re-simulates when the real input arrives. Targets: 2 frames of input delay, up to 8 frames of rollback.
+- **Requirements on the sim, starting today:**
+  - fully deterministic: already the rule, with seeded rng and no wall clock
+  - **snapshot and restore** of the whole sim state in under 1 ms, so rollback can rewind
+  - **compact, serializable inputs**: action bitmask plus quantised stick, camera yaw and offset (about 10–12 bytes per tick)
+  - all pickup spawns come from the seeded rng in the sim, never from the view
+- **AI is part of the deterministic sim** (or a pure function of sim state plus seeded rng), so AI fighters never need to be sent over the network.
+- **Appwrite project (owner's decision):** use the **same Appwrite Cloud project as MisterMime** (`6a113777000db893b12e`, region `sgp`, endpoint `https://sgp.cloud.appwrite.io/v1`). The project is shared with other apps: only **add** Skybreak resources (its own database, collections and functions, prefixed `skybreak`), never change or delete existing ones.
+- **Online tracking with Appwrite Presence** (as MisterMime does it): each signed-in player calls `realtime.upsertPresence({presenceId, status, metadata, permissions})` over the Realtime socket:
+  - `status` is `menu`, `lobby` or `in_match`
+  - `metadata` holds the display name, fighter, lobby id and platform
+  - Friends and lobbies watch the `presences` channel live; menus can also read the HTTP `presences.list`.
+  - The record is **deleted automatically when the socket drops**, so a partner disconnecting mid-match is detected at once. The match then **pauses for up to 30 s or hands that fighter to the AI** until they reconnect (setting).
+  - Presence metadata is client-published over the socket, so the spike also tests it as the **WebRTC signalling** channel (offer/answer/ICE), avoiding database writes.
+- **Godot client:** a small GDScript Appwrite client (HTTPRequest for REST, WebSocketPeer for Realtime), so the same code runs on Windows and in the web build. No addon is needed for that part.
+- **Transport decision (measured 2026-11-19, India to the Appwrite `sgp` region, two test users):**
+
+  | Path | p50 | p95 |
+  |---|---|---|
+  | TCP connect to Appwrite | 98 ms | — |
+  | Presence one-way (A publishes → B sees it) | 196 ms | 317 ms |
+  | Presence round trip (A → B → A) | 411 ms | 548 ms |
+
+  Presence also coalesces fast updates: 9 of 40 were overwritten, because it is state, not a queue.
+  - **Decision:** **per-tick inputs travel peer-to-peer over WebRTC data channels** (unreliable/unordered channel for inputs plus redundancy, reliable channel for match control). Expect about 2–10 ms on the same home Wi-Fi.
+  - **Appwrite Presence** is the **signalling channel** (offer/answer/ICE in presence metadata), and it also handles online status and disconnect detection. Signalling tolerates about 400 ms.
+  - Godot: WebRTC is built in for the web export. Windows needs the official `webrtc-native` GDExtension, which `developer` vendors in `addons/` when the netcode task starts.
+  - TURN fallback: for networks where direct P2P fails; decide later (STUN-only first).
+- **Transport abstraction:** a `NetTransport` interface, so Appwrite Realtime (or the Appwrite Push/MQTT path already used by MisterMime) can be swapped in without touching the sim.
+- **Lobbies and matchmaking:** Appwrite Auth plus a lobbies collection; Realtime presence shows who is online.
+- **Known risk:** floating-point determinism across different CPUs. The same build on Windows x86-64 is fine. If cross-platform play is ever wanted, the sim's movement math may need fixed-point.
+
 ## 13. Playtest plan
 
 Each milestone ends with a playtest by the owner, with a short checklist:
@@ -377,6 +546,8 @@ Tuning targets: an average round lasts 45–75 s; an average combo deals 12–20
 ---
 
 ## 15. Open questions for the owner
+
+*(Free-for-all chosen by the owner on 2026-11-19 as the main multiplayer format, §8.1. Pickups and online answered on 2026-11-19: yes to Brawlhalla-style weapons and powers in the arena, and Appwrite Realtime online later.)*
 
 1. Is a 99 s round timer right, or do you want ∞ by default?
 2. Do you want **Arcade story mode** in the first full version (milestone 7), or later?
