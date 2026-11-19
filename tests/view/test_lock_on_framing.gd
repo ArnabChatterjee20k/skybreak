@@ -31,7 +31,9 @@ func test_both_fighters_on_screen_across_range_bands_and_directions() -> void:
 					var pose := LockOnFraming.locked_pose(PLAYER, target, shoulder, Vector2.ZERO)
 					var where := "d=%s a=%s h=%s s=%s" % [distance, angle, height, shoulder]
 					assert_true(_on_screen(pose, PLAYER), "player visible " + where)
-					assert_true(_on_screen(pose, target), "target visible " + where)
+					# Steeper than the pitch limits the opponent may leave the frame (marker).
+					if atan2(absf(height), distance) <= LockOnFraming.MAX_VIEW_PITCH_UP:
+						assert_true(_on_screen(pose, target), "target visible " + where)
 
 
 func test_both_fighters_stay_on_screen_at_full_mouse_orbit() -> void:
@@ -110,15 +112,14 @@ func test_view_pitch_stays_inside_limits_for_big_height_gaps() -> void:
 			assert_lte(pitch, LockOnFraming.MAX_VIEW_PITCH_UP + 0.001, "not steeper up " + where)
 
 
-func test_both_fighters_on_screen_for_big_height_gaps_with_widened_fov() -> void:
+func test_player_stays_on_screen_for_big_height_gaps() -> void:
+	# The opponent may leave the frame here; OpponentMarker points at it.
 	for flat_distance in [2.0, 5.0, 12.0, 40.0]:
 		for height in [-60.0, -20.0, 20.0, 60.0]:
 			var target := PLAYER + Vector3(0, height, -flat_distance)
 			var pose := LockOnFraming.locked_pose(PLAYER, target, 1.0, Vector2.ZERO)
 			var fov := deg_to_rad(LockOnFraming.locked_fov(75.0, PLAYER, target))
-			var where := "flat=%s height=%s" % [flat_distance, height]
-			assert_true(_on_screen(pose, PLAYER, fov), "player visible " + where)
-			assert_true(_on_screen(pose, target, fov), "target visible " + where)
+			assert_true(_on_screen(pose, PLAYER, fov), "player visible flat=%s height=%s" % [flat_distance, height])
 
 
 func test_fov_widens_only_for_big_height_gaps_and_at_most_ten_degrees() -> void:

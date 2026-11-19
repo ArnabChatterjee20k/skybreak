@@ -8,8 +8,10 @@ extends RefCounted
 const CLOSE_RANGE := 5.0
 const FAR_RANGE := 40.0
 const CLOSE_SIDE_ANGLE := deg_to_rad(25.0)
-const CLOSE_BOOM_LENGTH := 4.5
-const FAR_BOOM_LENGTH := 8.0
+## Boom lengths keep the camera about 6-6.5 m from the player, so the 2 m tall fighter
+## stays at least ~15% of screen height even with the FOV fully widened.
+const CLOSE_BOOM_LENGTH := 6.0
+const FAR_BOOM_LENGTH := 6.5
 const CLOSE_HEIGHT := 1.8
 const FAR_HEIGHT := 0.7
 const SHOULDER_OFFSET := 0.9
@@ -24,8 +26,8 @@ const MAX_FREE_PITCH := deg_to_rad(60.0)
 ## How much of the opponent's elevation the boom follows: opponent above means
 ## camera below, so both stay in view.
 const ELEVATION_FOLLOW := 0.7
-## Steepest the locked camera may look down / up. Bigger height gaps pull the
-## camera back and widen the FOV instead of tilting further.
+## Steepest the locked camera may look down / up. Beyond that the opponent may
+## leave the frame; OpponentMarker then points at it.
 const MAX_VIEW_PITCH_DOWN := deg_to_rad(35.0)
 const MAX_VIEW_PITCH_UP := deg_to_rad(25.0)
 ## Most the FOV widens (degrees) for big height gaps.
@@ -37,11 +39,14 @@ const SHOULDER_SWITCH_MARGIN := 0.15
 ## Camera pose while locked on. shoulder: -1 camera left of the player .. +1 right
 ## (blends smoothly); the opponent shows on the shoulder side of the screen.
 ## orbit: mouse offset in radians (x yaw, y pitch), clamped to the orbit limits.
-static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit: Vector2) -> Transform3D:
+## far_blend: 0 close .. 1 far; negative means "from the current distance".
+static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit: Vector2,
+		far_blend: float = -1.0) -> Transform3D:
 	var to_target := target - player
 	var flat := Vector3(to_target.x, 0.0, to_target.z)
 	var facing := flat.normalized() if flat.length() > 0.01 else Vector3.FORWARD
-	var far_blend := range_blend(to_target.length())
+	if far_blend < 0.0:
+		far_blend = range_blend(to_target.length())
 	var clamped := clamp_orbit(orbit)
 
 	var behind := -facing
@@ -56,9 +61,8 @@ static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit
 		+ boom * lerpf(CLOSE_BOOM_LENGTH, FAR_BOOM_LENGTH, far_blend) \
 		+ Vector3.UP * lerpf(CLOSE_HEIGHT, FAR_HEIGHT, far_blend) \
 		+ facing.cross(Vector3.UP).normalized() * SHOULDER_OFFSET * shoulder
-	var look_at_point := player.lerp(target, 0.5)
-	position = _pulled_back_to_pitch_limit(position, look_at_point, behind)
-	return _looking_at(position, look_at_point)
+	var look := _clamp_pitch(player.lerp(target, 0.5) - position)
+	return _looking_at(position, position + look)
 
 
 ## Vertical FOV in degrees for a locked camera with base_fov normally.
@@ -105,17 +109,12 @@ static func shoulder_side_for(camera: Transform3D, target: Vector3, current_side
 	return signf(current_side) if current_side != 0.0 else 1.0
 
 
-## Slides the camera horizontally away from the look point until looking at it
-## is no steeper than the pitch limits. Keeps the camera's height.
-static func _pulled_back_to_pitch_limit(position: Vector3, look_at_point: Vector3, behind: Vector3) -> Vector3:
-	var to_look := look_at_point - position
-	var flat := Vector3(to_look.x, 0.0, to_look.z)
-	var limit := MAX_VIEW_PITCH_DOWN if to_look.y < 0.0 else MAX_VIEW_PITCH_UP
-	var needed := absf(to_look.y) / tan(limit)
-	if flat.length() >= needed:
-		return position
-	var away := -flat.normalized() if flat.length() > 0.01 else behind
-	return position + away * (needed - flat.length())
+## Direction with its pitch limited to the view pitch limits; keeps its heading.
+static func _clamp_pitch(direction: Vector3) -> Vector3:
+	var flat := Vector2(direction.x, direction.z)
+	var heading := flat.normalized() if flat.length() > 0.001 else Vector2(0, -1)
+	var pitch := clampf(atan2(direction.y, flat.length()), -MAX_VIEW_PITCH_DOWN, MAX_VIEW_PITCH_UP)
+	return Vector3(heading.x * cos(pitch), sin(pitch), heading.y * cos(pitch))
 
 
 static func _looking_at(position: Vector3, look_at_point: Vector3) -> Transform3D:
