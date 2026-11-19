@@ -32,16 +32,24 @@ const MAX_VIEW_PITCH_DOWN := deg_to_rad(35.0)
 const MAX_VIEW_PITCH_UP := deg_to_rad(25.0)
 ## Most the FOV widens (degrees) for big height gaps.
 const MAX_FOV_BOOST := 10.0
-## The opponent must cross this far past centre before the shoulder flips.
-const SHOULDER_SWITCH_MARGIN := 0.15
+## Where the player sits while locked: this far from the screen centre toward
+## the edge away from the shoulder, as a fraction of the half width (1/3 from the edge).
+const PLAYER_SCREEN_OFFSET := 1.0 / 3.0
+## The opponent must cross past the player by this much (fraction of the half
+## width) before the shoulder flips.
+const SHOULDER_SWITCH_MARGIN := 0.05
+## Screen shape the framing aims for.
+const DEFAULT_VERTICAL_FOV := 75.0
+const ASPECT := 16.0 / 9.0
 
 
 ## Camera pose while locked on. shoulder: -1 camera left of the player .. +1 right
 ## (blends smoothly); the opponent shows on the shoulder side of the screen.
 ## orbit: mouse offset in radians (x yaw, y pitch), clamped to the orbit limits.
 ## far_blend: 0 close .. 1 far; negative means "from the current distance".
+## vertical_fov: degrees, used to put the player at PLAYER_SCREEN_OFFSET.
 static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit: Vector2,
-		far_blend: float = -1.0) -> Transform3D:
+		far_blend: float = -1.0, vertical_fov: float = DEFAULT_VERTICAL_FOV) -> Transform3D:
 	var to_target := target - player
 	var flat := Vector3(to_target.x, 0.0, to_target.z)
 	var facing := flat.normalized() if flat.length() > 0.01 else Vector3.FORWARD
@@ -61,8 +69,26 @@ static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit
 		+ boom * lerpf(CLOSE_BOOM_LENGTH, FAR_BOOM_LENGTH, far_blend) \
 		+ Vector3.UP * lerpf(CLOSE_HEIGHT, FAR_HEIGHT, far_blend) \
 		+ facing.cross(Vector3.UP).normalized() * SHOULDER_OFFSET * shoulder
-	var look := _clamp_pitch(player.lerp(target, 0.5) - position)
-	return _looking_at(position, position + look)
+	# Aim beside the player so they sit 1/3 from the edge and the opponent gets
+	# the open side; pitch still frames the midpoint.
+	var tan_half_h := tan(deg_to_rad(vertical_fov) / 2.0) * ASPECT
+	var aside := atan(PLAYER_SCREEN_OFFSET * tan_half_h) * shoulder
+	var to_player := player - position
+	var heading := Vector3(to_player.x, 0.0, to_player.z).rotated(Vector3.UP, -aside)
+	var midpoint_pitch := _clamp_pitch(player.lerp(target, 0.5) - position)
+	var look := heading.normalized() * Vector2(midpoint_pitch.x, midpoint_pitch.z).length() + Vector3.UP * midpoint_pitch.y
+	var pose := _looking_at(position, position + look)
+	# Pitch skews where a yaw offset lands on screen; nudge the yaw until the
+	# player is at the intended screen x.
+	var wanted_x := -PLAYER_SCREEN_OFFSET * shoulder * tan_half_h
+	for _pass in 3:
+		var local := pose.affine_inverse() * player
+		if local.z >= -0.01:
+			break
+		var error := atan(local.x / -local.z) - atan(wanted_x)
+		look = look.rotated(Vector3.UP, -error)
+		pose = _looking_at(position, position + look)
+	return pose
 
 
 ## Vertical FOV in degrees for a locked camera with base_fov normally.
@@ -95,18 +121,22 @@ static func clamp_orbit(orbit: Vector2) -> Vector2:
 		clampf(orbit.y, -MAX_ORBIT_PITCH, MAX_ORBIT_PITCH))
 
 
-## Which shoulder to sit on: the side of the screen the opponent is on.
-## Keeps the current side while the opponent is inside the centre margin.
-static func shoulder_side_for(camera: Transform3D, target: Vector3, current_side: float) -> float:
-	var local := camera.affine_inverse() * target
-	if local.z >= 0.0:
-		return current_side
-	var screen_x := local.x / -local.z
-	if screen_x > SHOULDER_SWITCH_MARGIN:
-		return 1.0
-	if screen_x < -SHOULDER_SWITCH_MARGIN:
+## Which shoulder to sit on: the opponent should be on the shoulder side of the
+## player on screen. Flips once the opponent crosses past the player by the
+## margin; there is no dead zone around the screen centre.
+static func shoulder_side_for(camera: Transform3D, player: Vector3, target: Vector3, current_side: float) -> float:
+	var view := camera.affine_inverse()
+	var player_local := view * player
+	var target_local := view * target
+	if player_local.z >= 0.0 or target_local.z >= 0.0:
+		return current_side if current_side != 0.0 else 1.0
+	var gap := target_local.x / -target_local.z - player_local.x / -player_local.z
+	var margin := SHOULDER_SWITCH_MARGIN * tan(deg_to_rad(DEFAULT_VERTICAL_FOV) / 2.0) * ASPECT
+	if current_side >= 0.0 and gap < -margin:
 		return -1.0
-	return signf(current_side) if current_side != 0.0 else 1.0
+	if current_side <= 0.0 and gap > margin:
+		return 1.0
+	return current_side if current_side != 0.0 else 1.0
 
 
 ## Direction with its pitch limited to the view pitch limits; keeps its heading.

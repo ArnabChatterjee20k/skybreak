@@ -63,8 +63,10 @@ func test_shoulder_side_moves_camera_to_that_side() -> void:
 func test_opponent_appears_on_the_shoulder_side_of_the_screen() -> void:
 	var target := PLAYER + Vector3(0, 0, -10)
 	var pose := LockOnFraming.locked_pose(PLAYER, target, 1.0, Vector2.ZERO)
-	assert_gt((pose.affine_inverse() * target).x, 0.0, "target right of centre")
-	assert_lt((pose.affine_inverse() * PLAYER).x, 0.0, "player left of centre")
+	var target_local := pose.affine_inverse() * target
+	var player_local := pose.affine_inverse() * PLAYER
+	assert_gt(target_local.x / -target_local.z, player_local.x / -player_local.z, "target right of the player")
+	assert_lt(player_local.x, 0.0, "player left of centre")
 
 
 func test_orbit_is_clamped_to_limits() -> void:
@@ -73,12 +75,26 @@ func test_orbit_is_clamped_to_limits() -> void:
 	assert_almost_eq(clamped.y, -LockOnFraming.MAX_ORBIT_PITCH, 0.0001)
 
 
-func test_shoulder_flips_only_past_the_centre_margin() -> void:
+func test_shoulder_follows_the_opponent_relative_to_the_player_not_the_centre() -> void:
 	var camera := Transform3D(Basis.IDENTITY, Vector3.ZERO)
-	assert_eq(LockOnFraming.shoulder_side_for(camera, Vector3(0.5, 0, -10), 1.0), 1.0, "near centre: keep right")
-	assert_eq(LockOnFraming.shoulder_side_for(camera, Vector3(0.5, 0, -10), -1.0), -1.0, "near centre: keep left")
-	assert_eq(LockOnFraming.shoulder_side_for(camera, Vector3(-5, 0, -10), 1.0), -1.0, "far left: flip left")
-	assert_eq(LockOnFraming.shoulder_side_for(camera, Vector3(5, 0, -10), -1.0), 1.0, "far right: flip right")
+	var player := Vector3(-3, 0, -8)
+	# Opponent left of centre but still right of the player: keep the right shoulder.
+	assert_eq(LockOnFraming.shoulder_side_for(camera, player, Vector3(-1, 0, -20), 1.0), 1.0, "keep right")
+	# Opponent crosses to the left of the player: flip left.
+	assert_eq(LockOnFraming.shoulder_side_for(camera, player, Vector3(-12, 0, -20), 1.0), -1.0, "flip left")
+	# Mirror image.
+	var right_player := Vector3(3, 0, -8)
+	assert_eq(LockOnFraming.shoulder_side_for(camera, right_player, Vector3(1, 0, -20), -1.0), -1.0, "keep left")
+	assert_eq(LockOnFraming.shoulder_side_for(camera, right_player, Vector3(12, 0, -20), -1.0), 1.0, "flip right")
+
+
+func test_locked_player_sits_a_third_from_the_edge() -> void:
+	var target := PLAYER + Vector3(0, 0, -15)
+	for shoulder in [-1.0, 1.0]:
+		var pose := LockOnFraming.locked_pose(PLAYER, target, shoulder, Vector2.ZERO)
+		var local := pose.affine_inverse() * PLAYER
+		var ndc_x := local.x / -local.z / (tan(VERTICAL_FOV / 2.0) * ASPECT)
+		assert_almost_eq(ndc_x, -shoulder / 3.0, 0.02, "shoulder %s" % shoulder)
 
 
 func test_free_pose_orbits_player_at_boom_length_and_looks_at_them() -> void:

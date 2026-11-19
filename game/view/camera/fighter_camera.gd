@@ -71,14 +71,14 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	if locked:
 		if _seconds_since_mouse_moved > orbit_return_delay:
 			orbit = orbit.lerp(Vector2.ZERO, _blend(orbit_return_sharpness, delta))
-		_shoulder_goal = LockOnFraming.shoulder_side_for(global_transform, target, _shoulder_goal)
+		_shoulder_goal = LockOnFraming.shoulder_side_for(global_transform, player, target, _shoulder_goal)
 		_shoulder = move_toward(_shoulder, _shoulder_goal, shoulder_switch_speed * delta)
 		var range_goal := LockOnFraming.range_blend(player.distance_to(target))
 		if _far_blend < 0.0:
 			_far_blend = range_goal
 		else:
 			_far_blend = lerpf(_far_blend, range_goal, _blend(range_blend_sharpness, delta))
-		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend)
+		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, base_fov)
 	else:
 		if _was_locked and _has_pose:
 			_continue_free_orbit_from_here(player)
