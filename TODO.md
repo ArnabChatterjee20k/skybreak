@@ -133,6 +133,13 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-128 [desktop] Front end: splash, main menu over the world flythrough, character
+  select (roster read dynamically, SubViewport turntable portraits, name/title/stat
+  bars, human/AI, AI level 1-5 and team per seat; Vs AI 1-3 AIs, FFA 2-4), zone
+  select (7 zones, Heartbloom hearts), settings (bus volumes, graphics, camera
+  sensitivity, key rebinding), pause menu, results screen; `MatchConfig` autoload
+  launches `zone_match.tscn` or falls back to the test arena.
+
 - T-D26 [desktop] Powers and gadgets (Overdrive Orb, Burst Shard, Aegis, Haste, Spike Bomb, Gravity Mine, Mirror Decoy) as sky drops alternating with weapons, plus T-D14's gaps: bow draw levels and level-3 pin, Heartstring Tether and yank, chakram out-and-back disc, repeater heat/slowed fire/dash absorb, swap-cancel, C quick-swap, 80% ranged combo starters, counter-hit heavy drops, nocked arrow, `held_ammo()` for the HUD.
 - T-129 [developer, built by cloud] Training room (dummy modes, record/playback, frame-data overlay, input display, refills, reset, weapon spawner, move list) and a 9-lesson tutorial with sim-driven goal checks; entry scenes `game/modes/training/training.tscn` and `game/modes/tutorial/tutorial.tscn`. Open: combo breaker, ki blasts, chase/tech and knockdown wakeup lessons once the sim has them.
 - T-D23 [desktop] Real AI opponents (`game/ai/`): `FighterAI` levels 1–5 with reaction delay, utility neutral, guard/perfect block/push-block, whiff punishes, grab techs, combo routes up to launcher → vanish → air string → spike, weapons, FFA targets; `AIDriver` from the menus' fighter list; optional P2 hookup in the test arena. Open: burst escape (no burst in the sim yet), habit adaptation (§10), rubber-banding.
