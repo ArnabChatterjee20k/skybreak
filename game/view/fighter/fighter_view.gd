@@ -22,6 +22,14 @@ const LEAN_SHARPNESS := 10.0
 @export var display_name := ""
 ## Team recolour of the character (part name -> Color), see FighterPalette.
 @export var palette: Dictionary = {}
+## Roster id (e.g. &"kael"); when set it picks character_scene and, unless
+## palette is set, the slot's palette. The arena spawns the sim fighter from it too.
+@export var character_id: StringName = &""
+## Player slot (0 = P1); picks the roster palette.
+@export var slot: int = 0
+
+## The roster character drawn, or null for a hand-set scene or the capsule.
+var character: RosterCharacter
 
 ## The sim state this view draws; set before the first frame.
 var fighter: FighterState
@@ -35,6 +43,11 @@ var _height_marker := HeightMarker.new()
 
 
 func _ready() -> void:
+	character = Roster.character(character_id) if character_id != &"" else null
+	if character != null:
+		character_scene = character.scene
+		if palette.is_empty():
+			palette = character.palette_for(slot)
 	_body = Node3D.new()
 	add_child(_body)
 	_height_marker.color = Color(energy_color, 1.0)
@@ -56,6 +69,11 @@ func _ready() -> void:
 	visor.position = Vector3(0, 0.55, -0.42)
 	visor.material_override = _material(Color(0.1, 0.1, 0.12))
 	_body.add_child(visor)
+
+
+## Sim stats for this view's character; null means the sim's default.
+func fighter_stats() -> FighterStats:
+	return character.stats if character != null else null
 
 
 ## Call once per sim tick, before the sim advances.

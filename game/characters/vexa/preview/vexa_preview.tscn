@@ -1,0 +1,57 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://game/characters/preview/character_preview.gd" id="1_preview"]
+[ext_resource type="PackedScene" path="res://game/characters/vexa/vexa.tscn" id="2_vexa"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.32, 0.5, 0.8, 1)
+sky_horizon_color = Color(0.72, 0.78, 0.86, 1)
+ground_horizon_color = Color(0.72, 0.78, 0.86, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+tonemap_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="ground_material"]
+albedo_color = Color(0.36, 0.4, 0.36, 1)
+
+[sub_resource type="PlaneMesh" id="ground"]
+size = Vector2(12, 12)
+
+[node name="VexaPreview" type="Node3D"]
+script = ExtResource("1_preview")
+character_scene = ExtResource("2_vexa")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 6, 0)
+light_energy = 0.9
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground")
+surface_material_override/0 = SubResource("ground_material")
+
+[node name="Body" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.894, -0.096, 0.437, 0, 0.977, 0.214, -0.447, -0.191, 0.875, 2.2, 1.9, -4.6)
+fov = 50.0
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="Overlay"]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 900.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 28

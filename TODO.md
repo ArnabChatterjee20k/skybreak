@@ -13,6 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D18 [desktop] Vexa built natively in Godot code as a rigid action figure
+  (FigureKit mesh kit, humanoid-profile rig, procedural layer), stacked on
+  T-D10.
 - T-D12 [desktop] World map grey-block: 2 km procedural terrain (chunked, 4 LODs),
   six zones with landmarks, atmosphere/time of day/weather, energy dome,
   `WorldMap` API and flythrough preview, PR #39.
@@ -119,6 +122,11 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D18b [desktop] Vexa playable: own 16-move set (5-hit string, launcher, spike,
+  chakram heavies), IK-posed clips timed to each move, `Roster` (kael/vexa ->
+  scene, stats, slot palettes), test arena P1 Kael vs P2 Vexa (alt palette,
+  team rim), merged assembly (10 draw calls). Contains #44. Follow-ups:
+  render benchmark on the dev PC; fighters can overlap (no pushbox).
 - T-D00 [desktop] Game design document (`docs/GAME_DESIGN.md`), PR #1.
 - T-002 [developer] Graphics presets + resolution scale + vsync, F10 menu, PR #2.
 - T-003 [developer] Windows export preset (single exe), PR #4.

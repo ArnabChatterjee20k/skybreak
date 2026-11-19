@@ -30,7 +30,7 @@ var match_hud := MatchHud.new()
 
 func _ready() -> void:
 	for i in FIGHTER_STARTS.size():
-		_fighter_views[i].fighter = sim.add_fighter(FIGHTER_STARTS[i])
+		_fighter_views[i].fighter = sim.add_fighter(FIGHTER_STARTS[i], _fighter_views[i].fighter_stats())
 		_fighter_views[i].remember_previous_tick()
 	sim.lock_everyone_onto_nearest()
 	$DebugOverlay.sim = sim

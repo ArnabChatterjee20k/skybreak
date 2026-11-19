@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"light_2"
+display_name = "Gauntlet Cross"
+startup_ticks = 5
+active_ticks = 2
+recovery_ticks = 9
+step_distance = 0.3
+hitbox_offsets = PackedVector3Array(0.2, 0.3, -1, 0.2, 0.3, -1.1)
+hitbox_radii = PackedFloat32Array(0.42, 0.42)
+damage = 230
+hitstun_ticks = 15
+blockstun_ticks = 8
+hitstop_ticks = 3
+knockback_type = 0
+knockback = Vector3(0, 0, -1.5)
+guard_damage = 4
+cancel_level = 1
+cancel_start_tick = 5
+cancel_end_tick = 15
+string_window_start_tick = 5
