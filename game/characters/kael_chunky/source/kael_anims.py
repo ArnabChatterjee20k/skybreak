@@ -37,6 +37,7 @@ STRIKE_BONES = {
 	"charged_smash_2": "RightMiddleProximal",
 	"charged_smash_3": "RightMiddleProximal",
 	"push_block": "LeftMiddleProximal",
+	"grab": "LeftMiddleProximal",
 }
 
 
@@ -452,11 +453,40 @@ def clip_push_block(moves):
 	return c
 
 
+def clip_grab(moves):
+	"""Grab: a lunging two-handed snatch with open hands that clamp shut on contact."""
+	c, s, a, r = _attack_clip(moves, "grab")
+	palms = hands(open_hand(14), open_hand(14))
+	reach = body(turn=0, lean=20, hz=-0.12, lh=(0.16, -0.78, 1.0), rh=(-0.16, -0.78, 1.0), lpole=(1, 0.3, -0.5),
+		rpole=(-1, 0.3, -0.5), fingers=palms, legs=feet(lf=(0.2, -0.32)), scale={"Chest": 1.08})
+	clamp = body(turn=0, lean=24, hz=-0.13, lh=(0.05, -0.9, 1.0), rh=(-0.05, -0.9, 1.0), lpole=(1, 0.3, -0.5),
+		rpole=(-1, 0.3, -0.5), legs=feet(lf=(0.2, -0.32)), scale={"Chest": 1.04})
+	c.key(0, STANCE).key(s - 3, body(turn=-12, lean=2, lh=(0.3, -0.3, 1.1), rh=(-0.26, -0.26, 1.08), fingers=palms,
+		scale={"Chest": 0.9}), "out")
+	pull = body(turn=0, lean=12, hz=-0.12, lh=(0.12, -0.55, 1.05), rh=(-0.12, -0.55, 1.05), legs=feet(lf=(0.2, -0.3)))
+	c.key(s, reach, "in").key(s + 1, clamp, "out").key(s + a + 4, pull, "io")
+	c.key(s + a + 14, body(lean=10, lh=(0.14, -0.5, 1.05), rh=(-0.12, -0.48, 1.03)), "io").key(c.length, STANCE, "io")
+	return c
+
+
+def clip_throw():
+	"""Throwing: heaving the held opponent up and over to his right."""
+	c = Clip("throw", 36)
+	hold = body(turn=0, lean=14, hz=-0.12, lh=(0.12, -0.6, 1.05), rh=(-0.12, -0.6, 1.05), legs=feet(lf=(0.2, -0.28)))
+	heave = body(turn=-50, lean=-8, hz=-0.06, lh=(0.0, -0.3, 1.6), rh=(-0.3, -0.15, 1.6), lpole=(1, 0.3, 0.3),
+		rpole=(-1, 0.3, 0.3), scale={"Chest": 1.1, "Hips": 1.03}, legs=feet(lf=(0.2, -0.28)))
+	toss = body(turn=40, lean=26, hz=-0.16, lh=(-0.2, -0.62, 0.95), rh=(-0.42, -0.4, 0.9), legs=feet(lf=(0.2, -0.28)),
+		scale={"Chest": 0.88, "Hips": 0.94})
+	c.key(0, hold).key(12, hold.but(scale={"Chest": 0.9}), "io").key(20, heave, "out").key(26, toss, "in3")
+	c.key(36, toss.but(scale={}), "out")
+	return c
+
+
 def all_clips(moves):
 	clips = [clip_idle(), clip_power_up(), clip_hover(), clip_fly(), clip_smash_hold(),
 		clip_light_1(moves), clip_light_2(moves), clip_light_3(moves), clip_light_4(moves), clip_smash(moves),
 		clip_breaker(moves), clip_launcher(moves), clip_rising(moves), clip_spike(moves), clip_sweep(moves),
-		clip_push_block(moves)]
+		clip_push_block(moves), clip_grab(moves), clip_throw()]
 	clips += [clip_charged_smash(moves, n) for n in (1, 2, 3)]
 	return clips
 

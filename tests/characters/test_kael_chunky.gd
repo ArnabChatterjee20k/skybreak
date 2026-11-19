@@ -13,7 +13,7 @@ const STRIKE_BONES := {
 	&"light_4": &"RightToes", &"smash": &"RightMiddleProximal", &"breaker": &"LeftMiddleProximal",
 	&"launcher": &"RightMiddleProximal", &"rising": &"RightToes", &"spike": &"RightToes", &"sweep": &"RightToes",
 	&"charged_smash_1": &"RightMiddleProximal", &"charged_smash_2": &"RightMiddleProximal",
-	&"charged_smash_3": &"RightMiddleProximal", &"push_block": &"LeftMiddleProximal",
+	&"charged_smash_3": &"RightMiddleProximal", &"push_block": &"LeftMiddleProximal", &"grab": &"LeftMiddleProximal",
 }
 const FRAME := 1.0 / 60.0
 const PEAK_TOLERANCE_TICKS := 2
@@ -34,7 +34,7 @@ func _moves() -> Array[MoveData]:
 	moves.append_array(move_set.light_string)
 	moves.append_array(move_set.charged_smash)
 	for move: MoveData in [move_set.smash, move_set.breaker, move_set.launcher, move_set.rising,
-			move_set.spike, move_set.sweep, move_set.push_block]:
+			move_set.spike, move_set.sweep, move_set.push_block, move_set.grab]:
 		moves.append(move)
 	return moves
 
@@ -145,12 +145,15 @@ func test_apply_state_handles_every_fighter_state() -> void:
 			% [FighterState.State.find_key(state_value), clip])
 
 
-func test_states_pick_kaels_own_clips_where_he_has_them() -> void:
+func test_states_pick_their_clips() -> void:
 	var expected := {
 		FighterState.State.IDLE: &"idle",
 		FighterState.State.CHARGING: &"power_up",
 		FighterState.State.FLYING: &"hover",
 		FighterState.State.MOVING: &"run",
+		FighterState.State.BLOCKING: &"block",
+		FighterState.State.GRABBED: &"guard_broken",
+		FighterState.State.THROWING: &"throw",
 	}
 	for state_value: int in expected:
 		_fighter.enter_state(state_value)
