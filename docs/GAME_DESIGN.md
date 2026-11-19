@@ -312,13 +312,19 @@ Each fighter has a clear playstyle, one strength, one weakness and one unique me
 | **Brann** | Heavy / grappler | Huge damage, armored heavies (absorb 1 hit), command grabs | Slowest flight, vanishes cost 35/55 ki, big hurtbox | **Unstoppable:** charged smash has full armor at level 3 | *Titan*: red-bronze; grabs become unblockable rushes |
 | **Lyra** | Zoner / trapper | Best ki blasts and beams, places floating mines | Weak at close range, low guard (80) | **Seal mines:** up to 3 mines in the air that detonate on contact or on command | *Starlight*: blue-white; blasts home, beams split |
 
-**Kael's look (binding, original design; supersedes any earlier brief):**
-- **Hair:** silver-white, swept back with volume (not upward spikes), one crimson streak over the left brow, short tail at the nape.
-- **Outfit:** a sleeveless, high-collared fitted coat in **teal and charcoal** with **gold trim**, split at the hips into two tails; an **asymmetric white sash** from right shoulder to left hip; black fitted pants; **orange armoured shin guards** over dark boots; **fingerless dark gloves** with gold knuckle plates.
-- **Signature:** a **long orange scarf** that trails in flight and dashes (secondary motion).
-- **Energy colour:** orange-white (aura and rim), unchanged.
-- **Do not** use: an orange gi, a blue/navy undershirt with matching wristbands, a wide knotted belt over a gi, white boots, or tall black upward spikes. Together those read as an existing anime hero.
-- The same rule applies to every fighter: each design must be checked against well-known characters in the genre before it's built.
+**Art direction for fighters (owner's decision: Brawlhalla-style, not DBZ-style):**
+- **Proportions:** chunky and stylized, about **4.5 heads tall**: big head, broad shoulders, **oversized hands and feet**, compact torso and short legs. A toy-like, instantly readable silhouette from any angle at fight distance.
+- **Shapes:** simple, bold forms with few small details. Every fighter has **one big silhouette feature** (hat, hood, horns, cape, scarf, pauldrons).
+- **Colour:** bright, saturated, 2–3 main colours per fighter plus an accent. Thick ink outlines (our outline shader) and 2–3 cel bands.
+- **Theme:** a roster of **fantasy "legends"** from different worlds and eras (knight, rogue, brawler, mage and so on), each with a **signature weapon pair** that matches the pickup weapons (§5.11). Fighters can use any weapon; their pair is their best fit and appears on their idle pose.
+- **Animation:** snappy and exaggerated, with big anticipation and squash/stretch on impacts. Read at a glance, not realistic.
+- **Originality:** inspired by the *style* of platform fighters like Brawlhalla, but **no existing character, costume or name is copied**. Every design is checked against well-known characters before it's built.
+
+**Launch roster looks (original):**
+- **Kael** (all-rounder; signature weapons: Storm Blade + Arc Revolver): a young **sky-knight adventurer** with silver-white tufted hair under brass flight goggles, a short teal-and-gold armoured coat over a charcoal tunic, oversized gold gauntlets, chunky orange boots, and a **long orange scarf** that trails in flight. Energy colour orange-white.
+- **Vexa** (speed/trickster; Ki Gauntlets + Orbit Chakram): a masked **shadow rogue** with a deep violet hood with long ear-like points, a cropped silver jacket, wrapped arms, and a mischievous visor-mask with glowing eyes.
+- **Brann** (heavy grappler; Titan Hammer + Scatter Cannon): a huge **stone-forged blacksmith** with mossy rock shoulders, a leather apron, a braided ember-red beard, and anvil-sized fists.
+- **Lyra** (zoner; Ki Bow + Sky Lance): a **star-cartographer mage** with a wide-brimmed midnight-blue hat dotted with constellation lights, a flowing star-map cape and floating brass astrolabe rings.
 
 **Balance target:** in AI-vs-AI simulations and playtests, no fighter wins more than 55% of matches against any other.
 
