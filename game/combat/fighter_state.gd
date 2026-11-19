@@ -157,6 +157,8 @@ var smitten_ticks: int = 0
 var smitten_by: int = -1
 ## Ticks since Smitten last started, capped; a repeat inside the window lasts half as long.
 var ticks_since_smitten: int = 1 << 20
+## Height of the origin when standing at the current (x, z); the sim sets it each tick.
+var stand_height: float = 1.0
 
 
 ## Switches to new_state and restarts the tick counter, even if it is the same state.

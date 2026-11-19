@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"push_block"
+display_name = "Bulwark Shove"
+kind = 2
+startup_ticks = 3
+active_ticks = 4
+recovery_ticks = 16
+step_distance = 0
+hitbox_offsets = PackedVector3Array(0, 0.2, -1, 0, 0.2, -1.1, 0, 0.2, -1.2, 0, 0.2, -1.25)
+hitbox_radii = PackedFloat32Array(1.3, 1.3, 1.4, 1.4)
+damage = 0
+hitstun_ticks = 0
+blockstun_ticks = 0
+hitstop_ticks = 0
+knockback_type = 0
+knockback = Vector3(0, 0, 0)
+guard_damage = 0
+cancel_level = 2
+cancel_start_tick = 0
+cancel_end_tick = 0
