@@ -13,6 +13,10 @@ const FULL_LEAN_SPEED := 30.0
 const LEAN_SHARPNESS := 10.0
 
 @export var body_color := Color(0.9, 0.4, 0.15)
+## Character model (a CharacterView scene). Empty draws the placeholder capsule.
+@export var character_scene: PackedScene
+## Energy colour for the character's rim; alpha is the blend.
+@export var energy_color := Color(1.0, 0.55, 0.2, 0.0)
 
 ## The sim state this view draws; set before the first frame.
 var fighter: FighterState
@@ -21,11 +25,17 @@ var _previous_position := Vector3.ZERO
 var _previous_yaw := 0.0
 var _lean := Vector2.ZERO
 var _body: Node3D
+var _character: CharacterView
 
 
 func _ready() -> void:
 	_body = Node3D.new()
 	add_child(_body)
+	if character_scene != null:
+		_character = character_scene.instantiate() as CharacterView
+		_body.add_child(_character)
+		_character.set_energy_color(energy_color)
+		return
 	var capsule := MeshInstance3D.new()
 	capsule.mesh = CapsuleMesh.new()
 	capsule.material_override = _material(body_color)
@@ -55,6 +65,8 @@ func present(blend: float, delta: float) -> void:
 	_lean = _lean.lerp(goal, 1.0 - exp(-LEAN_SHARPNESS * delta))
 	_body.basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, _lean.x) * Basis(Vector3.BACK, _lean.y)
 	visible = fighter.state != FighterState.State.VANISHING
+	if _character != null:
+		_character.apply_state(fighter, delta)
 
 
 ## Lean angles for a velocity: x = pitch (negative leans forward),
