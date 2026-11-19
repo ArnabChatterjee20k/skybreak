@@ -1,0 +1,63 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://game/levels/test_arena.gd" id="1_arena"]
+[ext_resource type="Script" path="res://game/input/keyboard_mouse_input.gd" id="2_input"]
+[ext_resource type="Script" path="res://game/debug/debug_overlay.gd" id="3_overlay"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.25, 0.45, 0.85, 1)
+sky_horizon_color = Color(0.7, 0.8, 0.95, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+tonemap_mode = 2
+
+[sub_resource type="PlaneMesh" id="ground_mesh"]
+size = Vector2(600, 600)
+
+[sub_resource type="StandardMaterial3D" id="ground_material"]
+albedo_color = Color(0.35, 0.5, 0.3, 1)
+
+[sub_resource type="CapsuleMesh" id="fighter_mesh"]
+
+[sub_resource type="StandardMaterial3D" id="fighter1_material"]
+albedo_color = Color(0.9, 0.4, 0.15, 1)
+
+[sub_resource type="StandardMaterial3D" id="fighter2_material"]
+albedo_color = Color(0.2, 0.45, 0.95, 1)
+
+[node name="TestArena" type="Node3D"]
+script = ExtResource("1_arena")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 50, 0)
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground_mesh")
+surface_material_override/0 = SubResource("ground_material")
+
+[node name="Fighter1" type="MeshInstance3D" parent="."]
+mesh = SubResource("fighter_mesh")
+surface_material_override/0 = SubResource("fighter1_material")
+
+[node name="Fighter2" type="MeshInstance3D" parent="."]
+mesh = SubResource("fighter_mesh")
+surface_material_override/0 = SubResource("fighter2_material")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 4, 14)
+
+[node name="KeyboardMouseInput" type="Node" parent="."]
+script = ExtResource("2_input")
+
+[node name="DebugOverlay" type="CanvasLayer" parent="."]
+script = ExtResource("3_overlay")

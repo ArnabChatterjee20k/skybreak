@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  tests:
+    name: GUT tests (headless Godot)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux
+
+      - name: Download Godot
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          zip="Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSLf -o "/tmp/$zip" "$base/$zip"
+          curl -sSLf -o /tmp/SHA512-SUMS.txt "$base/SHA512-SUMS.txt"
+          (cd /tmp && grep " $zip\$" SHA512-SUMS.txt | sha512sum -c -)
+          unzip -q "/tmp/$zip" -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+
+      - name: Import project
+        run: ~/godot/godot --headless --path . --import
+
+      - name: Run tests
+        run: ~/godot/godot --headless --path . -s res://addons/gut/gut_cmdln.gd
