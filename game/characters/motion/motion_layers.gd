@@ -16,6 +16,13 @@ const MAX_LEAN := deg_to_rad(28.0)
 const MAX_BANK := deg_to_rad(55.0)
 const PLANTED_HEIGHT := 0.06
 const MAX_PELVIS_DROP := 0.25
+## Grounding pass: how far the pelvis may shift to put the lowest sole on the ground (m), the
+## steepest surface a planted foot tilts to, and how fast the shift eases out off the ground.
+const MAX_GROUND_SHIFT := 0.45
+const MAX_FOOT_TILT := deg_to_rad(25.0)
+const SHIFT_RELEASE_FREQUENCY := 10.0
+## Share of the full leg length the IK may straighten to (no locked or hyperextended knee).
+const KNEE_REACH := 0.995
 ## Foot lock: a planted foot stays where it touched down (world) until the clip pulls it this far
 ## away (m), then steps back over the lock blend, lifted by STEP_LIFT of the distance left.
 const LOCK_RELEASE := 0.22
@@ -24,6 +31,9 @@ const STEP_LIFT := 0.5
 const ARMS := [[&"LeftUpperArm", &"LeftLowerArm", &"LeftHand"], [&"RightUpperArm", &"RightLowerArm", &"RightHand"]]
 ## Flight: speed (m/s) for the full flight body, and the flutter of the trailing legs.
 const FLIGHT_FULL_SPEED := 22.0
+const FLIGHT_RELEASE_FREQUENCY := 10.0
+## Spring rate of the lean and flight body while bracing for a landing (1/s).
+const BRACE_FREQUENCY := 22.0
 ## Level flight pitch limit; dives go on to the profile's dive_pitch (horizontal superman).
 const MAX_FLIGHT_PITCH := deg_to_rad(78.0)
 ## Twist limits about the bone (radians) and the fastest any body bone may turn (rad/s).
@@ -53,6 +63,10 @@ const ARM_POSES := {
 @export var foot_ik := true
 ## Planted feet hold their world position (standing states); needs body_to_world.
 @export var foot_lock := false
+## Standing on the ground (idle, guard, charge, landing): the lowest sole is put on the ground.
+@export var stance := false
+## About to land: the flight lean and body ease out fast so the legs are under the body.
+@export var brace := false
 ## Ground under a world point, in skeleton space relative to the stand floor (overrides ground
 ## when valid, so a locked foot is placed on the floor where it actually is).
 var ground_at: Callable
@@ -114,6 +128,9 @@ var _last_delta := 1.0 / 60.0
 var _lock_world: Array[Vector3] = [Vector3.INF, Vector3.INF]
 var _lock_offset: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _lock_offset_velocity: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+# Grounding pass: the pelvis shift (skeleton space, m) and its release velocity.
+var _shift := 0.0
+var _shift_velocity := 0.0
 # Frame stepping (advance_frame): the delta still to step, or -1 once stepped this frame.
 var _frame_delta := -1.0
 var _frame_driven := false
@@ -258,6 +275,8 @@ func reset() -> void:
 	_lock_offset = [Vector3.ZERO, Vector3.ZERO]
 	_lock_offset_velocity = [Vector3.ZERO, Vector3.ZERO]
 	_guard_world.clear()
+	_shift = 0.0
+	_shift_velocity = 0.0
 
 
 ## Takes a legend's motion personality.
@@ -353,11 +372,14 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 	hips = _landing_layer(rotations, hips, delta)
 	_arm_layer(rotations, hips, delta)
 	hips = _stance_layer(hips, delta)
+	hips = _stance_shift(rotations, hips, delta)
 	if foot_ik:
 		hips = _foot_ik(rotations, hips, delta)
 	else:
 		_release_locks()
+	_ground_pass(rotations, hips)
 	_pop_guard(rotations, delta)
+	hips = _lift_sunk_feet(rotations, hips)
 	_prev_out = _last_out.duplicate()
 	_last_out = rotations.duplicate()
 	_prev_hips = _last_hips
@@ -438,7 +460,9 @@ func _lean_layer(rotations: Array[Quaternion], delta: float) -> void:
 		accel.z * accel_lean + horizontal.z * velocity_lean,
 		0.0,
 		-accel.x * accel_lean - horizontal.x * velocity_lean)
-	if flying:
+	if brace:
+		target = Vector3.ZERO
+	elif flying:
 		# Bank into turns: roll with lateral acceleration, pitch down with speed (dive).
 		target.z = clampf(-accel.x * accel_lean * 2.0 - velocity.x * 0.03, -MAX_BANK, MAX_BANK)
 		var speed := velocity.length()
@@ -448,7 +472,7 @@ func _lean_layer(rotations: Array[Quaternion], delta: float) -> void:
 	else:
 		target.x = clampf(target.x, -MAX_LEAN, MAX_LEAN)
 		target.z = clampf(target.z, -MAX_LEAN, MAX_LEAN)
-	var s := spring(lean, _lean_velocity, target, lean_frequency, delta)
+	var s := spring(lean, _lean_velocity, target, maxf(lean_frequency, BRACE_FREQUENCY) if brace else lean_frequency, delta)
 	lean = s[0]
 	_lean_velocity = s[1]
 	var hips: int = _index.get(&"Hips", -1)
@@ -479,7 +503,8 @@ func _offset(rotations: Array[Quaternion], bone: StringName, euler: Vector3) -> 
 func _flight_layer(rotations: Array[Quaternion], delta: float) -> void:
 	var speed := velocity.length()
 	var amount := clampf(speed / FLIGHT_FULL_SPEED, 0.0, 1.0) if flying else 0.0
-	var s := spring(_flight, _flight_velocity, amount, 7.0, delta)
+	# Bracing for a landing, the flight body goes fast: the legs come under the body before touchdown.
+	var s := spring(_flight, _flight_velocity, amount, 7.0 if flying else BRACE_FREQUENCY if brace else FLIGHT_RELEASE_FREQUENCY, delta)
 	_flight = s[0]
 	_flight_velocity = s[1]
 	var diving := clampf((-velocity.y - 6.0) / 14.0, 0.0, 1.0) if flying else 0.0
@@ -816,6 +841,135 @@ func _foot_ik(rotations: Array[Quaternion], hips: Vector3, delta := 0.0) -> Vect
 	return hips
 
 
+## Standing, the pelvis shifts so the lowest sole meets the ground under it (a clip or blend that
+## floats the feet, a landing clip that starts above its contact); the foot IK then plants and locks
+## it. Off the ground the shift eases out.
+func _stance_shift(rotations: Array[Quaternion], hips: Vector3, delta: float) -> Vector3:
+	var hips_id: int = _index.get(&"Hips", -1)
+	if hips_id < 0 or not foot_ik or flying:
+		_shift = 0.0
+		_shift_velocity = 0.0
+		return hips
+	if stance:
+		var gaps := _ground_gaps(rotations, hips)
+		var lowest := minf(gaps[0], gaps[1])
+		if not is_finite(lowest):
+			return hips
+		_shift = clampf(-lowest / maxf((_rest_parent_rot[hips_id] * Vector3.UP).y, 0.1), -MAX_GROUND_SHIFT, MAX_GROUND_SHIFT)
+		_shift_velocity = 0.0
+	elif _shift != 0.0:
+		var s := spring(_shift, _shift_velocity, 0.0, SHIFT_RELEASE_FREQUENCY, delta)
+		_shift = s[0]
+		_shift_velocity = s[1]
+		if absf(_shift) < 1e-4 and absf(_shift_velocity) < 1e-3:
+			_shift = 0.0
+			_shift_velocity = 0.0
+	hips.y += _shift
+	return hips
+
+
+## Each sole's height over the ground under it (skeleton space; INF without that leg).
+func _ground_gaps(rotations: Array[Quaternion], hips: Vector3) -> Array[float]:
+	_world_cache.clear()
+	var gaps: Array[float] = [INF, INF]
+	for side in 2:
+		var foot: int = _index.get(LEGS[side][2], -1)
+		if foot < 0 or _index.get(LEGS[side][0], -1) < 0 or _index.get(LEGS[side][1], -1) < 0:
+			continue
+		var ankle := _world_at(rotations, hips, foot).origin
+		gaps[side] = ankle.y - _floor_under(side, ankle, foot)
+	_world_cache.clear()
+	return gaps
+
+
+## Rest ankle height over the ground under a skeleton-space point.
+func _floor_under(side: int, at: Vector3, foot: int) -> float:
+	var under: float = ground_at.call(body_to_world * at) if ground_at.is_valid() else ground[side]
+	return under + _rest_heights[foot]
+
+
+## Last word on the feet before the pop guard: a foot below its ground (steep runs) is re-solved
+## onto it, so is the lowest standing foot the shift limit left short; planted feet tilt to the surface.
+func _ground_pass(rotations: Array[Quaternion], hips: Vector3) -> void:
+	if _index.get(&"Hips", -1) < 0 or not foot_ik or flying:
+		return
+	_world_cache.clear()
+	var world := _legs_world(rotations, hips)
+	var gaps := [INF, INF]
+	var floors := [INF, INF]
+	for side in 2:
+		var foot: int = _index.get(LEGS[side][2], -1)
+		if foot < 0 or _index.get(LEGS[side][0], -1) < 0 or _index.get(LEGS[side][1], -1) < 0:
+			continue
+		var ankle: Vector3 = (world[foot] as Transform3D).origin
+		floors[side] = _floor_under(side, ankle, foot)
+		gaps[side] = ankle.y - floors[side]
+	var lowest_side := 0 if gaps[0] <= gaps[1] else 1
+	for side in 2:
+		if not is_finite(gaps[side]):
+			continue
+		var foot: int = _index[LEGS[side][2]]
+		var ankle: Vector3 = (world[foot] as Transform3D).origin
+		var short: bool = stance and side == lowest_side and gaps[side] > 0.001
+		if gaps[side] < -0.001 or short:
+			_two_bone(rotations, world, _index[LEGS[side][0]], _index[LEGS[side][1]], foot,
+				Vector3(ankle.x, floors[side], ankle.z))
+			gaps[side] = 0.0
+	_world_cache.clear()
+	_tilt_feet(rotations, hips, gaps)
+	_world_cache.clear()
+
+
+## After the pop guard (which may hold a leg back from its solve): a foot left below its ground
+## lifts the whole body by the difference. A translation, so it can't pop a bone.
+func _lift_sunk_feet(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
+	var hips_id: int = _index.get(&"Hips", -1)
+	if hips_id < 0 or not foot_ik or flying:
+		return hips
+	_world_cache.clear()
+	var deficit := 0.0
+	for side in 2:
+		var foot: int = _index.get(LEGS[side][2], -1)
+		if foot < 0:
+			continue
+		var ankle := _world_at(rotations, hips, foot).origin
+		deficit = maxf(deficit, _floor_under(side, ankle, foot) - ankle.y)
+	_world_cache.clear()
+	if deficit > 0.001:
+		hips.y += minf(deficit, MAX_GROUND_SHIFT) / maxf((_rest_parent_rot[hips_id] * Vector3.UP).y, 0.1)
+	return hips
+
+
+## Planted feet turn toward the surface normal under them (clamped), eased out as they lift.
+func _tilt_feet(rotations: Array[Quaternion], hips: Vector3, gaps: Array) -> void:
+	if not ground_at.is_valid():
+		return
+	for side in 2:
+		var gap: float = gaps[side]
+		if not is_finite(gap) or gap > PLANTED_HEIGHT:
+			continue
+		var foot: int = _index[LEGS[side][2]]
+		var lo: int = _index[LEGS[side][1]]
+		var ankle := _world_at(rotations, hips, foot)
+		var normal := _ground_normal(ankle.origin)
+		var angle := Vector3.UP.angle_to(normal)
+		if angle < 0.01:
+			continue
+		var weight := 1.0 - smoothstep(PLANTED_HEIGHT * 0.5, PLANTED_HEIGHT, gap)
+		var axis := Vector3.UP.cross(normal).normalized()
+		var tilt := Quaternion(axis, minf(angle, MAX_FOOT_TILT) * weight)
+		var shin := _world_at(rotations, hips, lo).basis.get_rotation_quaternion()
+		rotations[foot] = (shin.inverse() * tilt * ankle.basis.get_rotation_quaternion()).normalized()
+
+
+## Surface normal (skeleton space) of the ground around a skeleton-space point.
+func _ground_normal(at: Vector3) -> Vector3:
+	const STEP := 0.12
+	var dx: float = ground_at.call(body_to_world * (at + Vector3(STEP, 0, 0))) - ground_at.call(body_to_world * (at - Vector3(STEP, 0, 0)))
+	var dz: float = ground_at.call(body_to_world * (at + Vector3(0, 0, STEP))) - ground_at.call(body_to_world * (at - Vector3(0, 0, STEP)))
+	return Vector3(-dx / (2.0 * STEP), 1.0, -dz / (2.0 * STEP)).normalized()
+
+
 ## World transforms of the hips and both legs only (sparse), for the foot IK.
 func _legs_world(rotations: Array[Quaternion], hips: Vector3) -> Array:
 	var out := []
@@ -837,7 +991,7 @@ func _two_bone(rotations: Array[Quaternion], world: Array, up: int, lo: int, foo
 	var l1 := h.origin.distance_to(k.origin)
 	var l2 := k.origin.distance_to(a.origin)
 	var to := target - h.origin
-	var d := clampf(to.length(), absf(l1 - l2) + 0.001, (l1 + l2) * 0.9999)
+	var d := clampf(to.length(), absf(l1 - l2) + 0.001, (l1 + l2) * KNEE_REACH)
 	var u := to.normalized()
 	var perp := (k.origin - h.origin) - u * (k.origin - h.origin).dot(u)
 	# Bend direction: the limb's own, but kept from the last solve while the limb is near straight
