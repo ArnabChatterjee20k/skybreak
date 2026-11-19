@@ -1,0 +1,162 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 4
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"hammer/light_1": {
+			"7": 5
+		},
+		"hammer/light_1+counter": {
+			"11": 1
+		},
+		"hammer/light_2": {
+			"10": 4
+		},
+		"launcher": {
+			"7": 7,
+			"9": 1
+		},
+		"light_1": {
+			"3": 11,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 12
+		},
+		"light_2": {
+			"3": 13
+		},
+		"light_3": {
+			"3": 9,
+			"5": 4
+		},
+		"smash": {
+			"8": 1
+		},
+		"spike": {
+			"7": 1
+		}
+	},
+	"id": "120:heartbloom_gardens:2v2:brann,lyra,kael,vexa:5245",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		2,
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 120,
+	"sim_ms_per_tick": 1.50419583333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0131801841780543,
+		"finger_pops_per_fighter_minute": 30.3876615256357,
+		"foot_error_p95_cm": 9.0164509800843,
+		"foot_slide_cm_per_frame": 1.22504915787466,
+		"locked_on_screen_share": 0.994787141615986,
+		"pops_per_fighter_minute": 43.8932888703626
+	},
+	"view_ms_per_frame": 0.994063333333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 145,
+			"detail": "lowest sole -10.1 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 90,
+			"worst_value": -0.100774302107993
+		},
+		{
+			"check": "pop",
+			"count": 39,
+			"detail": "RightHand turned 2.79 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 3,
+			"first_tick": 67,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 67,
+			"worst_value": 2.78846287727356
+		},
+		{
+			"check": "pop",
+			"count": 13,
+			"detail": "RightHand turned 2.78 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 76,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 76,
+			"worst_value": 2.78294944763184
+		},
+		{
+			"check": "pop",
+			"count": 45,
+			"detail": "RightHand turned 2.78 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 85,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 85,
+			"worst_value": 2.77904868125916
+		},
+		{
+			"check": "pop",
+			"count": 20,
+			"detail": "BeardBraid turned 3.14 rad in one frame (HITSTUN, move , clip hit_stagger)",
+			"fighter": 0,
+			"first_tick": 90,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1540,
+			"worst_value": 3.13833546638489
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 8,
+			"detail": "fighters 0 and 3 overlap 0.11 m (ATTACKING vs BLOCKING)",
+			"fighter": 0,
+			"first_tick": 1171,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1175,
+			"worst_value": 0.112126338481903
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "117 pops in 2.7 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 5.33111111111111,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 117
+		}
+	],
+	"wall_seconds": 19.15,
+	"zone": "heartbloom_gardens"
+}

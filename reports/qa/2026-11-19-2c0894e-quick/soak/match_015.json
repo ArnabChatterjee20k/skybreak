@@ -1,0 +1,96 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 8,
+			"20": 1
+		},
+		"light_1": {
+			"3": 11,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 4
+		},
+		"light_2": {
+			"3": 11,
+			"5": 1
+		},
+		"light_3": {
+			"3": 11,
+			"8": 1
+		},
+		"light_4": {
+			"4": 2
+		},
+		"smash+counter": {
+			"14": 1
+		}
+	},
+	"id": "115:skyhold_ruins:1v1:vexa,brann:45",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 115,
+	"sim_ms_per_tick": 0.715720833333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0116166435182095,
+		"finger_pops_per_fighter_minute": 14.2559399749896,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.977467327625056,
+		"pops_per_fighter_minute": 26.2609420591913
+	},
+	"view_ms_per_frame": 0.72647375,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 14,
+			"detail": "RightLowerLeg turned 2.89 rad in one frame (ATTACKING, move light_4, clip light_4)",
+			"fighter": 0,
+			"first_tick": 225,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 358,
+			"worst_value": 2.88957142829895
+		},
+		{
+			"check": "pop",
+			"count": 21,
+			"detail": "ApronFlap turned 3.09 rad in one frame (FLYING, move , clip hover)",
+			"fighter": 1,
+			"first_tick": 946,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 2246,
+			"worst_value": 3.09113574028015
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "35 pops in 1.3 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 2.66555555555556,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 35
+		}
+	],
+	"wall_seconds": 18.781,
+	"zone": "skyhold_ruins"
+}
