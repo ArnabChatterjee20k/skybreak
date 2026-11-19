@@ -16,6 +16,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-114 [developer] Shoulder offset: player pinned 1/3 from the screen edge
   (yaw corrected for pitch skew), shoulder flips when the opponent crosses the
   player rather than the screen centre, opponent-hidden metric + asserts.
+- T-D09b [desktop] VFX fixes from the GTX 1650 check of T-D09: shockwave no
+  longer cut by the ground, aura never darkens the body, flames break into
+  tongues, PR #18.
 
 ## Backlog
 
