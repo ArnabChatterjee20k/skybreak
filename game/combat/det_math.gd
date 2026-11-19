@@ -6,13 +6,12 @@ extends RefCounted
 ## glibc, MSVC and wasm, and Godot's Basis(axis, angle), Vector3.rotated(),
 ## slerp() and angle() call them. Everything here uses only IEEE-754 + - * /,
 ## sqrt, floor and fmod, which are exact or correctly rounded everywhere, in
-## 64-bit floats, with the fdlibm (FreeBSD msun) kernels and constants given
-## as exact bit patterns. Accuracy against correctly rounded results (see
-## tests/combat/test_det_math.gd and the T-D32 PR for the measured table):
-##   sin, cos: <= 1 ulp for |x| < 2^19 * PI/2 (range reduction by Cody-Waite).
-##   atan, atan2: <= 1 ulp. asin, acos: <= 2 ulp (atan2 of a sqrt).
-##   exp, log: <= 1 ulp. pow: exact by squaring for integer |y| <= 64, else
-##   exp(y * log(x)), relative error ~ (1 + |y * ln x|) ulp.
+## 64-bit floats, with the fdlibm (FreeBSD msun) kernels. Worst error against
+## glibc, measured by tools/diag/det_math_accuracy.gd:
+##   sin, cos: 1 ulp for |x| < 2^19 * PI/2 (Cody-Waite range reduction).
+##   atan, atan2, exp, log: 1 ulp. acos, asin: 2 ulp (atan2 of a sqrt).
+##   pow: exact by squaring for integer |y| <= 64; else the whole part by
+##   squaring times exp(fraction * log(x)), 4 ulp; |y| > 64: (1 + |y ln x|) ulp.
 ## The sign of zero is ignored by atan2, so -0.0 inputs give the +0.0 result.
 ## Constants are exact fdlibm bit patterns, built as integer / 2^k (Godot's own
 ## decimal parser is not correctly rounded); test_det_math.gd checks every one.

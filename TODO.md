@@ -18,6 +18,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   AI, -0.0 canonicalised each tick, lint test for banned calls, goldens re-blessed,
   `tools/diag/det_check.gd` hash chain. Open: `developer` runs det_check on Windows
   and compares with the Linux output in the PR (acceptance gate).
+  `test_re_simulating_8_frames_for_4_fighters_takes_at_most_4_ms` fails in the
+  cloud container on main too (5.2 ms); DetMath adds ~1 us per sin/cos/atan2 call.
 - T-D13 fix [desktop] Flat floor bit-identical to pre-terrain: floor epsilon and
   ledge drop only apply with an injected `ground_height`; golden per-tick
   fingerprints from f1d2dba (`tests/combat/test_flat_floor_equivalence.gd`).
