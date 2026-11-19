@@ -1,0 +1,75 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/net/duo_lobby.gd" id="1_lobby"]
+
+[node name="DuoLobby" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lobby")
+
+[node name="Panel" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -200.0
+offset_right = 260.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="Panel"]
+layout_mode = 2
+text = "Duo online: you and your partner vs AI"
+horizontal_alignment = 1
+
+[node name="AiRow" type="HBoxContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="AiLabel" type="Label" parent="Panel/AiRow"]
+layout_mode = 2
+text = "AI opponents"
+
+[node name="AiCount" type="SpinBox" parent="Panel/AiRow"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 1.0
+max_value = 2.0
+value = 2.0
+
+[node name="HostButton" type="Button" parent="Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Host a lobby"
+
+[node name="JoinRow" type="HBoxContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="CodeField" type="LineEdit" parent="Panel/JoinRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Lobby code"
+max_length = 5
+
+[node name="JoinButton" type="Button" parent="Panel/JoinRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Join"
+
+[node name="Status" type="Label" parent="Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Host a lobby, or type your partner's code and join."
+autowrap_mode = 3
+
+[node name="Readout" type="Label" parent="Panel"]
+unique_name_in_owner = true
+layout_mode = 2

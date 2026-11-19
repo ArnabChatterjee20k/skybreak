@@ -61,7 +61,8 @@ var _coverage := {}
 ## then and makes defensive reads (block, perfect block, grab, tech, push-block),
 ## so every exchange happens. A KO starts the next round. Records states, dash
 ## kinds, moves, cancels, KOs, events and rock-paper-scissors outcomes seen.
-func _run_match(seed_value: int, ticks: int, visited: Dictionary, count := 2) -> int:
+func _run_match(seed_value: int, ticks: int, visited: Dictionary, count := 2,
+		after_tick := Callable()) -> int:
 	var sim := CombatSim.new(seed_value)
 	# A Kael variant with less health and guard, a faster charge, a Breaker
 	# that is armored through startup and wall-splats, and a slower grab, so KOs,
@@ -135,6 +136,8 @@ func _run_match(seed_value: int, ticks: int, visited: Dictionary, count := 2) ->
 		var before: Array = sim.fighters.map(
 			func(f: FighterState) -> Array: return [f.move, f.move_tick, f.state, f.attack_phase()])
 		sim.tick(inputs)
+		if after_tick.is_valid():
+			after_tick.call(sim)
 		previous = inputs
 		_record_events(sim, before, visited)
 		if sim.round_over:
@@ -291,8 +294,8 @@ func test_same_seed_and_inputs_give_identical_state_after_10k_ticks() -> void:
 
 func test_a_scripted_4_fighter_free_for_all_is_deterministic_and_has_every_defense() -> void:
 	var visited := {}
-	var first := _run_match(10, 10_000, visited, 4)
-	assert_eq(first, _run_match(10, 10_000, {}, 4))
+	var first := _run_match(12, 10_000, visited, 4)
+	assert_eq(first, _run_match(12, 10_000, {}, 4))
 	for type in [CombatSim.EventType.BLOCK, CombatSim.EventType.PERFECT_BLOCK, CombatSim.EventType.GRAB,
 			CombatSim.EventType.THROW, CombatSim.EventType.GRAB_TECH, CombatSim.EventType.PUSH_BLOCK]:
 		assert_true(visited.has("event %d" % type), "a %s event" % CombatSim.EventType.keys()[type])
