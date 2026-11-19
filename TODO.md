@@ -132,6 +132,9 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D25 [desktop] Lyra playable: star-cartographer zoner built with FigureKit (merged mesh, star-map
+  cape on springs, astrolabe, Sky Lance + Ki Bow), Star-Step teleport, Star Trap, constellation beams,
+  roster entry with 3 palettes. Ranged moves are long hitboxes until MoveData can spawn sim projectiles.
 - T-123 [developer] Web build: single-threaded Compatibility/WebGL2 preset, `web` quality tier,
   `tools/web/build_web.sh` (checksummed templates), loading/click-to-start shell, headless
   Chromium smoke test, Appwrite Sites steps in `tools/web/DEPLOY.md` (not deployed yet). Follow-up: VFX,

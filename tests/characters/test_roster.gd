@@ -3,7 +3,8 @@ extends GutTest
 
 
 func test_the_roster_has_kael_and_vexa() -> void:
-	assert_eq(Roster.ids(), [&"kael", &"vexa"] as Array[StringName])
+	var ids := Roster.ids()
+	assert_eq(ids.slice(0, 2), [&"kael", &"vexa"] as Array[StringName], "Kael and Vexa first; later legends append")
 	for id in Roster.ids():
 		var character := Roster.character(id)
 		assert_not_null(character, "%s loads" % id)
