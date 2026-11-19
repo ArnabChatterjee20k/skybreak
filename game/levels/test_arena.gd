@@ -27,6 +27,8 @@ var match_hud := MatchHud.new()
 var match_audio := MatchAudio.new()
 ## Pickups, projectiles and weapons in hand (T-D14).
 var weapon_layer := WeaponLayer.new()
+## Round cues and music from the match flow (T-127).
+var match_cues := MatchCues.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -50,6 +52,7 @@ func _ready() -> void:
 	$Hud.add_child(impact_frame)
 	combat_feedback.impact_frame = impact_frame
 	$Hud.add_child(combo_counter)
+	match_flow.spawn_points = FIGHTER_STARTS
 	match_hud.sim = sim
 	match_hud.flow = match_flow
 	for view in _fighter_views:
@@ -59,6 +62,8 @@ func _ready() -> void:
 	add_child(vfx_prewarm)
 	match_audio.sim = sim
 	add_child(match_audio)
+	match_cues.zone = match_audio.default_zone
+	add_child(match_cues)
 	# After the first frame so the camera has its starting pose. A method,
 	# not a lambda: deferred calls on a freed arena are then simply dropped.
 	_start_prewarm.call_deferred()
@@ -104,6 +109,7 @@ func step_tick() -> void:
 	for i in _fighter_views.size():
 		_fighter_views[i].react_to_tick(sim, i)
 	match_flow.step(sim)
+	match_cues.after_tick(match_flow, sim)
 	match_audio.after_tick()
 
 

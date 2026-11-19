@@ -111,8 +111,8 @@ unit_size = 12.0
 max_distance = 250.0
 loop = false
 layers = Array[StringName]([&"impact_thump", &"impact_tail"])
-duck_db = -6.0
-duck_seconds = 0.35
+duck_db = -8.0
+duck_seconds = 0.6
 
 [sub_resource type="Resource" id="impact_thump"]
 script = ExtResource("cue")
@@ -211,8 +211,8 @@ unit_size = 12.0
 max_distance = 250.0
 loop = false
 layers = Array[StringName]([])
-duck_db = -6.0
-duck_seconds = 0.4
+duck_db = -8.0
+duck_seconds = 0.6
 
 [sub_resource type="Resource" id="armor_hit"]
 script = ExtResource("cue")
@@ -291,8 +291,8 @@ unit_size = 12.0
 max_distance = 250.0
 loop = false
 layers = Array[StringName]([])
-duck_db = -6.0
-duck_seconds = 0.4
+duck_db = -8.0
+duck_seconds = 0.7
 
 [sub_resource type="Resource" id="push_block"]
 script = ExtResource("cue")
@@ -411,8 +411,8 @@ unit_size = 12.0
 max_distance = 250.0
 loop = false
 layers = Array[StringName]([&"ko_tail"])
-duck_db = -12.0
-duck_seconds = 1.6
+duck_db = -14.0
+duck_seconds = 2.5
 
 [sub_resource type="Resource" id="ko_tail"]
 script = ExtResource("cue")

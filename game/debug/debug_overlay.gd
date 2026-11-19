@@ -1,6 +1,7 @@
 class_name DebugOverlay
 extends CanvasLayer
-## Frame-rate, frame-time and sim readout. F3 toggles it.
+## Frame-rate, frame-time and sim readout. Hidden by default; F3 toggles it
+## in debug builds only (never in player-facing exports, issue #79).
 
 const TOGGLE_KEY := KEY_F3
 
@@ -11,6 +12,7 @@ var _label: Label
 
 
 func _ready() -> void:
+	visible = false
 	layer = 100
 	_label = Label.new()
 	_label.position = Vector2(12, 8)
@@ -22,7 +24,7 @@ func _ready() -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
-	if key.pressed and not key.echo and key.physical_keycode == TOGGLE_KEY:
+	if OS.is_debug_build() and key.pressed and not key.echo and key.physical_keycode == TOGGLE_KEY:
 		visible = not visible
 
 
