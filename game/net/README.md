@@ -102,17 +102,25 @@ on the official 4.7.2 linux build: `initialize()` reports
 `_gdvirtual__initialize_call` not implemented. `WebRtcTransport.is_available()`
 returns false there, and the lobby says so.
 
-The PC needs the official **godotengine/webrtc-native** GDExtension, release
-**1.2.2**:
+The PC needs the official **godotengine/webrtc-native** GDExtension. The Windows
+x86_64 build of release **1.2.2-stable** is committed under `addons/webrtc_native/`
+(debug and release DLLs plus `webrtc_native.gdextension`), so Windows runs and
+Windows exports work with no setup. Verified on the GTX 1650 PC with 4.7.2:
+`ClassDB.class_exists("WebRTCLibPeerConnection")` is true,
+`WebRTCPeerConnection.initialize()` returns OK and `WebRtcTransport.is_available()`
+is true.
 
-1. From <https://github.com/godotengine/webrtc-native/releases/tag/1.2.2>, download
-   the asset `godot-extension-webrtc_native.zip`.
-2. Unzip it and vendor its contents under `addons/webrtc_native/` (developer owns
-   `addons/`). The `.gdextension` file there uses relative library paths and
-   `compatibility_minimum = 4.3`, so it loads in 4.7.2 as is, with no path edits.
-3. Restart the editor. `ClassDB.class_exists("WebRTCLibPeerConnection")` is then
-   true, `WebRtcTransport.is_available()` returns true, and exports bundle the
-   library.
+Other desktop platforms (Linux, macOS) are a local install step:
+
+1. From <https://github.com/godotengine/webrtc-native/releases>, tag `1.2.2-stable`,
+   download `godot-extension-webrtc_native.zip`.
+2. Unzip it. It holds `addons/webrtc_native/` with `webrtc_native.gdextension`
+   and `lib/` binaries for every platform. Copy that folder over the committed
+   one (don't commit the extra libraries). The `.gdextension` library paths are
+   relative (`lib/...`), so they need no edits. `compatibility_minimum` is 4.3.
+3. Restart the editor.
+
+The web build uses the browser's native WebRTC and needs no extension.
 
 Tests never need the extension: they run over `LoopbackTransport`.
 
