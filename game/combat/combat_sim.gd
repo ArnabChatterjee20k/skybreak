@@ -27,6 +27,15 @@ enum EventType {
 	THROW, ## A held target was thrown: damage and blowback.
 	GRAB_TECH, ## A grab was teched, or two grabs clashed: both pushed apart, no damage.
 	PUSH_BLOCK, ## A push-block shoved the target out to mid range.
+	# Weapons (T-D14). Entries: {type, fighter (or -1), position, weapon (Weapon.Kind), id (pickup/projectile)}.
+	PICKUP_SPAWN, ## A weapon drop was telegraphed (light pillar at position).
+	PICKUP, ## fighter picked up the weapon; id is the pickup.
+	PICKUP_DESPAWN, ## A pickup timed out.
+	WEAPON_SWITCH, ## fighter switched to weapon (NONE = unarmed).
+	WEAPON_THROW, ## fighter threw weapon; id is the projectile.
+	WEAPON_DROP, ## fighter dropped weapon (KO, guard break, knockdown, replaced); id is the pickup.
+	FIRE, ## fighter fired weapon; id is the first projectile, count how many.
+	PROJECTILE_HIT, ## Projectile id touched target: blocked/reflected flags; HIT/BLOCK/KO follow as usual.
 }
 
 const _DASH := FighterInput.Action.DASH
@@ -35,6 +44,13 @@ const _CHARGE := FighterInput.Action.CHARGE
 const _LIGHT := FighterInput.Action.LIGHT
 const _HEAVY := FighterInput.Action.HEAVY
 const _GRAB := FighterInput.Action.GRAB
+const _PICKUP := FighterInput.Action.PICKUP
+const _THROW := FighterInput.Action.THROW
+const _WEAPON_NEXT := FighterInput.Action.WEAPON_NEXT
+const _WEAPON_PREVIOUS := FighterInput.Action.WEAPON_PREVIOUS
+## Projectiles spawn this far in front of the fighter's centre, and this high.
+const _MUZZLE_FORWARD := 0.8
+const _MUZZLE_UP := 0.3
 const _UNIT := FighterState.METER_UNIT
 ## Presses that do not interrupt charging.
 const _CHARGE_SAFE_ACTIONS := FighterInput.Action.CHARGE | FighterInput.Action.LOCK_TOGGLE
@@ -106,6 +122,20 @@ var hit_tuning: HitTuning
 ## point), move_id, damage (display units), hitstop, knockback_type, counter}.
 ## Replaced by a new array at the start of every tick.
 var events: Array[Dictionary] = []
+## Weapon spawner constants and zone tables. Configuration, like tuning.
+var pickup_tuning := PickupTuning.new()
+## Zone the match is in; picks the spawn table. Set before the first tick.
+var zone: StringName = &"skyhold_ruins"
+## True to drop weapons from the sky; off by default (a "pure duel"), on in the arena.
+var pickups_enabled: bool = false
+## Weapons in the world, and shots/thrown weapons in flight.
+var pickups: Array[WeaponPickup] = []
+var projectiles: Array[Projectile] = []
+## Next pickup/projectile id.
+var next_entity_id: int = 1
+## Tick of the next drop; -1 until the first tick schedules it.
+var next_spawn_tick: int = -1
+var last_spawn_kind: Weapon.Kind = Weapon.Kind.NONE
 
 
 func _init(seed_value: int = 0, movement_tuning: MovementTuning = null,
@@ -150,6 +180,8 @@ func tick(inputs: Array[FighterInput]) -> void:
 	_follow_vanish_anchors()
 	if not round_over:
 		_resolve_hits(frozen)
+	_step_projectiles()
+	_step_pickups()
 	current_tick += 1
 
 
@@ -157,6 +189,7 @@ func tick(inputs: Array[FighterInput]) -> void:
 func start_round() -> void:
 	round_over = false
 	round_winner = -1
+	projectiles = []
 	for fighter in fighters:
 		_reset_round_meters(fighter)
 		fighter.hitstop_ticks = 0
@@ -175,9 +208,14 @@ func start_round() -> void:
 ## Hash of everything that defines the sim state; equal hashes mean equal states.
 func state_hash() -> int:
 	# Events are this tick's output, but cheap to cover, so replays can compare them too.
-	var parts: Array = [current_tick, rng.state, round_over, round_winner, events]
+	var parts: Array = [current_tick, rng.state, round_over, round_winner, events,
+		zone, pickups_enabled, next_entity_id, next_spawn_tick, last_spawn_kind]
 	for fighter in fighters:
 		parts.append_array(fighter.state_values())
+	for pickup in pickups:
+		parts.append_array(pickup.state_values())
+	for projectile in projectiles:
+		parts.append_array(projectile.state_values())
 	return hash(var_to_bytes(parts))
 
 
@@ -263,6 +301,7 @@ func apply_damage(target_index: int, attacker_index: int, amount: int) -> void:
 	if attacker_index >= 0:
 		_add_burst(fighters[attacker_index], dealt * meter_tuning.burst_per_1000_damage_dealt / 1000)
 	if target.is_knocked_out():
+		_drop_all_weapons(target_index)
 		_end_round_if_decided()
 	elif not target.last_stand_used and target.health * 100 \
 			< target.stats.max_health * _UNIT * meter_tuning.last_stand_health_percent:
@@ -278,6 +317,7 @@ func apply_guard_damage(fighter_index: int, amount: int) -> void:
 	fighter.guard = maxi(fighter.guard - amount * _UNIT, 0)
 	fighter.ticks_since_block = 0
 	if fighter.guard == 0:
+		_drop_held_weapon(fighter_index)
 		fighter.blocking = false
 		fighter.velocity = Vector3.ZERO
 		fighter.dash_kind = FighterState.DashKind.NONE
@@ -347,9 +387,11 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 	var state_before := fighter.state
 	_record_presses(fighter, input)
 	_update_lock_on(index, input)
+	_count_weapon_timers(fighter)
 	var wish := _wish_direction(index, input)
 	_finish_timed_action(index, input)
 	if not round_over:
+		_handle_weapon_inputs(index)
 		_start_buffered_action(index, input, wish)
 		_start_block(index, input)
 		_start_grab(index)
@@ -380,6 +422,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 				FighterState.State.KNOCKDOWN, FighterState.State.THROWING:
 			fighter.velocity = Vector3.ZERO
 	_integrate(index)
+	_drift_if_smitten(fighter)
 	if fighter.state == FighterState.State.HITSTUN:
 		_bounce_or_knock_down(fighter)
 	_clamp_to_arena(fighter)
@@ -508,7 +551,8 @@ func _start_block(index: int, input: FighterInput) -> void:
 func _start_grab(index: int) -> void:
 	var fighter := fighters[index]
 	var grab := _move_set(fighter).grab
-	if grab == null or fighter.state not in _ATTACK_START_STATES or not consume_buffered(index, _GRAB):
+	if grab == null or fighter.state not in _ATTACK_START_STATES or not _may_attack(fighter) \
+			or not consume_buffered(index, _GRAB):
 		return
 	_update_facing(index)
 	_aim_at_target(index)
@@ -582,11 +626,12 @@ func _start_attack(index: int, input: FighterInput, wish: Vector3) -> void:
 		if is_buffered(index, _HEAVY) and can_cancel_into(index, MoveData.CancelLevel.HEAVY):
 			_begin_heavy(index, input, wish)
 		return
-	if fighter.state not in _ATTACK_START_STATES:
+	if fighter.state not in _ATTACK_START_STATES or not _may_attack(fighter):
 		return
 	if is_buffered(index, _HEAVY):
 		_begin_heavy(index, input, wish)
-	elif is_buffered(index, _LIGHT):
+	elif is_buffered(index, _LIGHT) \
+			or (fighter.held_weapon() == Weapon.Kind.STORM_REPEATER and input.is_held(_LIGHT)):
 		_begin_light(index, 1)
 
 
@@ -594,7 +639,11 @@ func _start_attack(index: int, input: FighterInput, wish: Vector3) -> void:
 func _begin_light(index: int, number: int) -> bool:
 	var fighter := fighters[index]
 	var lights := _move_set(fighter).light_string
-	if number > lights.size() or not _spend_ki(fighter, lights[number - 1].ki_cost):
+	if number > lights.size():
+		return false
+	if WeaponMoves.is_shot(lights[number - 1]) and not _can_fire(index):
+		return false
+	if not _spend_ki(fighter, lights[number - 1].ki_cost):
 		return false
 	consume_buffered(index, _LIGHT)
 	_update_facing(index)
@@ -691,6 +740,8 @@ func _advance_attack(index: int, input: FighterInput) -> void:
 	if fighter.move_tick >= fighter.move_total_ticks():
 		_enter_free_state(fighter)
 		return
+	if WeaponMoves.is_shot(move) and fighter.move_tick == move.startup_ticks:
+		_fire(index)
 	if move.can_charge() and fighter.move_tick < move.startup_ticks:
 		# Charge counts only while the button stays held since the press.
 		if input.is_held(_HEAVY) and fighter.charge_ticks == fighter.move_tick:
@@ -934,6 +985,7 @@ func _bounce_or_knock_down(fighter: FighterState) -> void:
 	fighter.velocity = Vector3.ZERO
 	fighter.enter_state(FighterState.State.KNOCKDOWN)
 	fighter.stun_ticks = hit_tuning.knockdown_ticks
+	_drop_held_weapon(fighters.find(fighter))
 
 
 ## Finds every hitbox touching an opponent this tick, then applies them in
@@ -1045,7 +1097,8 @@ func _faces(fighter: FighterState, from: Vector3) -> bool:
 
 
 ## Damage with combo scaling, then hitstun and knockback unless armored; KO ends it.
-func _apply_hit(contact: Dictionary) -> void:
+## A projectile hit (from_projectile) freezes only the target and opens no cancel window.
+func _apply_hit(contact: Dictionary, from_projectile: bool = false) -> void:
 	var attacker_index: int = contact.attacker
 	var target_index: int = contact.target
 	var attacker := fighters[attacker_index]
@@ -1057,7 +1110,8 @@ func _apply_hit(contact: Dictionary) -> void:
 	var damage := scaled_damage(move, combo_hit)
 	var combo_damage := target.combo_damage if continuing else 0
 	apply_damage(target_index, attacker_index, damage)
-	register_contact(attacker_index, false)
+	if not from_projectile:
+		register_contact(attacker_index, false)
 	add_landed_hit_ki(attacker_index)
 	_add_ki(attacker, move.ki_gain * _UNIT)
 	_add_burst(attacker, move.burst_gain * _UNIT)
@@ -1076,14 +1130,14 @@ func _apply_hit(contact: Dictionary) -> void:
 	var knocked_out := target.is_knocked_out()
 	if knocked_out:
 		hitstop = maxi(hitstop, hit_tuning.knockout_hitstop_ticks)
-	_freeze(attacker, target, hitstop)
+	_freeze(target if from_projectile else attacker, target, hitstop)
 	events.append(_event(type, contact, damage, hitstop, knockback))
 	if knocked_out:
 		events.append(_event(EventType.KO, contact, damage, hitstop, knockback))
 
 
 ## Guard damage and blockstun; a guard broken by this block stuns instead.
-func _apply_block(contact: Dictionary) -> void:
+func _apply_block(contact: Dictionary, from_projectile: bool = false) -> void:
 	var attacker_index: int = contact.attacker
 	var target_index: int = contact.target
 	var target := fighters[target_index]
@@ -1092,7 +1146,8 @@ func _apply_block(contact: Dictionary) -> void:
 	if target.guard < move.guard_break_below * _UNIT:
 		guard_damage = maxi(guard_damage, ceili(float(target.guard) / _UNIT))
 	apply_guard_damage(target_index, guard_damage)
-	register_contact(attacker_index, true)
+	if not from_projectile:
+		register_contact(attacker_index, true)
 	add_blocked_hit_ki(attacker_index)
 	var hitstop := move.hitstop_ticks * hit_tuning.blocked_hitstop_percent / 100
 	var broken := target.state == FighterState.State.GUARD_BROKEN
@@ -1100,7 +1155,7 @@ func _apply_block(contact: Dictionary) -> void:
 		hitstop = maxi(hitstop, hit_tuning.guard_break_hitstop_ticks)
 	else:
 		_enter_stun(target, FighterState.State.BLOCKSTUN, move.blockstun_ticks)
-	_freeze(fighters[attacker_index], target, hitstop)
+	_freeze(target if from_projectile else fighters[attacker_index], target, hitstop)
 	events.append(_event(EventType.BLOCK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
 	if broken:
 		events.append(_event(EventType.GUARD_BREAK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
@@ -1525,9 +1580,11 @@ func _add_burst(fighter: FighterState, units: int) -> void:
 
 
 func _move_set(fighter: FighterState) -> MoveSet:
-	if fighter.stats.move_set:
-		return fighter.stats.move_set
-	return (DEFAULT_FIGHTER_STATS as FighterStats).move_set
+	var unarmed := fighter.stats.move_set
+	if unarmed == null:
+		unarmed = (DEFAULT_FIGHTER_STATS as FighterStats).move_set
+	var held := fighter.held_weapon()
+	return unarmed if held == Weapon.Kind.NONE else WeaponMoves.move_set(held, unarmed)
 
 
 ## Standing, moving, falling or flying: able to start a new action.
@@ -1544,3 +1601,432 @@ static func _action_index(action: int) -> int:
 			return index
 	assert(false, "action must be a single FighterInput.Action bit")
 	return -1
+
+
+# Weapons (T-D14): pickups, inventory, firing, projectiles, the spawner.
+
+## A standing fighter's origin sits this far above the floor (capsule centre).
+const _FIGHTER_HALF_HEIGHT := 1.0
+## States a smitten fighter drifts in.
+const _NO_DRIFT_STATES: Array[FighterState.State] = [
+	FighterState.State.GRABBED, FighterState.State.THROWING,
+	FighterState.State.VANISHING, FighterState.State.KNOCKDOWN,
+]
+
+
+## Height of the floor fighters stand on.
+func floor_height() -> float:
+	return tuning.ground_height - _FIGHTER_HALF_HEIGHT
+
+
+## Index in pickups of the nearest pickup the fighter can grab, or -1.
+func pickup_in_reach(fighter_index: int) -> int:
+	var fighter := fighters[fighter_index]
+	var best := -1
+	var best_distance := pickup_tuning.pickup_reach * pickup_tuning.pickup_reach
+	for i in pickups.size():
+		if not pickups[i].can_be_picked_up():
+			continue
+		var distance := fighter.position.distance_squared_to(pickups[i].position)
+		if distance <= best_distance:
+			best = i
+			best_distance = distance
+	return best
+
+
+func _count_weapon_timers(fighter: FighterState) -> void:
+	fighter.switch_lockout = maxi(fighter.switch_lockout - 1, 0)
+	fighter.reload_ticks = maxi(fighter.reload_ticks - 1, 0)
+	if fighter.smitten_ticks > 0:
+		fighter.smitten_ticks -= 1
+		if fighter.smitten_ticks == 0:
+			fighter.smitten_by = -1
+	fighter.ticks_since_smitten = mini(fighter.ticks_since_smitten + 1,
+		pickup_tuning.smitten_repeat_window_ticks)
+
+
+## Not switching weapons and not Smitten.
+func _may_attack(fighter: FighterState) -> bool:
+	return fighter.switch_lockout == 0 and fighter.smitten_ticks == 0
+
+
+## G picks up (or throws with nothing in reach), THROW throws, next/previous switch. Free states only.
+func _handle_weapon_inputs(index: int) -> void:
+	var fighter := fighters[index]
+	if not _is_free(fighter):
+		return
+	if consume_buffered(index, _PICKUP):
+		var in_reach := pickup_in_reach(index)
+		if in_reach >= 0:
+			_pick_up(index, in_reach)
+			return
+		if fighter.held_weapon() != Weapon.Kind.NONE and _may_attack(fighter):
+			_throw_weapon(index)
+			return
+	if consume_buffered(index, _THROW):
+		if fighter.held_weapon() != Weapon.Kind.NONE and _may_attack(fighter):
+			_throw_weapon(index)
+			return
+	if consume_buffered(index, _WEAPON_NEXT):
+		_switch_weapon(index, 1)
+	elif consume_buffered(index, _WEAPON_PREVIOUS):
+		_switch_weapon(index, -1)
+
+
+## Takes pickups[pickup_index] into the inventory and into the hand. With all
+## slots full it replaces the weapon in hand (slot 1 when unarmed), which drops.
+func _pick_up(index: int, pickup_index: int) -> void:
+	var fighter := fighters[index]
+	var pickup := pickups[pickup_index]
+	pickups.remove_at(pickup_index)
+	var slot := -1
+	for i in fighter.weapons.size():
+		if fighter.weapons[i] == Weapon.Kind.NONE:
+			slot = i
+			break
+	if slot < 0:
+		slot = maxi(fighter.active_slot, 0)
+		_drop_slot(index, slot)
+	fighter.weapons[slot] = pickup.kind
+	fighter.ammo[slot] = pickup.ammo
+	fighter.active_slot = slot
+	fighter.reload_ticks = 0
+	fighter.begin_move(WeaponMoves.pickup_move())
+	events.append(_weapon_event(EventType.PICKUP, index, pickup.position, pickup.kind, pickup.id))
+
+
+## Cycles Unarmed and the filled slots; attacks wait out the switch lockout.
+func _switch_weapon(index: int, step: int) -> void:
+	var fighter := fighters[index]
+	var options: Array[int] = [-1]
+	for i in fighter.weapons.size():
+		if fighter.weapons[i] != Weapon.Kind.NONE:
+			options.append(i)
+	var next: int = options[posmod(options.find(fighter.active_slot) + step, options.size())]
+	if next == fighter.active_slot:
+		return
+	fighter.active_slot = next
+	fighter.switch_lockout = pickup_tuning.switch_lockout_ticks
+	events.append(_weapon_event(EventType.WEAPON_SWITCH, index, fighter.position, fighter.held_weapon(), -1))
+
+
+## Throws the weapon in hand at the target as a projectile; it lands as a pickup.
+func _throw_weapon(index: int) -> void:
+	var fighter := fighters[index]
+	var slot := fighter.active_slot
+	var kind := fighter.held_weapon()
+	var ammo := fighter.ammo[slot]
+	fighter.weapons[slot] = Weapon.Kind.NONE
+	fighter.ammo[slot] = 0
+	fighter.active_slot = -1
+	fighter.reload_ticks = 0
+	_update_facing(index)
+	var stats := Weapon.THROWN_STATS
+	var projectile := _spawn_projectile(index, kind, _aim_direction(index) * float(stats.speed),
+		stats.gravity, stats.radius, stats.lifetime, WeaponMoves.thrown_move(), Weapon.Effect.NONE)
+	projectile.thrown = true
+	projectile.ammo = ammo
+	fighter.begin_move(WeaponMoves.throw_move())
+	events.append(_weapon_event(EventType.WEAPON_THROW, index, projectile.position, kind, projectile.id))
+
+
+func _drop_held_weapon(index: int) -> void:
+	if index >= 0 and fighters[index].active_slot >= 0:
+		_drop_slot(index, fighters[index].active_slot)
+
+
+func _drop_all_weapons(index: int) -> void:
+	for slot in fighters[index].weapons.size():
+		if fighters[index].weapons[slot] != Weapon.Kind.NONE:
+			_drop_slot(index, slot)
+
+
+## Empties a slot; the weapon falls from the fighter as a pickup (an empty gun just vanishes).
+func _drop_slot(index: int, slot: int) -> void:
+	var fighter := fighters[index]
+	var kind := fighter.weapons[slot] as Weapon.Kind
+	var ammo := fighter.ammo[slot]
+	fighter.weapons[slot] = Weapon.Kind.NONE
+	fighter.ammo[slot] = 0
+	if fighter.active_slot == slot:
+		fighter.active_slot = -1
+		fighter.reload_ticks = 0
+	var pickup := _drop_pickup(kind, ammo, fighter.position)
+	events.append(_weapon_event(EventType.WEAPON_DROP, index, fighter.position, kind,
+		pickup.id if pickup else -1))
+
+
+## A dropped or landed weapon falling from position; null for an empty ranged weapon.
+func _drop_pickup(kind: Weapon.Kind, ammo: int, at: Vector3) -> WeaponPickup:
+	if kind == Weapon.Kind.NONE or (Weapon.is_ranged(kind) and ammo <= 0):
+		return null
+	var pickup := WeaponPickup.new()
+	pickup.id = _new_entity_id()
+	pickup.kind = kind
+	pickup.ammo = ammo
+	pickup.position = _inside_arena(at)
+	pickup.position.y = maxf(pickup.position.y, floor_height() + pickup_tuning.rest_height)
+	pickup.phase = WeaponPickup.Phase.FALLING
+	pickup.ticks_left = pickup_tuning.dropped_lifetime_ticks
+	pickup.dropped = true
+	pickups.append(pickup)
+	return pickup
+
+
+## True if the ranged weapon in hand can shoot now. An empty one is thrown instead.
+func _can_fire(index: int) -> bool:
+	var fighter := fighters[index]
+	if fighter.ammo[fighter.active_slot] <= 0:
+		_throw_weapon(index)
+		return false
+	return fighter.reload_ticks == 0
+
+
+## Spends one ammo and fires the weapon's pellets along the aim, with seeded spread.
+func _fire(index: int) -> void:
+	var fighter := fighters[index]
+	var kind := fighter.held_weapon()
+	if not Weapon.is_ranged(kind) or fighter.ammo[fighter.active_slot] <= 0:
+		return
+	var stats: Dictionary = Weapon.RANGED_STATS[kind]
+	var left := fighter.ammo[fighter.active_slot] - 1
+	fighter.ammo[fighter.active_slot] = left
+	if stats.magazine > 0 and left > 0 and left % stats.magazine == 0:
+		fighter.reload_ticks = stats.reload
+	var aim := _aim_direction(index)
+	var first_id := next_entity_id
+	var muzzle := Vector3.ZERO
+	for _pellet in stats.pellets:
+		var direction := _spread(aim, stats.spread)
+		var projectile := _spawn_projectile(index, kind, direction * float(stats.speed), stats.gravity,
+			stats.radius, stats.lifetime, WeaponMoves.projectile_move(kind), stats.effect)
+		muzzle = projectile.position
+	var event := _weapon_event(EventType.FIRE, index, muzzle, kind, first_id)
+	event["count"] = stats.pellets
+	events.append(event)
+
+
+## Unit aim from the muzzle: at the locked target's centre, else straight along the facing.
+func _aim_direction(index: int) -> Vector3:
+	var fighter := fighters[index]
+	var forward := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+	if fighter.lock_on_target >= 0:
+		var to_target := fighters[fighter.lock_on_target].position - _muzzle(fighter)
+		if to_target.length_squared() > 0.0001:
+			return to_target.normalized()
+	return forward
+
+
+func _muzzle(fighter: FighterState) -> Vector3:
+	var forward := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+	return fighter.position + forward * _MUZZLE_FORWARD + Vector3.UP * _MUZZLE_UP
+
+
+## Turns direction by a random yaw and half as much pitch, up to spread radians.
+func _spread(direction: Vector3, spread: float) -> Vector3:
+	if spread <= 0.0:
+		return direction
+	var yaw := rng.randf_range(-spread, spread)
+	var pitch := rng.randf_range(-spread, spread) * 0.5
+	var right := direction.cross(Vector3.UP)
+	right = right.normalized() if right.length_squared() > 0.0001 else Vector3.RIGHT
+	return (Basis(Vector3.UP, yaw) * Basis(right, pitch) * direction).normalized()
+
+
+func _spawn_projectile(owner: int, weapon: Weapon.Kind, velocity: Vector3, gravity: float,
+		radius: float, lifetime: int, move: MoveData, effect: Weapon.Effect) -> Projectile:
+	var projectile := Projectile.new()
+	projectile.id = _new_entity_id()
+	projectile.owner = owner
+	projectile.weapon = weapon
+	projectile.position = _muzzle(fighters[owner])
+	projectile.velocity = velocity
+	projectile.gravity = gravity
+	projectile.radius = radius
+	projectile.ticks_left = lifetime
+	projectile.move = move
+	projectile.effect = effect
+	projectiles.append(projectile)
+	return projectile
+
+
+## Moves every projectile along its path, hitting the first body it sweeps through.
+## Thrown weapons land as pickups when they stop.
+func _step_projectiles() -> void:
+	var kept: Array[Projectile] = []
+	for projectile in projectiles:
+		var from := projectile.position
+		projectile.velocity.y -= projectile.gravity * TICK_SECONDS
+		projectile.position += projectile.velocity * TICK_SECONDS
+		projectile.ticks_left -= 1
+		var spent := false
+		if not round_over:
+			spent = _projectile_contact(projectile, from)
+		var outside := projectile.position != _inside_arena(projectile.position) \
+			or projectile.position.y <= floor_height()
+		if not spent and projectile.ticks_left > 0 and not outside:
+			kept.append(projectile)
+		elif projectile.thrown:
+			_drop_pickup(projectile.weapon, projectile.ammo, projectile.position)
+	projectiles = kept
+
+
+## Applies the first hit along this tick's path from from. True if the projectile is used up.
+func _projectile_contact(projectile: Projectile, from: Vector3) -> bool:
+	for target_index in fighters.size():
+		var target := fighters[target_index]
+		if target_index == projectile.owner or not target.can_be_hit():
+			continue
+		var body := target.hurtbox()
+		var points := _closest_points(from, projectile.position, body.start, body.end)
+		var reach: float = projectile.radius + body.radius
+		if points[0].distance_squared_to(points[1]) > reach * reach:
+			continue
+		if target.is_invincible_to(target.is_upper_body(points[0])):
+			continue
+		var travel := projectile.velocity
+		var contact := {
+			"type": EventType.HIT, "attacker": projectile.owner, "target": target_index,
+			"move": projectile.move, "yaw": atan2(-travel.x, -travel.z), "pitch": 0.0, "side": 1,
+			"position": points[1] + (points[0] - points[1]).limit_length(body.radius),
+		}
+		var event := _weapon_event(EventType.PROJECTILE_HIT, target_index, contact.position,
+			projectile.weapon, projectile.id)
+		event["attacker"] = projectile.owner
+		event["blocked"] = false
+		event["reflected"] = false
+		if _perfect_blocks(target, from):
+			target.perfect_block_armed = false
+			add_perfect_block_burst(target_index)
+			event["reflected"] = true
+			events.append(event)
+			if projectile.thrown:
+				return true
+			projectile.owner = target_index
+			projectile.velocity = -projectile.velocity
+			projectile.position = from
+			return false
+		if _blocks(target, from):
+			event["blocked"] = true
+			events.append(event)
+			_apply_block(contact, true)
+			return true
+		if target.is_armored():
+			contact.type = EventType.ARMOR
+		elif target.attack_phase() in [FighterState.AttackPhase.STARTUP, FighterState.AttackPhase.HOLD]:
+			contact.type = EventType.COUNTER
+		events.append(event)
+		_apply_hit(contact, true)
+		if projectile.effect == Weapon.Effect.SMITTEN and not target.is_knocked_out():
+			_make_smitten(target_index, projectile.owner)
+		return true
+	return false
+
+
+## Smitten: drifts toward the shooter and cannot attack; a repeat soon after lasts half as long.
+func _make_smitten(target_index: int, shooter: int) -> void:
+	var target := fighters[target_index]
+	var ticks := pickup_tuning.smitten_ticks
+	if target.ticks_since_smitten < pickup_tuning.smitten_repeat_window_ticks:
+		ticks /= 2
+	target.smitten_ticks = ticks
+	target.smitten_by = shooter
+	target.ticks_since_smitten = 0
+
+
+func _drift_if_smitten(fighter: FighterState) -> void:
+	if fighter.smitten_ticks <= 0 or fighter.smitten_by < 0 or fighter.state in _NO_DRIFT_STATES:
+		return
+	var to_shooter := fighters[fighter.smitten_by].position - fighter.position
+	if to_shooter.length() > tuning.rush_stop_distance:
+		fighter.position += to_shooter.normalized() * pickup_tuning.smitten_drift_speed * TICK_SECONDS
+
+
+## Schedules and spawns drops, then moves pickups through telegraph, fall and rest, and despawns old ones.
+func _step_pickups() -> void:
+	if next_spawn_tick < 0:
+		next_spawn_tick = current_tick + pickup_tuning.first_spawn_ticks
+	if pickups_enabled and not round_over and current_tick >= next_spawn_tick and not fighters.is_empty():
+		next_spawn_tick = current_tick + rng.randi_range(pickup_tuning.spawn_interval_min_ticks,
+			pickup_tuning.spawn_interval_max_ticks)
+		var spawned := 0
+		for pickup in pickups:
+			if not pickup.dropped:
+				spawned += 1
+		if spawned < pickup_tuning.max_pickups:
+			_spawn_pickup()
+	var kept: Array[WeaponPickup] = []
+	var rest := floor_height() + pickup_tuning.rest_height
+	for pickup in pickups:
+		pickup.phase_ticks += 1
+		pickup.ticks_left -= 1
+		match pickup.phase:
+			WeaponPickup.Phase.TELEGRAPH:
+				if pickup.phase_ticks >= pickup_tuning.telegraph_ticks:
+					pickup.phase = WeaponPickup.Phase.FALLING
+					pickup.phase_ticks = 0
+			WeaponPickup.Phase.FALLING:
+				pickup.fall_speed = maxf(pickup.fall_speed - pickup_tuning.drop_gravity * TICK_SECONDS,
+					-pickup_tuning.drop_max_speed)
+				pickup.position.y += pickup.fall_speed * TICK_SECONDS
+				if pickup.position.y <= rest:
+					pickup.position.y = rest
+					pickup.fall_speed = 0.0
+					pickup.phase = WeaponPickup.Phase.GROUNDED
+					pickup.phase_ticks = 0
+		if pickup.ticks_left <= 0:
+			events.append(_weapon_event(EventType.PICKUP_DESPAWN, -1, pickup.position, pickup.kind, pickup.id))
+			continue
+		kept.append(pickup)
+	pickups = kept
+
+
+## A sky drop from the zone's table, 25-60 m from the fighters' midpoint.
+func _spawn_pickup() -> void:
+	var middle := Vector3.ZERO
+	for fighter in fighters:
+		middle += fighter.position / fighters.size()
+	var angle := rng.randf() * TAU
+	var distance := rng.randf_range(pickup_tuning.spawn_distance_min, pickup_tuning.spawn_distance_max)
+	var pickup := WeaponPickup.new()
+	pickup.id = _new_entity_id()
+	pickup.kind = _pick_kind(pickup_tuning.table_for(zone))
+	pickup.ammo = Weapon.full_ammo(pickup.kind)
+	pickup.position = _inside_arena(middle + Vector3(sin(angle), 0.0, cos(angle)) * distance)
+	pickup.position.y = floor_height() + pickup_tuning.drop_height
+	pickup.phase = WeaponPickup.Phase.TELEGRAPH
+	pickup.ticks_left = pickup_tuning.spawn_lifetime_ticks
+	pickups.append(pickup)
+	last_spawn_kind = pickup.kind
+	events.append(_weapon_event(EventType.PICKUP_SPAWN, -1, pickup.position, pickup.kind, pickup.id))
+
+
+## Weighted pick from a spawn table, never the same kind twice in a row.
+func _pick_kind(table: Dictionary) -> Weapon.Kind:
+	var total := 0
+	for kind: int in table:
+		if kind != last_spawn_kind or table.size() == 1:
+			total += table[kind]
+	var roll := rng.randi_range(0, total - 1)
+	for kind: int in table:
+		if kind == last_spawn_kind and table.size() > 1:
+			continue
+		roll -= table[kind]
+		if roll < 0:
+			return kind as Weapon.Kind
+	return table.keys()[0] as Weapon.Kind
+
+
+## Planar position kept a little inside the arena walls.
+func _inside_arena(at: Vector3) -> Vector3:
+	var half := tuning.arena_half_size - 1.0
+	return Vector3(clampf(at.x, -half, half), at.y, clampf(at.z, -half, half))
+
+
+func _new_entity_id() -> int:
+	next_entity_id += 1
+	return next_entity_id - 1
+
+
+func _weapon_event(type: EventType, fighter_index: int, at: Vector3, weapon: int, id: int) -> Dictionary:
+	return {"type": type, "fighter": fighter_index, "position": at, "weapon": weapon, "id": id}

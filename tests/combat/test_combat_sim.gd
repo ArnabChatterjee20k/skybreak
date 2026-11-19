@@ -317,7 +317,8 @@ func test_the_scripted_10k_tick_matches_cover_every_kael_move_strings_charge_and
 
 func test_the_scripted_10k_tick_matches_land_every_event_knockback_and_defense_outcome() -> void:
 	var visited: Dictionary = _coverage
-	for type in CombatSim.EventType.values():
+	# Weapon events (PICKUP_SPAWN and later) are covered by test_weapons.gd's bot match.
+	for type in range(CombatSim.EventType.PICKUP_SPAWN):
 		assert_true(visited.has("event %d" % type), "a %s event" % CombatSim.EventType.keys()[type])
 	for kind in [MoveData.KnockbackType.NONE, MoveData.KnockbackType.BLOWBACK,
 			MoveData.KnockbackType.LAUNCH, MoveData.KnockbackType.SPIKE,

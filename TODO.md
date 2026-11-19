@@ -129,6 +129,14 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
+  per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
+  switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
+  bow/revolver/repeater/scatter cannon/Heartstring Bow as sim projectiles,
+  procedural weapon models on Kael's hands, pickup and projectile visuals,
+  WeaponBot. Open: bow draw levels, Heartstring tether, chakram return flight,
+  perf benchmark on the GTX 1650, HUD weapon strip.
+
 - T-D21 [desktop] Adaptive background score: menu, character select, seven zone
   battle themes as synced calm/combat/climax stems, victory and KO stingers,
   composed as code and rendered offline; `MusicDirector` autoload switches
