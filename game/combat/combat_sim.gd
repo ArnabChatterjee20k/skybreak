@@ -1188,8 +1188,14 @@ func _bounce_off_arena_walls(fighter: FighterState) -> void:
 func _move_ko_down(fighter: FighterState) -> void:
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
 	planar = planar.move_toward(Vector3.ZERO, hit_tuning.ko_slide_deceleration * TICK_SECONDS)
-	fighter.velocity = _ko_travel_capped(fighter, planar)
-	fighter.position.y = tuning.ground_height
+	var vertical := 0.0
+	var stand := _stand_height(fighter)
+	if fighter.position.y > stand + _floor_epsilon():
+		# Slid off a ledge: falls to the ground below instead of snapping down.
+		vertical = maxf(fighter.velocity.y - hit_tuning.ko_gravity * TICK_SECONDS, -tuning.max_fall_speed)
+	else:
+		fighter.position.y = stand
+	fighter.velocity = _ko_travel_capped(fighter, planar) + Vector3.UP * vertical
 
 
 ## The first floor contact bounces (damped, keeping part of the slide); the next lays it down.
@@ -1197,7 +1203,7 @@ func _bounce_or_rest(index: int) -> void:
 	var fighter := fighters[index]
 	if not _is_on_floor(fighter) or fighter.velocity.y > 0.0:
 		return
-	fighter.position.y = tuning.ground_height
+	fighter.position.y = _stand_height(fighter)
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
 	if not fighter.ko_bounced:
 		fighter.ko_bounced = true
@@ -1494,6 +1500,7 @@ func _apply_grab(contact: Dictionary, contacts: Array[Dictionary], struck: int) 
 	_enter_stun(target, FighterState.State.GRABBED, 0)
 	target.grab_partner = attacker_index
 	target.position = _hold_position(attacker)
+	settle(target)
 	var to_holder := attacker.position - target.position
 	if Vector2(to_holder.x, to_holder.z).length_squared() > 0.0001:
 		target.facing_yaw = DetMath.atan2(-to_holder.x, -to_holder.z)
@@ -1816,7 +1823,7 @@ func _follow_vanish_anchors() -> void:
 	for fighter in fighters:
 		if fighter.state == FighterState.State.VANISHING and fighter.vanish_anchor >= 0:
 			fighter.position = fighters[fighter.vanish_anchor].position + fighter.vanish_offset
-			_clamp_to_arena(fighter)
+			settle(fighter)
 
 
 ## Unit direction from move plus ascend/descend, or zero. Never into the floor.

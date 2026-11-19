@@ -60,8 +60,6 @@ func test_a_knockout_in_the_air_falls_bounces_rests_then_round_two_starts_at_the
 
 
 func test_a_knockout_on_a_raised_island_rests_on_the_island_top() -> void:
-	if known_issue(&"QA-1", "KO bounce/rest snap to the flat floor height and ignore sim.ground_height"):
-		return
 	start([&"kael", &"vexa"], [Vector3(0, ISLAND_TOP + 1.0, 0), Vector3(0, ISLAND_TOP + 1.0, -1.8)])
 	sim.ground_height = _island
 	tick()

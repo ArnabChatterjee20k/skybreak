@@ -1,0 +1,87 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 4,
+			"8": 1
+		},
+		"light_1": {
+			"3": 4,
+			"4": 2
+		},
+		"light_1+counter": {
+			"7": 2
+		},
+		"light_2": {
+			"3": 4,
+			"4": 2
+		},
+		"light_3": {
+			"3": 4,
+			"4": 2
+		},
+		"light_4": {
+			"6": 1
+		},
+		"repeater/projectile": {
+			"1": 96
+		},
+		"repeater/projectile+counter": {
+			"5": 5
+		}
+	},
+	"id": "112:ember_rift:1v1:kael,vexa:45",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 112,
+	"sim_ms_per_tick": 0.631039583333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0076716230250895,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.26896559415712,
+		"foot_slide_cm_per_frame": 0.0000294596396836392,
+		"locked_on_screen_share": 0.998665480427046,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.424084583333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 8,
+			"detail": "lowest sole +66.2 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 1048,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1048,
+			"worst_value": 0.662428979393532
+		},
+		{
+			"check": "foot_ground",
+			"count": 6,
+			"detail": "lowest sole +81.2 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 1,
+			"first_tick": 1072,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1072,
+			"worst_value": 0.811605039399552
+		}
+	],
+	"wall_seconds": 17.072,
+	"zone": "ember_rift"
+}

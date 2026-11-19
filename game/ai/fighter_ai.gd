@@ -31,6 +31,10 @@ const NEAR_GROUND := 3.0
 const AIR_FOLLOW_TICKS: Array[int] = [70, 55, 45, 36, 30]
 ## Within this planar distance, more height than planar gap is a stack: step out sideways.
 const STACK_RADIUS := 3.0
+## Planar room (m) kept to a target someone else is juggling in the air (FFA).
+const JUGGLE_ROOM := 4.0
+## A target this high (m) above its floor in hitstun is in an air juggle.
+const JUGGLE_ALTITUDE := 1.0
 ## Keeps this much room (m) to fighters it is not fighting (FFA dog-piles).
 const CROWD_RADIUS := 3.0
 ## Other fighters already on a target that make it a poor pick (FFA).
@@ -95,6 +99,10 @@ var _edge_gap: float = INF
 var _perfect_streak: int = 0
 ## Ticks the target has been flying by choice (high up, not launched).
 var _target_air_ticks: int = 0
+## This tick: the target is straight over or under (no attack starts until realigned).
+var _stacked_now: bool = false
+## Per fighter: who landed the last hit or throw on it (-1 none), for juggle ownership.
+var _last_hitter := PackedInt32Array()
 ## This AI's ki this tick (read from the sim each tick, so no snapshot needed).
 var _ki: int = 0
 
@@ -149,7 +157,7 @@ func snapshot() -> Dictionary:
 			_air_combo, _guard_key, _guard_roll, _punish_key, _punish_until, _link_key, _link_ok,
 			_defend_left, _escape_left, _tech_tick, _hold_left, _hold_move, _hold_vertical,
 			_last_state, _grudge, _grudge_tick, _push_rolled, _step_out, _edge_gap, _perfect_streak, _target_air_ticks, legend,
-			profile.spacing],
+			profile.spacing, _last_hitter.duplicate()],
 	}
 
 
@@ -174,6 +182,7 @@ func restore(saved: Dictionary) -> void:
 	_grudge = v[22]; _grudge_tick = v[23]; _push_rolled = v[24]; _step_out = v[25]
 	_edge_gap = v[26]; _perfect_streak = v[27]; _target_air_ticks = v[28]; legend = v[29]
 	profile.spacing = v[30]
+	_last_hitter = (v[31] as PackedInt32Array).duplicate() if v.size() > 31 else PackedInt32Array()
 
 
 ## How far a move's hitboxes reach from the attacker's centre to a target's centre (planar).
@@ -198,6 +207,7 @@ static func move_reach(move: MoveData, hurtbox_radius: float = 0.5) -> float:
 func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 	var target := sim.fighters[_target]
 	var to_target := target.position - me.position
+	_stacked_now = _stacked_on(me, target) or _juggled_overhead(me, target)
 	plan.view_yaw = DetMath.atan2(-to_target.x, -to_target.z)
 	var picking := _plan == Plan.PICKUP and _is_free(me)
 	if not picking:
@@ -490,6 +500,14 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 	# Seen attacks and shots.
 	var threat := _threat_ticks(sim, me)
 	if threat < 99 and _guard(me, threat, plan):
+		return
+	if _in_others_juggle(sim, _target):
+		_hold_off_juggle(sim, me, target, plan)
+		return
+	if _juggled_overhead(me, target):
+		# Its own juggle came down overhead: step out from under it rather than under it.
+		plan.move = Vector2(_strafe * 0.4, -1)
+		_keep_apart(sim, me, target, plan)
 		return
 	if _step_out:
 		_fight_height(sim, me, target, plan, false)
@@ -808,6 +826,8 @@ func _choose_target(sim: CombatSim) -> int:
 		if planar.length() > 0.1:
 			score += 0.1 * planar.normalized().dot(facing)
 		score -= absf(offset.y) / 20.0
+		if _in_others_juggle(sim, j):
+			score -= 1.0
 		var crowd := _attackers_on(sim, j)
 		if crowd >= CROWD_LIMIT:
 			score -= 0.9 * (crowd - CROWD_LIMIT + 1)
@@ -822,7 +842,13 @@ func _choose_target(sim: CombatSim) -> int:
 
 
 func _note_hits(sim: CombatSim) -> void:
+	if _last_hitter.size() != sim.fighters.size():
+		_last_hitter.resize(sim.fighters.size())
+		_last_hitter.fill(-1)
 	for event in sim.events:
+		if event.type in [CombatSim.EventType.HIT, CombatSim.EventType.COUNTER, CombatSim.EventType.THROW] \
+				and event.get("attacker", -1) >= 0:
+			_last_hitter[event.target as int] = event.attacker
 		if event.get("target", -1) == fighter_index:
 			if event.type == CombatSim.EventType.PERFECT_BLOCK:
 				_perfect_streak += 1
@@ -842,6 +868,31 @@ func _match_height(me: FighterState, target: FighterState, plan: FighterInput, s
 		plan.vertical = 1
 	elif dy < -slack:
 		plan.vertical = -1
+
+
+## True when fighter index is in an air juggle someone else (still standing) is running.
+func _in_others_juggle(sim: CombatSim, index: int) -> bool:
+	var fighter := sim.fighters[index]
+	var juggler := _last_hitter[index] if index < _last_hitter.size() else -1
+	return fighter.state == _S.HITSTUN and juggler >= 0 and juggler != fighter_index \
+		and not sim.fighters[juggler].is_knocked_out() and _altitude(sim, fighter) >= JUGGLE_ALTITUDE
+
+
+## Waits out someone else's juggle: no attack, low, at JUGGLE_ROOM planar from it, never over or under.
+func _hold_off_juggle(sim: CombatSim, me: FighterState, target: FighterState, plan: FighterInput) -> void:
+	var offset := target.position - me.position
+	var gap := Vector2(offset.x, offset.z).length()
+	plan.move = Vector2(_strafe * 0.4, -1.0 if gap < JUGGLE_ROOM else 0.0)
+	if not me.is_grounded() and _altitude(sim, me) > 0.2:
+		plan.vertical = -1
+	_keep_apart(sim, me, target, plan)
+
+
+## True when target is in hitstun above and close enough that a hit would carry it overhead.
+func _juggled_overhead(me: FighterState, target: FighterState) -> bool:
+	var offset := target.position - me.position
+	var gap := Vector2(offset.x, offset.z).length()
+	return target.state == _S.HITSTUN and gap < 2.5 and offset.y > maxf(gap * 0.4, 0.4)
 
 
 ## True when target is more over or under this AI than beside it, up close.
@@ -966,7 +1017,7 @@ func _is_free(me: FighterState) -> bool:
 
 
 func _may_attack(me: FighterState) -> bool:
-	return me.switch_lockout == 0 and me.smitten_ticks == 0
+	return me.switch_lockout == 0 and me.smitten_ticks == 0 and not _stacked_now
 
 
 ## Holds action this tick only if it was not held last tick, so every tap is a fresh press.

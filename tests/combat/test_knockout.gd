@@ -356,3 +356,28 @@ func test_state_hash_covers_the_knockout_origin() -> void:
 	var base := _sim.state_hash()
 	_fighter(0).ko_origin = Vector3(1, 0, 0)
 	assert_ne(_sim.state_hash(), base)
+
+
+func test_a_knocked_out_fighter_sliding_off_a_ledge_falls_to_the_ground_below() -> void:
+	_start([Vector3(0, 0, -2)])
+	# A 4 m step: the high side is z > -3 (x any), low ground beyond it.
+	_sim.ground_height = func(_x: float, z: float, _y: float) -> float: return 4.0 if z > -3.0 else 0.0
+	_sim.start_round([Vector3(0, 0, 0), Vector3(0, 0, -2)])
+	var them := _fighter(1)
+	them.health = 0
+	_tick()
+	assert_true(them.is_ko_state())
+	assert_true(_tick(REST_WITHIN_TICKS).any(func(e: Dictionary) -> bool:
+		return e.type == Event.KO_REST and e.fighter == 1), "comes to rest")
+	assert_almost_eq(them.position.y, _sim.tuning.ground_height + 4.0, 0.05, "rests on the high ground")
+	# Now slide it off the edge.
+	them.velocity = Vector3(0, 0, -10)
+	var dropped := false
+	for _i in 120:
+		_tick()
+		var stand := _sim.tuning.ground_height + (4.0 if them.position.z > -3.0 else 0.0)
+		assert_gte(them.position.y, stand - 0.05, "never inside the ground")
+		dropped = dropped or them.position.y > stand + 0.5
+	assert_true(them.position.z < -3.0, "slid off the edge")
+	assert_true(dropped, "falls instead of snapping down")
+	assert_almost_eq(them.position.y, _sim.tuning.ground_height, 0.05, "lies on the low ground")
