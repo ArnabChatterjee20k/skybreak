@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FighterStats" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/combat/fighter_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/vexa_move_set.tres" id="2_moves"]
+
+[resource]
+script = ExtResource("1_stats")
+max_health = 9500
+guard_max = 90
+vanish_counter_ki_cost = 25
+second_vanish_counter_ki_cost = 40
+hurtbox_radius = 0.45
+hurtbox_height = 1.95
+move_set = ExtResource("2_moves")

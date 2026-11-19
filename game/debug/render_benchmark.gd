@@ -6,6 +6,9 @@ extends SceneTree
 ##
 ## godot --path . --resolution 1920x1080 --disable-vsync -s res://game/debug/render_benchmark.gd
 ##
+## Add `-- --fighters 4` to draw two extra Kaels beside the sim fighters
+## (render cost of a 4-character scene; they copy the sim fighters' state).
+##
 ## Exits 1 if the medium preset misses the budget.
 
 const WARMUP_FRAMES := 120
@@ -17,6 +20,7 @@ const CPU_BUDGET_P95 := 8.0
 const DASH := FighterInput.Action.DASH
 
 var _previous: Array[FighterInput] = [FighterInput.new(), FighterInput.new()]
+var _fighter_count := 2
 
 
 func _initialize() -> void:
@@ -24,10 +28,14 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	print("Render benchmark: %s, %s, %dx%d" % [
+	var args := OS.get_cmdline_user_args()
+	var at := args.find("--fighters")
+	if at >= 0 and at + 1 < args.size():
+		_fighter_count = maxi(2, int(args[at + 1]))
+	print("Render benchmark: %s, %s, %dx%d, %d fighters" % [
 		RenderingServer.get_video_adapter_name(),
 		RenderingServer.get_current_rendering_driver_name(),
-		root.size.x, root.size.y])
+		root.size.x, root.size.y, _fighter_count])
 	var medium_passed := true
 	for quality in GraphicsSettings.Quality.values():
 		var result := await _measure(quality)
@@ -48,7 +56,9 @@ func _measure(quality: GraphicsSettings.Quality) -> Dictionary:
 	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
 	_previous = [FighterInput.new(), FighterInput.new()]
 	arena.input_override = _route_input
+	arena.match_flow.enabled = false  # same route as before; the HUD still draws
 	root.add_child(arena)
+	_add_extra_fighters(arena)
 	await process_frame
 	if not arena.vfx_prewarm.is_finished:
 		await arena.vfx_prewarm.finished
@@ -73,6 +83,29 @@ func _measure(quality: GraphicsSettings.Quality) -> Dictionary:
 	arena.queue_free()
 	await process_frame
 	return {"gpu": _stats(gpu), "cpu": _stats(cpu), "setup": _stats(setup)}
+
+
+## Extra fighter views that mirror the sim fighters 3 m to the side.
+func _add_extra_fighters(arena: Node) -> void:
+	for i in _fighter_count - 2:
+		var source: FighterView = arena.get_node("Fighter%d" % (i % 2 + 1))
+		var mirror := _Mirror.new()
+		mirror.position = Vector3(3.0 * (i + 1), 0, 0)
+		mirror.view = FighterView.new()
+		mirror.view.character_scene = source.character_scene
+		mirror.view.energy_color = source.energy_color
+		mirror.view.fighter = source.fighter
+		arena.add_child(mirror)
+		mirror.add_child(mirror.view)
+
+
+## Draws a FighterView every frame at the sim's latest state; freed with the arena.
+class _Mirror extends Node3D:
+	var view: FighterView
+
+	func _process(delta: float) -> void:
+		view.remember_previous_tick()
+		view.present(1.0, delta)
 
 
 ## Fixed route: both take off, then circle-strafe in opposite directions while

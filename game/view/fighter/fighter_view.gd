@@ -13,6 +13,23 @@ const FULL_LEAN_SPEED := 30.0
 const LEAN_SHARPNESS := 10.0
 
 @export var body_color := Color(0.9, 0.4, 0.15)
+## Character model (a CharacterView scene). Empty draws the placeholder capsule.
+@export var character_scene: PackedScene
+## Energy colour for the character's rim; alpha is the blend. Its rgb is also
+## the team colour of the height marker.
+@export var energy_color := Color(1.0, 0.55, 0.2, 0.0)
+## Name on the HUD plate (e.g. "KAEL"); empty shows "P1", "P2"...
+@export var display_name := ""
+## Team recolour of the character (part name -> Color), see FighterPalette.
+@export var palette: Dictionary = {}
+## Roster id (e.g. &"kael"); when set it picks character_scene and, unless
+## palette is set, the slot's palette. The arena spawns the sim fighter from it too.
+@export var character_id: StringName = &""
+## Player slot (0 = P1); picks the roster palette.
+@export var slot: int = 0
+
+## The roster character drawn, or null for a hand-set scene or the capsule.
+var character: RosterCharacter
 
 ## The sim state this view draws; set before the first frame.
 var fighter: FighterState
@@ -21,11 +38,26 @@ var _previous_position := Vector3.ZERO
 var _previous_yaw := 0.0
 var _lean := Vector2.ZERO
 var _body: Node3D
+var _character: CharacterView
+var _height_marker := HeightMarker.new()
 
 
 func _ready() -> void:
+	character = Roster.character(character_id) if character_id != &"" else null
+	if character != null:
+		character_scene = character.scene
+		if palette.is_empty():
+			palette = character.palette_for(slot)
 	_body = Node3D.new()
 	add_child(_body)
+	_height_marker.color = Color(energy_color, 1.0)
+	add_child(_height_marker)
+	if character_scene != null:
+		_character = character_scene.instantiate() as CharacterView
+		_body.add_child(_character)
+		FighterPalette.apply(_character, palette)
+		_character.set_energy_color(energy_color)
+		return
 	var capsule := MeshInstance3D.new()
 	capsule.mesh = CapsuleMesh.new()
 	capsule.material_override = _material(body_color)
@@ -37,6 +69,11 @@ func _ready() -> void:
 	visor.position = Vector3(0, 0.55, -0.42)
 	visor.material_override = _material(Color(0.1, 0.1, 0.12))
 	_body.add_child(visor)
+
+
+## Sim stats for this view's character; null means the sim's default.
+func fighter_stats() -> FighterStats:
+	return character.stats if character != null else null
 
 
 ## Call once per sim tick, before the sim advances.
@@ -55,6 +92,9 @@ func present(blend: float, delta: float) -> void:
 	_lean = _lean.lerp(goal, 1.0 - exp(-LEAN_SHARPNESS * delta))
 	_body.basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, _lean.x) * Basis(Vector3.BACK, _lean.y)
 	visible = fighter.state != FighterState.State.VANISHING
+	_height_marker.update(position)
+	if _character != null:
+		_character.apply_state(fighter, delta)
 
 
 ## Lean angles for a velocity: x = pitch (negative leans forward),

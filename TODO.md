@@ -13,6 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D18 [desktop] Vexa built natively in Godot code as a rigid action figure
+  (FigureKit mesh kit, humanoid-profile rig, procedural layer), stacked on
+  T-D10.
 - T-D12 [desktop] World map grey-block: 2 km procedural terrain (chunked, 4 LODs),
   six zones with landmarks, atmosphere/time of day/weather, energy dome,
   `WorldMap` API and flythrough preview, PR #39.
@@ -46,6 +49,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## Backlog
 
+- T-D22b [desktop] Integrate `MotionLibrary` + `MotionLayers` into `CharacterView` for Kael and Vexa (ClipSet mapping, inertialized switches, root curves, foot IK), the weapon poses and the KO flow. Re-source the launcher (no true uppercut yet) and heavy hit (stumble, not a hit reaction); a proper sweep and hit-reaction mocap set are still missing.
+
 ### Milestone 1: flight and camera (goal: flying feels great)
 
 Playtest #1 (flight and camera) scored movement 2/5, camera 1/5. Target after
@@ -71,24 +76,32 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   high preset is fine on the grey-box arena (T-107: GPU p95 1.8 ms); recheck
   once real content lands.
 
-- T-118 [developer] Fighter identity: camera-side fill/rim light, a facing cue
-  readable from behind, height drop-line + ground ring under airborne
-  fighters, bigger off-screen arrow with distance and above/below/behind.
+- T-118 [developer] Fighter identity (PR open): P2 palette swap + stronger
+  team rim, height drop-line + ground ring, off-screen arrow with distance,
+  above/below and "behind". Fill light and back cue dropped: the toon
+  shader's shadow tint keeps backlit Kael readable and the model's front and
+  back are distinct (both were capsule-era problems).
+- T-117b [developer] Point-blank framing (0-1 m gap, fighters overlapping):
+  the camera can put a fighter at the screen edge or cut it off (media-1.5).
+  After T-118.
 - T-119 [developer] Playtest capture: render key motion events (re-lock, vanish,
   rush arrival) at every frame for the playtester. Add a check for Space+RMB
   on the ground giving Rising only on the same tick (T-D03 feel note).
 - T-120 [developer] Attack pose placeholder on the capsule (lunge/scale per
   `attack_phase()`, armor/invincibility flash) and the T-201 hitbox debug draw
   from `active_hitboxes()`, interpolated like the fighter.
-- T-121 [developer] Combat feedback when T-D04 lands: map `CombatSim.events` to
-  the T-D09 VFX, hitstop camera shake (§5.10), hitstun/blockstun/knockdown
-  poses, combo counter on the HUD.
-- T-122 [developer] Swap the capsule for T-D10's `CharacterView` in
-  `FighterView` (after T-D10).
-- T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
-  health with grey recoverable part, ki in 4 bars, guard, burst stocks.
-- T-112 [developer] Round flow in the test arena: on `round_over`, reset
-  positions and call `start_round()`.
+- T-121 [developer] Combat feedback (PR open): `CombatSim.events` -> T-D09 VFX,
+  hit camera shake, impact frames on KO/guard break, combo counter. Stun
+  poses come from Kael's clips (T-D10b); no audio (T-D20 owns it).
+- T-122 [developer] Swap the capsule for `kael_chunky.tscn` in `FighterView`
+  (PR open). No hit-reaction VFX (T-121); team colour is a rim tint only (T-118).
+- T-126 [developer] Match HUD + round flow (PR open; covers T-111 and T-112):
+  plates for 2-4 fighters (name badge, health with chip trail and grey part,
+  ki x4, guard, burst, win pips, weapon "UNARMED" + 2 inventory slots read
+  generically until T-D14), round clock, ROUND n / FIGHT! intro holding
+  input, K.O.!/TIME! with 1 s slow motion, best of 3. Scales from a
+  1920x1080 design, pinned to the top. Open: positions are not reset between
+  rounds (sim-side, ask desktop), and the name badge stands in for portraits.
 
 ### Combat sim (desktop)
 
@@ -111,6 +124,12 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D22a [desktop] Motion realism spike: CMU + Bandai Namco mocap retargeted onto the humanoid profile (`game/characters/motion/`), 43 clips incl. frame-accurate strikes for all 14 Kael moves, `MotionLayers` prototype, old-vs-new metrics and comparison renders.
+- T-D18b [desktop] Vexa playable: own 16-move set (5-hit string, launcher, spike,
+  chakram heavies), IK-posed clips timed to each move, `Roster` (kael/vexa ->
+  scene, stats, slot palettes), test arena P1 Kael vs P2 Vexa (alt palette,
+  team rim), merged assembly (10 draw calls). Contains #44. Follow-ups:
+  render benchmark on the dev PC; fighters can overlap (no pushbox).
 - T-D00 [desktop] Game design document (`docs/GAME_DESIGN.md`), PR #1.
 - T-002 [developer] Graphics presets + resolution scale + vsync, F10 menu, PR #2.
 - T-003 [developer] Windows export preset (single exe), PR #4.
@@ -128,6 +147,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-D09 [desktop] Aura and impact VFX, PR #12.
 - T-114 [developer] Shoulder offset: player a third from the edge, PR #16.
 - T-115 [developer] Camera turn limits and teleport glide, PR #17.
+- T-D11c [desktop] Re-bake chunky Kael clips for push_block 2/4/14 (T-D05); fixes the clip-length test.
 - T-116 [developer] VFX prewarm at arena load, PR #19.
 - T-D09b [desktop] VFX fixes (ground shockwave, aura, flame tongues), PR #18.
 - T-D03 [desktop] Moves, light string and cancels, PR #15.

@@ -44,10 +44,17 @@ surface_material_override/0 = SubResource("ground_material")
 [node name="Fighter1" type="Node3D" parent="."]
 script = ExtResource("6_fighter_view")
 body_color = Color(0.9, 0.4, 0.15, 1)
+energy_color = Color(1, 0.55, 0.2, 0.6)
+display_name = "KAEL"
+character_id = &"kael"
 
 [node name="Fighter2" type="Node3D" parent="."]
 script = ExtResource("6_fighter_view")
 body_color = Color(0.2, 0.45, 0.95, 1)
+energy_color = Color(0.3, 0.8, 1, 0.8)
+display_name = "VEXA"
+character_id = &"vexa"
+slot = 1
 
 [node name="FighterCamera" type="Camera3D" parent="."]
 base_fov = 75.0

@@ -25,6 +25,7 @@ func _init(arena_node: Node, scenario: Dictionary) -> void:
 	arena.set_physics_process(false)
 	arena.set_process(false)
 	arena.input_override = _input_for
+	arena.match_flow.enabled = false  # no round intro holding the routes' input
 
 
 func is_finished() -> bool:

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"charged_smash_3"
+display_name = "Eclipse Chakram"
+startup_ticks = 9
+active_ticks = 6
+recovery_ticks = 26
+step_distance = 1
+hitbox_offsets = PackedVector3Array(0, 0.25, -2, 0, 0.25, -2, 0, 0.25, -2, 0, 0.25, -2, 0, 0.25, -2, 0, 0.25, -2)
+hitbox_radii = PackedFloat32Array(0.55, 0.55, 0.55, 0.55, 0.55, 0.55)
+hitbox_lengths = PackedFloat32Array(2.4, 2.4, 2.4, 2.4, 2.4, 2.4)
+hitbox_axes = PackedVector3Array(0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1)
+damage = 1350
+hitstun_ticks = 48
+blockstun_ticks = 20
+hitstop_ticks = 12
+knockback_type = 4
+knockback = Vector3(0, 4, -54)
+guard_damage = 38
+guard_break_below = 35
+cancel_level = 2
+cancel_start_tick = 9
+cancel_end_tick = 24
+armor_start_tick = 0
+armor_end_tick = 12

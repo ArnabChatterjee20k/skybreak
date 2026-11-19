@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="MoveSet" load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_set.gd" id="1_set"]
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="2_move"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/light_1.tres" id="3_light_1"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/light_2.tres" id="4_light_2"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/light_3.tres" id="5_light_3"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/light_4.tres" id="6_light_4"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/light_5.tres" id="7_light_5"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/smash.tres" id="8_smash"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/charged_smash_1.tres" id="9_charged_smash_1"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/charged_smash_2.tres" id="10_charged_smash_2"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/charged_smash_3.tres" id="11_charged_smash_3"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/breaker.tres" id="12_breaker"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/launcher.tres" id="13_launcher"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/rising.tres" id="14_rising"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/spike.tres" id="15_spike"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/sweep.tres" id="16_sweep"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/push_block.tres" id="17_push_block"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/grab.tres" id="18_grab"]
+
+[resource]
+script = ExtResource("1_set")
+light_string = Array[ExtResource("2_move")]([ExtResource("3_light_1"), ExtResource("4_light_2"), ExtResource("5_light_3"), ExtResource("6_light_4"), ExtResource("7_light_5")])
+smash = ExtResource("8_smash")
+charged_smash = Array[ExtResource("2_move")]([ExtResource("9_charged_smash_1"), ExtResource("10_charged_smash_2"), ExtResource("11_charged_smash_3")])
+breaker = ExtResource("12_breaker")
+launcher = ExtResource("13_launcher")
+rising = ExtResource("14_rising")
+spike = ExtResource("15_spike")
+sweep = ExtResource("16_sweep")
+push_block = ExtResource("17_push_block")
+grab = ExtResource("18_grab")
