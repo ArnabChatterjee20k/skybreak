@@ -487,7 +487,19 @@ Online versus is planned for later, using **Appwrite** (auth, lobbies, presence)
   - The record is **deleted automatically when the socket drops**, so a partner disconnecting mid-match is detected at once. The match then **pauses for up to 30 s or hands that fighter to the AI** until they reconnect (setting).
   - Presence metadata is client-published over the socket, so the spike also tests it as the **WebRTC signalling** channel (offer/answer/ICE), avoiding database writes.
 - **Godot client:** a small GDScript Appwrite client (HTTPRequest for REST, WebSocketPeer for Realtime), so the same code runs on Windows and in the web build. No addon is needed for that part.
-- **Transport decision pending a spike:** Appwrite (Auth, a lobbies collection, Realtime presence) is the lobby and **signalling** layer for certain. Whether per-tick inputs travel over **Appwrite Realtime** or **directly peer-to-peer over WebRTC data channels** (with Appwrite only doing signalling) is decided by measured latency and jitter from the target devices. Target: under 80 ms round trip on home Wi-Fi.
+- **Transport decision (measured 2026-11-19, India to the Appwrite `sgp` region, two test users):**
+
+  | Path | p50 | p95 |
+  |---|---|---|
+  | TCP connect to Appwrite | 98 ms | — |
+  | Presence one-way (A publishes → B sees it) | 196 ms | 317 ms |
+  | Presence round trip (A → B → A) | 411 ms | 548 ms |
+
+  Presence also coalesces fast updates: 9 of 40 were overwritten, because it is state, not a queue.
+  - **Decision:** **per-tick inputs travel peer-to-peer over WebRTC data channels** (unreliable/unordered channel for inputs plus redundancy, reliable channel for match control). Expect about 2–10 ms on the same home Wi-Fi.
+  - **Appwrite Presence** is the **signalling channel** (offer/answer/ICE in presence metadata), and it also handles online status and disconnect detection. Signalling tolerates about 400 ms.
+  - Godot: WebRTC is built in for the web export. Windows needs the official `webrtc-native` GDExtension, which `developer` vendors in `addons/` when the netcode task starts.
+  - TURN fallback: for networks where direct P2P fails; decide later (STUN-only first).
 - **Transport abstraction:** a `NetTransport` interface, so Appwrite Realtime (or the Appwrite Push/MQTT path already used by MisterMime) can be swapped in without touching the sim.
 - **Lobbies and matchmaking:** Appwrite Auth plus a lobbies collection; Realtime presence shows who is online.
 - **Known risk:** floating-point determinism across different CPUs. The same build on Windows x86-64 is fine. If cross-platform play is ever wanted, the sim's movement math may need fixed-point.
