@@ -82,6 +82,21 @@ func remember_previous_tick() -> void:
 	_previous_yaw = fighter.facing_yaw
 
 
+## Call once per sim tick, after the sim advanced: the character flinches at this tick's hits
+## and blocks on fighter index and looks at its lock-on target. View-only.
+func react_to_tick(sim: CombatSim, index: int) -> void:
+	if _character == null:
+		return
+	for event: Dictionary in sim.events:
+		if event.get("target", -1) == index:
+			_character.react_to_event(event, fighter)
+	var target := fighter.lock_on_target
+	if target >= 0 and target < sim.fighters.size():
+		_character.set_look_target(sim.fighters[target].position)
+	else:
+		_character.set_look_target(Vector3.ZERO, 0.0)
+
+
 ## Call every rendered frame. blend: 0 = previous tick, 1 = latest tick.
 func present(blend: float, delta: float) -> void:
 	position = _previous_position.lerp(fighter.position, blend)

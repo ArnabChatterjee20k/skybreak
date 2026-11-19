@@ -49,7 +49,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## Backlog
 
-- T-D22b [desktop] Integrate `MotionLibrary` + `MotionLayers` into `CharacterView` for Kael and Vexa (ClipSet mapping, inertialized switches, root curves, foot IK), the weapon poses and the KO flow. Re-source the launcher (no true uppercut yet) and heavy hit (stumble, not a hit reaction); a proper sweep and hit-reaction mocap set are still missing.
+- [desktop] Bug (found in T-D22b): `WeaponMoves.move_set(kind, unarmed)` caches by weapon kind only, so the first fighter to arm a kind (e.g. Vexa) fixes its unarmed grab/push_block for everyone after. Key the cache by the unarmed set too.
+
 
 ### Milestone 1: flight and camera (goal: flying feels great)
 
@@ -162,6 +163,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   composed as code and rendered offline; `MusicDirector` autoload switches
   layers and zones on bar lines from sim state.
 - T-D22a [desktop] Motion realism spike: CMU + Bandai Namco mocap retargeted onto the humanoid profile (`game/characters/motion/`), 43 clips incl. frame-accurate strikes for all 14 Kael moves, `MotionLayers` prototype, old-vs-new metrics and comparison renders.
+- T-D22b [desktop] Motion integration: `CharacterView` plays the mocap for Kael and Vexa (locomotion, flight, attacks seeked by move_tick, guard, hits, grab/throw, KO fall/lie/get-up) with inertialized switches and the old clips as per-slot fallback; `MotionLayers` runs live (lean/bank, sprung superhero flight, look-at, foot IK, flinch from `CombatSim.events`, landings, weapon arm IK); derived launcher_up / sweep_low / hit_stagger; 4 fighters 0.34 ms. Follow-ups: Vexa forearm pops in her posed clips, mocap jabs without anticipation, idle loop foot slide, turn-in-place unused.
 - T-D18b [desktop] Vexa playable: own 16-move set (5-hit string, launcher, spike,
   chakram heavies), IK-posed clips timed to each move, `Roster` (kael/vexa ->
   scene, stats, slot palettes), test arena P1 Kael vs P2 Vexa (alt palette,

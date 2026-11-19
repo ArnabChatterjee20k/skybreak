@@ -2,7 +2,7 @@
 
 Real motion capture retargeted onto `SkeletonProfileHumanoid` (chunky Kael's `%GeneralSkeleton`),
 cleaned up, and stored in a `MotionLibrary`, plus `MotionLayers`, a procedural layer that runs on
-top of any clip. Nothing here is wired into the game yet; T-D22b does that.
+top of any clip. T-D22b wires both into `CharacterView` (see "In game" below).
 
 | File | What it is |
 |---|---|
@@ -67,3 +67,20 @@ strength)` on hits, `land(strength)` on landings and `inertialize()` just before
 Inertialization stores the offset (and velocity) from the last output pose to the new clip and
 decays it with a critically damped spring, so there's no linear crossfade and no pop.
 `process_pose()` runs the same maths on plain arrays (tests).
+
+## In game (T-D22b)
+
+- `ClipSet.motion` turns it on per character (chunky Kael, Vexa). `MotionSlots` picks the mocap
+  clip from `FighterState`; a slot without mocap (charging, charge hold, Vexa's moves listed in
+  `motion_moves` as `-`) plays the character's own clip, so nothing T-poses.
+- `MotionClips` adds the derived clips at load (`launcher_up`, `sweep_low`, `hit_stagger`: a base
+  take plus authored overlays, feet re-planted with two-bone IK) and rescales hips heights per rig
+  so the stance stands on the floor (the stored heights ignore the skeleton's motion scale).
+- Attack clips are seeked by `move_tick` through `ClipSet.phase_clip_time` with Kael's active
+  windows, so startup, active and recovery line up for any move timing.
+- `MotionLayers` is the skeleton's first modifier (before `ScarfLag`). `CharacterView` feeds it
+  velocity, flight, landings, the look target (`set_look_target`), hit flinches
+  (`react_to_event`, called by `FighterView.react_to_tick` with `CombatSim.events`) and the weapon
+  arm pose. It only reads the sim.
+- Review renders: `tools/motion_integration_capture.gd` (old left, new right), committed under
+  `renders/integration/`.
