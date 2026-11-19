@@ -74,6 +74,11 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-118 [developer] Fighter identity: camera-side fill/rim light, a facing cue
   readable from behind, height drop-line + ground ring under airborne
   fighters, bigger off-screen arrow with distance and above/below/behind.
+  Plus P2 identity (media-1.5: two Kaels looked alike): a P2 palette swap
+  (body, coat and scarf hue) and a team rim colour.
+- T-117b [developer] Point-blank framing (0-1 m gap, fighters overlapping):
+  the camera can put a fighter at the screen edge or cut it off (media-1.5).
+  After T-118.
 - T-119 [developer] Playtest capture: render key motion events (re-lock, vanish,
   rush arrival) at every frame for the playtester. Add a check for Space+RMB
   on the ground giving Rising only on the same tick (T-D03 feel note).
@@ -83,8 +88,8 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-121 [developer] Combat feedback when T-D04 lands: map `CombatSim.events` to
   the T-D09 VFX, hitstop camera shake (§5.10), hitstun/blockstun/knockdown
   poses, combo counter on the HUD.
-- T-122 [developer] Swap the capsule for T-D10's `CharacterView` in
-  `FighterView` (after T-D10).
+- T-122 [developer] Swap the capsule for `kael_chunky.tscn` in `FighterView`
+  (PR open). No hit-reaction VFX (T-121); team colour is a rim tint only (T-118).
 - T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
   health with grey recoverable part, ki in 4 bars, guard, burst stocks.
 - T-112 [developer] Round flow in the test arena: on `round_over`, reset
