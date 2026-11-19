@@ -1,0 +1,138 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 1
+		},
+		"light_1": {
+			"3": 4,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 1,
+			"9": 4
+		},
+		"light_2": {
+			"3": 4,
+			"5": 5
+		},
+		"light_3": {
+			"3": 4,
+			"8": 5
+		},
+		"light_4": {
+			"4": 2
+		},
+		"scythe/light_1": {
+			"5": 3
+		},
+		"scythe/light_2": {
+			"5": 2
+		},
+		"scythe/light_3": {
+			"7": 1
+		}
+	},
+	"id": "3401:verdant_falls:1v1:vexa,brann:42",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		2
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3401,
+	"sim_ms_per_tick": 3.00688166666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0102289170026779,
+		"finger_pops_per_fighter_minute": 42.0233463035019,
+		"foot_error_p95_cm": 13.1252759238681,
+		"foot_slide_cm_per_frame": 1.13854711091826,
+		"locked_on_screen_share": 0.998706338939198,
+		"pops_per_fighter_minute": 34.0188993885492
+	},
+	"view_ms_per_frame": 2.98165611111111,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 128,
+			"detail": "lowest sole +41.1 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1248,
+			"worst_value": 0.410636330804779
+		},
+		{
+			"check": "foot_ground",
+			"count": 11,
+			"detail": "lowest sole -10.3 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 23,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 964,
+			"worst_value": -0.102620661455246
+		},
+		{
+			"check": "pop",
+			"count": 10,
+			"detail": "RightLowerLeg turned 2.89 rad in one frame (ATTACKING, move light_4)",
+			"fighter": 0,
+			"first_tick": 231,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 305,
+			"worst_value": 2.88957118988037
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 542,
+			"detail": "fighters 0 and 1 overlap 1.05 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 240,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "scythe",
+			"worst_tick": 1291,
+			"worst_value": 1.04931760621257
+		},
+		{
+			"check": "pop",
+			"count": 24,
+			"detail": "RightHand turned 1.24 rad in one frame (ATTACKING, move breaker)",
+			"fighter": 1,
+			"first_tick": 655,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 658,
+			"worst_value": 1.23715901374817
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "34 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 34
+		}
+	],
+	"wall_seconds": 30.874,
+	"zone": "verdant_falls"
+}

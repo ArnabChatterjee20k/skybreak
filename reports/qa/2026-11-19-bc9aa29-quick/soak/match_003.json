@@ -1,0 +1,147 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 2
+		},
+		"light_1": {
+			"3": 5,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 2,
+			"9": 2
+		},
+		"light_2": {
+			"3": 5,
+			"5": 3
+		},
+		"light_3": {
+			"3": 3,
+			"8": 2
+		},
+		"light_4": {
+			"4": 1
+		},
+		"revolver/projectile": {
+			"4": 17
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "103:frozen_peaks:1v1:vexa,brann:44",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 103,
+	"sim_ms_per_tick": 2.43745458333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0091514615342021,
+		"finger_pops_per_fighter_minute": 33.0137557315548,
+		"foot_error_p95_cm": 12.5394445074491,
+		"foot_slide_cm_per_frame": 0.295411154317359,
+		"locked_on_screen_share": 0.981360671015843,
+		"pops_per_fighter_minute": 19.5081283868278
+	},
+	"view_ms_per_frame": 2.35525041666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 171,
+			"detail": "lowest sole +44.9 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 538,
+			"worst_value": 0.449468535660316
+		},
+		{
+			"check": "pop",
+			"count": 15,
+			"detail": "RightLowerLeg turned 2.89 rad in one frame (ATTACKING, move light_4)",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1245,
+			"worst_value": 2.88957142829895
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 356,
+			"detail": "fighters 0 and 1 overlap 1.05 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 224,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1221,
+			"worst_value": 1.04949947447749
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "BeardBraid turned 2.01 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 432,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1319,
+			"worst_value": 2.01131153106689
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -8.5 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 561,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 561,
+			"worst_value": -0.0854563226066887
+		},
+		{
+			"check": "camera_cover",
+			"count": 1,
+			"detail": "fighter 1 covers 65% of the screen",
+			"fighter": 1,
+			"first_tick": 1379,
+			"legend": "brann",
+			"limit": 0.6,
+			"weapon": "",
+			"worst_tick": 1379,
+			"worst_value": 0.64545223283179
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "26 pops in 1.3 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 2.66555555555556,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 26
+		}
+	],
+	"wall_seconds": 38.592,
+	"zone": "frozen_peaks"
+}

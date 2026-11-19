@@ -69,18 +69,24 @@ func test_fly_dummy_hovers_at_its_height() -> void:
 func test_block_all_dummy_blocks_every_jab() -> void:
 	_mode(Mode.BLOCK_ALL)
 	_bench.tick(2)
-	_jab(3)
+	# From the reset positions: block pushback (T-D29) slides the dummy out of jab range.
+	_jab(3, 40, true)
 	assert_eq(_bench.events_of(Event.BLOCK).size(), 3)
 	assert_eq(_bench.events_of(Event.HIT).size(), 0)
 
 
 func test_block_after_first_hit_dummy_takes_one_then_blocks() -> void:
 	_mode(Mode.BLOCK_AFTER_FIRST_HIT)
-	_jab(3, 30)
+	# The player steps back in each time: pushback (T-D29) slides the dummy out of jab range.
+	var gap := _bench.player().position - _bench.dummy().position
+	for _i in 3:
+		_bench.player().position = _bench.dummy().position + gap
+		_jab(1, 30)
 	assert_eq(_bench.events_of(Event.HIT).size(), 1, "the first jab lands")
 	assert_eq(_bench.events_of(Event.BLOCK).size(), 2, "the rest are blocked")
 	# Once the pressure stops, it drops its guard and the next jab lands again.
 	_bench.tick(TrainingDummy.GUARD_HOLD_TICKS + 30)
+	_bench.player().position = _bench.dummy().position + gap
 	_jab(1)
 	assert_eq(_bench.events_of(Event.HIT).size(), 2)
 

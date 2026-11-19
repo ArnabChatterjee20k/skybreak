@@ -1,0 +1,132 @@
+{
+	"hitstops": {
+		"breaker": {
+			"8": 2
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"gauntlets/launcher": {
+			"7": 1
+		},
+		"gauntlets/light_1+counter": {
+			"7": 1
+		},
+		"gauntlets/light_2": {
+			"3": 1
+		},
+		"gauntlets/light_3": {
+			"3": 1
+		},
+		"launcher": {
+			"8": 1
+		},
+		"light_1": {
+			"3": 6,
+			"4": 3
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 1
+		},
+		"light_2": {
+			"3": 6,
+			"4": 4
+		},
+		"light_3": {
+			"4": 1,
+			"5": 5
+		}
+	},
+	"id": "3603:heartbloom_gardens:1v1:lyra,kael:33",
+	"kos": 0,
+	"legends": [
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3603,
+	"sim_ms_per_tick": 0.871588333333333,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0159615520387888,
+		"finger_pops_per_fighter_minute": 27.0150083379655,
+		"foot_error_p95_cm": 3.68285120239307,
+		"foot_slide_cm_per_frame": 0.577173910244011,
+		"locked_on_screen_share": 0.972925250147145,
+		"pops_per_fighter_minute": 17.0094496942746
+	},
+	"view_ms_per_frame": 0.892909444444445,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 17,
+			"detail": "RightLowerArm turned 2.03 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 2.02893877029419
+		},
+		{
+			"check": "foot_ground",
+			"count": 16,
+			"detail": "lowest sole +48.8 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 188,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1059,
+			"worst_value": 0.487577771688052
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 415,
+			"detail": "fighters 0 and 1 overlap 0.93 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 237,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1427,
+			"worst_value": 0.928411766020581
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -5.2 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1044,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1044,
+			"worst_value": -0.0518402664392852
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "17 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 17
+		}
+	],
+	"wall_seconds": 15.025,
+	"zone": "heartbloom_gardens"
+}

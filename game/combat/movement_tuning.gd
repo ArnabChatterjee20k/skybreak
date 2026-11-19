@@ -64,6 +64,11 @@ extends Resource
 ## Ticks a fighter stays vanished before it can act again.
 @export var vanish_step_ticks: int = 12
 
+@export_group("Lock-on")
+## Fastest a locked strafe circles its target, in degrees per second. Only
+## bites close in (T-D29): at ground speed under ~3.8 m. Matches the camera turn cap.
+@export var max_orbit_turn_speed: float = 180.0
+
 @export_group("Arena")
 ## Half the arena's width and depth, centred on the origin (300 = 600 m x 600 m).
 @export var arena_half_size: float = 300.0

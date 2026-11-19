@@ -1,0 +1,106 @@
+{
+	"hitstops": {
+		"breaker": {
+			"10": 1
+		},
+		"breaker+counter": {
+			"14": 1
+		},
+		"light_1": {
+			"3": 2,
+			"5": 7
+		},
+		"light_1+counter": {
+			"7": 4,
+			"9": 2
+		},
+		"light_2": {
+			"3": 6,
+			"5": 6
+		},
+		"light_3": {
+			"3": 4,
+			"8": 4,
+			"20": 1
+		}
+	},
+	"id": "3101:skyhold_ruins:1v1:vexa,brann:24",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "KO",
+	"rounds_started": 1,
+	"seed": 3101,
+	"sim_ms_per_tick": 1.86981722222222,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.010726205073297,
+		"finger_pops_per_fighter_minute": 25.0138966092273,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.989564149785144,
+		"pops_per_fighter_minute": 24.0133407448583
+	},
+	"view_ms_per_frame": 2.05678277777778,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 510,
+			"detail": "fighters 0 and 1 overlap 1.05 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 173,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1273,
+			"worst_value": 1.04947851541219
+		},
+		{
+			"check": "pop",
+			"count": 7,
+			"detail": "SashUpper turned 2.21 rad in one frame (ATTACKING, move light_2)",
+			"fighter": 0,
+			"first_tick": 175,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 658,
+			"worst_value": 2.20555400848389
+		},
+		{
+			"check": "pop",
+			"count": 17,
+			"detail": "LeftHand turned 1.40 rad in one frame (HITSTUN, move )",
+			"fighter": 1,
+			"first_tick": 369,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 971,
+			"worst_value": 1.39930462837219
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "24 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 24
+		}
+	],
+	"wall_seconds": 23.604,
+	"zone": "skyhold_ruins"
+}

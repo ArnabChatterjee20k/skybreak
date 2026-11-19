@@ -1,0 +1,225 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 2
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"7": 6,
+			"8": 1
+		},
+		"light_1": {
+			"3": 6,
+			"4": 4,
+			"5": 5
+		},
+		"light_1+counter": {
+			"7": 6,
+			"8": 3,
+			"9": 2
+		},
+		"light_2": {
+			"3": 9,
+			"4": 6,
+			"5": 6
+		},
+		"light_3": {
+			"3": 7,
+			"4": 1,
+			"8": 6
+		}
+	},
+	"id": "1413:verdant_falls:ffa4:lyra,kael,vexa,brann:3455",
+	"kos": 1,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		3,
+		4,
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1413,
+	"sim_ms_per_tick": 4.06228055555556,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.00586502952501178,
+		"finger_pops_per_fighter_minute": 28.0155642023346,
+		"foot_error_p95_cm": 18.2030080645269,
+		"foot_slide_cm_per_frame": 1.93801298211418,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 16.50917176209
+	},
+	"view_ms_per_frame": 4.17538444444444,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 468,
+			"detail": "fighters 0 and 2 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 584,
+			"detail": "fighters 1 and 3 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "foot_ground",
+			"count": 123,
+			"detail": "lowest sole -18.7 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 174,
+			"worst_value": -0.186540683313684
+		},
+		{
+			"check": "foot_ground",
+			"count": 82,
+			"detail": "lowest sole -11.2 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 74,
+			"worst_value": -0.112486000387577
+		},
+		{
+			"check": "foot_ground",
+			"count": 206,
+			"detail": "lowest sole +42.7 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 653,
+			"worst_value": 0.426650326350511
+		},
+		{
+			"check": "foot_ground",
+			"count": 5,
+			"detail": "lowest sole -5.7 cm off the visible ground (BLOCKING)",
+			"fighter": 2,
+			"first_tick": 145,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 147,
+			"worst_value": -0.0571144080484629
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "RightFoot turned 2.74 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 188,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 234,
+			"worst_value": 2.73994159698486
+		},
+		{
+			"check": "arena_bounds",
+			"count": 1,
+			"detail": "outside the arena at (-620.0, 6.75, 618.65) (stand 7.53, GRABBED)",
+			"fighter": 3,
+			"first_tick": 203,
+			"legend": "brann",
+			"limit": 300.05,
+			"weapon": "",
+			"worst_tick": 203,
+			"worst_value": 148.651611328125
+		},
+		{
+			"check": "pop",
+			"count": 10,
+			"detail": "LeftHand turned 1.45 rad in one frame (HITSTUN, move )",
+			"fighter": 3,
+			"first_tick": 214,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 519,
+			"worst_value": 1.45013344287872
+		},
+		{
+			"check": "pop",
+			"count": 12,
+			"detail": "RightHoodPoint turned 1.86 rad in one frame (ATTACKING, move weapon/pickup)",
+			"fighter": 2,
+			"first_tick": 296,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1402,
+			"worst_value": 1.85825347900391
+		},
+		{
+			"check": "bow_string_head",
+			"count": 2,
+			"detail": "bow string 7.5 cm from the head centre (draw 0, DASHING)",
+			"fighter": 1,
+			"first_tick": 840,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "bow",
+			"worst_tick": 840,
+			"worst_value": 0.0748053565621376
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 71,
+			"detail": "fighters 2 and 3 overlap 1.03 m (ATTACKING vs GRABBED)",
+			"fighter": 2,
+			"first_tick": 1515,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1754,
+			"worst_value": 1.03494768608361
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "33 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 33
+		}
+	],
+	"wall_seconds": 35.675,
+	"zone": "verdant_falls"
+}

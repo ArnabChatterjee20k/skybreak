@@ -1,0 +1,117 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 6,
+			"8": 2
+		},
+		"light_1": {
+			"3": 6,
+			"4": 1
+		},
+		"light_1+counter": {
+			"7": 3
+		},
+		"light_2": {
+			"3": 8,
+			"4": 2
+		},
+		"light_3": {
+			"3": 7,
+			"4": 1
+		},
+		"spike": {
+			"7": 3
+		}
+	},
+	"id": "3100:skyhold_ruins:1v1:kael,vexa:55",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3100,
+	"sim_ms_per_tick": 2.36894166666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0110984724014997,
+		"finger_pops_per_fighter_minute": 23.0127848804892,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.926070038910506,
+		"pops_per_fighter_minute": 41.0227904391328
+	},
+	"view_ms_per_frame": 1.90613944444444,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 23,
+			"detail": "RightLowerLeg turned 1.80 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 1,
+			"first_tick": 188,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1668,
+			"worst_value": 1.79964017868042
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 540,
+			"detail": "fighters 0 and 1 overlap 0.95 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 202,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1790,
+			"worst_value": 0.949540966528002
+		},
+		{
+			"check": "pop",
+			"count": 18,
+			"detail": "RightLowerLeg turned 2.16 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 0,
+			"first_tick": 562,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1277,
+			"worst_value": 2.16207480430603
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "41 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 41
+		},
+		{
+			"check": "camera_on_screen",
+			"count": 1,
+			"detail": "both locked fighters on screen in 92.6% of 1799 locked frames",
+			"fighter": 0,
+			"first_tick": 1800,
+			"legend": "kael",
+			"limit": 0.95,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 0.926070038910506
+		}
+	],
+	"wall_seconds": 25.943,
+	"zone": "skyhold_ruins"
+}

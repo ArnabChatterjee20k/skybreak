@@ -44,30 +44,26 @@ static func build(kind: StringName) -> VfxEffect:
 static func _fill(effect: VfxEffect, kind: StringName) -> void:
 	match kind:
 		&"anime_burst":
-			effect.lifetime = 0.42
+			# Counter-hit accent: thin rays and sparks around the contact, no solid core or ring.
+			effect.lifetime = 0.16
 			effect.default_color = WARM
-			effect.add_sprite(&"spikes", 3.4)
-			effect.add_sprite(&"flash", 2.0)
-			effect.add_sprite(&"ring", 3.4)
-			effect.add_particles(&"spark", &"burst", 16, 0.35, Vector2(0.09, 0.8))
+			effect.add_sprite(&"spikes", 1.1)
+			effect.add_particles(&"spark", &"burst", 8, 0.15, Vector2(0.05, 0.4))
 		&"guard_shatter":
-			effect.lifetime = 0.7
+			effect.lifetime = 0.5
 			effect.default_color = RED
-			effect.add_sprite(&"spikes", 3.0)
-			effect.add_sprite(&"ring", 4.0)
-			effect.add_sprite(&"flash", 2.4)
-			var shards := effect.add_particles(&"chunk", &"shards", 18, 0.65, Vector2(0.28, 0.28))
+			var shards := effect.add_particles(&"chunk", &"shards", 12, 0.5, Vector2(0.14, 0.14))
 			effect.make_secondary(shards)
 		&"ko_dome":
-			effect.lifetime = 1.3
+			# An outlined shell drawn only behind the fighters, a ground-level ring and a few
+			# sparks; no flash or spikes over the bodies.
+			effect.lifetime = 1.0
 			effect.default_color = Color(1.0, 0.9, 0.7)
 			var dome := effect.add_mesh(&"dome", VfxKit.sphere())
-			dome.scale = Vector3.ONE * 7.0
-			var ring := effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(26, 26)))
+			dome.scale = Vector3.ONE * 6.0
+			var ring := effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(16, 16)))
 			ring.rotation = Vector3(-PI / 2.0, 0.0, 0.0)
-			effect.add_sprite(&"spikes", 6.0)
-			effect.add_sprite(&"flash", 5.0)
-			effect.add_particles(&"spark", &"burst", 28, 0.6, Vector2(0.14, 1.4))
+			effect.add_particles(&"spark", &"burst", 12, 0.4, Vector2(0.06, 0.6))
 		&"lightning":
 			effect.lifetime = 0.65
 			effect.default_color = STORM

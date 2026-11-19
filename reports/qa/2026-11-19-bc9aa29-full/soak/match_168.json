@@ -1,0 +1,115 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 6,
+			"20": 1
+		},
+		"light_1": {
+			"3": 9,
+			"4": 3
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 1
+		},
+		"light_2": {
+			"3": 9,
+			"4": 4
+		},
+		"light_3": {
+			"3": 8,
+			"4": 2
+		}
+	},
+	"id": "3000:shattered_mesa:1v1:kael,vexa:24",
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "INTRO",
+	"rounds_started": 2,
+	"seed": 3000,
+	"sim_ms_per_tick": 2.906685,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.00866197142750025,
+		"finger_pops_per_fighter_minute": 20.0111172873819,
+		"foot_error_p95_cm": 4.60005612356191,
+		"foot_slide_cm_per_frame": 1.32483397963889,
+		"locked_on_screen_share": 0.973440395305744,
+		"pops_per_fighter_minute": 20.0111172873819
+	},
+	"view_ms_per_frame": 2.34513611111111,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 8,
+			"detail": "lowest sole +5.1 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 13,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 13,
+			"worst_value": 0.0514963580645897
+		},
+		{
+			"check": "pop",
+			"count": 9,
+			"detail": "RightFoot turned 2.29 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 189,
+			"worst_value": 2.29258966445923
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "RightLowerLeg turned 2.89 rad in one frame (ATTACKING, move light_4)",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1470,
+			"worst_value": 2.88957142829895
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 553,
+			"detail": "fighters 0 and 1 overlap 0.95 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 211,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1197,
+			"worst_value": 0.949112888064701
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "20 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 20
+		}
+	],
+	"wall_seconds": 28.278,
+	"zone": "shattered_mesa"
+}

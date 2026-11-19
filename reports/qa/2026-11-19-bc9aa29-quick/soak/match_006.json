@@ -1,0 +1,141 @@
+{
+	"hitstops": {
+		"chakram/launcher": {
+			"8": 1
+		},
+		"chakram/light_1": {
+			"4": 3
+		},
+		"chakram/light_2": {
+			"4": 1
+		},
+		"chakram/light_3": {
+			"6": 1
+		},
+		"light_1": {
+			"3": 4,
+			"5": 4
+		},
+		"light_1+counter": {
+			"7": 5,
+			"9": 2
+		},
+		"light_2": {
+			"3": 7,
+			"5": 1
+		},
+		"light_3": {
+			"5": 6,
+			"8": 1
+		},
+		"repeater/projectile": {
+			"1": 12
+		},
+		"repeater/projectile+counter": {
+			"5": 1
+		}
+	},
+	"id": "106:heartbloom_gardens:1v1:brann,lyra:33",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 106,
+	"sim_ms_per_tick": 2.27887458333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0113412821665406,
+		"finger_pops_per_fighter_minute": 13.505627344727,
+		"foot_error_p95_cm": 10.1925243519531,
+		"foot_slide_cm_per_frame": 0.0202238270671727,
+		"locked_on_screen_share": 0.963817277250113,
+		"pops_per_fighter_minute": 3.75156315131305
+	},
+	"view_ms_per_frame": 2.7997775,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 157,
+			"detail": "lowest sole +42.8 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2057,
+			"worst_value": 0.428339696138153
+		},
+		{
+			"check": "foot_ground",
+			"count": 19,
+			"detail": "lowest sole +48.6 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 185,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1417,
+			"worst_value": 0.486264945047253
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 983,
+			"detail": "fighters 0 and 1 overlap 1.03 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 377,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1489,
+			"worst_value": 1.02871490558144
+		},
+		{
+			"check": "pop",
+			"count": 4,
+			"detail": "LeftLowerArm turned 1.96 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 0,
+			"first_tick": 581,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 581,
+			"worst_value": 1.9647524356842
+		},
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "RightUpperArm turned 1.42 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 583,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 583,
+			"worst_value": 1.41995072364807
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "5 pops in 1.3 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 2.66555555555556,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 5
+		}
+	],
+	"wall_seconds": 36.691,
+	"zone": "heartbloom_gardens"
+}

@@ -1,0 +1,137 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 12
+		},
+		"light_1": {
+			"3": 1
+		},
+		"light_1+counter": {
+			"7": 5,
+			"9": 2
+		},
+		"light_2": {
+			"3": 4,
+			"5": 2
+		},
+		"light_3": {
+			"5": 3,
+			"8": 2
+		}
+	},
+	"id": "2202:stormfall_city:1v1:brann,lyra:44",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2202,
+	"sim_ms_per_tick": 1.85086444444444,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0106993913650513,
+		"finger_pops_per_fighter_minute": 27.0150083379655,
+		"foot_error_p95_cm": 11.1321764261996,
+		"foot_slide_cm_per_frame": 0.859365629000093,
+		"locked_on_screen_share": 0.975654290931223,
+		"pops_per_fighter_minute": 7.00389105058366
+	},
+	"view_ms_per_frame": 1.951835,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 174,
+			"detail": "lowest sole +42.3 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1678,
+			"worst_value": 0.422959812831385
+		},
+		{
+			"check": "pop",
+			"count": 6,
+			"detail": "LeftHand turned 1.96 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 0,
+			"first_tick": 246,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 915,
+			"worst_value": 1.96320402622223
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 175,
+			"detail": "fighters 0 and 1 overlap 1.02 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 250,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 672,
+			"worst_value": 1.02001259449869
+		},
+		{
+			"check": "camera_cover",
+			"count": 1,
+			"detail": "fighter 1 covers 73% of the screen",
+			"fighter": 1,
+			"first_tick": 591,
+			"legend": "lyra",
+			"limit": 0.6,
+			"weapon": "",
+			"worst_tick": 591,
+			"worst_value": 0.725981987847222
+		},
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "RightUpperArm turned 1.42 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 917,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 917,
+			"worst_value": 1.41970133781433
+		},
+		{
+			"check": "foot_ground",
+			"count": 15,
+			"detail": "lowest sole +53.4 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 950,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1138,
+			"worst_value": 0.53403964974844
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "7 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 7
+		}
+	],
+	"wall_seconds": 21.505,
+	"zone": "stormfall_city"
+}

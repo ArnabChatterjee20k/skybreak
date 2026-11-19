@@ -1,0 +1,156 @@
+{
+	"hitstops": {
+		"chakram/launcher": {
+			"8": 2
+		},
+		"chakram/light_1+counter": {
+			"8": 1
+		},
+		"chakram/light_2": {
+			"4": 1
+		},
+		"chakram/light_3": {
+			"6": 1
+		},
+		"launcher": {
+			"7": 3,
+			"9": 1
+		},
+		"launcher+counter": {
+			"11": 1
+		},
+		"light_1": {
+			"3": 3,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 3
+		},
+		"light_2": {
+			"3": 6,
+			"5": 2
+		},
+		"light_3": {
+			"3": 6,
+			"8": 2
+		},
+		"spike": {
+			"7": 3
+		}
+	},
+	"id": "2401:verdant_falls:1v1:vexa,brann:55",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2401,
+	"sim_ms_per_tick": 2.72426944444444,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.00621732557192445,
+		"finger_pops_per_fighter_minute": 26.0144524735964,
+		"foot_error_p95_cm": 13.1252759238681,
+		"foot_slide_cm_per_frame": 1.13854711091826,
+		"locked_on_screen_share": 0.966992665036675,
+		"pops_per_fighter_minute": 35.0194552529183
+	},
+	"view_ms_per_frame": 2.98611222222222,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 154,
+			"detail": "lowest sole -23.9 cm off the visible ground (MOVING)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 764,
+			"worst_value": -0.239415062162585
+		},
+		{
+			"check": "foot_ground",
+			"count": 9,
+			"detail": "lowest sole +5.1 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 23,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 103,
+			"worst_value": 0.0513043206033146
+		},
+		{
+			"check": "pop",
+			"count": 22,
+			"detail": "SashLower turned 3.07 rad in one frame (FLYING, move )",
+			"fighter": 0,
+			"first_tick": 193,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 316,
+			"worst_value": 3.06992888450623
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 362,
+			"detail": "fighters 0 and 1 overlap 1.05 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 209,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "chakram",
+			"worst_tick": 1629,
+			"worst_value": 1.04846924608573
+		},
+		{
+			"check": "pop",
+			"count": 13,
+			"detail": "RightHand turned 2.01 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 292,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1138,
+			"worst_value": 2.00948905944824
+		},
+		{
+			"check": "arena_bounds",
+			"count": 1,
+			"detail": "outside the arena at (-630.65, 8.07, 618.61) (stand 8.12, VANISHING)",
+			"fighter": 1,
+			"first_tick": 759,
+			"legend": "brann",
+			"limit": 300.05,
+			"weapon": "",
+			"worst_tick": 759,
+			"worst_value": 148.605224609375
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "35 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 35
+		}
+	],
+	"wall_seconds": 28.057,
+	"zone": "verdant_falls"
+}
