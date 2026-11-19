@@ -29,7 +29,7 @@ func test_free_for_alls_stay_near_the_ground_most_of_the_time() -> void:
 
 func test_fighters_rarely_stack_vertically() -> void:
 	assert_lt(_duel.stacked_percent(), 2.0, "1v1")
-	# Target < 3% (polish batch 2) not met yet: 5.3% after the air guard (6.2% before); TODO.md QA-12.
+	# Target < 3% (polish batch 2) not met yet: 5.3% after the air guard (6.2% before); TODO.md QA-15.
 	assert_lt(_ffa.stacked_percent(), 6.0, "FFA-4")
 
 
