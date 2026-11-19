@@ -84,19 +84,43 @@ func test_combo_text_starts_at_two_hits() -> void:
 	assert_eq(ComboCounter.text_for(7), "7 HITS")
 
 
-func test_combo_counter_holds_the_last_count_then_hides() -> void:
+func test_combo_counter_shows_on_a_landed_hit_then_fades_within_a_second() -> void:
 	var counter := ComboCounter.new()
 	add_child_autofree(counter)
+	var other := FighterState.new()
 	var target := FighterState.new()
+	target.combo_hits = 1
+	counter.show_combo([other, target], 1.0 / 60.0)
+	assert_false(counter.visible, "1 hit is no combo")
 	target.combo_hits = 3
-	counter.show_combo([FighterState.new(), target], 1.0 / 60.0)
+	counter.show_combo([other, target], 1.0 / 60.0)
 	assert_true(counter.visible)
 	assert_eq(counter.text, "3 HITS")
-	target.combo_hits = 0
-	counter.show_combo([FighterState.new(), target], 0.5)
-	assert_true(counter.visible, "held after the combo ends")
-	counter.show_combo([FighterState.new(), target], 0.6)
-	assert_false(counter.visible)
+	# Still in hitstun (a long knockback flight), no new hit: it must not linger.
+	var time := 0.0
+	while counter.visible and time < 3.0:
+		counter.show_combo([other, target], 1.0 / 60.0)
+		time += 1.0 / 60.0
+	assert_false(counter.visible, "gone without new hits")
+	assert_lt(time, ComboCounter.HOLD_SECONDS + ComboCounter.FADE_SECONDS + 0.05)
+
+
+func test_combo_counter_never_counts_down_to_another_fighters_smaller_combo() -> void:
+	var counter := ComboCounter.new()
+	add_child_autofree(counter)
+	var a := FighterState.new()
+	var b := FighterState.new()
+	a.combo_hits = 3
+	counter.show_combo([a, b], 1.0 / 60.0)
+	b.combo_hits = 2
+	counter.show_combo([a, b], 1.0 / 60.0)
+	assert_eq(counter.text, "3 HITS", "another fighter's 2-hit combo doesn't replace a live 3")
+
+
+func test_debug_overlay_starts_hidden() -> void:
+	var overlay := DebugOverlay.new()
+	add_child_autofree(overlay)
+	assert_false(overlay.visible, "issue #79: never covers the P1 plate by default")
 
 
 func test_the_arena_feeds_sim_events_to_the_feedback_every_tick() -> void:
