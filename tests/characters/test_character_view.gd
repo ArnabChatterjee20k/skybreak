@@ -158,7 +158,8 @@ func test_states_added_later_fall_back_or_map_by_name() -> void:
 
 
 func test_hit_states_pick_their_clips() -> void:
-	var expected := {&"HITSTUN": &"hit", &"BLOCKSTUN": &"block_hit", &"KNOCKDOWN": &"knockdown"}
+	var expected := {&"HITSTUN": &"hit", &"BLOCKSTUN": &"block_hit", &"KNOCKDOWN": &"knockdown",
+		&"BLOCKING": &"block", &"GRABBED": &"guard_broken", &"THROWING": &"overhead"}
 	for state_name: StringName in expected:
 		if not FighterState.State.has(state_name):
 			continue
