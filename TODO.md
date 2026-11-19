@@ -13,6 +13,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D32 [desktop] Cross-platform determinism: `DetMath` (fdlibm sin, cos, atan2,
+  acos, exp, log, pow on + - * / and sqrt) replaces every libm call in the sim and
+  AI, -0.0 canonicalised each tick, lint test for banned calls, goldens re-blessed,
+  `tools/diag/det_check.gd` hash chain. Open: `developer` runs det_check on Windows
+  and compares with the Linux output in the PR (acceptance gate).
+  `test_re_simulating_8_frames_for_4_fighters_takes_at_most_4_ms` fails in the
+  cloud container on main too (5.2 ms); DetMath adds ~1 us per sin/cos/atan2 call.
 - [desktop] QA re-baseline after #69/#72: golden replays and character visual goldens re-blessed
   (causes in `tests/qa/goldens/README.md`), rollback timing bound made machine-relative, VFX
   node-growth assert counts lazy pool fills instead of a fixed slack.
@@ -72,6 +79,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - QA-13 [developer] Bug (T-D22d): `ZoneMatch` never calls `FighterView.react_to_tick`, so in real matches nobody flinches at hits or looks at the lock-on target (FighterView now finds the sim's floor itself).
 - QA-14 [desktop] Bug (T-D22d): zone visual goldens `zone_ember_rift` (SSIM 0.884) and `zone_frozen_peaks` (80% tiles) fail on fafc61e in a cloud run; fighter shots pass. Not re-blessed: not yet shown whether it is the pose change or the renderer.
 - QA-9 [desktop] Bug (T-D31): a held bow's string passes within 1.5–8 cm of the head centre (Brann blocking, attacking or in blockstun; Kael dashing), 7 of 252 full-soak matches.
+- QA-12 [desktop] Bug (QA re-bless after #87): `tests/ai/test_ai_spacing.gd` `test_fighters_rarely_stack_vertically` fails for FFA-4 (stacked 7.05% vs limit 7.0%) once the last four libm calls in `fighter_ai.gd` use `DetMath` (ulp shifts change the 20 seeded matches). 1v1 stays at 2.68%. The threshold is not loosened. Needs an AI spacing look, or a larger sample.
 - QA-11 [desktop] Bug (QA re-baseline): with T-D29 merged, the soak's `fighter_overlap` check is live and fails 19 of 21 quick matches (up to 0.17 m, mostly ATTACKING vs ATTACKING/BLOCKING). `QaSimChecks.check_overlap` measures hurtboxes, while T-D29 resolves the pushboxes, which are slimmer and shorter by design. Measure `pushbox_at()` instead, then see whether any real pushbox overlap remains.
 - QA-10 [desktop] Bug (QA re-baseline): the Skyhold Ruins cloud sea renders differently on every run (SSIM 0.944, 4.2% tiles between two renders of the same commit), so `zone_skyhold_ruins` sits just above the visual-golden threshold on noise alone. Make the cloud layer's time deterministic in the QA shots.
 - [desktop] Bug (found in T-D22b): `WeaponMoves.move_set(kind, unarmed)` caches by weapon kind only, so the first fighter to arm a kind (e.g. Vexa) fixes its unarmed grab/push_block for everyone after. Key the cache by the unarmed set too.

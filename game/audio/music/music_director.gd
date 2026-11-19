@@ -38,6 +38,10 @@ var _streams: Dictionary = {}
 
 
 ## One playing track: its player, bar grid, layers and fade.
+## Battle-theme level under the combat SFX (menus and stingers stay at full).
+const BATTLE_TRIM_DB := -10.0
+
+
 class Deck:
 	extends RefCounted
 	var player: AudioStreamPlayer
@@ -322,6 +326,10 @@ func _apply_volumes() -> void:
 		if deck.track == &"":
 			continue
 		var gain := deck.gain * _duck
+		if deck.layers != null:
+			# Battle themes sit under the fight (T-127 mix): measured on a bot
+			# fight they were ~2 LU louder than the SFX; this puts them ~8 LU under.
+			gain *= db_to_linear(BATTLE_TRIM_DB)
 		deck.player.volume_db = SILENT_DB if gain <= 0.0001 else linear_to_db(gain)
 		if deck.layers != null and deck.player.stream is AudioStreamSynchronized:
 			var sync := deck.player.stream as AudioStreamSynchronized

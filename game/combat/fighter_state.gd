@@ -279,7 +279,7 @@ func active_hitboxes() -> Array[Dictionary]:
 
 ## Rotation of the hitboxes: facing yaw, then the aim pitch.
 func aim_basis() -> Basis:
-	return Basis(Vector3.UP, facing_yaw) * Basis(Vector3.RIGHT, aim_pitch)
+	return DetMath.axis_angle(Vector3.UP, facing_yaw) * DetMath.axis_angle(Vector3.RIGHT, aim_pitch)
 
 
 ## The body as a vertical capsule centred on position, as {start, end, radius}.

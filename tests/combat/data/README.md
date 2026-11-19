@@ -28,3 +28,21 @@ log it here.
     attacking; the stepping attacks stop at body contact (gap 0.04 m -> 0).
   Before those ticks the new sequences are identical to #68's, so the flat
   floor itself still behaves as before T-D13.
+- **T-D32 (cross-platform determinism)**: re-blessed on Linux after the
+  deterministic path stopped calling libm. On Windows (main 4089277) the old
+  goldens diverged at FFA tick 10 (index 9): fighter 1, blocking while locked
+  on, had `velocity.z` -1.7677666 on Linux and -1.7677667 on Windows (1
+  float32 ulp). Its drift direction comes from `_wish_direction()`:
+  `atan2()` (libm, double) and `Basis(Vector3.UP, yaw)` (libm `sinf`/`cosf`
+  inside the engine), which round differently in glibc and the Windows CRT.
+  The same path gave the other one-tick blips (FFA 14, 25; bot 186) and the
+  drift from FFA tick 71 once a difference fed back into positions. They were
+  real last-bit differences, not signed zeros.
+  Now every sin, cos, atan2 and rotation in `game/combat/**` and `game/ai/**`
+  goes through `DetMath` (`game/combat/det_math.gd`: fdlibm kernels on + - * /
+  and sqrt only), and the sim turns -0.0 into +0.0 at the end of every tick.
+  Both sequences differ from #69's from index 0, because the spawn ring and
+  every facing now round through `DetMath` (1 ulp moves; no rule changed).
+  `tools/diag/det_check.gd` prints a hash chain over the full state of both
+  sequences; it must print the same lines on Linux, Windows and the web build
+  (`tools/web/det_check_web.sh`).

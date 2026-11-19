@@ -14,8 +14,11 @@ const ROW_GAP := 14.0
 ## (fraction of the bar per second).
 const TRAIL_HOLD := 0.5
 const TRAIL_SPEED := 0.8
-const INVENTORY_SLOTS := 2
+## Weapon slots per fighter (FighterState.weapons, T-D14).
+const INVENTORY_SLOTS := 3
 const KI_BARS := 4
+## Banner baseline height as a fraction of the screen height.
+const BANNER_HEIGHT_FRACTION := 0.3
 
 const INK := Color(0.05, 0.05, 0.08, 0.85)
 const PANEL := Color(0.08, 0.09, 0.13, 0.72)
@@ -125,15 +128,19 @@ func _draw_plate(index: int, rect: Rect2) -> void:
 	var weapon_x := inner_x + 52.0 if right_side else inner_x + inner_w - weapon_w - 52.0
 	var weapon_rect := Rect2(weapon_x, rect.position.y + 78, weapon_w, 30)
 	draw_rect(weapon_rect, INK)
-	_text(font, weapon_rect.get_center() + Vector2(0, 6), weapon_label(fighter), 16,
+	var weapon_text := weapon_label(fighter)
+	var weapon_size := fit_font_size(font, weapon_text, weapon_rect.size.x - 8.0, 16, 9)
+	_text(font, weapon_rect.get_center() + Vector2(0, weapon_size * 0.38), weapon_text, weapon_size,
 		Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_CENTER, 4)
-	var items := inventory_labels(fighter)
-	for s in INVENTORY_SLOTS:
-		var slot_x := weapon_rect.position.x - 24.0 - s * 22.0 if right_side else weapon_rect.end.x + 6.0 + s * 22.0
+	var slots := inventory_slots(fighter)
+	for slot_index in slots.size():
+		var slot_x := weapon_rect.position.x - 24.0 - slot_index * 22.0 if right_side else weapon_rect.end.x + 6.0 + slot_index * 22.0
 		var slot := Rect2(slot_x, weapon_rect.position.y + 4, 18, 22)
 		draw_rect(slot, INK)
-		if s < items.size():
+		if slots[slot_index].filled:
 			draw_rect(slot.grow(-4), team)
+		if slots[slot_index].active:
+			draw_rect(slot, Color.WHITE, false, 2.0)
 	# Burst stocks.
 	var stocks := burst_stocks(fighter, sim.meter_tuning)
 	for s in sim.meter_tuning.burst_max_stocks:
@@ -163,8 +170,10 @@ func _draw_banner() -> void:
 	if banner.title == "":
 		return
 	var font := ThemeDB.fallback_font
-	# The real screen centre, in design space (the design is pinned to the top).
-	var centre := (size / 2.0 - design_offset(size)) / design_scale(size) + Vector2(0, -60)
+	# Upper third of the real screen (in design space; the design is pinned to
+	# the top), clear of the fighters, who sit around the middle: media-1.9's
+	# centred K.O.! hid the fall.
+	var centre := banner_position(size)
 	_text(font, centre, banner.title, 132, BANNER, HORIZONTAL_ALIGNMENT_CENTER, 18)
 	if banner.subtitle != "":
 		_text(font, centre + Vector2(0, 70), banner.subtitle, 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10)
@@ -205,6 +214,14 @@ static func design_offset(screen: Vector2) -> Vector2:
 	return Vector2((screen.x - DESIGN.x * design_scale(screen)) / 2.0, 0.0)
 
 
+## Where banners are centred, in design space: the upper third of the screen,
+## below the plates and clock.
+static func banner_position(screen: Vector2) -> Vector2:
+	var scale_factor := design_scale(screen)
+	var top_third := Vector2(screen.x / 2.0, screen.y * BANNER_HEIGHT_FRACTION)
+	return (top_third - design_offset(screen)) / scale_factor
+
+
 ## Plate for fighter index, in design space: even indices on the left, odd on
 ## the right, a second row for fighters 3 and 4.
 static func plate_rect(index: int, _count: int) -> Rect2:
@@ -243,22 +260,29 @@ static func chip_trail_step(trail: float, health: float, hold: float, delta: flo
 	return {"trail": maxf(trail - TRAIL_SPEED * delta, health), "hold": 0.0}
 
 
-## Held weapon name, read generically: FighterState gains weapons in T-D14.
+## What the weapon box says: the held weapon's name, plus ammo for ranged
+## weapons ("ARC REVOLVER 12", "RELOAD" while reloading); "UNARMED" when empty.
 static func weapon_label(fighter: FighterState) -> String:
-	var weapon = fighter.get("weapon")
-	if weapon == null or str(weapon) == "":
+	var kind := fighter.held_weapon()
+	if kind == Weapon.Kind.NONE:
 		return "UNARMED"
-	if weapon is Resource:
-		var display = weapon.get("display_name")
-		if display != null and str(display) != "":
-			return str(display).to_upper()
-		return weapon.resource_path.get_file().get_basename().to_upper()
-	return str(weapon).to_upper()
+	var label := String(Weapon.Kind.find_key(kind)).replace("_", " ")
+	if Weapon.is_ranged(kind):
+		label += " RELOAD" if fighter.reload_ticks > 0 else " %d" % fighter.ammo[fighter.active_slot]
+	return label
 
 
-## Held inventory items, empty until T-D14 adds them.
-static func inventory_labels(fighter: FighterState) -> Array:
-	var items = fighter.get("inventory")
-	if items is Array:
-		return items.filter(func(item): return item != null)
-	return []
+## Largest font size from largest down to smallest at which text fits width.
+static func fit_font_size(font: Font, text: String, width: float, largest: int, smallest: int) -> int:
+	var font_size := largest
+	while font_size > smallest and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > width:
+		font_size -= 1
+	return font_size
+
+
+## One entry per weapon slot: {filled, active}.
+static func inventory_slots(fighter: FighterState) -> Array[Dictionary]:
+	var slots: Array[Dictionary] = []
+	for i in mini(fighter.weapons.size(), INVENTORY_SLOTS):
+		slots.append({"filled": fighter.weapons[i] != Weapon.Kind.NONE, "active": i == fighter.active_slot})
+	return slots

@@ -83,7 +83,7 @@ func _go_for_pickup(sim: CombatSim, me: FighterState, pickup: WeaponPickup, plan
 	if me.lock_on_target >= 0:
 		_tap(plan, _A.LOCK_TOGGLE)
 	var to_pickup := pickup.position - me.position
-	plan.view_yaw = atan2(-to_pickup.x, -to_pickup.z)
+	plan.view_yaw = DetMath.atan2(-to_pickup.x, -to_pickup.z)
 	var planar := Vector2(to_pickup.x, to_pickup.z).length()
 	plan.move = Vector2(0, 1) if planar > 0.6 else Vector2.ZERO
 	if to_pickup.y > 0.8:
