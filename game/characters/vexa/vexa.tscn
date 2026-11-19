@@ -1,13 +1,15 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://game/characters/vexa/vexa_view.gd" id="1_view"]
 [ext_resource type="Resource" path="res://game/characters/vexa/vexa_clip_set.tres" id="2_clips"]
 [ext_resource type="Script" path="res://game/characters/vexa/vexa_figure.gd" id="3_figure"]
 [ext_resource type="Resource" path="res://game/characters/vexa/vexa_design.tres" id="4_design"]
+[ext_resource type="Resource" path="res://game/combat/moves/vexa/vexa_move_set.tres" id="5_moves"]
 
 [node name="Vexa" type="Node3D" node_paths=PackedStringArray("model")]
 script = ExtResource("1_view")
 clips = ExtResource("2_clips")
+move_set = ExtResource("5_moves")
 model = NodePath("Model/VexaFigure")
 
 [node name="Model" type="Node3D" parent="."]

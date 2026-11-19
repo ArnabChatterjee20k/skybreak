@@ -29,6 +29,8 @@ const SNAP_STATES: Array[FighterState.State] = [FighterState.State.DASHING, Figh
 ## Pose (seconds into the dash clip) that dashes and vanishes snap to and hold,
 ## so an afterimage copy of it reads crisply.
 @export var dash_snap_time := 0.3
+## Her moves; each gets a posed clip timed to its ticks (VexaMoveClips).
+@export var move_set: MoveSet
 
 var _skeleton: Skeleton3D
 var _springs: Array[FigureSpring] = []
@@ -39,6 +41,8 @@ var _spring_time := 0.0
 
 
 func _ready() -> void:
+	if move_set:
+		clips = VexaMoveClips.clip_set(clips, move_set, model.get_node("%GeneralSkeleton") as Skeleton3D)
 	super._ready()
 	_skeleton = model.get_node("%GeneralSkeleton") as Skeleton3D
 	for bone in LAYER_BONES:
