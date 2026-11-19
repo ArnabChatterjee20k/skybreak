@@ -7,16 +7,23 @@ enum TimeOfDay { DAY, DUSK, NIGHT }
 ## Fog end distance (m) for fog_density 0 and 1.
 const FOG_END_CLEAR := 1200.0
 const FOG_END_STORM := 450.0
+## Haze starts this far out: fighters stay crisp, the backdrop recedes behind them.
+const HAZE_BEGIN := 70.0
 const WEATHER_RAIN := 1
 const WEATHER_SNOW := 2
 const WEATHER_EMBERS := 3
 const WEATHER_PETALS := 4
+## Visual layers the rim light reaches (fighters); world geometry sits on WORLD_LAYERS.
+const RIM_LAYERS := 1
+const WORLD_LAYERS := 1 << 9
 
 ## Camera to follow; defaults to the viewport's current camera.
 @export var camera: Camera3D
 var time_of_day := TimeOfDay.DAY
 var environment: Environment
 var sun: DirectionalLight3D
+## Back light that lifts the fighters off the backdrop; lights only RIM_LAYERS.
+var rim: DirectionalLight3D
 var sky_material: ShaderMaterial
 var layout: ZoneLayout
 var weather: Dictionary = {}  # weather type -> GPUParticles3D
@@ -32,10 +39,16 @@ var _applied_weights := PackedFloat32Array()
 var _applied_time := -1
 
 
-func setup(zone_layout: ZoneLayout, env: Environment, light: DirectionalLight3D, sky_shader_material: ShaderMaterial) -> void:
+func setup(zone_layout: ZoneLayout, env: Environment, light: DirectionalLight3D, sky_shader_material: ShaderMaterial,
+		rim_light: DirectionalLight3D = null) -> void:
 	layout = zone_layout
 	environment = env
 	sun = light
+	rim = rim_light
+	if rim:
+		rim.light_cull_mask = RIM_LAYERS
+		rim.shadow_enabled = false
+		rim.sky_mode = DirectionalLight3D.SKY_MODE_LIGHT_ONLY
 	sky_material = sky_shader_material
 	_build_weather()
 
@@ -79,6 +92,7 @@ func blend_at(x: float, z: float, y: float = -INF) -> Dictionary:
 		"fog_color": Color(0, 0, 0, 0), "fog_end": 0.0, "sun_color": Color(0, 0, 0, 0),
 		"sun_energy": 0.0, "sun_direction": Vector3.ZERO, "ambient": Color(0, 0, 0, 0),
 		"sky_top": Color(0, 0, 0, 0), "sky_horizon": Color(0, 0, 0, 0), "weather": {},
+		"exposure": 0.0, "rim_color": Color(0, 0, 0, 0), "rim_energy": 0.0, "rim_angles": Vector2.ZERO,
 	}
 	for i in w.size():
 		if w[i] <= 0.0:
@@ -92,6 +106,10 @@ func blend_at(x: float, z: float, y: float = -INF) -> Dictionary:
 		out.ambient += zone.ambient_colors[t] * w[i]
 		out.sky_top += zone.sky_top_colors[t] * w[i]
 		out.sky_horizon += zone.sky_horizon_colors[t] * w[i]
+		out.exposure += zone.exposures[t] * w[i]
+		out.rim_color += zone.rim_colors[t] * w[i]
+		out.rim_energy += zone.rim_energies[t] * w[i]
+		out.rim_angles += zone.rim_angles * w[i]
 		if zone.weather != 0:
 			out.weather[zone.weather] = out.weather.get(zone.weather, 0.0) + w[i]
 	out.sun_direction = (out.sun_direction as Vector3).normalized()
@@ -113,8 +131,12 @@ func apply_at(position: Vector3) -> void:
 	if environment:
 		environment.fog_light_color = current.fog_color
 		environment.fog_depth_end = current.fog_end
-		environment.fog_depth_begin = current.fog_end * 0.18
+		environment.fog_depth_begin = HAZE_BEGIN
 		environment.ambient_light_color = current.ambient
+		environment.tonemap_exposure = current.exposure
+	if rim:
+		rim.light_color = current.rim_color
+		rim.light_energy = current.rim_energy
 	if sun:
 		sun.light_color = current.sun_color
 		sun.light_energy = current.sun_energy
@@ -145,6 +167,24 @@ func _process(_delta: float) -> void:
 	var cam := camera if camera else get_viewport().get_camera_3d()
 	if cam and layout:
 		apply_at(cam.global_position)
+		aim_rim(cam.global_transform.basis)
+
+
+## Points the rim light from behind what the camera looks at, back toward the camera.
+func aim_rim(camera_basis: Basis) -> void:
+	if rim == null or current.is_empty():
+		return
+	rim.global_transform = Transform3D(Basis.looking_at(rim_direction(camera_basis, current.rim_angles), Vector3.UP), Vector3.ZERO)
+
+
+## Direction the rim light travels for a camera basis and (around, down) angles in degrees.
+static func rim_direction(camera_basis: Basis, angles: Vector2) -> Vector3:
+	var back := camera_basis.z
+	back.y = 0.0
+	back = back.normalized() if back.length_squared() > 0.0001 else Vector3.BACK
+	var flat := back.rotated(Vector3.UP, deg_to_rad(angles.x))
+	var down := deg_to_rad(clampf(angles.y, 5.0, 80.0))
+	return (flat * cos(down) + Vector3.DOWN * sin(down)).normalized()
 
 
 func _build_weather() -> void:
