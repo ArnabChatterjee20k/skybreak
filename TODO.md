@@ -20,6 +20,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D03 [desktop] `MoveData` Resource + light string + cancels, PR #15.
 - T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
   damage scaling, hitstun decay, knockback, hit events, PR #26.
+- T-D10 [desktop] First real character: Kael (CC0 VRoid body, toon look) on a
+  retargeted humanoid clip library (Quaternius UAL, CC0), `CharacterView`
+  driven by sim state, preview scene, PR #34. Swap into FighterView is T-122.
 
 ## Backlog
 
