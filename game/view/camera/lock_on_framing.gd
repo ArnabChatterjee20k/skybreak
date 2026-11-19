@@ -62,6 +62,15 @@ const NEAR_PLAYER_SCREEN_OFFSET := 0.45
 ## The opponent must cross past the player by this much (fraction of the half
 ## width) before the shoulder flips.
 const SHOULDER_SWITCH_MARGIN := 0.05
+## Stacked fighters (T-117b): when the height angle between them passes the
+## pitch limit while they are close, no pitch can show both. The camera blends
+## (over STACK_BLEND_ANGLE) to a side-on view of their midpoint, pulled back
+## until both fit inside STACK_FRAME_FILL of the screen height. Only up to
+## STACK_MAX_HEIGHT apart; bigger gaps keep the widen-and-arrow framing.
+const STACK_BLEND_ANGLE := deg_to_rad(20.0)
+const STACK_MAX_HEIGHT := 12.0
+const STACK_FADE_HEIGHT := 4.0
+const STACK_FRAME_FILL := 0.7
 ## Screen shape the framing aims for.
 const DEFAULT_VERTICAL_FOV := 75.0
 const ASPECT := 16.0 / 9.0
@@ -72,19 +81,76 @@ const ASPECT := 16.0 / 9.0
 ## orbit: mouse offset in radians (x yaw, y pitch), clamped to the orbit limits.
 ## far_blend: 0 close .. 1 far; negative means "from the current distance".
 ## vertical_fov: degrees, used to put the player at PLAYER_SCREEN_OFFSET.
+## hold_facing: the camera's current flat forward; used instead of the noisy
+## fighter-to-fighter direction when they are almost on top of each other.
 static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit: Vector2,
-		far_blend: float = -1.0, vertical_fov: float = DEFAULT_VERTICAL_FOV) -> Transform3D:
+		far_blend: float = -1.0, vertical_fov: float = DEFAULT_VERTICAL_FOV,
+		hold_facing: Vector3 = Vector3.ZERO) -> Transform3D:
 	if far_blend < 0.0:
 		far_blend = BAND_BLEND[band_for(player.distance_to(target), Band.MID)]
-	var pose := _pose_with_side(player, target, shoulder, orbit, far_blend, vertical_fov, 0.0)
-	# Near band: swing further aside until the fighters' silhouettes are apart.
-	var near_weight := clampf(1.0 - far_blend * 2.0, 0.0, 1.0)
+	var stacked := stack_weight(player, target)
+	var facing := stable_facing(player, target, hold_facing)
+	# Stacked, the horizontal direction between them is meaningless: keep the held one.
+	var hold := Vector3(hold_facing.x, 0.0, hold_facing.z)
+	if stacked > 0.0 and hold.length() > 0.01:
+		var blended := facing.lerp(hold.normalized(), stacked)
+		facing = blended.normalized() if blended.length() > 0.01 else hold.normalized()
+	var pose := _pose_with_side(player, target, shoulder, orbit, far_blend, vertical_fov, 0.0, facing)
+	# Near band: swing further aside until the fighters' silhouettes are apart
+	# (not when stacked: they are apart vertically).
+	var near_weight := clampf(1.0 - far_blend * 2.0, 0.0, 1.0) * (1.0 - stacked)
 	var wanted_gap := MIN_NEAR_SCREEN_GAP
 	var extra := 0.0
 	while near_weight > 0.0 and extra < MAX_EXTRA_SIDE_ANGLE 			and screen_gap(pose, vertical_fov, player, target) < wanted_gap:
 		extra += SIDE_ANGLE_STEP
-		pose = _pose_with_side(player, target, shoulder, orbit, far_blend, vertical_fov, extra)
+		pose = _pose_with_side(player, target, shoulder, orbit, far_blend, vertical_fov, extra, facing)
+	if stacked > 0.0:
+		var side_on := _stacked_pose(player, target, shoulder, facing, vertical_fov)
+		pose = Transform3D(
+			Basis(pose.basis.get_rotation_quaternion().slerp(side_on.basis.get_rotation_quaternion(), stacked)),
+			pose.origin.lerp(side_on.origin, stacked))
 	return pose
+
+
+## 0-1: how much to widen and pull back for a view lagging its framing by
+## angle (radians): none under 15°, full at 60°.
+static func lag_widen(angle: float) -> float:
+	return smoothstep(deg_to_rad(15.0), deg_to_rad(60.0), angle)
+
+
+## 0-1: how much the stacked (side-on) framing takes over.
+static func stack_weight(player: Vector3, target: Vector3) -> float:
+	var gap := target - player
+	var height := absf(gap.y)
+	var flat := Vector2(gap.x, gap.z).length()
+	var limit := MAX_VIEW_PITCH_UP if gap.y > 0.0 else MAX_VIEW_PITCH_DOWN
+	var steep := clampf((atan2(height, maxf(flat, 0.01)) - limit) / STACK_BLEND_ANGLE, 0.0, 1.0)
+	var close := clampf((STACK_MAX_HEIGHT - height) / STACK_FADE_HEIGHT, 0.0, 1.0)
+	return smoothstep(0.0, 1.0, steep) * close
+
+
+## Flat direction from player to target, or hold_facing (when given) if
+## they are exactly on top of each other.
+static func stable_facing(player: Vector3, target: Vector3, hold_facing: Vector3) -> Vector3:
+	var flat := Vector3(target.x - player.x, 0.0, target.z - player.z)
+	if flat.length() > 0.01:
+		return flat.normalized()
+	var hold := Vector3(hold_facing.x, 0.0, hold_facing.z)
+	return hold.normalized() if hold.length() > 0.01 else Vector3.FORWARD
+
+
+## Side-on view of a vertically stacked pair: from beside them (shoulder
+## side, at the close side angle), level with their midpoint, far enough
+## back that both fit.
+static func _stacked_pose(player: Vector3, target: Vector3, shoulder: float, facing: Vector3,
+		vertical_fov: float) -> Transform3D:
+	var mid := player.lerp(target, 0.5)
+	var half_extent := absf(target.y - player.y) * 0.5 + FIGHTER_HEIGHT * 0.5
+	var tan_half_v := tan(deg_to_rad(vertical_fov) / 2.0) * STACK_FRAME_FILL
+	var distance := maxf(half_extent / tan_half_v, CLOSE_BOOM_LENGTH + 1.5)
+	var back := (-facing).rotated(Vector3.UP, CLOSE_SIDE_ANGLE * shoulder)
+	var position := mid + back * distance + Vector3.UP * 0.5
+	return _looking_at(position, mid)
 
 
 ## Horizontal gap between the two fighters' screen boxes as a fraction of the
@@ -110,10 +176,9 @@ static func _screen_box_ndc(camera: Transform3D, vertical_fov: float, centre: Ve
 
 
 static func _pose_with_side(player: Vector3, target: Vector3, shoulder: float, orbit: Vector2,
-		far_blend: float, vertical_fov: float, extra_side: float) -> Transform3D:
+		far_blend: float, vertical_fov: float, extra_side: float, facing: Vector3) -> Transform3D:
 	var to_target := target - player
 	var flat := Vector3(to_target.x, 0.0, to_target.z)
-	var facing := flat.normalized() if flat.length() > 0.01 else Vector3.FORWARD
 	var clamped := clamp_orbit(orbit)
 
 	var behind := -facing

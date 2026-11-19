@@ -73,6 +73,8 @@ func time_scale() -> float:
 
 ## The big centre text: {title, subtitle}; empty title when none.
 func banner(names: Array) -> Dictionary:
+	if not enabled:
+		return {"title": "", "subtitle": ""}
 	match phase:
 		Phase.INTRO:
 			if phase_ticks < INTRO_ROUND_TICKS:
