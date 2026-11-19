@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="MotionProfile" format=3]
+
+[ext_resource type="Script" path="res://game/characters/motion/motion_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+resource_name = "lyra: graceful"
+lean_scale = 0.8
+lean_frequency = 6.5
+secondary_frequency = 9.0
+secondary_scale = 1.4
+blend_frequency = 13.0
+flinch_frequency = 13.0
+flinch_scale = 0.9
+landing_scale = 0.6
+stride_scale = 1.15
+timing_scale = 0.9
+hover_bob = 0.07
+hover_bob_hz = 0.4
+flight_arm_scale = 1.2
+dive_pitch = 92.0

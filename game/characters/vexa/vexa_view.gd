@@ -61,13 +61,15 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 	_set_poses(_base)
 	var frozen := fighter.hitstop_ticks > 0
 	if fighter.state in SNAP_STATES:
+		if layers != null:
+			_update_layers(fighter, 0.0 if frozen else delta)
 		_snap(fighter)
 	else:
 		super.apply_state(fighter, delta)
 	if not frozen:
 		_time += delta
 	_base = _poses()
-	_apply_layer(procedural_layer(fighter, _time))
+	_apply_layer(defer_to_layers(procedural_layer(fighter, _time), fighter))
 	_step_springs(fighter, 0.0 if frozen else delta)
 
 
@@ -101,6 +103,13 @@ func afterimage_pose() -> Array[Transform3D]:
 	for bone in _skeleton.get_bone_count():
 		poses.append(_skeleton.get_bone_global_pose(bone))
 	return poses
+
+
+func _fit_specs() -> Dictionary:
+	if move_set == null:
+		return {}
+	return MotionClips.fit_specs(VexaMoveClips.moves_of(move_set), VexaMoveClips.STYLES, VexaMoveClips.strike_point,
+		clips.motion_moves)
 
 
 func skeleton() -> Skeleton3D:

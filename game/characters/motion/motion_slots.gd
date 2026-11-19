@@ -58,7 +58,8 @@ static func state_clip(fighter: FighterState, local_velocity: Vector3, airborne:
 		FighterState.State.FLYING:
 			return flight(local_velocity)
 		FighterState.State.DASHING, FighterState.State.VANISHING:
-			return &"fly" if airborne else &"dash_start"
+			# In the air the upright hover base: MotionLayers pitches it and adds the dash burst.
+			return &"hover" if airborne else &"dash_start"
 		FighterState.State.BLOCKING:
 			return &"guard"
 		FighterState.State.BLOCKSTUN:

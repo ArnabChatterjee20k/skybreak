@@ -74,7 +74,7 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 	if not frozen:
 		_time += delta
 	_base = _poses()
-	_apply_layer(procedural_layer(fighter, _time))
+	_apply_layer(defer_to_layers(procedural_layer(fighter, _time), fighter))
 	_step_springs(fighter, 0.0 if frozen else delta)
 	if _ember:
 		_ember.emission_energy_multiplier = ember_energy(fighter, _time)
@@ -118,6 +118,13 @@ static func ember_energy(fighter: FighterState, time: float) -> float:
 	elif fighter.is_armored():
 		flare = 1.0
 	return EMBER_ENERGY + sin(TAU * time / BREATH_PERIOD) * EMBER_PULSE + flare * EMBER_FLARE
+
+
+func _fit_specs() -> Dictionary:
+	if move_set == null:
+		return {}
+	return MotionClips.fit_specs(BrannMoveClips.moves_of(move_set), BrannMoveClips.STYLES, BrannMoveClips.strike_point,
+		clips.motion_moves)
 
 
 func skeleton() -> Skeleton3D:
