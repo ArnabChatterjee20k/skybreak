@@ -7,6 +7,6 @@
 resource_name = "vexa_silver"
 next_pass = ExtResource("2_outline")
 shader = ExtResource("1_toon")
-shader_parameter/albedo_color = Color(0.5, 0.52, 0.62, 1)
+shader_parameter/albedo_color = Color(0.42, 0.44, 0.54, 1)
 shader_parameter/shadow_tint = Color(0.55, 0.52, 0.72, 1)
 shader_parameter/specular_enabled = true

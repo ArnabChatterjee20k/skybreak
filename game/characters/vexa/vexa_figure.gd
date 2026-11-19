@@ -129,6 +129,10 @@ static func _torso(d: VexaDesign, j: Dictionary, list: Array[FigureRig.Part]) ->
 	_add(list, &"Chest", &"black", FigureKit.rounded_box(d.waist_size, 0.6), chest + Vector3(0, -0.02, 0))
 	_add(list, &"UpperChest", &"silver", FigureKit.rounded_box(d.chest_size, 0.45),
 		upper + Vector3(0, 0.04, -0.005))
+	# Cropped hem of the jacket.
+	_add(list, &"UpperChest", &"violet", FigureKit.torus(d.chest_size.x * 0.44, 0.022, 24, 6),
+		Transform3D(Basis.from_scale(Vector3(1, 1, d.chest_size.z / d.chest_size.x)),
+			upper + Vector3(0, 0.04 - d.chest_size.y * 0.45, -0.005)))
 	# Open jacket front: a black V of the suit underneath.
 	var v_neck := PackedVector2Array([Vector2(-0.085, 0.1), Vector2(0.085, 0.1), Vector2(0.0, -0.11)])
 	_add(list, &"UpperChest", &"black", FigureKit.extrude(v_neck, 0.05, 0.01),
@@ -252,6 +256,8 @@ static func _leg(d: VexaDesign, j: Dictionary, side: float, list: Array[FigureRi
 	_add(list, StringName(s + "LowerLeg"), &"black",
 		FigureKit.capsule(knee, ankle + Vector3(0, 0.03, 0), Vector2(0.076, 0.076), Vector2(0.064, 0.064)))
 	_wraps(list, StringName(s + "LowerLeg"), knee + Vector3(0, -0.07, 0), ankle + Vector3(0, 0.1, 0), 0.074, 0.066, 3, side)
+	_add(list, StringName(s + "LowerLeg"), &"silver", FigureKit.rounded_box(Vector3(0.11, 0.1, 0.06), 0.5, 12, 8),
+		knee + Vector3(0, -0.02, 0.065))
 	var boot := Vector3(ankle.x, d.boot_size.y * 0.5, d.boot_size.z * 0.17)
 	_add(list, StringName(s + "Foot"), &"black", FigureKit.rounded_box(d.boot_size, 0.5), boot)
 	_add(list, StringName(s + "Foot"), &"silver",
@@ -286,7 +292,7 @@ static func _wraps(list: Array[FigureRig.Part], bone: StringName, from: Vector3,
 		var t := float(k) / maxf(count - 1, 1)
 		var tilt := Basis(Vector3.RIGHT if absf(axis.y) > 0.9 else Vector3.BACK, 0.18 * (1 if k % 2 == 0 else -1))
 		var radius := lerpf(radius_from, radius_to, t) + 0.004
-		_add(list, bone, &"wrap", FigureKit.torus(radius, 0.013, 18, 6),
+		_add(list, bone, &"wrap", FigureKit.torus(radius, 0.013, 14, 6),
 			Transform3D(to_axis * tilt, from.lerp(to, t)))
 
 
