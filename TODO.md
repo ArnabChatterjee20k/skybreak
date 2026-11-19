@@ -133,6 +133,13 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D15 [desktop] Rollback core + Duo online prototype: `CombatSim.snapshot()`/
+  `restore()` (reflection deep copy, `SimSnapshot`), compact `InputCodec` (8-18 B),
+  transport-agnostic `RollbackSession` (2-tick delay, prediction, 8-tick rollback,
+  hash desync check, frame-advantage sync), loopback + WebRTC transports, Appwrite
+  lobby/signalling, `duo_lobby.tscn`. Open: provision the `skybreak_` resources
+  (game/net/README.md), vendor webrtc-native in `addons/` [developer], draw the
+  session in the arena, Presence-based signalling, team rules (stocks, friendly fire).
 - T-128 [desktop] Front end: splash, main menu over the world flythrough, character
   select (roster read dynamically, SubViewport turntable portraits, name/title/stat
   bars, human/AI, AI level 1-5 and team per seat; Vs AI 1-3 AIs, FFA 2-4), zone
