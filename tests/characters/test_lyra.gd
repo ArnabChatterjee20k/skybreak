@@ -271,7 +271,7 @@ func test_she_zones_far_but_is_weaker_up_close_than_kael() -> void:
 	assert_lt(lyra.light_string.size(), kael.light_string.size(), "a shorter light string")
 	var total := func(string: Array[MoveData]) -> int:
 		return string.reduce(func(sum: int, move: MoveData) -> int: return sum + move.damage, 0)
-	assert_lt(total.call(lyra.light_string), total.call(kael.light_string) * 0.7, "her string deals far less")
+	assert_lt(float(total.call(lyra.light_string)), total.call(kael.light_string) * 0.7, "her string deals far less")
 	assert_lt(lyra.light_string[-1].damage, kael.light_string[-1].damage, "a lighter finisher")
 	assert_lt(lyra.light_string[0].damage, kael.light_string[0].damage, "a lighter jab")
 	assert_gte(lyra.light_string[0].startup_ticks, kael.light_string[0].startup_ticks, "no faster jab")
