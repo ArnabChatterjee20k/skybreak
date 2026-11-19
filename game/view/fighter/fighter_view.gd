@@ -15,8 +15,11 @@ const LEAN_SHARPNESS := 10.0
 @export var body_color := Color(0.9, 0.4, 0.15)
 ## Character model (a CharacterView scene). Empty draws the placeholder capsule.
 @export var character_scene: PackedScene
-## Energy colour for the character's rim; alpha is the blend.
+## Energy colour for the character's rim; alpha is the blend. Its rgb is also
+## the team colour of the height marker.
 @export var energy_color := Color(1.0, 0.55, 0.2, 0.0)
+## Team recolour of the character (part name -> Color), see FighterPalette.
+@export var palette: Dictionary = {}
 
 ## The sim state this view draws; set before the first frame.
 var fighter: FighterState
@@ -26,14 +29,18 @@ var _previous_yaw := 0.0
 var _lean := Vector2.ZERO
 var _body: Node3D
 var _character: CharacterView
+var _height_marker := HeightMarker.new()
 
 
 func _ready() -> void:
 	_body = Node3D.new()
 	add_child(_body)
+	_height_marker.color = Color(energy_color, 1.0)
+	add_child(_height_marker)
 	if character_scene != null:
 		_character = character_scene.instantiate() as CharacterView
 		_body.add_child(_character)
+		FighterPalette.apply(_character, palette)
 		_character.set_energy_color(energy_color)
 		return
 	var capsule := MeshInstance3D.new()
@@ -65,6 +72,7 @@ func present(blend: float, delta: float) -> void:
 	_lean = _lean.lerp(goal, 1.0 - exp(-LEAN_SHARPNESS * delta))
 	_body.basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, _lean.x) * Basis(Vector3.BACK, _lean.y)
 	visible = fighter.state != FighterState.State.VANISHING
+	_height_marker.update(position)
 	if _character != null:
 		_character.apply_state(fighter, delta)
 

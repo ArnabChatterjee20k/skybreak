@@ -71,11 +71,11 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   high preset is fine on the grey-box arena (T-107: GPU p95 1.8 ms); recheck
   once real content lands.
 
-- T-118 [developer] Fighter identity: camera-side fill/rim light, a facing cue
-  readable from behind, height drop-line + ground ring under airborne
-  fighters, bigger off-screen arrow with distance and above/below/behind.
-  Plus P2 identity (media-1.5: two Kaels looked alike): a P2 palette swap
-  (body, coat and scarf hue) and a team rim colour.
+- T-118 [developer] Fighter identity (PR open): P2 palette swap + stronger
+  team rim, height drop-line + ground ring, off-screen arrow with distance,
+  above/below and "behind". Fill light and back cue dropped: the toon
+  shader's shadow tint keeps backlit Kael readable and the model's front and
+  back are distinct (both were capsule-era problems).
 - T-117b [developer] Point-blank framing (0-1 m gap, fighters overlapping):
   the camera can put a fighter at the screen edge or cut it off (media-1.5).
   After T-118.

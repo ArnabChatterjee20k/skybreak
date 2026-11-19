@@ -47,3 +47,26 @@ func test_edge_arrows_stay_inside_the_margin() -> void:
 		var inner := Rect2(Vector2.ONE * (OpponentMarker.EDGE_MARGIN - 0.5),
 			SCREEN - Vector2.ONE * (OpponentMarker.EDGE_MARGIN - 0.5) * 2.0)
 		assert_true(inner.has_point(result.position), "inside margin for %s" % point)
+
+
+# --- T-118: distance, above/below and behind cues ---
+
+func test_point_behind_the_camera_is_flagged_behind() -> void:
+	assert_true(OpponentMarker.placement(CAMERA, FOV, SCREEN, Vector3(1, 0, 10)).behind)
+	assert_false(OpponentMarker.placement(CAMERA, FOV, SCREEN, Vector3(50, 0, -5)).behind)
+
+
+func test_cue_gives_the_distance_in_whole_metres() -> void:
+	var cue := OpponentMarker.cue_for(Vector3.ZERO, Vector3(30, 0, 40), false)
+	assert_eq(cue.label, "50 m")
+	assert_eq(cue.vertical, 0)
+
+
+func test_cue_says_above_or_below_beyond_the_height_threshold() -> void:
+	assert_eq(OpponentMarker.cue_for(Vector3.ZERO, Vector3(0, 20, 5), false).vertical, 1)
+	assert_eq(OpponentMarker.cue_for(Vector3(0, 30, 0), Vector3(0, 1, 5), false).vertical, -1)
+	assert_eq(OpponentMarker.cue_for(Vector3.ZERO, Vector3(0, 3, 5), false).vertical, 0, "small gaps are level")
+
+
+func test_cue_tags_an_opponent_behind_you() -> void:
+	assert_eq(OpponentMarker.cue_for(Vector3.ZERO, Vector3(0, 0, 12), true).label, "12 m behind")
