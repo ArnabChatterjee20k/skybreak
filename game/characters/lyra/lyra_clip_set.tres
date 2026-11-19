@@ -3,6 +3,8 @@
 [ext_resource type="Script" path="res://game/characters/clip_set.gd" id="1_clips"]
 [ext_resource type="AnimationLibrary" path="res://game/characters/animations/humanoid_clips.res" id="1_gebhv"]
 
+[ext_resource type="Resource" path="res://game/characters/motion/motion_library.res" id="9_motion"]
+[ext_resource type="Resource" path="res://game/characters/motion/profiles/lyra_motion.tres" id="10_profile"]
 [resource]
 script = ExtResource("1_clips")
 library = ExtResource("1_gebhv")
@@ -49,3 +51,21 @@ impact_windows = Dictionary[StringName, Vector2]({
 &"swing_low": Vector2(0.18333334, 0.26333332),
 &"swing_rising": Vector2(0.6166667, 0.69666666)
 })
+motion = ExtResource("9_motion")
+motion_moves = Dictionary[StringName, StringName]({
+&"breaker": &"fit:smash",
+&"charged_smash_1": &"fit:push_block",
+&"charged_smash_2": &"fit:push_block",
+&"charged_smash_3": &"fit:push_block",
+&"grab": &"fit:grab",
+&"launcher": &"fit:launcher_up",
+&"light_1": &"fit",
+&"light_2": &"fit",
+&"light_3": &"fit:push_block",
+&"push_block": &"fit",
+&"rising": &"fit:launcher_up",
+&"smash": &"fit",
+&"spike": &"fit:smash",
+&"sweep": &"fit:push_block"
+})
+motion_profile = ExtResource("10_profile")
