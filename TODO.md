@@ -13,6 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-113 [developer] Camera distance model: rigid follow with a smoothed offset,
+  6-7 m boom, tilt-first height gaps, opponent edge marker/lock reticle,
+  scripted-playtest harness + asserts in the repo.
 - T-110 [developer] Window mode: borderless fullscreen at desktop resolution by
   default; windowed = 1600x900 centred, shrunk to fit the usable screen area;
   Fullscreen toggle in the F10 menu, saved with the graphics settings.
@@ -32,20 +35,15 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 Playtest #1 (flight and camera) scored movement 2/5, camera 1/5. Target after
 T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playtester.
 
-- T-113 [developer] Camera distance model: boom 6–10 m from the player, player
-  never below ~15% of screen height, distance changes smoothed over ≥ 0.5 s
-  (no pumping), height gaps tilt first within the 35°/25° clamp instead of
-  pulling back (replaces PR #8's pull-back; keep FOV widening ≤ +10°), edge
-  marker/reticle when the opponent can't fit. Scripted-playtest asserts.
 - T-114 [developer] Shoulder offset: player about 1/3 from the screen edge,
   minimum lateral offset, no centre dead zone; silhouette overlap ≤ 20% of
   frames in circle-strafe and figure-8 (asserted).
 - T-115 [developer] Camera turn limits: re-lock/target-switch yaw ≤ 180°/s;
   teleports (vanish) glide-follow over ~0.2 s instead of the 14/s snap; no
   frame-to-frame jump > 10° outside cuts.
-- T-103 [developer] Lock-on polish: off-screen arrow for the opponent (§4.7);
-  camera transition when the target changes; dash bank capped at about 20°
-  (the playtester saw about 45°, which looks like falling over).
+- T-103 [developer] Lock-on polish: camera transition when the target changes;
+  dash bank capped at about 20° (playtester saw about 45°). The off-screen
+  arrow (§4.7) is done in T-113 (OpponentMarker).
 - T-104 [developer] Movement VFX: dash streaks/afterimage, small FOV kick on
   sustained dash and rush, vanish afterimage at the old spot, rush recovery
   pose (view side); reuse T-D09 speed lines and impact pieces once merged.
