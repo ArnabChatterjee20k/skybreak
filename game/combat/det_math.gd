@@ -64,6 +64,8 @@ static var _lg: PackedFloat64Array = PackedFloat64Array([_bits(0x3FE555555555559
 static var _sqrt2: float = _bits(0x3FF6A09E667F3BCD)
 static var _head := 0.0
 static var _tail := 0.0
+static var _sin := 0.0
+static var _cos := 0.0
 
 
 ## Sine of x radians.
@@ -240,7 +242,8 @@ static func lerp_angle(from: float, to: float, weight: float) -> float:
 
 ## Planar unit vector the yaw faces: Basis(Vector3.UP, yaw) * Vector3.FORWARD.
 static func forward(yaw: float) -> Vector3:
-	return DetMath.canon(Vector3(-DetMath.sin(yaw), 0.0, -DetMath.cos(yaw)))
+	_sin_cos(yaw)
+	return DetMath.canon(Vector3(-_sin, 0.0, -_cos))
 
 
 ## Yaw that faces along v's planar part, the inverse of forward().
@@ -250,22 +253,25 @@ static func yaw_of(v: Vector3) -> float:
 
 ## v turned by angle radians about +Y: Basis(Vector3.UP, angle) * v.
 static func rotate_y(v: Vector3, angle: float) -> Vector3:
-	var s := DetMath.sin(angle)
-	var c := DetMath.cos(angle)
+	_sin_cos(angle)
+	var s := _sin
+	var c := _cos
 	return DetMath.canon(Vector3(v.x * c + v.z * s, v.y, v.z * c - v.x * s))
 
 
 ## v turned by angle radians about +X: Basis(Vector3.RIGHT, angle) * v.
 static func rotate_x(v: Vector3, angle: float) -> Vector3:
-	var s := DetMath.sin(angle)
-	var c := DetMath.cos(angle)
+	_sin_cos(angle)
+	var s := _sin
+	var c := _cos
 	return DetMath.canon(Vector3(v.x, v.y * c - v.z * s, v.y * s + v.z * c))
 
 
 ## Rotation by angle radians about the unit axis, like Basis(axis, angle).
 static func axis_angle(axis: Vector3, angle: float) -> Basis:
-	var s := DetMath.sin(angle)
-	var c := DetMath.cos(angle)
+	_sin_cos(angle)
+	var s := _sin
+	var c := _cos
 	var t := 1.0 - c
 	var x := axis.x
 	var y := axis.y
@@ -284,6 +290,23 @@ static func canon(v: Vector3) -> Vector3:
 ## Rounds x to the nearest float32 (Vector3 and Basis store float32), explicitly.
 static func to_f32(x: float) -> float:
 	return Vector3(x, 0.0, 0.0).x
+
+
+# Sine and cosine of x into _sin and _cos, from one range reduction.
+static func _sin_cos(x: float) -> void:
+	match _reduce(x) & 3:
+		0:
+			_sin = _ksin(_head, _tail)
+			_cos = _kcos(_head, _tail)
+		1:
+			_sin = _kcos(_head, _tail)
+			_cos = -_ksin(_head, _tail)
+		2:
+			_sin = -_ksin(_head, _tail)
+			_cos = -_kcos(_head, _tail)
+		_:
+			_sin = -_kcos(_head, _tail)
+			_cos = _ksin(_head, _tail)
 
 
 # x^n by repeated squaring.
