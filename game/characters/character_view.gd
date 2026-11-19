@@ -42,6 +42,8 @@ const AIRBORNE_MARGIN := 0.05
 static var _ground_height := MovementTuning.new().ground_height
 ## How much of a one-hand attack follows the swing arc rather than the clip.
 const SWING_WEIGHT := 0.85
+## How much of the hold a weapon keeps during hit reactions.
+const REACTION_HOLD_WEIGHT := 0.6
 ## Knocked-out states: they play the knockdown fall unless the clip set maps them.
 const KO_STATES: Array[int] = [FighterState.State.KO_FALL, FighterState.State.KO_DOWN]
 
@@ -467,7 +469,18 @@ func _update_arms(fighter: FighterState) -> void:
 	_hold_weapon(kind)
 	layers.arm_pose = MotionLayers.ArmPose.NONE
 	layers.arm_weight = 0.0
-	if reacting or kind == Weapon.Kind.NONE:
+	if kind == Weapon.Kind.NONE:
+		return
+	if reacting:
+		# Hit reactions keep part of the class's hold, so a flinch never folds the weapon into the body.
+		match WeaponGrip.hold_of(kind):
+			WeaponGrip.Hold.ONE_HAND:
+				layers.arm_pose = MotionLayers.ArmPose.GUARD
+			WeaponGrip.Hold.HEAVY:
+				layers.arm_pose = MotionLayers.ArmPose.TWO_HANDED
+			WeaponGrip.Hold.BRACED:
+				layers.arm_pose = MotionLayers.ArmPose.BRACED
+		layers.arm_weight = REACTION_HOLD_WEIGHT if layers.arm_pose != MotionLayers.ArmPose.NONE else 0.0
 		return
 	match WeaponGrip.hold_of(kind):
 		WeaponGrip.Hold.ONE_HAND:

@@ -95,6 +95,49 @@ func surface_at(x: float, z: float, from_y: float = INF) -> float:
 	return best
 
 
+## Top of island `i` at (x, z) as its mesh draws it (HeartbloomProps: `segments` wedges of
+## `rings` rings, each quad split a b c, a c d), or -INF outside its rim polygon.
+func drawn_top(i: int, x: float, z: float, segments := 40, rings := 7) -> float:
+	var d := Vector2(x, z) - centres[i]
+	var step := TAU / segments
+	var j := posmod(floori(atan2(d.y, d.x) / step), segments)
+	var a0 := step * j
+	var a1 := step * (j + 1)
+	var v0 := Vector2(cos(a0), sin(a0)) * rim_radius(i, a0)
+	var v1 := Vector2(cos(a1), sin(a1)) * rim_radius(i, a1)
+	# d = u * v0 + w * v1; rings run along u + w = k / rings.
+	var det := v0.x * v1.y - v0.y * v1.x
+	if absf(det) < 1e-9:
+		return -INF
+	var u := (d.x * v1.y - d.y * v1.x) / det
+	var w := (v0.x * d.y - v0.y * d.x) / det
+	var t := (u + w) * rings
+	if t > float(rings) + 1e-6 or u < -1e-6 or w < -1e-6:
+		return -INF
+	var k := mini(floori(t), rings - 1)
+	var lo := float(k) / rings
+	var hi := float(k + 1) / rings
+	var h_lo := top_profile(i, lo)
+	var h_hi := top_profile(i, hi)
+	var p := Vector2(u, w)
+	# Triangle a b c: a = (lo, 0), b = (hi, 0), c = (0, hi); triangle a c d: d = (0, lo).
+	var bary := _barycentric(p, Vector2(lo, 0), Vector2(hi, 0), Vector2(0, hi))
+	if k == 0 or (bary.x >= -1e-6 and bary.y >= -1e-6 and bary.z >= -1e-6):
+		return bary.x * h_lo + bary.y * h_hi + bary.z * h_hi
+	bary = _barycentric(p, Vector2(lo, 0), Vector2(0, hi), Vector2(0, lo))
+	return bary.x * h_lo + bary.y * h_hi + bary.z * h_lo
+
+
+static func _barycentric(p: Vector2, a: Vector2, b: Vector2, c: Vector2) -> Vector3:
+	var v0 := b - a
+	var v1 := c - a
+	var v2 := p - a
+	var den := v0.x * v1.y - v1.x * v0.y
+	var y := (v2.x * v1.y - v1.x * v2.y) / den
+	var z := (v0.x * v2.y - v2.x * v0.y) / den
+	return Vector3(1.0 - y - z, y, z)
+
+
 ## Underside height of island `i` at a rim fraction `s` (0..1): rim at the top, tip at the bottom.
 func underside_profile(i: int, s: float) -> float:
 	return tops[i] - depths[i] * (1.0 - pow(clampf(s, 0.0, 1.0), 1.6))

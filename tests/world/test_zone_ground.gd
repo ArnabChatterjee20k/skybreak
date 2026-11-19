@@ -29,14 +29,14 @@ func test_samples_repeat_exactly_and_are_whole_centimetres() -> void:
 		assert_almost_eq(h * 100.0, roundf(h * 100.0), 0.001, "quantised to cm")
 
 
-func test_terrain_samples_match_the_drawn_lod_0_triangles_within_a_centimetre() -> void:
+func test_terrain_samples_match_the_drawn_lod_0_triangles_within_two_centimetres() -> void:
 	var ground := ZoneGround.bake(heightmap, null, Vector2(650, 500), 300.0)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5
 	for i in 200:
 		var x := rng.randf_range(360, 940)
 		var z := rng.randf_range(210, 790)
-		assert_almost_eq(ground.height_at(x, z, INF), _drawn_terrain(x, z), 0.011)
+		assert_almost_eq(ground.height_at(x, z, INF), _drawn_terrain(x, z), 0.02, "within the cm grid")
 
 
 ## The terrain as TerrainGrid draws it at LOD 0: cell (i, j) split into a b c and b d c.

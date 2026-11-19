@@ -58,9 +58,9 @@ func _run() -> void:
 				camera.look_at(Vector3(0, top * 0.25, 0))
 				if bow_close_up:
 					# Pose 0 from the front, pose 1 from the string side; both at full draw.
-					var face := Vector3(0, top + 0.3, 0)
-					camera.position = face + (Vector3(-0.35, 0.15, -1.4) if pose == 0 else Vector3(1.4, 0.2, 0.25))
-					camera.look_at(face + Vector3(0, -0.05, -0.15))
+					var face := Vector3(0, top + 0.2, -0.2)
+					camera.position = face + (Vector3(-0.5, 0.25, -2.1) if pose == 0 else Vector3(2.1, 0.35, -0.1))
+					camera.look_at(face)
 				var drawn := pose == 1 or bow_close_up
 				if drawn:
 					var move := WeaponMoves.move_set(kind, unarmed).light_string[0]

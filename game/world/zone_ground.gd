@@ -61,10 +61,11 @@ func _bake_islands(islands: IslandField) -> void:
 		for row in range(lo.y, hi.y + 1):
 			for column in range(lo.x, hi.x + 1):
 				var p := origin + Vector2(column, row) * CELL
-				var s := islands.rim_fraction(i, p.x, p.y)
-				if s > 1.0:
+				# The island top as its mesh draws it, so feet meet the drawn grass.
+				var drawn := islands.drawn_top(i, p.x, p.y)
+				if is_inf(drawn):
 					continue
-				var top := roundi(islands.top_profile(i, s) * 100.0)
+				var top := roundi(drawn * 100.0)
 				var k := row * columns + column
 				island_tops[k] = maxi(island_tops[k], top)
 
