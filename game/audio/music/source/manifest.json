@@ -1,0 +1,181 @@
+{
+ "character_select": {
+  "bars": 16,
+  "beats_per_bar": 4,
+  "bpm": 126,
+  "files": [
+   "character_select.ogg"
+  ],
+  "key": "E dorian",
+  "kind": "menu",
+  "loop": true,
+  "loop_samples": 1344000,
+  "mood": "Bouncy groove for picking fighters",
+  "sample_rate": 44100,
+  "title": "Choose Your Legend"
+ },
+ "defeat": {
+  "bars": 64,
+  "beats_per_bar": 4,
+  "bpm": 100,
+  "files": [
+   "defeat.ogg"
+  ],
+  "key": "A minor",
+  "kind": "stinger",
+  "loop": false,
+  "loop_samples": 167580,
+  "mood": "Falling brass and choir KO stinger (~4 s)",
+  "sample_rate": 44100,
+  "title": "Fallen"
+ },
+ "ember_rift": {
+  "bars": 32,
+  "beats_per_bar": 4,
+  "bpm": 150,
+  "files": [
+   "battle_ember_rift_calm.ogg",
+   "battle_ember_rift_combat.ogg",
+   "battle_ember_rift_climax.ogg"
+  ],
+  "key": "C harmonic minor",
+  "kind": "battle",
+  "loop": true,
+  "loop_samples": 2257920,
+  "mood": "Volcanic and heavy: growl bass, low brass, choir, war drums",
+  "sample_rate": 44100,
+  "title": "Magma Heart"
+ },
+ "frozen_peaks": {
+  "bars": 32,
+  "beats_per_bar": 4,
+  "bpm": 140,
+  "files": [
+   "battle_frozen_peaks_calm.ogg",
+   "battle_frozen_peaks_combat.ogg",
+   "battle_frozen_peaks_climax.ogg"
+  ],
+  "key": "B minor",
+  "kind": "battle",
+  "loop": true,
+  "loop_samples": 2419200,
+  "mood": "Icy and tense: FM bells, 16th arps, cold strings",
+  "sample_rate": 44100,
+  "title": "Glass Summit"
+ },
+ "heartbloom_gardens": {
+  "bars": 32,
+  "beats_per_bar": 4,
+  "bpm": 120,
+  "files": [
+   "battle_heartbloom_gardens_calm.ogg",
+   "battle_heartbloom_gardens_combat.ogg",
+   "battle_heartbloom_gardens_climax.ogg"
+  ],
+  "key": "F major",
+  "kind": "battle",
+  "loop": true,
+  "loop_samples": 2822400,
+  "mood": "Warm, romantic and playful: e-piano, glockenspiel, strings, light claps",
+  "sample_rate": 44100,
+  "title": "Petals for Two"
+ },
+ "menu": {
+  "bars": 16,
+  "beats_per_bar": 4,
+  "bpm": 140,
+  "files": [
+   "menu.ogg"
+  ],
+  "key": "A minor",
+  "kind": "menu",
+  "loop": true,
+  "loop_samples": 1209600,
+  "mood": "Main theme: heroic call to adventure",
+  "sample_rate": 44100,
+  "title": "Skybreak"
+ },
+ "shattered_mesa": {
+  "bars": 32,
+  "beats_per_bar": 4,
+  "bpm": 147,
+  "files": [
+   "battle_shattered_mesa_calm.ogg",
+   "battle_shattered_mesa_combat.ogg",
+   "battle_shattered_mesa_climax.ogg"
+  ],
+  "key": "D harmonic minor",
+  "kind": "battle",
+  "loop": true,
+  "loop_samples": 2304000,
+  "mood": "Dusty desert showdown: twangy plucks, taiko, bold brass",
+  "sample_rate": 44100,
+  "title": "Red Horizon"
+ },
+ "skyhold_ruins": {
+  "bars": 32,
+  "beats_per_bar": 4,
+  "bpm": 168,
+  "files": [
+   "battle_skyhold_ruins_calm.ogg",
+   "battle_skyhold_ruins_combat.ogg",
+   "battle_skyhold_ruins_climax.ogg"
+  ],
+  "key": "E lydian",
+  "kind": "battle",
+  "loop": true,
+  "loop_samples": 2016000,
+  "mood": "Soaring and heroic: wide strings, leaping brass hook",
+  "sample_rate": 44100,
+  "title": "Islands of Gold"
+ },
+ "stormfall_city": {
+  "bars": 32,
+  "beats_per_bar": 4,
+  "bpm": 175,
+  "files": [
+   "battle_stormfall_city_calm.ogg",
+   "battle_stormfall_city_combat.ogg",
+   "battle_stormfall_city_climax.ogg"
+  ],
+  "key": "F# minor",
+  "kind": "battle",
+  "loop": true,
+  "loop_samples": 1935360,
+  "mood": "Night-city chase: gated synths, breakbeat, octave bass",
+  "sample_rate": 44100,
+  "title": "Neon Downpour"
+ },
+ "verdant_falls": {
+  "bars": 32,
+  "beats_per_bar": 4,
+  "bpm": 144,
+  "files": [
+   "battle_verdant_falls_calm.ogg",
+   "battle_verdant_falls_combat.ogg",
+   "battle_verdant_falls_climax.ogg"
+  ],
+  "key": "G mixolydian",
+  "kind": "battle",
+  "loop": true,
+  "loop_samples": 2352000,
+  "mood": "Jungle sprint: marimba, tribal toms, breathy flute hook",
+  "sample_rate": 44100,
+  "title": "Canopy Run"
+ },
+ "victory": {
+  "bars": 64,
+  "beats_per_bar": 4,
+  "bpm": 140,
+  "files": [
+   "victory.ogg"
+  ],
+  "key": "C major",
+  "kind": "stinger",
+  "loop": false,
+  "loop_samples": 229320,
+  "mood": "Triumphant brass fanfare (~5 s)",
+  "sample_rate": 44100,
+  "title": "Victory Fanfare"
+ }
+}

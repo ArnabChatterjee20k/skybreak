@@ -23,6 +23,7 @@ buses/default_bus_layout="res://game/audio/default_bus_layout.tres"
 [autoload]
 
 AudioDirector="*res://game/audio/audio_director.gd"
+MusicDirector="*res://game/audio/music/music_director.gd"
 
 [display]
 

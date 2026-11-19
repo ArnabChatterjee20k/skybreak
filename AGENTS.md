@@ -20,6 +20,7 @@ someone else's, ask on the MisterMime bus first.
 
 | Owner | Paths |
 |---|---|
+| `desktop` (cloud agents) | `game/combat/**`, `game/view/shaders/**`, `game/audio/music/**`, `tests/combat/**`, `tests/shaders/**`, `tests/audio/music/**`, `docs/GAME_DESIGN.md` |
 | `desktop` (cloud agents) | `game/combat/**`, `game/view/shaders/**`, `tests/combat/**`, `tests/shaders/**`, `docs/GAME_DESIGN.md` |
 | `desktop` (cloud agents), audio (T-D20) | `game/audio/**` (sound effects, banks, `AudioDirector`, bus layout; `game/audio/music/**` is T-D21's), `tests/audio/**` |
 | `desktop` (cloud agents), characters (T-D10) | `game/characters/**` (models, materials, animation libraries, `CharacterView`), `tests/characters/**`, their entries in `docs/asset-licences.md` |
