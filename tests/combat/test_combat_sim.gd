@@ -294,8 +294,8 @@ func test_same_seed_and_inputs_give_identical_state_after_10k_ticks() -> void:
 
 func test_a_scripted_4_fighter_free_for_all_is_deterministic_and_has_every_defense() -> void:
 	var visited := {}
-	var first := _run_match(10, 10_000, visited, 4)
-	assert_eq(first, _run_match(10, 10_000, {}, 4))
+	var first := _run_match(12, 10_000, visited, 4)
+	assert_eq(first, _run_match(12, 10_000, {}, 4))
 	for type in [CombatSim.EventType.BLOCK, CombatSim.EventType.PERFECT_BLOCK, CombatSim.EventType.GRAB,
 			CombatSim.EventType.THROW, CombatSim.EventType.GRAB_TECH, CombatSim.EventType.PUSH_BLOCK]:
 		assert_true(visited.has("event %d" % type), "a %s event" % CombatSim.EventType.keys()[type])

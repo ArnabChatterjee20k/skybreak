@@ -32,6 +32,7 @@ const FIGHTER_ACTIONS := {
 	FighterInput.Action.WEAPON_NEXT: &"fighter_weapon_next",
 	FighterInput.Action.WEAPON_PREVIOUS: &"fighter_weapon_previous",
 	FighterInput.Action.THROW: &"fighter_throw",
+	FighterInput.Action.QUICK_SWAP: &"fighter_quick_swap",
 }
 
 ## Vanish is DASH + BLOCK (Shift+E); the sim reads the combination.
@@ -56,7 +57,9 @@ const DEFAULT_KEYS := {
 	&"fighter_lock_toggle": [KEY_TAB],
 	# Weapons (T-D14): G picks up, or throws with nothing in reach; the wheel stays target switch.
 	&"fighter_pickup": [KEY_G],
-	&"fighter_weapon_next": [KEY_C],
+	# C quick-swaps to the last weapon (§5.11); next moves to B.
+	&"fighter_quick_swap": [KEY_C],
+	&"fighter_weapon_next": [KEY_B],
 	&"fighter_weapon_previous": [KEY_Z],
 	&"fighter_throw": [KEY_V],
 }

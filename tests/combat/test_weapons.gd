@@ -277,6 +277,8 @@ func test_every_melee_weapon_swaps_in_its_own_sane_move_set() -> void:
 		var all: Array[MoveData] = []
 		all.append_array(moves.light_string)
 		all.append_array([moves.smash, moves.breaker, moves.launcher, moves.rising, moves.spike, moves.sweep])
+		# The chakram's neutral heavy throws its disc (T-D26): a projectile, no hitbox.
+		all = all.filter(func(move: MoveData) -> bool: return not WeaponMoves.is_disc_throw(move))
 		for move in all:
 			assert_true(String(move.id).begins_with(String(name) + "/"), "%s id" % move.id)
 			assert_between(move.startup_ticks, 4, 30, "%s startup" % move.id)
@@ -458,6 +460,8 @@ func _bot_match(seed_value: int, ticks: int, zone := &"skyhold_ruins",
 	var sim := CombatSim.new(seed_value)
 	sim.zone = zone
 	sim.pickups_enabled = true
+	# Weapon drops only; powers and gadgets have their own bot match (tests/combat/weapons).
+	sim.pickup_tuning.powers_enabled = false
 	sim.add_fighter(Vector3(0, 1, 6))
 	sim.add_fighter(Vector3(0, 1, -6))
 	sim.lock_everyone_onto_nearest()
@@ -528,8 +532,8 @@ func test_longer_bot_matches_land_every_weapon_event() -> void:
 	for seed_value in [3, 4]:
 		types.merge(_bot_match(seed_value, 7200)[2])
 	# Bots grab every drop, so PICKUP_DESPAWN is covered by its own test above.
-	# KO_BOUNCE and later are covered by test_knockout.gd.
-	for type in range(E.PICKUP_SPAWN, E.KO_BOUNCE):
+	# KO_BOUNCE and later are covered by test_knockout.gd and the T-D26 tests.
+	for type in range(E.PICKUP_SPAWN, E.PROJECTILE_HIT + 1):
 		if type != E.PICKUP_DESPAWN:
 			assert_true(types.has(type), "a %s event" % E.keys()[type])
 

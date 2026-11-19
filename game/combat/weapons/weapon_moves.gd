@@ -123,6 +123,17 @@ const RANGED_TABLES := {
 	},
 }
 
+## Ki Bow arrow hit numbers at draw levels 2 and 3 (level 1 is "projectile" above).
+const BOW_LEVELS := [
+	[1000, 34, 16, 8, MoveData.KnockbackType.BLOWBACK, Vector3(0, 2, -16), 28],
+	[1400, 44, 18, 10, MoveData.KnockbackType.WALL_SPLAT, Vector3(0, 3, -34), 36],
+]
+## Charged Heartstring arrow: little damage, it is all about the tether.
+const TETHER_HIT := [200, 18, 10, 4, MoveData.KnockbackType.NONE, Vector3(0, 0, -1), 6]
+## Orbit Chakram disc throw (startup, active, recovery) and one disc hit; light stun so the way back hits too.
+const DISC_THROW := [10, 1, 16]
+const DISC_HIT := [420, 22, 12, 4, MoveData.KnockbackType.NONE, Vector3(0, 0, -3), 10]
+
 ## Weak weapon-bash for every heavy while holding a ranged weapon.
 const BASH := [10, 3, 18, 0.3, [Vector3(0, 0.2, -1.2), 0.55, 0.0, _FWD], 350, 20, 11, 5, MoveData.KnockbackType.BLOWBACK, Vector3(0, 2, -9), 10, {}]
 ## A thrown weapon's hit: damage plus a short stun.
@@ -135,6 +146,10 @@ static var _projectiles: Dictionary = {}
 static var _thrown: MoveData
 static var _throw_move: MoveData
 static var _pickup_move: MoveData
+static var _bow_levels: Array[MoveData] = []
+static var _tether: MoveData
+static var _disc: MoveData
+static var _disc_throw: MoveData
 
 
 ## The MoveSet a fighter uses while holding kind. Push-block and grab stay unarmed.
@@ -151,6 +166,9 @@ static func move_set(kind: Weapon.Kind, unarmed: MoveSet) -> MoveSet:
 			moves.light_string.append(light)
 		for slot in _HEAVY_SLOTS:
 			moves.set(slot, _build("%s/%s" % [prefix, slot], table[slot], MoveData.CancelLevel.HEAVY))
+		if kind == Weapon.Kind.ORBIT_CHAKRAM:
+			# The neutral heavy throws the out-and-back disc.
+			moves.smash = disc_throw_move()
 	else:
 		var shot: Array = RANGED_TABLES[kind].shot
 		var shot_move := MoveData.new()
@@ -171,6 +189,51 @@ static func move_set(kind: Weapon.Kind, unarmed: MoveSet) -> MoveSet:
 ## True if move is a ranged weapon's shot: it fires on its first active tick.
 static func is_shot(move: MoveData) -> bool:
 	return move != null and String(move.id).ends_with("/shot")
+
+
+## Draw level (1-3) for ticks held at full draw.
+static func draw_level(draw_ticks: int) -> int:
+	var level := 1
+	for needed in Weapon.DRAW_LEVEL_TICKS:
+		if draw_ticks >= needed:
+			level += 1
+	return level
+
+
+## Hit numbers of a Ki Bow arrow at a draw level (1-3).
+static func bow_move(level: int) -> MoveData:
+	if level <= 1:
+		return projectile_move(Weapon.Kind.KI_BOW)
+	if _bow_levels.is_empty():
+		for i in BOW_LEVELS.size():
+			_bow_levels.append(_hit_move("bow/projectile_%d" % (i + 2), BOW_LEVELS[i]))
+	return _bow_levels[mini(level, 3) - 2]
+
+
+## Hit numbers of a charged Heartstring arrow (the tether shot).
+static func tether_move() -> MoveData:
+	if _tether == null:
+		_tether = _hit_move("heartstring/tether", TETHER_HIT)
+	return _tether
+
+
+## Hit numbers of one Orbit Chakram disc pass.
+static func disc_move() -> MoveData:
+	if _disc == null:
+		_disc = _hit_move("chakram/disc_hit", DISC_HIT)
+	return _disc
+
+
+## The Orbit Chakram's disc throw: the disc leaves on the first active tick.
+static func disc_throw_move() -> MoveData:
+	if _disc_throw == null:
+		_disc_throw = _bare_move(&"chakram/disc", DISC_THROW[0], DISC_THROW[1], DISC_THROW[2])
+		_disc_throw.cancel_level = MoveData.CancelLevel.HEAVY
+	return _disc_throw
+
+
+static func is_disc_throw(move: MoveData) -> bool:
+	return move != null and move.id == &"chakram/disc"
 
 
 ## Hit numbers of one projectile fired by kind.
