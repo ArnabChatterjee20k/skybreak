@@ -77,6 +77,75 @@ func test_wrap_angle_and_angle_difference_take_the_short_way() -> void:
 	assert_false(_sign_bit(DetMath.fposmod(-3.0, 3.0)))
 
 
+func test_every_constant_is_exactly_its_fdlibm_bit_pattern() -> void:
+	var pairs := [
+		[DetMath._INVPIO2, 0x3FE45F306DC9C883],
+		[DetMath._PIO2_1, 0x3FF921FB54400000],
+		[DetMath._PIO2_2, 0x3DD0B4611A600000],
+		[DetMath._PIO2_2T, 0x3BA3198A2E037073],
+		[DetMath._S1, -0x3FC5555555555549],
+		[DetMath._S2, 0x3F8111111110F8A6],
+		[DetMath._S3, -0x3F2A01A019C161D5],
+		[DetMath._S4, 0x3EC71DE357B1FE7D],
+		[DetMath._S5, -0x3E5AE5E68A2B9CEB],
+		[DetMath._S6, 0x3DE5D93A5ACFD57C],
+		[DetMath._C1, 0x3FA555555555554C],
+		[DetMath._C2, -0x3F56C16C16C15177],
+		[DetMath._C3, 0x3EFA01A019CB1590],
+		[DetMath._C4, -0x3E927E4F809C52AD],
+		[DetMath._C5, 0x3E21EE9EBDB4B1C4],
+		[DetMath._C6, -0x3DA8FAE9BE8838D4],
+		[DetMath._PI, 0x400921FB54442D18],
+		[DetMath._PI_LO, 0x3CA1A62633145C07],
+		[DetMath._LN2_HI, 0x3FE62E42FEE00000],
+		[DetMath._LN2_LO, 0x3DEA39EF35793C76],
+		[DetMath._INVLN2, 0x3FF71547652B82FE],
+		[DetMath._P1, 0x3FC555555555553E],
+		[DetMath._P2, -0x3F66C16C16BEBD93],
+		[DetMath._P3, 0x3F11566AAF25DE2C],
+		[DetMath._P4, -0x3EBBBD41C5D26BF1],
+		[DetMath._P5, 0x3E66376972BEA4D0],
+		[DetMath._SQRT2, 0x3FF6A09E667F3BCD],
+		[DetMath._ATANHI0, 0x3FDDAC670561BB4F],
+		[DetMath._ATANHI1, 0x3FE921FB54442D18],
+		[DetMath._ATANHI2, 0x3FEF730BD281F69B],
+		[DetMath._ATANHI3, 0x3FF921FB54442D18],
+		[DetMath._ATANLO0, 0x3C7A2B7F222F65E2],
+		[DetMath._ATANLO1, 0x3C81A62633145C07],
+		[DetMath._ATANLO2, 0x3C7007887AF0CBBD],
+		[DetMath._ATANLO3, 0x3C91A62633145C07],
+		[DetMath._AT0, 0x3FD555555555550D],
+		[DetMath._AT1, -0x3FC999999998EBC4],
+		[DetMath._AT2, 0x3FC24924920083FF],
+		[DetMath._AT3, -0x3FBC71C6FE231671],
+		[DetMath._AT4, 0x3FB745CDC54C206E],
+		[DetMath._AT5, -0x3FB3B0F2AF749A6D],
+		[DetMath._AT6, 0x3FB10D66A0D03D51],
+		[DetMath._AT7, -0x3FADDE2D52DEFD9A],
+		[DetMath._AT8, 0x3FA97B4B24760DEB],
+		[DetMath._AT9, -0x3FA2B4442C6A6C2F],
+		[DetMath._AT10, 0x3F90AD3AE322DA11],
+		[DetMath._LG0, 0x3FE5555555555593],
+		[DetMath._LG1, 0x3FD999999997FA04],
+		[DetMath._LG2, 0x3FD2492494229359],
+		[DetMath._LG3, 0x3FCC71C51D8E78AF],
+		[DetMath._LG4, 0x3FC7466496CB03DE],
+		[DetMath._LG5, 0x3FC39A09D078C69F],
+		[DetMath._LG6, 0x3FC2F112DF3E5244],
+	]
+	for pair in pairs:
+		var bits: int = pair[1]
+		var expected := -DetMath._bits(-bits) if bits < 0 else DetMath._bits(bits)
+		assert_eq(_to_bits(pair[0]), _to_bits(expected), "constant %s" % expected)
+
+
+func _to_bits(x: float) -> int:
+	var bytes := PackedByteArray()
+	bytes.resize(8)
+	bytes.encode_double(0, x)
+	return bytes.decode_s64(0)
+
+
 func _ulps(a: float, b: float) -> float:
 	var ulp := absf(_next_up(absf(b)) - absf(b))
 	return absf(a - b) / maxf(ulp, 4.9e-324)
