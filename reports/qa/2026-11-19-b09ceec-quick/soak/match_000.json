@@ -1,0 +1,124 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 7,
+			"8": 2
+		},
+		"light_1": {
+			"3": 6,
+			"4": 2
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 1
+		},
+		"light_2": {
+			"3": 9,
+			"4": 3
+		},
+		"light_3": {
+			"3": 9,
+			"4": 3
+		},
+		"light_4": {
+			"4": 2
+		},
+		"repeater/projectile": {
+			"1": 45
+		},
+		"spike": {
+			"8": 1
+		}
+	},
+	"id": "100:shattered_mesa:1v1:kael,vexa:54",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 100,
+	"sim_ms_per_tick": 1.32902708333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0109633877873421,
+		"finger_pops_per_fighter_minute": 57.0237598999583,
+		"foot_error_p95_cm": 3.98785892602742,
+		"foot_slide_cm_per_frame": 1.20908895287097,
+		"locked_on_screen_share": 0.994714079769342,
+		"pops_per_fighter_minute": 127.553147144644
+	},
+	"view_ms_per_frame": 0.935029583333333,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 19,
+			"detail": "RightLowerLeg turned 2.89 rad in one frame (ATTACKING, move light_4, clip light_4)",
+			"fighter": 1,
+			"first_tick": 67,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1031,
+			"worst_value": 2.88957142829895
+		},
+		{
+			"check": "pop",
+			"count": 151,
+			"detail": "RightHand turned 2.78 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 76,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 76,
+			"worst_value": 2.78294944763184
+		},
+		{
+			"check": "foot_ground",
+			"count": 3,
+			"detail": "lowest sole -5.0 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 88,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 897,
+			"worst_value": -0.0500661437332468
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 92,
+			"detail": "fighters 0 and 1 overlap 0.17 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 305,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 322,
+			"worst_value": 0.172185611724853
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "170 pops in 1.3 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 2.66555555555556,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 170
+		}
+	],
+	"wall_seconds": 22.159,
+	"zone": "shattered_mesa"
+}

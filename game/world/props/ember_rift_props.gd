@@ -7,7 +7,7 @@ static func build(parent: Node3D, kit: PropKit, zone: ZoneData, layout: ZoneLayo
 	var zi := layout.index_of(zone.id)
 	var c := zone.centre
 	var obsidian := kit.material("obsidian", Color(0.16, 0.13, 0.18), {"rim_strength": 0.45, "rim_color": Color(1.0, 0.45, 0.2)})
-	var vent_mat := kit.material("vent", Color(0.25, 0.12, 0.08), {"emission_color": Color(1.0, 0.4, 0.1), "emission_strength": 1.6})
+	var vent_mat := kit.material("vent", Color(0.2, 0.09, 0.06), {"emission_color": Color(1.0, 0.32, 0.06), "emission_strength": 0.7, "strata": 0.6, "strata_spacing": 0.8})
 	var spires: Array[Transform3D] = []
 	var vents: Array[Transform3D] = []
 	var tries := 0

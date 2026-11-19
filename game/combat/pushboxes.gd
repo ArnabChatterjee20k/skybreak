@@ -170,7 +170,7 @@ static func _contact_direction(sim: CombatSim, first: FighterState, second: Figh
 	if _planar(sim, first, second):
 		direction.y = 0.0
 	if direction.length_squared() < 1.0e-8:
-		direction = Basis(Vector3.UP, first.facing_yaw) * Vector3.FORWARD
+		direction = DetMath.forward(first.facing_yaw)
 	return direction.normalized()
 
 
