@@ -17,6 +17,8 @@ const SHOCKWAVE := preload("res://game/view/shaders/vfx/shockwave.tscn")
 const HEAVY_HITSTOP := 7
 const BLOCK_COLOR := Color(0.65, 0.85, 1.0)
 const ARMOR_COLOR := Color(0.75, 0.75, 0.8)
+## Floor impacts of a knocked-out fighter (KO bounce and rest).
+const DUST_COLOR := Color(0.8, 0.72, 0.6)
 ## Weapon events use the gold item colour (GAME_DESIGN §5.11); the weapon layer draws the rest.
 const ITEM_COLOR := Color(1.0, 0.8, 0.3)
 
@@ -88,6 +90,16 @@ static func plan_for(event: Dictionary) -> Dictionary:
 		E.GRAB, E.GRAB_TECH:
 			plan.effects = [SPARK_LIGHT]
 			plan.scale = 0.6
+		E.KO_BOUNCE:
+			plan.effects = [SHOCKWAVE]
+			plan.color = DUST_COLOR
+			plan.scale = 0.6
+			plan.shake = 0.25
+		E.KO_REST:
+			plan.effects = [SHOCKWAVE]
+			plan.color = DUST_COLOR
+			plan.scale = 0.35
+			plan.shake = 0.08
 		E.PICKUP_SPAWN, E.PICKUP, E.PICKUP_DESPAWN, E.WEAPON_SWITCH, E.WEAPON_THROW, \
 				E.WEAPON_DROP, E.FIRE, E.PROJECTILE_HIT:
 			plan.effects = [SPARK_LIGHT]
