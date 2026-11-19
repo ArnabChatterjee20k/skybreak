@@ -1,0 +1,113 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 8
+		},
+		"light_1": {
+			"3": 2,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 7
+		},
+		"light_2": {
+			"3": 7,
+			"5": 1
+		},
+		"light_3": {
+			"3": 8,
+			"8": 1
+		}
+	},
+	"id": "1601:heartbloom_gardens:1v1:vexa,brann:35",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		3,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1601,
+	"sim_ms_per_tick": 2.90949722222222,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0121676810085773,
+		"finger_pops_per_fighter_minute": 35.0194552529183,
+		"foot_error_p95_cm": 10.0102730456797,
+		"foot_slide_cm_per_frame": 1.31210401139565,
+		"locked_on_screen_share": 0.983879933296276,
+		"pops_per_fighter_minute": 31.0172317954419
+	},
+	"view_ms_per_frame": 2.81644111111111,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 136,
+			"detail": "lowest sole -22.1 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 194,
+			"worst_value": -0.221307850971527
+		},
+		{
+			"check": "pop",
+			"count": 10,
+			"detail": "RightLowerArm turned 2.00 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 2.00015711784363
+		},
+		{
+			"check": "pop",
+			"count": 21,
+			"detail": "RightUpperArm turned 1.47 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 209,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1085,
+			"worst_value": 1.46507787704468
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 342,
+			"detail": "fighters 0 and 1 overlap 1.04 m (ATTACKING vs BLOCKING)",
+			"fighter": 0,
+			"first_tick": 230,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 543,
+			"worst_value": 1.04387245625257
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "31 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 31
+		}
+	],
+	"wall_seconds": 27.277,
+	"zone": "heartbloom_gardens"
+}

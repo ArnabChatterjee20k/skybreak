@@ -1,0 +1,198 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1,
+			"8": 2
+		},
+		"hammer/light_1": {
+			"7": 1
+		},
+		"launcher": {
+			"7": 3,
+			"8": 4
+		},
+		"light_1": {
+			"3": 4,
+			"4": 4,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 7,
+			"8": 7,
+			"9": 2
+		},
+		"light_2": {
+			"3": 8,
+			"4": 9,
+			"5": 3
+		},
+		"light_3": {
+			"3": 4,
+			"4": 5,
+			"5": 3,
+			"8": 2
+		},
+		"spike": {
+			"7": 1
+		},
+		"sweep+counter": {
+			"12": 1,
+			"13": 1
+		}
+	},
+	"id": "3221:stormfall_city:2v2:vexa,brann,lyra,kael:5454",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		5,
+		4,
+		5,
+		4
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3221,
+	"sim_ms_per_tick": 5.27655555555556,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0144515717402101,
+		"finger_pops_per_fighter_minute": 32.017787659811,
+		"foot_error_p95_cm": 10.3761729485441,
+		"foot_slide_cm_per_frame": 1.13611503375324,
+		"locked_on_screen_share": 0.953367875647668,
+		"pops_per_fighter_minute": 34.0188993885492
+	},
+	"view_ms_per_frame": 4.56977555555556,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 120,
+			"detail": "lowest sole -10.4 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 74,
+			"worst_value": -0.104281660265373
+		},
+		{
+			"check": "foot_ground",
+			"count": 11,
+			"detail": "lowest sole -6.8 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 12,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 744,
+			"worst_value": -0.0680220194659995
+		},
+		{
+			"check": "pop",
+			"count": 20,
+			"detail": "RightLowerArm turned 2.00 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 1.99663615226746
+		},
+		{
+			"check": "pop",
+			"count": 32,
+			"detail": "RightFoot turned 2.26 rad in one frame (MOVING, move )",
+			"fighter": 3,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 151,
+			"worst_value": 2.26469898223877
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 536,
+			"detail": "fighters 1 and 3 overlap 1.10 m (HITSTUN vs ATTACKING)",
+			"fighter": 1,
+			"first_tick": 176,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 401,
+			"worst_value": 1.09648646707647
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 345,
+			"detail": "fighters 0 and 2 overlap 0.88 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 229,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "hammer",
+			"worst_tick": 1126,
+			"worst_value": 0.877844983125106
+		},
+		{
+			"check": "pop",
+			"count": 15,
+			"detail": "LeftHand turned 1.96 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 1,
+			"first_tick": 401,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1056,
+			"worst_value": 1.9628564119339
+		},
+		{
+			"check": "foot_ground",
+			"count": 29,
+			"detail": "lowest sole +47.3 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 695,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1619,
+			"worst_value": 0.473009853417455
+		},
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "RightHand turned 1.46 rad in one frame (MOVING, move )",
+			"fighter": 2,
+			"first_tick": 1506,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1506,
+			"worst_value": 1.46107602119446
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "68 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 68
+		}
+	],
+	"wall_seconds": 44.4,
+	"zone": "stormfall_city"
+}

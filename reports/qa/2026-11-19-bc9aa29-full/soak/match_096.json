@@ -1,0 +1,106 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1
+		},
+		"launcher": {
+			"7": 1,
+			"8": 1
+		},
+		"light_1": {
+			"3": 5,
+			"4": 7
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 1
+		},
+		"light_2": {
+			"3": 5,
+			"4": 2
+		},
+		"light_3": {
+			"3": 6,
+			"4": 1
+		}
+	},
+	"id": "2100:skyhold_ruins:1v1:kael,vexa:32",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2100,
+	"sim_ms_per_tick": 2.33217444444444,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0523114651441574,
+		"finger_pops_per_fighter_minute": 37.0205669816565,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 46.0255697609783
+	},
+	"view_ms_per_frame": 2.17546944444444,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 1075,
+			"detail": "fighters 0 and 1 overlap 0.95 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 173,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1534,
+			"worst_value": 0.949632519698935
+		},
+		{
+			"check": "pop",
+			"count": 20,
+			"detail": "RightLowerLeg turned 1.80 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 1,
+			"first_tick": 174,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 249,
+			"worst_value": 1.79964005947113
+		},
+		{
+			"check": "pop",
+			"count": 26,
+			"detail": "RightLowerLeg turned 2.16 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 0,
+			"first_tick": 217,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 446,
+			"worst_value": 2.16207480430603
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "46 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 46
+		}
+	],
+	"wall_seconds": 24.27,
+	"zone": "skyhold_ruins"
+}

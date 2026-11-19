@@ -1,0 +1,145 @@
+{
+	"hitstops": {
+		"lance/light_1": {
+			"4": 1
+		},
+		"lance/light_1+counter": {
+			"8": 2
+		},
+		"lance/light_2": {
+			"4": 2
+		},
+		"lance/light_3": {
+			"7": 2
+		},
+		"launcher": {
+			"7": 1,
+			"9": 1
+		},
+		"light_1": {
+			"3": 1,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 2,
+			"9": 1
+		},
+		"light_2": {
+			"3": 3,
+			"5": 3
+		},
+		"light_3": {
+			"3": 2,
+			"8": 3
+		},
+		"spike": {
+			"7": 1
+		},
+		"sweep": {
+			"9": 1
+		}
+	},
+	"id": "2601:heartbloom_gardens:1v1:vexa,brann:55",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2601,
+	"sim_ms_per_tick": 2.46459833333333,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0125145670026541,
+		"finger_pops_per_fighter_minute": 39.0216787103947,
+		"foot_error_p95_cm": 10.0102730456797,
+		"foot_slide_cm_per_frame": 1.32382066857991,
+		"locked_on_screen_share": 0.977735368956743,
+		"pops_per_fighter_minute": 42.0233463035019
+	},
+	"view_ms_per_frame": 2.50454444444444,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 145,
+			"detail": "lowest sole +41.0 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 841,
+			"worst_value": 0.409811995127143
+		},
+		{
+			"check": "pop",
+			"count": 26,
+			"detail": "RightLowerArm turned 3.13 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1205,
+			"worst_value": 3.12822484970093
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 365,
+			"detail": "fighters 0 and 1 overlap 1.04 m (ATTACKING vs BLOCKING)",
+			"fighter": 0,
+			"first_tick": 220,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1106,
+			"worst_value": 1.04064540117979
+		},
+		{
+			"check": "pop",
+			"count": 16,
+			"detail": "LeftLowerArm turned 1.96 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 1,
+			"first_tick": 308,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1124,
+			"worst_value": 1.9601263999939
+		},
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole -6.8 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 856,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 856,
+			"worst_value": -0.0682255587460077
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "42 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 42
+		}
+	],
+	"wall_seconds": 25.955,
+	"zone": "heartbloom_gardens"
+}

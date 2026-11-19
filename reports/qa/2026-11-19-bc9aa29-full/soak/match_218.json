@@ -1,0 +1,140 @@
+{
+	"hitstops": {
+		"gauntlets/launcher": {
+			"7": 2
+		},
+		"gauntlets/light_1": {
+			"3": 3
+		},
+		"gauntlets/light_1+counter": {
+			"7": 6
+		},
+		"gauntlets/light_2": {
+			"3": 5
+		},
+		"gauntlets/light_3": {
+			"3": 4
+		},
+		"light_1": {
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 1,
+			"9": 2
+		},
+		"light_2": {
+			"3": 1,
+			"5": 3
+		},
+		"light_3": {
+			"5": 1,
+			"8": 3
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "3402:verdant_falls:1v1:brann,lyra:45",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3402,
+	"sim_ms_per_tick": 2.53400222222222,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0103830881416798,
+		"finger_pops_per_fighter_minute": 37.0205669816565,
+		"foot_error_p95_cm": 14.0749440167657,
+		"foot_slide_cm_per_frame": 0.0203944635590729,
+		"locked_on_screen_share": 0.982883475971034,
+		"pops_per_fighter_minute": 22.0122290161201
+	},
+	"view_ms_per_frame": 2.430685,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 129,
+			"detail": "lowest sole +43.9 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 529,
+			"worst_value": 0.439250726494974
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 308,
+			"detail": "fighters 0 and 1 overlap 0.65 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 341,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 695,
+			"worst_value": 0.648477076292038
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "BeardBraid turned 2.14 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 0,
+			"first_tick": 449,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1244,
+			"worst_value": 2.13824987411499
+		},
+		{
+			"check": "foot_ground",
+			"count": 4,
+			"detail": "lowest sole +49.7 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 525,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "gauntlets",
+			"worst_tick": 1772,
+			"worst_value": 0.496811361638173
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "RightUpperArm turned 2.11 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 527,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "gauntlets",
+			"worst_tick": 1412,
+			"worst_value": 2.10732936859131
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "22 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 22
+		}
+	],
+	"wall_seconds": 27.085,
+	"zone": "verdant_falls"
+}

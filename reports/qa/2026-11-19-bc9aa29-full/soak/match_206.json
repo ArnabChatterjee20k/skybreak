@@ -1,0 +1,138 @@
+{
+	"hitstops": {
+		"blade/launcher": {
+			"8": 2
+		},
+		"blade/light_1": {
+			"4": 1
+		},
+		"blade/light_1+counter": {
+			"8": 1
+		},
+		"blade/light_2": {
+			"4": 2
+		},
+		"blade/light_3": {
+			"4": 2
+		},
+		"light_1": {
+			"3": 3,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 3,
+			"9": 3
+		},
+		"light_2": {
+			"3": 4,
+			"5": 3
+		},
+		"light_3": {
+			"5": 4,
+			"8": 3
+		}
+	},
+	"id": "3302:frozen_peaks:1v1:brann,lyra:44",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3302,
+	"sim_ms_per_tick": 2.65005166666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0108326524496078,
+		"finger_pops_per_fighter_minute": 40.0222345747638,
+		"foot_error_p95_cm": 51.9257477682913,
+		"foot_slide_cm_per_frame": 0.0201501813653917,
+		"locked_on_screen_share": 0.977542932628798,
+		"pops_per_fighter_minute": 22.0122290161201
+	},
+	"view_ms_per_frame": 3.19806833333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 183,
+			"detail": "lowest sole -100.6 cm off the visible ground (MOVING)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "blade",
+			"worst_tick": 1771,
+			"worst_value": -1.00591773749915
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 222,
+			"detail": "fighters 0 and 1 overlap 0.98 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 224,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 623,
+			"worst_value": 0.979166800826788
+		},
+		{
+			"check": "foot_ground",
+			"count": 34,
+			"detail": "lowest sole +90.3 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 670,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1731,
+			"worst_value": 0.903172876208444
+		},
+		{
+			"check": "pop",
+			"count": 20,
+			"detail": "RightUpperArm turned 1.58 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 0,
+			"first_tick": 917,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "blade",
+			"worst_tick": 1010,
+			"worst_value": 1.58297860622406
+		},
+		{
+			"check": "pop",
+			"count": 2,
+			"detail": "RightHand turned 1.92 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 1,
+			"first_tick": 925,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1532,
+			"worst_value": 1.91699540615082
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "22 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 22
+		}
+	],
+	"wall_seconds": 30.14,
+	"zone": "frozen_peaks"
+}

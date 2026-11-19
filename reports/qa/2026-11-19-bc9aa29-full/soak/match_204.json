@@ -1,0 +1,115 @@
+{
+	"hitstops": {
+		"launcher": {
+			"8": 4
+		},
+		"light_1": {
+			"3": 4,
+			"4": 9
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 3,
+			"20": 1
+		},
+		"light_2": {
+			"3": 5,
+			"4": 9
+		},
+		"light_3": {
+			"3": 5,
+			"4": 4
+		}
+	},
+	"id": "3300:frozen_peaks:1v1:kael,vexa:42",
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		2
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "INTRO",
+	"rounds_started": 2,
+	"seed": 3300,
+	"sim_ms_per_tick": 2.80527888888889,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.00942795071750879,
+		"finger_pops_per_fighter_minute": 21.011673151751,
+		"foot_error_p95_cm": 3.79195398966772,
+		"foot_slide_cm_per_frame": 0.174093346393832,
+		"locked_on_screen_share": 0.956145768993206,
+		"pops_per_fighter_minute": 27.0150083379655
+	},
+	"view_ms_per_frame": 2.45602722222222,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 17,
+			"detail": "RightLowerArm turned 2.03 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 273,
+			"worst_value": 2.02893948554993
+		},
+		{
+			"check": "pop",
+			"count": 10,
+			"detail": "SashUpper turned 2.73 rad in one frame (KO_FALL, move )",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1631,
+			"worst_value": 2.73369073867798
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 759,
+			"detail": "fighters 0 and 1 overlap 0.95 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 226,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1595,
+			"worst_value": 0.949609184305882
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -5.0 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 269,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 269,
+			"worst_value": -0.0504223286087324
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "27 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 27
+		}
+	],
+	"wall_seconds": 30.484,
+	"zone": "frozen_peaks"
+}
