@@ -15,8 +15,13 @@ static func of(world: WorldMap) -> RenderedGround:
 	var ground := RenderedGround.new()
 	ground.heightmap = world.heightmap
 	var islands := world.find_child("Islands", true, false) as MeshInstance3D
-	if islands != null and islands.mesh != null:
-		var arrays := islands.mesh.surface_get_arrays(0)
+	if islands == null or islands.mesh == null:
+		return ground
+	# The grass (surface 0) and the rim squares drawn from the sim's grid.
+	for surface in islands.mesh.get_surface_count():
+		if surface != 0 and islands.mesh.surface_get_name(surface) != HeartbloomProps.RIM_SURFACE:
+			continue
+		var arrays := islands.mesh.surface_get_arrays(surface)
 		var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var indices: Variant = arrays[Mesh.ARRAY_INDEX]
 		var to_world := islands.global_transform

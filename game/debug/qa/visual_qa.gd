@@ -131,16 +131,13 @@ func _measure(tick: int) -> void:
 		var all := body.capsules(pose, space)
 		capsules.append(all)
 		var fighter := sim.fighters[i]
-		var trace := OS.get_environment("VISUAL_QA_TRACE").split(":")
-		if trace.size() == 3 and int(trace[0]) == i and tick >= int(trace[1]) and tick <= int(trace[2]):
-			print("TRACE %d %s st%d pos %s vel %s stand %.2f sole %s view %s" % [tick, FighterState.State.find_key(fighter.state),
-				fighter.state_ticks, fighter.position, fighter.velocity, fighter.stand_height,
-				body.lowest_sole(pose, space), view.global_position])
 		# Ground contact.
 		if fighter.state in GROUNDED_STATES and fighter.position.y <= fighter.stand_height + 0.01:
 			var sole := body.lowest_sole(pose, space)
 			var gap := sole.y - ground.height_at(sole.x, sole.z, sole.y)
-			_record(&"ground_contact", absf(gap) > GROUND_TOLERANCE, gap, tick, i, {
+			# As the QA harness rule (AGENTS.md): standing feet within the tolerance; a run may lift both feet, never sink.
+			var off := gap < -GROUND_TOLERANCE if fighter.state == FighterState.State.MOVING else absf(gap) > GROUND_TOLERANCE
+			_record(&"ground_contact", off, gap, tick, i, {
 				"state": FighterState.State.find_key(fighter.state), "state_ticks": fighter.state_ticks,
 				"sole": sole, "sim_floor": fighter.stand_height - sim.tuning.ground_height,
 				"drawn_centre": ground.height_at(fighter.position.x, fighter.position.z, sole.y)})

@@ -46,7 +46,7 @@ static var _ground_height := MovementTuning.new().ground_height
 ## How much of a one-hand attack follows the swing arc rather than the clip.
 const SWING_WEIGHT := 0.85
 ## How much of the hold a weapon keeps during hit reactions.
-const REACTION_HOLD_WEIGHT := 0.6
+const REACTION_HOLD_WEIGHT := 0.85
 ## Knocked-out states: they play the knockdown fall unless the clip set maps them.
 const KO_STATES: Array[int] = [FighterState.State.KO_FALL, FighterState.State.KO_DOWN]
 

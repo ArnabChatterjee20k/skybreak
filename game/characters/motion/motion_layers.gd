@@ -53,7 +53,7 @@ const SWING_FROM := deg_to_rad(-55.0)
 const SWING_TO := deg_to_rad(25.0)
 const SWING_POINT := Vector3(0.0, -0.12, 0.97)
 ## Bow draw: the string hand anchors this far beside the head capsule's surface (m), at jaw height.
-const BOW_ANCHOR_GAP := 0.09
+const BOW_ANCHOR_GAP := 0.13
 const BOW_ANCHOR_DROP := 0.04
 ## Bow cant (sideways lean of its top per unit up) and the shortest bow-hand distance from the anchor (m).
 const BOW_CANT := 0.12
@@ -386,6 +386,8 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 		hips = _foot_ik(rotations, hips)
 	_last_hips_now = hips
 	_pop_guard(rotations, delta)
+	# The guard's twist and turn limits can bring the weapon back into the body: clear it once more.
+	_clearance(rotations, hips)
 	_prev_out = _last_out.duplicate()
 	_last_out = rotations.duplicate()
 	_prev_hips = _last_hips
@@ -873,14 +875,14 @@ func _stance_layer(hips: Vector3, delta: float) -> Vector3:
 ## unseparated bodies so two fighters never chase each other. The feet re-plant after.
 func _separation(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
 	var skeleton := get_skeleton()
-	if skeleton == null or body == null or not skeleton.is_inside_tree():
+	if skeleton == null or body == null or rivals.is_empty() or not skeleton.is_inside_tree():
 		body_capsules = {}
 		return hips
 	var space := skeleton.global_transform
 	_world_cache.clear()
 	body_capsules = body.capsules(func(bone: int) -> Transform3D: return _world_at(rotations, hips, bone), space)
 	_world_cache.clear()
-	if not separate or rivals.is_empty():
+	if not separate:
 		return hips
 	var centre: Vector3 = body_capsules.get(&"pelvis", [space.origin])[0]
 	var shift := Vector3.ZERO

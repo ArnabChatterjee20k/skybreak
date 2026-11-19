@@ -38,6 +38,9 @@ const FLOWER_COLORS: Array[Color] = [
 const ARCH_OFFSET := Vector2(0, -26)
 const ARCH_HEIGHT := 46.0
 
+## Name of the Islands mesh surface holding the rim squares.
+const RIM_SURFACE := "rim"
+
 var kit: PropKit
 var zone: ZoneData
 var field: IslandField
@@ -250,7 +253,6 @@ func _islands(parent: Node3D) -> void:
 			var s := rock_rng.randf_range(1.2, 1.8)
 			PropKit.append_mesh(rock, PropKit.sphere(6, 3), Transform3D(Basis.from_scale(Vector3(s * 1.4, s, s * 1.2)),
 				p + Vector3(cos(a) * 3.2, 0.1, sin(a) * 3.2)), Color(0.86, 0.74, 0.78))
-	_add_rim(grass)
 	grass.generate_normals()
 	rock.generate_normals()
 	var mesh := grass.commit()
@@ -258,6 +260,15 @@ func _islands(parent: Node3D) -> void:
 	mesh.surface_set_material(0, kit.material("hb_grass", Color(1, 1, 1), {"shadow_tint": Color(0.5, 0.52, 0.66), "rim_strength": 0.12}))
 	mesh.surface_set_material(1, kit.material("hb_rock", Color(1, 1, 1), {"strata": 0.15, "strata_spacing": 7.0,
 		"shadow_tint": Color(0.6, 0.44, 0.64), "rim_strength": 0.2}))
+	# The rim squares (from the sim's ground grid) are their own grass surface, named for the QA.
+	var rim := SurfaceTool.new()
+	rim.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_add_rim(rim)
+	rim.generate_normals()
+	rim.commit(mesh)
+	if mesh.get_surface_count() > 2:
+		mesh.surface_set_name(2, RIM_SURFACE)
+		mesh.surface_set_material(2, mesh.surface_get_material(0))
 	var node := kit.single(parent, "Islands", mesh, null, Transform3D.IDENTITY)
 	node.set_meta("islands", field.names)
 
@@ -270,7 +281,6 @@ func _add_rim(grass: SurfaceTool) -> void:
 		reach = maxf(reach, (field.centres[i] - zone.centre).length() + field.radii[i] * 1.2)
 	var ground := ZoneGround.bake(kit.map, field, zone.centre, reach)
 	var half := ZoneGround.CELL * 0.25
-	grass.set_smooth_group(-1)
 	grass.set_color(Color(0.3, 0.52, 0.3))
 	for c in ground.island_rim_squares():
 		var a := c + Vector3(-half, 0, -half)

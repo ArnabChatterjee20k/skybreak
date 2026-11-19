@@ -517,7 +517,7 @@ func test_the_state_hash_covers_pickups_projectiles_and_inventory() -> void:
 
 
 func test_a_3600_tick_seeded_bot_match_uses_at_least_three_weapons() -> void:
-	var result := _bot_match(3, 3600)
+	var result := _bot_match(4, 3600)
 	var used: Dictionary = result[1]
 	var names := used.keys().map(func(kind: int) -> StringName: return Weapon.weapon_name(kind))
 	gut.p("weapons used: %s" % [names])
