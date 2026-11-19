@@ -71,20 +71,25 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   high preset is fine on the grey-box arena (T-107: GPU p95 1.8 ms); recheck
   once real content lands.
 
-- T-118 [developer] Fighter identity: camera-side fill/rim light, a facing cue
-  readable from behind, height drop-line + ground ring under airborne
-  fighters, bigger off-screen arrow with distance and above/below/behind.
+- T-118 [developer] Fighter identity (PR open): P2 palette swap + stronger
+  team rim, height drop-line + ground ring, off-screen arrow with distance,
+  above/below and "behind". Fill light and back cue dropped: the toon
+  shader's shadow tint keeps backlit Kael readable and the model's front and
+  back are distinct (both were capsule-era problems).
+- T-117b [developer] Point-blank framing (0-1 m gap, fighters overlapping):
+  the camera can put a fighter at the screen edge or cut it off (media-1.5).
+  After T-118.
 - T-119 [developer] Playtest capture: render key motion events (re-lock, vanish,
   rush arrival) at every frame for the playtester. Add a check for Space+RMB
   on the ground giving Rising only on the same tick (T-D03 feel note).
 - T-120 [developer] Attack pose placeholder on the capsule (lunge/scale per
   `attack_phase()`, armor/invincibility flash) and the T-201 hitbox debug draw
   from `active_hitboxes()`, interpolated like the fighter.
-- T-121 [developer] Combat feedback when T-D04 lands: map `CombatSim.events` to
-  the T-D09 VFX, hitstop camera shake (§5.10), hitstun/blockstun/knockdown
-  poses, combo counter on the HUD.
-- T-122 [developer] Swap the capsule for T-D10's `CharacterView` in
-  `FighterView` (after T-D10).
+- T-121 [developer] Combat feedback (PR open): `CombatSim.events` -> T-D09 VFX,
+  hit camera shake, impact frames on KO/guard break, combo counter. Stun
+  poses come from Kael's clips (T-D10b); no audio (T-D20 owns it).
+- T-122 [developer] Swap the capsule for `kael_chunky.tscn` in `FighterView`
+  (PR open). No hit-reaction VFX (T-121); team colour is a rim tint only (T-118).
 - T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
   health with grey recoverable part, ki in 4 bars, guard, burst stocks.
 - T-112 [developer] Round flow in the test arena: on `round_over`, reset
@@ -137,6 +142,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-D09 [desktop] Aura and impact VFX, PR #12.
 - T-114 [developer] Shoulder offset: player a third from the edge, PR #16.
 - T-115 [developer] Camera turn limits and teleport glide, PR #17.
+- T-D11c [desktop] Re-bake chunky Kael clips for push_block 2/4/14 (T-D05); fixes the clip-length test.
 - T-116 [developer] VFX prewarm at arena load, PR #19.
 - T-D09b [desktop] VFX fixes (ground shockwave, aura, flame tongues), PR #18.
 - T-D03 [desktop] Moves, light string and cancels, PR #15.

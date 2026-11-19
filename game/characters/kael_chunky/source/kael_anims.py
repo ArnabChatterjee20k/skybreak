@@ -444,7 +444,7 @@ def clip_push_block(moves):
 		legs=feet(lf=(0.2, -0.26)))
 	peak = body(turn=0, lean=16, lh=(0.12, -0.8, 1.2), rh=(-0.12, -0.8, 1.2), lpole=(1, 0.4, -0.6),
 		rpole=(-1, 0.4, -0.6), fingers=palms, scale={"Chest": 1.05}, legs=feet(lf=(0.2, -0.26)))
-	c.key(0, STANCE).key(s - 2, body(turn=-15, lean=2, lh=(0.13, -0.3, 1.16), rh=(-0.11, -0.28, 1.14),
+	c.key(0, STANCE).key(max(1, s - 2), body(turn=-15, lean=2, lh=(0.13, -0.3, 1.16), rh=(-0.11, -0.28, 1.14),
 		fingers=palms, scale={"Chest": 0.92}), "out")
 	c.key(s, push, "in").key(s + 1, peak, "out").key(s + a, push.but(scale={}), "io")
 	c.key(s + a + 3, body(turn=0, lean=6, lh=(0.13, -0.5, 1.15), rh=(-0.11, -0.48, 1.12), fingers=palms), "io")
