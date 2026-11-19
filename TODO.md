@@ -31,6 +31,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D10 [desktop] First real character: Kael (CC0 VRoid body, toon look) on a
   retargeted humanoid clip library (Quaternius UAL, CC0), `CharacterView`
   driven by sim state, preview scene, PR #34. Swap into FighterView is T-122.
+- T-D01b [desktop] Movement fixes from playtest #1: locked strafe orbits at
+  constant radius, dash-away goes straight back, rush brakes over 0.15 s,
+  vanish keeps distance and height to the target, climb eases out, held
+  BLOCK + DASH press vanishes. PR #40.
 - T-D10b [desktop] Original fighting clips authored as keyframes in code
   (stance, power-up, superhero flight, air dash, kicks, uppercut); Kael
   remapped to them. Stacked on PR #34.
@@ -80,12 +84,6 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ### Combat sim (desktop)
 
-- T-D01b [desktop] Movement fixes from playtest #1 (after T-D03): locked
-  strafe orbits at constant radius (no 12 → 22.7 m spiral-out); dash-away goes
-  straight back along the line to the target (no 22 m drift); rush brakes over
-  0.15 s (`MovementTuning`) instead of 80 → 0 in one tick; vanish steps keep
-  distance and height relative to the target (no 12 → 17 m drift). Regression
-  test for each.
 - T-D06 [desktop] Vanish rules: direction guess, Sense, max 2, then Clash.
 - T-D07 [desktop] Chase/tech and wall-splat.
 - T-D09b [desktop] VFX fixes from the PR #12 Windows check: shockwave clipped by
