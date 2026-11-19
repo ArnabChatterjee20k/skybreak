@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="ClipSet" format=3]
+
+[ext_resource type="Script" path="res://game/characters/clip_set.gd" id="1_clips"]
+[ext_resource type="AnimationLibrary" path="res://game/characters/animations/humanoid_clips.res" id="1_gebhv"]
+
+[resource]
+script = ExtResource("1_clips")
+library = ExtResource("1_gebhv")
+state_clips = Dictionary[StringName, StringName]({
+&"BLOCKING": &"block",
+&"BLOCKSTUN": &"block_hit",
+&"CHARGING": &"charge",
+&"DASHING": &"dash",
+&"FALLING": &"fall",
+&"FLYING": &"hover",
+&"GRABBED": &"guard_broken",
+&"GUARD_BROKEN": &"guard_broken",
+&"HITSTUN": &"hit",
+&"IDLE": &"idle",
+&"KNOCKDOWN": &"knockdown",
+&"MOVING": &"run",
+&"THROWING": &"overhead",
+&"VANISHING": &"dash"
+})
+move_clips = Dictionary[StringName, StringName]({
+&"breaker": &"swing_back",
+&"charged_smash_1": &"hook",
+&"charged_smash_2": &"hook",
+&"charged_smash_3": &"palm_strike",
+&"launcher": &"swing_rising",
+&"light_1": &"jab",
+&"light_2": &"cross",
+&"light_3": &"hook",
+&"light_4": &"palm_strike",
+&"push_block": &"shove",
+&"rising": &"swing_rising",
+&"smash": &"cross",
+&"spike": &"overhead",
+&"sweep": &"swing_low"
+})
+impact_windows = Dictionary[StringName, Vector2]({
+&"cross": Vector2(0.25, 0.33),
+&"hook": Vector2(0.21666667, 0.29666665),
+&"jab": Vector2(0.15, 0.23),
+&"overhead": Vector2(0.33333334, 0.41333333),
+&"palm_strike": Vector2(0.15, 0.23),
+&"shove": Vector2(0.55, 0.63),
+&"swing_back": Vector2(0.2, 0.28),
+&"swing_low": Vector2(0.18333334, 0.26333332),
+&"swing_rising": Vector2(0.6166667, 0.69666666)
+})

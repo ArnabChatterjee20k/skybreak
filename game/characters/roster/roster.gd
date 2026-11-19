@@ -6,6 +6,7 @@ const CHARACTERS := {
 	&"kael": "res://game/characters/roster/kael.tres",
 	&"vexa": "res://game/characters/roster/vexa.tres",
 	&"lyra": "res://game/characters/roster/lyra.tres",
+	&"brann": "res://game/characters/roster/brann.tres",
 }
 
 
