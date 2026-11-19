@@ -47,7 +47,7 @@ const SWING_FROM := deg_to_rad(-55.0)
 const SWING_TO := deg_to_rad(25.0)
 const SWING_POINT := Vector3(0.0, -0.12, 0.97)
 ## Bow draw: the string hand anchors this far beside the head capsule's surface (m), at jaw height.
-const BOW_ANCHOR_GAP := 0.11
+const BOW_ANCHOR_GAP := 0.09
 const BOW_ANCHOR_DROP := 0.04
 ## Bow cant (sideways lean of its top per unit up) and the shortest bow-hand distance from the anchor (m).
 const BOW_CANT := 0.12
