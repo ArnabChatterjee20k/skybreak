@@ -49,6 +49,10 @@ enum Kind {
 @export var knockback_type: KnockbackType = KnockbackType.NONE
 ## Knockback velocity in the attacker's local space, m/s.
 @export var knockback: Vector3 = Vector3.ZERO
+## Off the floor: least planar speed away from the attacker (m/s); negative uses HitTuning's.
+@export var air_knockback_min_out: float = -1.0
+## Off the floor: most rise per m/s of outward speed; negative uses HitTuning's.
+@export var air_knockback_rise: float = -1.0
 ## Guard removed when blocked, in display units.
 @export var guard_damage: int = 0
 ## On block, the guard breaks outright if it is below this (0 = never).

@@ -1,0 +1,153 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 10
+		},
+		"bow/projectile+counter": {
+			"10": 1
+		},
+		"breaker": {
+			"7": 2,
+			"8": 3
+		},
+		"launcher": {
+			"7": 8,
+			"20": 1
+		},
+		"launcher+counter": {
+			"11": 1
+		},
+		"light_1": {
+			"3": 17,
+			"4": 3,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 3
+		},
+		"light_2": {
+			"3": 11,
+			"4": 4
+		},
+		"light_3": {
+			"3": 9,
+			"4": 3,
+			"5": 1,
+			"20": 1
+		},
+		"spike": {
+			"7": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "116:stormfall_city:ffa4:vexa,brann,lyra,kael:5333",
+	"kos": 2,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		5,
+		3,
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 116,
+	"sim_ms_per_tick": 1.02703166666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0125561077147722,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 2.64027953256498,
+		"foot_slide_cm_per_frame": 0.00180871610306591,
+		"locked_on_screen_share": 0.993635977938057,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.784434583333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 5,
+			"detail": "lowest sole +19.2 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 230,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1421,
+			"worst_value": 0.191696635417294
+		},
+		{
+			"check": "foot_ground",
+			"count": 6,
+			"detail": "lowest sole +76.6 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 0,
+			"first_tick": 234,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1166,
+			"worst_value": 0.766008409044021
+		},
+		{
+			"check": "foot_ground",
+			"count": 11,
+			"detail": "lowest sole +23.5 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 3,
+			"first_tick": 354,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 354,
+			"worst_value": 0.234563788098162
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 11,
+			"detail": "fighters 0 and 2 overlap 0.14 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 463,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 465,
+			"worst_value": 0.135733847618103
+		},
+		{
+			"check": "foot_ground",
+			"count": 8,
+			"detail": "lowest sole -6.2 cm off the visible ground (MOVING, clip run)",
+			"fighter": 1,
+			"first_tick": 794,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 794,
+			"worst_value": -0.0617386698601727
+		},
+		{
+			"check": "camera_cover",
+			"count": 3,
+			"detail": "fighter 1 covers 100% of the screen",
+			"fighter": 1,
+			"first_tick": 2167,
+			"legend": "brann",
+			"limit": 0.6,
+			"weapon": "",
+			"worst_tick": 2169,
+			"worst_value": 1.0
+		}
+	],
+	"wall_seconds": 17.563,
+	"zone": "stormfall_city"
+}

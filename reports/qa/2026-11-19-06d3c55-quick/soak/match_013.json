@@ -1,0 +1,178 @@
+{
+	"hitstops": {
+		"breaker": {
+			"10": 1
+		},
+		"launcher": {
+			"7": 5
+		},
+		"light_1": {
+			"3": 13,
+			"4": 2,
+			"5": 5,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 4,
+			"9": 7
+		},
+		"light_2": {
+			"3": 9,
+			"4": 4,
+			"5": 9,
+			"20": 1
+		},
+		"light_3": {
+			"3": 8,
+			"5": 1,
+			"8": 8
+		},
+		"scythe/light_1+counter": {
+			"9": 3
+		},
+		"scythe/light_2": {
+			"5": 2
+		},
+		"scythe/light_3": {
+			"7": 1
+		},
+		"smash+counter": {
+			"11": 1
+		},
+		"spike": {
+			"7": 3
+		}
+	},
+	"id": "113:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:2553",
+	"kos": 2,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		5,
+		5,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 113,
+	"sim_ms_per_tick": 1.00664583333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0106563242152333,
+		"finger_pops_per_fighter_minute": 21.0087536473531,
+		"foot_error_p95_cm": 9.55783511699337,
+		"foot_slide_cm_per_frame": 1.41197169856847,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 43.5181325552313
+	},
+	"view_ms_per_frame": 0.7573,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 167,
+			"detail": "lowest sole -10.3 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 128,
+			"worst_value": -0.102996561333896
+		},
+		{
+			"check": "pop",
+			"count": 31,
+			"detail": "RightHand turned 2.78 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 2,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 91,
+			"worst_value": 2.77747702598572
+		},
+		{
+			"check": "pop",
+			"count": 22,
+			"detail": "CapeLeftLower turned 2.95 rad in one frame (HITSTUN, move , clip hit_stagger)",
+			"fighter": 3,
+			"first_tick": 2,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1307,
+			"worst_value": 2.94596529006958
+		},
+		{
+			"check": "pop",
+			"count": 18,
+			"detail": "RightLowerArm turned 3.10 rad in one frame (MOVING, move , clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 145,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 161,
+			"worst_value": 3.09704422950745
+		},
+		{
+			"check": "pop",
+			"count": 45,
+			"detail": "SashUpper turned 3.08 rad in one frame (FLYING, move , clip hover)",
+			"fighter": 1,
+			"first_tick": 168,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 432,
+			"worst_value": 3.08182072639465
+		},
+		{
+			"check": "arena_bounds",
+			"count": 1,
+			"detail": "outside the arena at (124.95, 273.59, -137.37) (stand 273.69, GRABBED)",
+			"fighter": 3,
+			"first_tick": 980,
+			"legend": "lyra",
+			"limit": 290.05,
+			"weapon": "",
+			"worst_tick": 980,
+			"worst_value": 147.367584228516
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -6.2 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 1472,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1472,
+			"worst_value": -0.0621169431988164
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "116 pops in 2.7 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 5.33111111111111,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 116
+		}
+	],
+	"wall_seconds": 17.755,
+	"zone": "heartbloom_gardens"
+}

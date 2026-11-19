@@ -46,3 +46,15 @@ log it here.
   `tools/diag/det_check.gd` prints a hash chain over the full state of both
   sequences; it must print the same lines on Linux, Windows and the web build
   (`tools/web/det_check_web.sh`).
+- **#89 (polish batch 2) on the merge of `main` (b0754e5)**: re-blessed. Both
+  sequences match main's goldens up to the first close air hit, then diverge
+  from the air-knockback guard (intended): only the target's planar velocity
+  changes, raised to 3 m/s away from the attacker (`air_light_knockback_min_out`).
+  - `free_for_all`: first differs at index 304 (sim tick 305). Fighter 3 hits
+    fighter 2, both in the air (y 5.24 and 4.54) about 1 m apart; fighter 2's
+    knockback goes from (1.94, 0, 0.50) to (2.91, 0, 0.72).
+  - `bot_match`: first differs at index 199 (sim tick 200). Fighter 1 hits
+    fighter 0, both attacking in the air (y 6.84 and 8.63) 0.14 m apart;
+    fighter 0's knockback goes from (-0.47, 1.41, -1.33) to (-1.01, 1.41, -2.83).
+  `tools/diag/det_check.gd` total on Linux changes from `2bb1c571b216b165` to
+  `7f2c2af91b6d870f`.
