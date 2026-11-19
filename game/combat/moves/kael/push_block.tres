@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"push_block"
+display_name = "Push Block"
+startup_ticks = 4
+active_ticks = 3
+recovery_ticks = 16
+step_distance = 0
+hitbox_offsets = PackedVector3Array(0, 0.2, -0.9, 0, 0.2, -0.9, 0, 0.2, -0.9)
+hitbox_radii = PackedFloat32Array(1.2, 1.2, 1.2)
+damage = 0
+hitstun_ticks = 0
+blockstun_ticks = 20
+hitstop_ticks = 0
+knockback_type = 1
+knockback = Vector3(0, 0, -18)
+guard_damage = 0
+cancel_level = 2
+cancel_start_tick = 0
+cancel_end_tick = 0
