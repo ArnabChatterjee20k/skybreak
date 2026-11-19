@@ -21,6 +21,8 @@ var combo_counter := ComboCounter.new()
 ## (match_flow.enabled = false) so input is never held for an intro.
 var match_flow := MatchFlow.new(FIGHTER_STARTS.size())
 var match_hud := MatchHud.new()
+## Sound for sim events and fighter states (T-D20).
+var match_audio := MatchAudio.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -48,6 +50,8 @@ func _ready() -> void:
 		match_hud.team_colors.append(Color(view.energy_color, 1.0))
 	$Hud.add_child(match_hud)
 	add_child(vfx_prewarm)
+	match_audio.sim = sim
+	add_child(match_audio)
 	# After the first frame so the camera has its starting pose. A method,
 	# not a lambda: deferred calls on a freed arena are then simply dropped.
 	_start_prewarm.call_deferred()
@@ -90,6 +94,7 @@ func step_tick() -> void:
 	# sim.events holds only this tick's events, so read them every tick.
 	combat_feedback.react(sim.events)
 	match_flow.step(sim)
+	match_audio.after_tick()
 
 
 ## Draws one frame: fighters at blend between the last two ticks, then the camera.
