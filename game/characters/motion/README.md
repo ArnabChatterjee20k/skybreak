@@ -14,6 +14,9 @@ top of any clip. T-D22b wires both into `CharacterView` (see "In game" below).
 | `tools/build_motion_library.gd` | JSON to `motion_library.res`. |
 | `tools/motion_metrics.gd` | Old-vs-new realism table. |
 | `tools/motion_compare_capture.gd` | Side-by-side contact sheets and strips (`renders/`). |
+| `motion_profile.gd`, `profiles/` | `MotionProfile`: each legend's motion personality (T-D22c). |
+| `tools/motion_metrics_pass2.gd` | All four legends, on the clips CharacterView plays, plus live pops in two bot matches. Run it on two commits for old vs new. |
+| `tools/motion_pass2_capture.gd` | Per-legend contact sheets and the 4-legend lineup (`renders/pass2/`). |
 | `LICENSES.md` | Every clip's source, author and licence. |
 
 ## Re-run
@@ -84,3 +87,56 @@ decays it with a critically damped spring, so there's no linear crossfade and no
   arm pose. It only reads the sim.
 - Review renders: `tools/motion_integration_capture.gd` (old left, new right), committed under
   `renders/integration/`.
+
+## Pass 2 (T-D22c)
+
+- **All four legends** run mocap and `MotionLayers`: `ClipSet.motion` is set for Lyra and Brann too.
+- **Fitted strikes** (`MotionClips.fit_strike`) put a take onto another legend's move. A
+  `motion_moves` entry of `fit` (the slot's own take) or `fit:<take>` builds `fit_<move>` at load:
+  - **Retime:** the take's fullest extension toward the move's hitbox lands mid-active, and the
+    clip lasts exactly the move's ticks.
+  - **Mirror:** the take is mirrored (`MotionClips.mirror`) when it strikes with the other side,
+    and a punch or kick is swapped in when it strikes with the other kind of limb.
+  - **Reach:** two-bone IK moves the strike limb's path onto the hitbox, with a wind-up in startup
+    and a follow-through arc across the body after active.
+  - **Who uses it:** Vexa's breaker, launcher (mirrored uppercut), light_5, push_block, rising and
+    grab, and every Lyra and Brann move.
+- **Motion profiles** (`ClipSet.motion_profile`, `profiles/*.tres`) carry personality as numbers,
+  not code paths:
+  - spring frequencies (lean, secondary, blend, flinch)
+  - lean and secondary amount
+  - landing depth, stance crouch
+  - stride (locomotion cadence), reaction timing
+  - hover bob, flight arm read and dive pitch
+  - impact weight (Brann's hips take the hit on the active tick)
+
+  The four profiles:
+  - **Kael** uses the defaults (heroic, balanced).
+  - **Vexa** is quick and low: stiff springs, fast blends, a 7 cm crouch, a short stride.
+  - **Brann** is heavy: soft, slow springs and blends, deep landings, impact weight, a long stride.
+  - **Lyra** is graceful: soft lean, floaty secondary motion, a 7 cm hover bob, light landings.
+- **One lean source.** `MotionLayers` is the only thing that leans a motion legend:
+  - `FighterView` keeps its body node upright when `leans_itself()`.
+  - The views' own procedural lean and hover bob go through `CharacterView.defer_to_layers()`.
+  - `FighterView.MAX_LEAN` only applies to the capsule and to characters without layers.
+- **Pop guard** (the last layer):
+  - Upper and lower arm twist is unwrapped against the last frame and limited (`TWIST_LIMITS`).
+  - The two-bone IK keeps its last bend direction while a limb is nearly straight.
+  - No body bone turns faster than `MAX_TURN_RATE` in model space, parents first.
+  - Inertialization carries in at most `MAX_BLEND_SPEED`.
+  - The hips' twist uses a swing-twist yaw, not Euler angles, which flipped near 90° of flight pitch.
+- **Derived clips:**
+  - `light_1..3` get a 2–3 tick shoulder load inside startup.
+  - `sweep_low` gets a follow-through arc.
+  - `launcher_up` is smoothed outside its active window (less jerk).
+  - `get_up_full` is the tech take plus a rise all the way to the stance. The knockdown falls in
+    the first 40 %, and the legend stands by 90 % of the window.
+  - `turn_step` is turn_in_place without its body yaw. It plays when an idle legend's facing
+    swings past 45°.
+- **Flight:**
+  - The air dash uses the upright hover base, like flight; the `fly` take's baked pitch doubled
+    the layer's.
+  - The legs are eased to their straight rest pose.
+  - Both arms sweep back at speed, and the lead arm punches ahead in a dive.
+  - A dive pitches on to the profile's `dive_pitch`, a horizontal superman line.
+  - `burst()` fires on air dashes, including Vexa's and Lyra's dash snaps.

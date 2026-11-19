@@ -1,0 +1,16 @@
+[configuration]
+
+entry_symbol = "webrtc_extension_init"
+compatibility_minimum = 4.3
+
+exclude_tags = ["web", "no-webrtc"]
+
+; Only the Windows x86_64 libraries are committed (Windows exports bundle them).
+; Other desktop platforms: install the full 1.2.2-stable release locally and
+; use its webrtc_native.gdextension instead (game/net/README.md). The web build
+; uses the browser's own WebRTC and needs no extension.
+
+[libraries]
+
+windows.debug.x86_64 = "lib/libwebrtc_native.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "lib/libwebrtc_native.windows.template_release.x86_64.dll"

@@ -21,7 +21,10 @@ const CODE_LENGTH := 5
 ## No 0/O or 1/I, so codes read out loud survive.
 const CODE_ALPHABET := "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
+## The signed-in client; set it before adding this node to share the lobby's sign-in.
 var client: AppwriteClient
+## Off only in tests, which check the document flow without the WebRTC extension.
+var require_webrtc := true
 var transport: WebRtcTransport
 var lobby_code: String = ""
 var is_host: bool = false
@@ -32,8 +35,10 @@ var _poll_timer: Timer
 
 
 func _ready() -> void:
-	client = AppwriteClient.new()
-	add_child(client)
+	if client == null:
+		client = AppwriteClient.new()
+	if client.get_parent() == null:
+		add_child(client)
 	_poll_timer = Timer.new()
 	_poll_timer.wait_time = POLL_SECONDS
 	_poll_timer.timeout.connect(_poll)
@@ -45,10 +50,10 @@ func _process(_delta: float) -> void:
 		transport.poll()
 
 
-## Signs in and opens a new lobby with a fresh code and match seed.
+## Opens a new lobby with a fresh code and match seed.
 func host(ai_count: int) -> void:
 	is_host = true
-	if not await _sign_in():
+	if not _ready_to_start():
 		return
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
@@ -58,7 +63,7 @@ func host(ai_count: int) -> void:
 		var response := await client.create_document(LOBBIES, lobby_code, {
 			"code": lobby_code, "host": client.user_id, "guest": "", "status": "open",
 			"seed": seed_value, "ai_count": ai_count,
-		}, ['read("users")', 'update("users")', 'delete("user:%s")' % client.user_id])
+		}, lobby_permissions(client.user_id))
 		if not response.error:
 			status_changed.emit("Lobby %s: waiting for your partner" % lobby_code)
 			lobby_ready.emit(lobby_code, seed_value, ai_count)
@@ -70,11 +75,11 @@ func host(ai_count: int) -> void:
 	failed.emit("Could not find a free lobby code")
 
 
-## Signs in and joins the lobby with this code.
+## Joins the lobby with this code.
 func join(code: String) -> void:
 	is_host = false
 	lobby_code = code.strip_edges().to_upper()
-	if not await _sign_in():
+	if not _ready_to_start():
 		return
 	var response := await client.get_document(LOBBIES, lobby_code)
 	if response.error:
@@ -105,6 +110,16 @@ static func new_code(rng: RandomNumberGenerator) -> String:
 	return code
 
 
+## Lobby document permissions (README): any signed-in player reads and claims it, the host deletes it.
+static func lobby_permissions(host_id: String) -> Array[String]:
+	return ['read("users")', 'update("users")', 'delete("user:%s")' % host_id]
+
+
+## Signal document permissions (README): both ends read it, the receiver deletes it.
+static func signal_permissions(from_id: String, to_id: String) -> Array[String]:
+	return ['read("user:%s")' % to_id, 'read("user:%s")' % from_id, 'delete("user:%s")' % to_id]
+
+
 func close() -> void:
 	_poll_timer.stop()
 	if transport:
@@ -113,16 +128,12 @@ func close() -> void:
 		client.update_document(LOBBIES, lobby_code, {"status": "closed"})
 
 
-func _sign_in() -> bool:
-	if not WebRtcTransport.is_available():
+func _ready_to_start() -> bool:
+	if require_webrtc and not WebRtcTransport.is_available():
 		failed.emit("WebRTC is not available in this build (desktop needs the webrtc-native GDExtension; see game/net/README.md)")
 		return false
-	if client.user_id:
-		return true
-	status_changed.emit("Signing in")
-	var error := await client.sign_in_anonymously()
-	if error:
-		failed.emit("Sign-in failed: " + error)
+	if not client.is_signed_in():
+		failed.emit("Sign in first")
 		return false
 	return true
 
@@ -147,8 +158,7 @@ func _send_signal(kind: String, payload: Dictionary) -> void:
 	var response := await client.create_document(SIGNALS, "", {
 		"lobby": lobby_code, "from": client.user_id, "to": _partner_id,
 		"kind": kind, "payload": JSON.stringify(payload),
-	}, ['read("user:%s")' % _partner_id, 'read("user:%s")' % client.user_id,
-		'delete("user:%s")' % _partner_id])
+	}, signal_permissions(client.user_id, _partner_id))
 	if response.error:
 		failed.emit("Signalling failed: " + response.error)
 

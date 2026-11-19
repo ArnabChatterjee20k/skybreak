@@ -35,8 +35,11 @@ const WEAPON_SLOT_CLIPS := {&"bash": &"breaker", &"throw": &"light_2", &"shot": 
 ## Mocap clips (T-D22). When set, CharacterView plays these for every slot MotionSlots maps and
 ## falls back to the clips above, per slot, where the motion library has no clip.
 @export var motion: MotionLibrary
-## Move id -> motion clip, overriding MotionSlots.MOVES for this character.
+## Move id -> motion clip, overriding MotionSlots.MOVES for this character. "-" plays the posed
+## clip; "fit" (or "fit:<take>") retimes the take onto the character's own move (MotionClips.fit_strike).
 @export var motion_moves: Dictionary[StringName, StringName] = {}
+## The character's motion personality (springs, lean, stride, timing); null uses the defaults.
+@export var motion_profile: MotionProfile
 
 
 func clip_for_state(state_name: StringName, airborne := false) -> StringName:
