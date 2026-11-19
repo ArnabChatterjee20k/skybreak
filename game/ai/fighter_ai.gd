@@ -892,7 +892,7 @@ func _keep_apart(sim: CombatSim, me: FighterState, target: FighterState, plan: F
 ## A planar world direction as a move input in the lock-on frame (W toward the target).
 func _world_to_move(direction: Vector3, to_target: Vector3) -> Vector2:
 	var planar := Vector3(to_target.x, 0.0, to_target.z)
-	var yaw := DetMath.atan2(-planar.x, -planar.z) if planar.length() >= 0.5 else 0.0
+	var yaw := DetMath.yaw_of(planar) if planar.length() >= 0.5 else 0.0
 	var local := DetMath.rotate_y(direction, -yaw)
 	return Vector2(local.x, -local.z)
 
