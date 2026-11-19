@@ -211,23 +211,6 @@ static func box_depth(a: Vector3, b: Vector3, r: float, box: Transform3D) -> Arr
 	return [deepest, push, contact]
 
 
-## Deepest overlap of boxes with capsules ({name: [a, b, r]}):
-## [depth, push, capsule name, contact point, the overlapping box's centre].
-static func deepest_box(capsule_set: Dictionary, boxes: Array[Transform3D]) -> Array:
-	var result := [-INF, Vector3.ZERO, &"", Vector3.ZERO, Vector3.ZERO]
-	for name: StringName in capsule_set:
-		var c: Array = capsule_set[name]
-		for box in boxes:
-			# Cheap reject on the box's bounding sphere.
-			var reach := box.basis.x.length() + box.basis.y.length() + box.basis.z.length()
-			if _point_segment(box.origin, c[0], c[1]) > reach + float(c[2]):
-				continue
-			var hit := box_depth(c[0], c[1], c[2], box)
-			if hit[0] > result[0]:
-				result = [hit[0], hit[1], name, hit[2], box.origin]
-	return result
-
-
 ## Overlap of two capsules (m); <= 0 when apart.
 static func capsule_depth(a: Array, b: Array) -> float:
 	var closest := Geometry3D.get_closest_points_between_segments(a[0], a[1], b[0], b[1])
@@ -238,3 +221,76 @@ static func capsule_depth(a: Array, b: Array) -> float:
 static func segment_depth(p: Vector3, q: Vector3, c: Array) -> float:
 	var closest := Geometry3D.get_closest_points_between_segments(p, q, c[0], c[1])
 	return float(c[2]) - closest[0].distance_to(closest[1])
+
+
+## Deepest overlap of boxes with capsules ({name: [a, b, r]}):
+## [depth, push, capsule name, contact point, the overlapping box's centre].
+## Same result as box_depth over every pair near enough, with the box sizes and inverses shared.
+static func deepest_box(capsule_set: Dictionary, boxes: Array[Transform3D]) -> Array:
+	var result := [-INF, Vector3.ZERO, &"", Vector3.ZERO, Vector3.ZERO]
+	var count := boxes.size()
+	if count == 0:
+		return result
+	var reaches := PackedFloat32Array()
+	reaches.resize(count)
+	var centre := Vector3.ZERO
+	for i in count:
+		var box := boxes[i]
+		reaches[i] = box.basis.x.length() + box.basis.y.length() + box.basis.z.length()
+		centre += box.origin
+	centre /= count
+	# A sphere round every box's own sphere: a capsule clear of it is clear of every box.
+	var bound := 0.0
+	for i in count:
+		bound = maxf(bound, centre.distance_to(boxes[i].origin) + reaches[i])
+	bound += 1e-3
+	var inverses: Array = []
+	inverses.resize(count)
+	var best := -INF
+	for name: StringName in capsule_set:
+		var c: Array = capsule_set[name]
+		var a: Vector3 = c[0]
+		var b: Vector3 = c[1]
+		var r: float = c[2]
+		if _point_segment(centre, a, b) > bound + r:
+			continue
+		for i in count:
+			var box := boxes[i]
+			if _point_segment(box.origin, a, b) > reaches[i] + r:
+				continue
+			var inverse: Transform3D
+			if inverses[i] == null:
+				inverse = box.affine_inverse()
+				inverses[i] = inverse
+			else:
+				inverse = inverses[i]
+			var half := Vector3(box.basis.x.length(), box.basis.y.length(), box.basis.z.length())
+			var deepest := -INF
+			var push := Vector3.ZERO
+			var contact := box.origin
+			for k in 9:
+				var p := a.lerp(b, float(k) / 8)
+				var local := inverse * p
+				var clamped := local.clamp(-Vector3.ONE, Vector3.ONE)
+				var depth: float
+				if clamped.is_equal_approx(local):
+					var room := (Vector3.ONE - local.abs()) * half
+					var axis := room.min_axis_index()
+					depth = r + room[axis]
+					if depth > deepest:
+						var out := Vector3.ZERO
+						out[axis] = -signf(local[axis]) if local[axis] != 0.0 else 1.0
+						deepest = depth
+						push = (box.basis * out).normalized()
+						contact = p
+				else:
+					var q := box * clamped
+					depth = r - p.distance_to(q)
+					if depth > deepest:
+						deepest = depth
+						push = (q - p).normalized()
+						contact = q
+			if deepest > best:
+				best = deepest
+				result = [deepest, push, name, contact, box.origin]
+	return result

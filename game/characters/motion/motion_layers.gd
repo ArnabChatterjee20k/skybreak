@@ -253,6 +253,11 @@ var _used_parent: PackedInt32Array = []
 var _guard_world: Array[Quaternion] = []
 var _guard_world_now: Array[Quaternion] = []
 var _world_cache: Array = []
+## The pose and hips the last clear _clearance this frame ended on: a repeat call on them is a no-op.
+var _clear_rotations: Array[Quaternion] = []
+var _clear_hips := Vector3.INF
+var _clear_capsule_body: BodyCapsules = null
+var _clear_capsule_sets := {}
 var _rest_parent_rot: Array[Quaternion] = []
 ## Bones the skeleton mode reads and writes (the body; fingers and extras are left alone).
 var _used: PackedInt32Array = []
@@ -464,6 +469,7 @@ func _process_modification_with_delta(delta: float) -> void:
 func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> Vector3:
 	if delta <= 0.0:
 		delta = 0.0
+	_clear_hips = Vector3.INF
 	if body_layers:
 		_inertialize(rotations, delta)
 		hips = _inertialize_hips(hips, delta)
@@ -893,6 +899,10 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
 	var names: Array = CLEAR_OF.get(weapon_hand, [])
 	if weapon_off_hand != Vector3.INF:
 		names = names.filter(func(n: StringName) -> bool: return not n.begins_with("lower_arm"))
+	if hips == _clear_hips and rotations == _clear_rotations:
+		_world_cache.clear()
+		return
+	var tested := _clear_capsules(names)
 	for pass_index in CLEARANCE_PASSES + 1:
 		_world_cache.clear()
 		var hand := _world_at(rotations, hips, main[2])
@@ -900,11 +910,18 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
 		var boxes: Array[Transform3D] = []
 		for box in weapon_boxes:
 			boxes.append(weapon * box)
-		var capsules := body.capsules(func(bone: int) -> Transform3D: return _world_at(rotations, hips, bone),
-			Transform3D.IDENTITY, names)
+		var capsules := {}
+		for entry: Array in tested:
+			var from := _world_at(rotations, hips, entry[1])
+			var b: Vector3 = _world_at(rotations, hips, entry[2]).origin if entry[2] >= 0 else from * (entry[3] as Vector3)
+			capsules[entry[0]] = [from.origin, b, entry[4]]
 		var hit := BodyCapsules.deepest_box(capsules, boxes)
 		weapon_overlap = maxf(float(hit[0]), 0.0)
-		if float(hit[0]) <= -CLEARANCE_GAP or pass_index == CLEARANCE_PASSES:
+		if float(hit[0]) <= -CLEARANCE_GAP:
+			_clear_rotations = rotations.duplicate()
+			_clear_hips = hips
+			return
+		if pass_index == CLEARANCE_PASSES:
 			return
 		var push: Vector3 = hit[1]
 		var depth := float(hit[0]) + CLEARANCE_GAP + CLEARANCE_MARGIN
@@ -924,6 +941,22 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
 		var target := hand.origin + push * maxf(depth - moved, CLEARANCE_MARGIN)
 		_reach_hand(rotations, hips, main, target, hand_rotation, 1.0)
 		_grip_off_hand(rotations, hips, 1.0)
+
+
+## The body's capsules the clearance tests, in BodyCapsules order: [name, bone, end bone, offset, radius].
+func _clear_capsules(names: Array) -> Array:
+	var key := str(names)
+	if _clear_capsule_body != body:
+		_clear_capsule_body = body
+		_clear_capsule_sets.clear()
+	if not _clear_capsule_sets.has(key):
+		var entries: Array = []
+		for name: StringName in body.bones:
+			if names.is_empty() or names.has(name):
+				var entry: Array = body.bones[name]
+				entries.append([name, entry[0], entry[1], entry[2], float(body.radii[name])])
+		_clear_capsule_sets[key] = entries
+	return _clear_capsule_sets[key]
 
 
 ## Re-applies most of last frame's clearance correction to the main hand before this frame's solve.

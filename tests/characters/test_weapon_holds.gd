@@ -104,3 +104,41 @@ func test_a_drawn_bow_shows_exactly_one_arrow_on_its_string() -> void:
 	assert_eq(held[0].find_children("NockedArrow", "", true, false).size(), 1, "one nocked arrow")
 	assert_eq(string.arrow, held[0].find_child("NockedArrow", true, false), "the string carries it")
 	assert_eq(string.find_children("*", "MeshInstance3D", true, false).size(), 2, "the string draws only its two halves")
+
+
+func _deepest_box_by_pairs(capsule_set: Dictionary, boxes: Array[Transform3D]) -> Array:
+	var result := [-INF, Vector3.ZERO, &"", Vector3.ZERO, Vector3.ZERO]
+	for name: StringName in capsule_set:
+		var c: Array = capsule_set[name]
+		for box in boxes:
+			var reach := box.basis.x.length() + box.basis.y.length() + box.basis.z.length()
+			var p: Vector3 = box.origin
+			if p.distance_to(Geometry3D.get_closest_point_to_segment(p, c[0], c[1])) > reach + float(c[2]):
+				continue
+			var hit := BodyCapsules.box_depth(c[0], c[1], c[2], box)
+			if hit[0] > result[0]:
+				result = [hit[0], hit[1], name, hit[2], box.origin]
+	return result
+
+
+func test_deepest_box_matches_box_depth_over_every_pair_exactly() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 30
+	var v := func(s: float) -> Vector3: return Vector3(rng.randf_range(-s, s), rng.randf_range(-s, s), rng.randf_range(-s, s))
+	var hits := 0
+	for trial in 400:
+		var capsules := {}
+		for name: StringName in [&"pelvis", &"chest", &"head", &"upper_arm_l", &"upper_arm_r"]:
+			var a: Vector3 = v.call(0.4)
+			capsules[name] = [a, a + v.call(0.3), rng.randf_range(0.04, 0.15)]
+		var boxes: Array[Transform3D] = []
+		var weapon := Transform3D(Basis.from_euler(v.call(PI)), v.call(0.5))
+		for i in rng.randi_range(1, 16):
+			var basis := Basis.from_euler(v.call(PI)).scaled(Vector3(rng.randf_range(0.01, 0.3),
+				rng.randf_range(0.01, 0.3), rng.randf_range(0.01, 0.3)))
+			boxes.append(weapon * Transform3D(basis, v.call(0.6)))
+		var expected := _deepest_box_by_pairs(capsules, boxes)
+		assert_eq(BodyCapsules.deepest_box(capsules, boxes), expected, "trial %d" % trial)
+		if float(expected[0]) > 0.0:
+			hits += 1
+	assert_gt(hits, 50, "enough trials overlap")
