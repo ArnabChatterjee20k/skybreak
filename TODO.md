@@ -105,12 +105,21 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ### Milestone 2–3 (developer side)
 
+- T-D21b [developer] Wire `MusicDirector` (T-D21) into the game: `start_battle(zone)`
+  on arena load, `observe_sim(sim, final_round)` each tick, `set_zone()` when the
+  fight crosses a zone border, `round_started()` / `round_ended()`, `set_paused()`,
+  `play_menu()` / `play_character_select()` once menus exist.
+
 - T-201 [developer] Training dummy scene and combat debug view (hitboxes,
   frame data, input history) wired to sim state.
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
 
+- T-D21 [desktop] Adaptive background score: menu, character select, seven zone
+  battle themes as synced calm/combat/climax stems, victory and KO stingers,
+  composed as code and rendered offline; `MusicDirector` autoload switches
+  layers and zones on bar lines from sim state.
 - T-D00 [desktop] Game design document (`docs/GAME_DESIGN.md`), PR #1.
 - T-002 [developer] Graphics presets + resolution scale + vsync, F10 menu, PR #2.
 - T-003 [developer] Windows export preset (single exe), PR #4.
