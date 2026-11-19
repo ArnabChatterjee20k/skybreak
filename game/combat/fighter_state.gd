@@ -20,6 +20,8 @@ enum State {
 	BLOCKING, ## Holding block: guard up, slow drift only, no attacks except push-block.
 	GRABBED, ## Held by grab_partner until the throw or a tech.
 	THROWING, ## Holding grab_partner before throwing it.
+	KO_FALL, ## Knocked out: no flight, falls with its knockback and bounces off the floor once.
+	KO_DOWN, ## Knocked out and lying on the floor until the next round; cannot be hit.
 }
 
 ## Part of the current move, derived from move_tick.
@@ -45,6 +47,8 @@ var position: Vector3 = Vector3.ZERO
 var velocity: Vector3 = Vector3.ZERO
 ## Index of the locked-on opponent in CombatSim.fighters, or -1 for none.
 var lock_on_target: int = -1
+## Side the fighter is on; the round ends when one team is left. Defaults to the slot index.
+var team: int = 0
 var state: State = State.IDLE
 ## Ticks spent in the current state, counting the tick it was entered.
 var state_ticks: int = 0
@@ -131,6 +135,8 @@ var hitstop_ticks: int = 0
 var knockback_type: MoveData.KnockbackType = MoveData.KnockbackType.NONE
 ## A spiked fighter already bounced off the floor; the next landing knocks it down.
 var spike_bounced: bool = false
+## A knocked-out fighter already bounced off the floor; the next landing lays it down.
+var ko_bounced: bool = false
 ## Hits and scaled damage (display units) of the combo being taken; 0 outside HITSTUN.
 var combo_hits: int = 0
 var combo_damage: int = 0
@@ -151,6 +157,8 @@ var smitten_ticks: int = 0
 var smitten_by: int = -1
 ## Ticks since Smitten last started, capped; a repeat inside the window lasts half as long.
 var ticks_since_smitten: int = 1 << 20
+## Height of the origin when standing at the current (x, z); the sim sets it each tick.
+var stand_height: float = 1.0
 
 
 ## Switches to new_state and restarts the tick counter, even if it is the same state.
@@ -170,6 +178,8 @@ func enter_state(new_state: State) -> void:
 		spike_bounced = false
 		combo_hits = 0
 		combo_damage = 0
+	if new_state != State.KO_FALL and new_state != State.KO_DOWN:
+		ko_bounced = false
 
 
 ## Starts performing new_move from its first startup tick.
@@ -246,9 +256,9 @@ func is_upper_body(point: Vector3) -> bool:
 	return point.y > position.y
 
 
-## False while knocked down or vanished: hits pass through.
+## False while knocked down, knocked out or vanished: hits pass through.
 func can_be_hit() -> bool:
-	return state != State.KNOCKDOWN and state != State.VANISHING
+	return state != State.KNOCKDOWN and state != State.VANISHING and not is_knocked_out()
 
 
 ## True while hits do not interrupt the current move (armor).
@@ -271,6 +281,11 @@ func is_grounded() -> bool:
 
 func is_knocked_out() -> bool:
 	return health <= 0
+
+
+## In KO_FALL or KO_DOWN: the KO physics own this fighter until the next round.
+func is_ko_state() -> bool:
+	return state == State.KO_FALL or state == State.KO_DOWN
 
 
 # Display values for the HUD.
@@ -310,6 +325,7 @@ func state_values() -> Array:
 		extra_recovery_ticks,
 		weapons, ammo, active_slot, switch_lockout, reload_ticks,
 		smitten_ticks, smitten_by, ticks_since_smitten,
+		team, ko_bounced,
 	]
 
 

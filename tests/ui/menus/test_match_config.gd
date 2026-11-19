@@ -45,17 +45,38 @@ func test_set_config_round_trips_the_contract() -> void:
 	assert_eq(_config.to_dictionary(), config)
 
 
-func test_level_with_configure_gets_the_config_and_a_match_session() -> void:
+func test_level_is_configured_before_it_enters_the_tree() -> void:
 	_config.set_config(MatchRules.build_vs_ai(&"kael", [{"character": &"vexa", "ai_level": 2}], &"ember_rift"))
+	var packed := PackedScene.new()
+	var template := FakeLevel.new()
+	packed.pack(template)
+	template.free()
+	var level: Node = _config.prepare_level(packed)
+	assert_false(level.is_inside_tree())
+	assert_eq(level.config.zone, &"ember_rift")
+	assert_eq(level.config.fighters.size(), 2)
+	level.free()
+
+
+func test_zone_match_accepts_the_menu_config() -> void:
+	if not ResourceLoader.exists(_config.ZONE_MATCH_SCENE):
+		pass_test("zone_match.tscn not merged yet")
+		return
+	_config.set_config(MatchRules.build_vs_ai(&"lyra", [{"character": &"brann", "ai_level": 4}], &"heartbloom_gardens"))
+	var level: Node = _config.prepare_level(load(_config.ZONE_MATCH_SCENE))
+	assert_eq(level.get(&"zone_id"), &"heartbloom_gardens")
+	level.free()
+
+
+func test_launched_level_gets_a_match_session() -> void:
 	_config.launched_scene = "res://tests/fake_zone_match.tscn"
 	var level := FakeLevel.new()
 	level.scene_file_path = _config.launched_scene
 	get_tree().root.add_child(level)
 	await wait_process_frames(2)
-	assert_eq(level.config.zone, &"ember_rift")
-	assert_eq(level.config.fighters.size(), 2)
 	assert_not_null(level.get_node_or_null(^"MatchSession"))
 	level.queue_free()
+	await wait_process_frames(1)
 
 
 func test_fallback_arena_seats_the_picked_legends() -> void:

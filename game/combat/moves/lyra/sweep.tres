@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"sweep"
+display_name = "Star Trap"
+startup_ticks = 12
+active_ticks = 30
+recovery_ticks = 10
+step_distance = -0.3
+hitbox_offsets = PackedVector3Array(0, -0.55, -2, 0, -0.55, -2.1, 0, -0.55, -2.2, 0, -0.55, -2.3, 0, -0.55, -2.4, 0, -0.55, -2.5, 0, -0.55, -2.6, 0, -0.55, -2.7, 0, -0.55, -2.8, 0, -0.55, -2.9, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3, 0, -0.55, -3)
+hitbox_radii = PackedFloat32Array(0.6, 0.64, 0.68, 0.72, 0.76, 0.8, 0.84, 0.88, 0.92, 0.96, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+damage = 420
+hitstun_ticks = 34
+blockstun_ticks = 14
+hitstop_ticks = 7
+knockback_type = 2
+knockback = Vector3(0, 14, -1)
+guard_damage = 12
+cancel_level = 2
+cancel_start_tick = 12
+cancel_end_tick = 42

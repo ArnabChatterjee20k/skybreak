@@ -44,15 +44,31 @@ static func match_scene_path() -> String:
 	return ZONE_MATCH_SCENE if ResourceLoader.exists(ZONE_MATCH_SCENE) else FALLBACK_SCENE
 
 
-## Starts the current config. Returns the scene path, or "" if the change failed.
+## Starts the current config: the level gets configure() before it enters the
+## tree (zone_match requires that). Returns the scene path, or "" on failure.
 func launch() -> String:
 	var path := match_scene_path()
-	_reset_engine_state()
-	if get_tree().change_scene_to_file(path) != OK:
+	var level := prepare_level(load(path) as PackedScene)
+	if level == null:
 		return ""
+	_reset_engine_state()
 	launched_scene = path
+	if get_tree().change_scene_to_node(level) != OK:
+		level.free()
+		launched_scene = ""
+		return ""
 	launched.emit(path)
 	return path
+
+
+## The level instance, configured but not yet in the tree.
+func prepare_level(packed: PackedScene) -> Node:
+	if packed == null:
+		return null
+	var level := packed.instantiate()
+	if level.has_method(&"configure"):
+		level.call(&"configure", to_dictionary())
+	return level
 
 
 ## Back to the front end, opening on `screen`.
@@ -80,12 +96,10 @@ func _on_node_added(node: Node) -> void:
 		if slot >= 0 and slot < fighters.size():
 			(node as FighterView).character_id = fighters[slot].character
 	if node.get_parent() == get_tree().root and node.scene_file_path == launched_scene:
-		_configure_level(node)
+		_attach_session(node)
 
 
-func _configure_level(level: Node) -> void:
-	if level.has_method(&"configure"):
-		level.call(&"configure", to_dictionary())
+func _attach_session(level: Node) -> void:
 	var session := MatchSession.new()
 	session.name = "MatchSession"
 	level.add_child.call_deferred(session)

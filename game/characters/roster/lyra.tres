@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RosterCharacter" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/characters/roster/roster_character.gd" id="1_entry"]
+[ext_resource type="PackedScene" path="res://game/characters/lyra/lyra.tscn" id="2_scene"]
+[ext_resource type="Resource" path="res://game/combat/moves/lyra/lyra_fighter_stats.tres" id="3_stats"]
+
+[resource]
+script = ExtResource("1_entry")
+id = &"lyra"
+display_name = "Lyra"
+scene = ExtResource("2_scene")
+stats = ExtResource("3_stats")
+palettes = Array[Dictionary]([{}, {
+"brass": Color(0.78, 0.82, 0.9, 1),
+"navy": Color(0.46, 0.1, 0.22, 1),
+"night": Color(0.2, 0.05, 0.1, 1),
+"parchment": Color(0.98, 0.9, 0.76, 1)
+}, {
+"brass": Color(0.95, 0.6, 0.5, 1),
+"navy": Color(0.06, 0.36, 0.36, 1),
+"night": Color(0.03, 0.13, 0.15, 1),
+"parchment": Color(0.88, 0.95, 0.96, 1)
+}])

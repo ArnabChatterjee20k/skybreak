@@ -51,7 +51,10 @@ func _meshes() -> Array[MeshInstance3D]:
 
 
 func _scarf() -> ScarfLag:
-	return _skeleton().find_children("*", "SkeletonModifier3D", false, false)[0] as ScarfLag
+	for node in _skeleton().find_children("*", "SkeletonModifier3D", false, false):
+		if node is ScarfLag:
+			return node
+	return null
 
 
 ## A bone's position in the view's space, from the local poses the clip just set.
@@ -141,25 +144,27 @@ func test_apply_state_handles_every_fighter_state() -> void:
 			_fighter.state_ticks += 1
 			_view.apply_state(_fighter, FRAME)
 		var clip := _view.current_clip()
-		assert_true(_view.clips.library.has_animation(clip), "%s plays a clip (%s)"
+		assert_true(_view.has_clip(clip), "%s plays a clip (%s)"
 			% [FighterState.State.find_key(state_value), clip])
 
 
-func test_states_pick_kaels_own_clips_where_he_has_them() -> void:
+func test_states_pick_mocap_and_fall_back_to_kaels_own_clips_per_slot() -> void:
 	var expected := {
-		FighterState.State.IDLE: &"idle",
-		FighterState.State.CHARGING: &"power_up",
-		FighterState.State.FLYING: &"hover",
-		FighterState.State.MOVING: &"run",
+		FighterState.State.IDLE: [&"fight_idle", true],
+		FighterState.State.CHARGING: [&"power_up", false],
+		FighterState.State.FLYING: [&"hover", true],
+		FighterState.State.MOVING: [&"run", true],
 	}
 	for state_value: int in expected:
 		_fighter.enter_state(state_value)
+		_fighter.velocity = Vector3(0, 0, -9) if state_value == FighterState.State.MOVING else Vector3.ZERO
 		_view.apply_state(_fighter, FRAME)
-		assert_eq(_view.current_clip(), expected[state_value])
+		assert_eq(_view.current_clip(), expected[state_value][0])
+		assert_eq(_view.is_playing_motion(), expected[state_value][1], "%s is mocap" % expected[state_value][0])
 	_fighter.enter_state(FighterState.State.FLYING)
 	_fighter.velocity = Vector3(0, 0, -25)
 	_view.apply_state(_fighter, FRAME)
-	assert_eq(_view.current_clip(), &"fly", "fast flight dives")
+	assert_eq(_view.current_clip(), &"hover", "fast flight keeps the hover take; MotionLayers pitches it")
 
 
 func test_holding_a_charge_plays_the_hold_clip() -> void:

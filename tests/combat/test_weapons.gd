@@ -525,7 +525,8 @@ func test_longer_bot_matches_land_every_weapon_event() -> void:
 	for seed_value in [3, 4]:
 		types.merge(_bot_match(seed_value, 7200)[2])
 	# Bots grab every drop, so PICKUP_DESPAWN is covered by its own test above.
-	for type in range(E.PICKUP_SPAWN, E.size()):
+	# KO_BOUNCE and later are covered by test_knockout.gd.
+	for type in range(E.PICKUP_SPAWN, E.KO_BOUNCE):
 		if type != E.PICKUP_DESPAWN:
 			assert_true(types.has(type), "a %s event" % E.keys()[type])
 
