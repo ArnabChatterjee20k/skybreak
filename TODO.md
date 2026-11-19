@@ -13,9 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
-- T-113 [developer] Camera distance model: rigid follow with a smoothed offset,
-  6-7 m boom, tilt-first height gaps, opponent edge marker/lock reticle,
-  scripted-playtest harness + asserts in the repo.
+- T-114 [developer] Shoulder offset: player pinned 1/3 from the screen edge
+  (yaw corrected for pitch skew), shoulder flips when the opponent crosses the
+  player rather than the screen centre, opponent-hidden metric + asserts.
 - T-110 [developer] Window mode: borderless fullscreen at desktop resolution by
   default; windowed = 1600x900 centred, shrunk to fit the usable screen area;
   Fullscreen toggle in the F10 menu, saved with the graphics settings.
@@ -35,9 +35,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 Playtest #1 (flight and camera) scored movement 2/5, camera 1/5. Target after
 T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playtester.
 
-- T-114 [developer] Shoulder offset: player about 1/3 from the screen edge,
-  minimum lateral offset, no centre dead zone; silhouette overlap ≤ 20% of
-  frames in circle-strafe and figure-8 (asserted).
 - T-115 [developer] Camera turn limits: re-lock/target-switch yaw ≤ 180°/s;
   teleports (vanish) glide-follow over ~0.2 s instead of the 14/s snap; no
   frame-to-frame jump > 10° outside cuts.
@@ -103,3 +100,5 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-D01 [developer, from desktop] Combat sim skeleton: input buffer, movement,
   `MovementTuning`, sim-owned lock-on, PR #6.
 - T-101 [developer] Flight view: facing, lean, vanish hide, PR #7.
+- T-113 [developer] Camera distance model, opponent marker, scripted playtest
+  harness, PR #14.

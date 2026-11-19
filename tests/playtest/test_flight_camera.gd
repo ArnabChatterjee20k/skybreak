@@ -104,3 +104,28 @@ func test_opponent_is_on_screen_in_most_locked_frames_at_moderate_height_gaps() 
 			visible += int(frame.opponent_on_screen)
 		if counted > 0:
 			assert_gte(float(visible) / counted, 0.99, "%s: %d/%d frames" % [scenario_name, visible, counted])
+
+
+func test_player_rarely_hides_the_opponent_while_strafing() -> void:
+	# T-114: in circle-strafe and figure-8 the player covers more than 20% of the
+	# opponent in at most 20% of locked frames.
+	for scenario_name in ["2_circle_strafe_locked", "3_figure_eight"]:
+		var locked := _settled(scenario_name).filter(func(f): return f.locked)
+		var hidden := locked.filter(func(f): return f.opponent_hidden > 0.2)
+		var share := float(hidden.size()) / locked.size()
+		assert_lte(share, 0.2, "%s: opponent >20%% hidden in %d/%d frames" % [scenario_name, hidden.size(), locked.size()])
+
+
+func test_player_sits_about_a_third_from_the_screen_edge_while_locked() -> void:
+	var screen := Vector2(1920, 1080)
+	for scenario_name in ["2_circle_strafe_locked", "3_figure_eight", "5_rush_from_far"]:
+		var off := 0
+		var locked := 0
+		for frame in _settled(scenario_name):
+			if not frame.locked:
+				continue
+			locked += 1
+			var x: float = OpponentMarker.placement(frame.camera, frame.fov, screen, frame.player).position.x / screen.x
+			if absf(x - 0.5) < 0.12:  # within the middle quarter of the screen
+				off += 1
+		assert_lte(float(off) / locked, 0.1, "%s: player centred in %d/%d frames" % [scenario_name, off, locked])

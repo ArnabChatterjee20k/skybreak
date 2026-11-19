@@ -7,6 +7,7 @@ extends RefCounted
 const FRAME_SECONDS := 1.0 / 60.0
 ## Height of the placeholder fighter, for its on-screen size.
 const FIGHTER_HEIGHT := 2.0
+const FIGHTER_RADIUS := 0.5
 
 var arena: Node
 var ticks: int
@@ -33,7 +34,8 @@ func is_finished() -> bool:
 ## Runs one tick and frame. Returns that frame's record:
 ## tick, locked, camera (Transform3D), fov, player, opponent (positions),
 ## player_on_screen, opponent_on_screen, player_screen_height (fraction),
-## camera_distance (to the player, m), view_pitch (radians, negative = down).
+## camera_distance (to the player, m), view_pitch (radians, negative = down),
+## opponent_hidden (fraction of the opponent's screen box the player covers).
 func advance() -> Dictionary:
 	arena.step_tick()
 	arena.present_frame(1.0, FRAME_SECONDS)
@@ -57,7 +59,35 @@ func advance() -> Dictionary:
 		"player_screen_height": FIGHTER_HEIGHT / (2.0 * depth * tan(deg_to_rad(camera.fov) / 2.0)),
 		"camera_distance": view.origin.distance_to(player),
 		"view_pitch": asin(clampf(-view.basis.z.y, -1.0, 1.0)),
+		"opponent_hidden": opponent_hidden_fraction(view, camera.fov, screen, player, opponent),
 	}
+
+
+## How much of the opponent's on-screen box the player's box covers (0..1),
+## counting only when the player is in front of the opponent.
+static func opponent_hidden_fraction(view: Transform3D, fov: float, screen: Vector2,
+		player: Vector3, opponent: Vector3) -> float:
+	var player_box := _screen_box(view, fov, screen, player)
+	var opponent_box := _screen_box(view, fov, screen, opponent)
+	if not player_box.has_area() or not opponent_box.has_area():
+		return 0.0
+	var player_depth := -(view.affine_inverse() * player).z
+	var opponent_depth := -(view.affine_inverse() * opponent).z
+	if player_depth >= opponent_depth:
+		return 0.0
+	return player_box.intersection(opponent_box).get_area() / opponent_box.get_area()
+
+
+## Screen rectangle of a standing fighter capsule, or an empty rect if behind.
+static func _screen_box(view: Transform3D, fov: float, screen: Vector2, centre: Vector3) -> Rect2:
+	var local := view.affine_inverse() * centre
+	if local.z >= -0.1:
+		return Rect2()
+	var placement := OpponentMarker.placement(view, fov, screen, centre)
+	var pixels_per_metre := screen.y * 0.5 / (-local.z * tan(deg_to_rad(fov) / 2.0))
+	var half := Vector2(FIGHTER_RADIUS, FIGHTER_HEIGHT * 0.5) * pixels_per_metre
+	var at: Vector2 = Vector2(local.x, -local.y) * pixels_per_metre + screen * 0.5
+	return Rect2(at - half, half * 2.0)
 
 
 ## Plays the whole scenario and returns every frame's record.
