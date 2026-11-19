@@ -13,6 +13,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- QA-11 [desktop] `fighter_overlap` measures pushboxes (`Pushboxes.gap`, skipping the pairs
+  `Pushboxes.collide` lets through) instead of hurtboxes. Quick soak: sim invariants PASS, no real
+  pushbox overlap left (was 5/21 matches, 128 frames).
+
 - T-131 [developer] Camera #75, PR #97: `CameraObstacles` (prop boxes, terrain, island bodies
   by shape), turn-acceleration cap, target glide, big-jump cut, KO framing. Finished by the cloud
   controller: main merged, 5_rush_from_far near-gap floor 0.099 (the cap eases the swing in),
@@ -86,7 +90,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - QA-12 [desktop] Bug (T-D22d): foot_ground still fails in 18/21 quick matches (545 frames, down from 3190). T-D22e (`claude/T-D22e-foot-grounding`): 542 -> 19 frames in a local replay of the quick matrix, all 19 in QA-12c. T-D34 quick run on 93ca66b: 3 frames in 2/21, both view-side: Brann's first IDLE frame after a vanish reappears (+10.2 cm, Stormfall t1902) and Lyra's `guard` +6.6 cm on flat Frozen Peaks ground (t1178-1181). Owner: characters (T-D22 motion).
 - QA-13 [developer] Bug (T-D22d): `ZoneMatch` never calls `FighterView.react_to_tick`, so in real matches nobody flinches at hits or looks at the lock-on target (FighterView now finds the sim's floor itself).
 - QA-9 [desktop] Bug (T-D31): a held bow's string passes within 1.5–8 cm of the head centre (Brann blocking, attacking or in blockstun; Kael dashing), 7 of 252 full-soak matches.
-- QA-11 [desktop] Bug (QA re-baseline): with T-D29 merged, the soak's `fighter_overlap` check is live and fails 19 of 21 quick matches (up to 0.17 m, mostly ATTACKING vs ATTACKING/BLOCKING). `QaSimChecks.check_overlap` measures hurtboxes, while T-D29 resolves the pushboxes, which are slimmer and shorter by design. Measure `pushbox_at()` instead, then see whether any real pushbox overlap remains.
 - QA-10 [desktop] Bug (QA re-baseline): the Skyhold Ruins cloud sea renders differently on every run (SSIM 0.944, 4.2% tiles between two renders of the same commit), so `zone_skyhold_ruins` sits just above the visual-golden threshold on noise alone. Make the cloud layer's time deterministic in the QA shots.
 - [desktop] Bug (found in T-D22b): `WeaponMoves.move_set(kind, unarmed)` caches by weapon kind only, so the first fighter to arm a kind (e.g. Vexa) fixes its unarmed grab/push_block for everyone after. Key the cache by the unarmed set too.
 

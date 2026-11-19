@@ -36,19 +36,16 @@ static func check_tick(sim: CombatSim) -> Array[Dictionary]:
 	return out
 
 
-## Fighter pairs whose body capsules overlap deeper than OVERLAP_DEPTH (needs T-D29 pushboxes).
+## Fighter pairs whose pushboxes (T-D29 body capsules) overlap deeper than OVERLAP_DEPTH.
 static func check_overlap(sim: CombatSim) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for i in sim.fighters.size():
 		for j in range(i + 1, sim.fighters.size()):
 			var a := sim.fighters[i]
 			var b := sim.fighters[j]
-			if not _solid(a) or not _solid(b) or a.grab_partner == j:
+			if not _solid(a) or not _solid(b) or not Pushboxes.collide(sim, i, j):
 				continue
-			var ha := a.hurtbox()
-			var hb := b.hurtbox()
-			var points := CombatSim._closest_points(ha.start, ha.end, hb.start, hb.end)
-			var depth: float = ha.radius + hb.radius - points[0].distance_to(points[1])
+			var depth := -Pushboxes.gap(a, a.position, b, b.position)
 			if depth > OVERLAP_DEPTH:
 				out.append({"check": "fighter_overlap", "fighter": i, "value": depth, "limit": OVERLAP_DEPTH,
 					"detail": "fighters %d and %d overlap %.2f m (%s vs %s)" % [i, j, depth,
