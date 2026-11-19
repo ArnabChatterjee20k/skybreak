@@ -1,7 +1,8 @@
 extends SceneTree
 ## Renders chunky Kael for review with the real toon shader. Each turnaround image is a close-up
 ## next to the same view at fight distance (6 m, the game's 75 degree FOV, native 1080p pixels).
-##   godot --path . --resolution 1920x1080 -s res://game/characters/kael_chunky/preview/kael_chunky_capture.gd -- <out dir> [turnaround|poses|attacks|states|all]
+##   godot --path . --resolution 1920x1080 -s res://game/characters/kael_chunky/preview/kael_chunky_capture.gd -- <out dir> [turnaround|poses|attacks|states|shared|all]
+## "shared" shows the T-D10b clips of the shared humanoid library on him, next to his own.
 
 const SCENE := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const MOVE_DIR := "res://game/combat/moves/kael/"
@@ -11,6 +12,14 @@ const CELL := Vector2i(240, 320)
 const FIGHT_DISTANCE := 6.0
 const GAME_FOV := 75.0
 const ENERGY := Color(1.0, 0.6, 0.2, 0.0)
+const SHARED_LIBRARY := "res://game/characters/animations/humanoid_clips.res"
+## T-D10b shared clip -> his own clip for the same job, at a key time (seconds).
+const SHARED_VS_OWN := [
+	["fight_stance", "idle", 0.3], ["power_up", "power_up", 0.3], ["fly_hover", "hover", 0.5],
+	["fly_forward", "fly", 0.3], ["air_dash", "", 0.15], ["uppercut", "launcher", 0.25],
+	["roundhouse_kick", "light_4", 0.19], ["flip_kick", "rising", 0.17], ["axe_kick", "spike", 0.28],
+	["low_sweep_kick", "sweep", 0.25],
+]
 ## Key poses for the pose sheet: label, state or move, tick.
 const POSES := [
 	["idle", "IDLE", 20], ["jab", "light_1", 7], ["kick", "light_4", 11], ["spike", "spike", 16],
@@ -79,6 +88,24 @@ func _run(what: String) -> void:
 				await _pose(states[row], 1 + i * 12)
 				_blit(sheet, await _close(35.0, CELL), Vector2i(CELL.x * i, CELL.y * row))
 		sheet.save_png(_out.path_join("states.png"))
+	if what in ["shared", "all"]:
+		var player := _view.get_node("AnimationPlayer") as AnimationPlayer
+		player.add_animation_library(&"shared", load(SHARED_LIBRARY))
+		var sheet := Image.create(CELL.x * SHARED_VS_OWN.size(), CELL.y * 2, false, Image.FORMAT_RGB8)
+		for i in SHARED_VS_OWN.size():
+			for row in 2:
+				var clip: String = SHARED_VS_OWN[i][row]
+				if clip == "":
+					continue
+				var library := "shared" if row == 0 else "humanoid"
+				var time: float = SHARED_VS_OWN[i][2]
+				if row == 1 and ResourceLoader.exists(MOVE_DIR + clip + ".tres"):
+					var move: MoveData = load(MOVE_DIR + clip + ".tres")
+					time = (move.startup_ticks + move.active_ticks / 2) / 60.0
+				player.play("%s/%s" % [library, clip], 0.0)
+				player.seek(time, true)
+				_blit(sheet, await _close(60.0, CELL), Vector2i(CELL.x * i, CELL.y * row))
+		sheet.save_png(_out.path_join("shared_vs_own.png"))
 	quit()
 
 

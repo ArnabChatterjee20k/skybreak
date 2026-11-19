@@ -11,7 +11,7 @@ const CLIP_SET := "res://game/characters/kael_chunky/kael_chunky_clip_set.tres"
 const MOVE_DIR := "res://game/combat/moves/kael/"
 ## Shared clips he uses as they are (checked on his proportions in the review renders).
 const SHARED_CLIPS: Array[StringName] = [&"run", &"fall", &"dash", &"block", &"block_hit", &"hit", &"hit_head",
-	&"knockdown", &"get_up", &"guard_broken", &"victory"]
+	&"knockdown", &"get_up", &"guard_broken", &"victory", &"air_dash"]
 ## His own looping clips; every other own clip plays once.
 const LOOPING: Array[StringName] = [&"idle", &"power_up", &"hover", &"fly", &"smash_hold"]
 

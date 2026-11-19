@@ -22,6 +22,10 @@ state_clips = Dictionary[StringName, StringName]({
 &"THROWING": &"throw",
 &"VANISHING": &"dash"
 })
+air_state_clips = Dictionary[StringName, StringName]({
+&"DASHING": &"air_dash",
+&"VANISHING": &"air_dash"
+})
 move_clips = Dictionary[StringName, StringName]({
 &"breaker": &"breaker",
 &"charged_smash_1": &"charged_smash_1",
