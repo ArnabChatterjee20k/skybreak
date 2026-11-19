@@ -1,0 +1,159 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 5,
+			"8": 1
+		},
+		"breaker+counter": {
+			"11": 3
+		},
+		"launcher": {
+			"8": 4,
+			"9": 1
+		},
+		"light_1": {
+			"3": 10,
+			"4": 5,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 9,
+			"8": 11,
+			"9": 4
+		},
+		"light_2": {
+			"3": 14,
+			"4": 6,
+			"5": 4,
+			"20": 1
+		},
+		"light_3": {
+			"3": 6,
+			"4": 5,
+			"5": 3,
+			"8": 4
+		},
+		"smash+counter": {
+			"14": 1
+		}
+	},
+	"id": "108:skyhold_ruins:2v2:brann,lyra,kael,vexa:5343",
+	"kos": 1,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		3,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 108,
+	"sim_ms_per_tick": 1.09582083333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0114742731675506,
+		"finger_pops_per_fighter_minute": 25.1354731137974,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.996248436848687,
+		"pops_per_fighter_minute": 39.7665694039183
+	},
+	"view_ms_per_frame": 0.817815416666667,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 23,
+			"detail": "fighters 0 and 2 overlap 0.15 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 169,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 176,
+			"worst_value": 0.148725485801697
+		},
+		{
+			"check": "pop",
+			"count": 35,
+			"detail": "LeftHand turned 1.94 rad in one frame (ATTACKING, move breaker, clip breaker)",
+			"fighter": 2,
+			"first_tick": 190,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 999,
+			"worst_value": 1.93788182735443
+		},
+		{
+			"check": "pop",
+			"count": 37,
+			"detail": "SashUpper turned 3.08 rad in one frame (FLYING, move , clip hover)",
+			"fighter": 3,
+			"first_tick": 205,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 205,
+			"worst_value": 3.0750629901886
+		},
+		{
+			"check": "pop",
+			"count": 22,
+			"detail": "RightUpperArm turned 1.73 rad in one frame (ATTACKING, move push_block, clip fit_push_block)",
+			"fighter": 0,
+			"first_tick": 213,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 2205,
+			"worst_value": 1.72825872898102
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 30,
+			"detail": "fighters 1 and 2 overlap 0.16 m (ATTACKING vs BLOCKSTUN)",
+			"fighter": 1,
+			"first_tick": 219,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 224,
+			"worst_value": 0.15619616985321
+		},
+		{
+			"check": "pop",
+			"count": 12,
+			"detail": "LeftUpperArm turned 1.99 rad in one frame (ATTACKING, move push_block, clip fit_push_block)",
+			"fighter": 1,
+			"first_tick": 401,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1488,
+			"worst_value": 1.99141263961792
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "106 pops in 2.7 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 5.33111111111111,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 106
+		}
+	],
+	"wall_seconds": 17.619,
+	"zone": "skyhold_ruins"
+}
