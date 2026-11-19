@@ -18,6 +18,8 @@ state_clips = Dictionary[StringName, StringName]({
 &"HITSTUN": &"hit",
 &"IDLE": &"fight_stance",
 &"KNOCKDOWN": &"knockdown",
+&"KO_DOWN": &"knockdown",
+&"KO_FALL": &"knockdown",
 &"MOVING": &"run",
 &"THROWING": &"overhead",
 &"VANISHING": &"dash"

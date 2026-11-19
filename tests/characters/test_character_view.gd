@@ -169,6 +169,24 @@ func test_hit_states_pick_their_clips() -> void:
 		assert_eq(_view.current_clip(), expected[state_name])
 
 
+func test_a_knockout_falls_and_lies_down_in_one_unbroken_clip() -> void:
+	_fighter.position.y = 6.0
+	_fighter.enter_state(FighterState.State.KO_FALL)
+	for _frame in 40:
+		_fighter.state_ticks += 1
+		_view.apply_state(_fighter, FRAME)
+	assert_eq(_view.current_clip(), &"knockdown")
+	var fall_time := _view.current_clip_time()
+	assert_gt(fall_time, 0.5, "the fall clip runs on")
+	_fighter.position.y = 1.0
+	_fighter.enter_state(FighterState.State.KO_DOWN)
+	for _frame in 400:
+		_fighter.state_ticks += 1
+		_view.apply_state(_fighter, FRAME)
+	assert_eq(_view.current_clip(), &"knockdown", "no get-up while knocked out")
+	assert_gt(_view.current_clip_time(), fall_time, "not restarted on landing: it ends lying down")
+
+
 func test_knockdown_ends_getting_up() -> void:
 	if not FighterState.State.has("KNOCKDOWN"):
 		pass_test("no KNOCKDOWN state yet")
