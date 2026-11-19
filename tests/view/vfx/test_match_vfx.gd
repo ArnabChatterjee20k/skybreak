@@ -33,14 +33,14 @@ func test_light_hits_add_nothing_on_top_of_the_feedback_spark() -> void:
 	assert_eq(MatchVfx.screen_for(_event(E.HIT, 4)), &"")
 
 
-func test_plain_heavies_add_nothing_and_only_heavy_counters_or_long_combo_enders_earn_an_impact_frame() -> void:
+func test_heavies_counters_and_combo_enders_never_recolour_the_screen() -> void:
 	for type in [E.HIT, E.THROW]:
 		assert_eq(MatchVfx.effects_for(_event(type, 8), &""), [] as Array[StringName], "#77: the heavy spark is enough")
 		assert_eq(MatchVfx.screen_for(_event(type, 8)), &"")
-		assert_eq(MatchVfx.screen_for(_event(type, 8), ImpactFrameGate.LONG_COMBO), &"impact")
+		assert_eq(MatchVfx.screen_for(_event(type, 8), 12), &"", "#77: not even a long combo's heavy ender")
 	assert_eq(MatchVfx.effects_for(_event(E.COUNTER, 4), &""), [&"anime_burst"] as Array[StringName])
 	assert_eq(MatchVfx.screen_for(_event(E.COUNTER, 4)), &"", "a light counter")
-	assert_eq(MatchVfx.screen_for(_event(E.COUNTER, 9)), &"impact")
+	assert_eq(MatchVfx.screen_for(_event(E.COUNTER, 9)), &"", "#77: a heavy counter gets its text pop and spark")
 
 
 func test_guard_break_shatters_with_burst_lines() -> void:
@@ -141,15 +141,12 @@ func test_react_plays_the_ko_finisher_and_screen_pop() -> void:
 	assert_false(vfx.screen().is_active(VfxScreen.Mode.POP), "the pop fades out")
 
 
-func test_a_heavy_counter_shows_a_two_frame_impact_frame() -> void:
+func test_a_heavy_counter_leaves_the_screen_untouched() -> void:
 	var vfx := _vfx_with_sim()
 	var events: Array[Dictionary] = [_event(E.COUNTER, 9)]
 	vfx.react(events)
-	assert_true(vfx.screen().is_active(VfxScreen.Mode.IMPACT))
-	assert_true(vfx.screen().is_active(VfxScreen.Mode.LINES))
-	vfx.advance(TICK)
-	vfx.advance(TICK)
-	assert_false(vfx.screen().is_active(VfxScreen.Mode.IMPACT))
+	for mode in VfxScreen.Mode.values():
+		assert_false(vfx.screen().is_active(mode), VfxScreen.Mode.find_key(mode))
 
 
 func test_dashing_leaves_stretched_afterimages() -> void:

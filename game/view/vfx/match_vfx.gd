@@ -185,8 +185,7 @@ static func effects_for(event: Dictionary, zone: StringName) -> Array[StringName
 	return found
 
 
-## Screen overlay an event earns (ImpactFrameGate.earns): &"impact" (heavy counter, long
-## combo's heavy finisher), &"lines" (guard break), &"ko" (finisher) or &"".
+## Screen overlay an event earns (ImpactFrameGate.earns): &"lines" (guard break), &"ko" or &"".
 ## react() still plays at most one per ImpactFrameGate.COOLDOWN_TICKS.
 static func screen_for(event: Dictionary, combo_hits: int = 0) -> StringName:
 	if not ImpactFrameGate.earns(event, combo_hits):
@@ -196,7 +195,7 @@ static func screen_for(event: Dictionary, combo_hits: int = 0) -> StringName:
 			return &"ko"
 		E.GUARD_BREAK:
 			return &"lines"
-	return &"impact"
+	return &""
 
 
 ## Smear kind for a fighter's attack, or &"" (ranged weapons, unarmed lights, grabs).
@@ -259,9 +258,6 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 		return
 	var center := _screen_point(where)
 	match overlay:
-		&"impact":
-			_screen.impact(color, center, 2)
-			_screen.burst_lines(center, Color.WHITE, 0.25)
 		&"lines":
 			_screen.burst_lines(center, Color(1.0, 0.85, 0.85), 0.3)
 		&"ko":
