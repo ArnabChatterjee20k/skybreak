@@ -1,0 +1,112 @@
+{
+	"hitstops": {
+		"breaker": {
+			"20": 1
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"7": 8,
+			"8": 2
+		},
+		"light_1": {
+			"3": 11,
+			"4": 4
+		},
+		"light_1+counter": {
+			"7": 12,
+			"8": 2
+		},
+		"light_2": {
+			"3": 10,
+			"4": 5
+		},
+		"light_3": {
+			"3": 9,
+			"4": 4
+		},
+		"light_4": {
+			"6": 2
+		}
+	},
+	"id": "112:ember_rift:1v1:kael,vexa:45",
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 112,
+	"sim_ms_per_tick": 0.611109166666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0123323006555438,
+		"finger_pops_per_fighter_minute": 19.5081283868278,
+		"foot_error_p95_cm": 4.7455077602649,
+		"foot_slide_cm_per_frame": 1.22411246128438,
+		"locked_on_screen_share": 0.996394772420009,
+		"pops_per_fighter_minute": 24.7603167986661
+	},
+	"view_ms_per_frame": 0.510665416666667,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 21,
+			"detail": "RightHand turned 2.79 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 67,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 67,
+			"worst_value": 2.78846287727356
+		},
+		{
+			"check": "pop",
+			"count": 12,
+			"detail": "RightLowerLeg turned 2.80 rad in one frame (ATTACKING, move light_4, clip light_4)",
+			"fighter": 0,
+			"first_tick": 76,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1315,
+			"worst_value": 2.79983186721802
+		},
+		{
+			"check": "foot_ground",
+			"count": 16,
+			"detail": "lowest sole +5.6 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 104,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 110,
+			"worst_value": 0.0564528335982288
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "33 pops in 1.3 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 2.66555555555556,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 33
+		}
+	],
+	"wall_seconds": 17.318,
+	"zone": "ember_rift"
+}
