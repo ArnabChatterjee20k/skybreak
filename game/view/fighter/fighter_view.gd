@@ -18,6 +18,8 @@ const LEAN_SHARPNESS := 10.0
 ## Energy colour for the character's rim; alpha is the blend. Its rgb is also
 ## the team colour of the height marker.
 @export var energy_color := Color(1.0, 0.55, 0.2, 0.0)
+## Name on the HUD plate (e.g. "KAEL"); empty shows "P1", "P2"...
+@export var display_name := ""
 ## Team recolour of the character (part name -> Color), see FighterPalette.
 @export var palette: Dictionary = {}
 

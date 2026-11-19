@@ -90,10 +90,13 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   poses come from Kael's clips (T-D10b); no audio (T-D20 owns it).
 - T-122 [developer] Swap the capsule for `kael_chunky.tscn` in `FighterView`
   (PR open). No hit-reaction VFX (T-121); team colour is a rim tint only (T-118).
-- T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
-  health with grey recoverable part, ki in 4 bars, guard, burst stocks.
-- T-112 [developer] Round flow in the test arena: on `round_over`, reset
-  positions and call `start_round()`.
+- T-126 [developer] Match HUD + round flow (PR open; covers T-111 and T-112):
+  plates for 2-4 fighters (name badge, health with chip trail and grey part,
+  ki x4, guard, burst, win pips, weapon "UNARMED" + 2 inventory slots read
+  generically until T-D14), round clock, ROUND n / FIGHT! intro holding
+  input, K.O.!/TIME! with 1 s slow motion, best of 3. Scales from a
+  1920x1080 design, pinned to the top. Open: positions are not reset between
+  rounds (sim-side, ask desktop), and the name badge stands in for portraits.
 
 ### Combat sim (desktop)
 
