@@ -17,6 +17,8 @@ const TRAIL_SPEED := 0.8
 ## Weapon slots per fighter (FighterState.weapons, T-D14).
 const INVENTORY_SLOTS := 3
 const KI_BARS := 4
+## Banner baseline height as a fraction of the screen height.
+const BANNER_HEIGHT_FRACTION := 0.3
 
 const INK := Color(0.05, 0.05, 0.08, 0.85)
 const PANEL := Color(0.08, 0.09, 0.13, 0.72)
@@ -168,8 +170,10 @@ func _draw_banner() -> void:
 	if banner.title == "":
 		return
 	var font := ThemeDB.fallback_font
-	# The real screen centre, in design space (the design is pinned to the top).
-	var centre := (size / 2.0 - design_offset(size)) / design_scale(size) + Vector2(0, -60)
+	# Upper third of the real screen (in design space; the design is pinned to
+	# the top), clear of the fighters, who sit around the middle: media-1.9's
+	# centred K.O.! hid the fall.
+	var centre := banner_position(size)
 	_text(font, centre, banner.title, 132, BANNER, HORIZONTAL_ALIGNMENT_CENTER, 18)
 	if banner.subtitle != "":
 		_text(font, centre + Vector2(0, 70), banner.subtitle, 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10)
@@ -208,6 +212,14 @@ static func design_scale(screen: Vector2) -> float:
 ## plates stay in the corners on tall (web) canvases.
 static func design_offset(screen: Vector2) -> Vector2:
 	return Vector2((screen.x - DESIGN.x * design_scale(screen)) / 2.0, 0.0)
+
+
+## Where banners are centred, in design space: the upper third of the screen,
+## below the plates and clock.
+static func banner_position(screen: Vector2) -> Vector2:
+	var scale_factor := design_scale(screen)
+	var top_third := Vector2(screen.x / 2.0, screen.y * BANNER_HEIGHT_FRACTION)
+	return (top_third - design_offset(screen)) / scale_factor
 
 
 ## Plate for fighter index, in design space: even indices on the left, odd on

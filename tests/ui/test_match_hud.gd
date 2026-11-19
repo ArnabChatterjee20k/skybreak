@@ -127,6 +127,16 @@ func test_hud_is_pinned_to_the_top_on_tall_canvases() -> void:
 	assert_almost_eq(MatchHud.design_offset(Vector2(2560, 1080)).x, 320.0, 0.001, "centred on ultrawide")
 
 
+func test_banners_sit_in_the_upper_third_clear_of_plates() -> void:
+	for screen in [Vector2(1920, 1080), Vector2(1280, 720), Vector2(1280, 1080)]:
+		var at := MatchHud.banner_position(screen)
+		var on_screen_y := at.y * MatchHud.design_scale(screen) + MatchHud.design_offset(screen).y
+		assert_almost_eq(on_screen_y / screen.y, MatchHud.BANNER_HEIGHT_FRACTION, 0.001, "%s" % screen)
+		# Below the second row of plates (132 + 14 + 132 + margin, minus the
+		# banner's cap height of ~100 px at 132 pt).
+		assert_gt(at.y - 100.0, MatchHud.plate_rect(0, 2).end.y, "clear of the plates on %s" % screen)
+
+
 func test_plates_for_four_fighters_never_overlap_and_stay_on_screen() -> void:
 	var screen := Rect2(Vector2.ZERO, MatchHud.DESIGN)
 	var clock := Rect2(MatchHud.DESIGN.x / 2 - 60, MatchHud.MARGIN, 120, 84)
