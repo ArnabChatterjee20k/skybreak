@@ -17,6 +17,7 @@ func _ready() -> void:
 	for start in FIGHTER_STARTS:
 		sim.add_fighter(start)
 		_previous_positions.append(start)
+	sim.lock_everyone_onto_nearest()
 	$DebugOverlay.sim = sim
 
 
