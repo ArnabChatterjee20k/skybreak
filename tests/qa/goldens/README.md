@@ -4,6 +4,46 @@ Golden replays (`replays/`) and visual goldens (`visual/`) for the QA harness
 (T-D31). Re-record with `tools/qa/bless_goldens.sh --replays|--visual|--all`
 only in the PR that intends the change, and log it below.
 
+## Re-bless after #87 DetMath and #89 polish batch 2 (merge of main into `claude/polish-batch-2`)
+
+### Golden replays
+
+Two causes, checked by playing every old golden's recorded inputs on three sims
+(#86 = 5399ac1, main = b0754e5, and the merge) and comparing every hashed field
+per tick (`ko_origin`, new in #89, left out so the old field set compares):
+
+1. **#87 DetMath (ulp-level).** Main never re-blessed the replays after #87, so
+   all ten already drifted on main after tick 0 (#86's sim still matches them on
+   every tick). The first-drift values are the spawn facings and the first
+   velocity step: at most 6 float32 ulps on positions and velocities, at most
+   1.6e-10 rad on `facing_yaw`, and in `duel_lyra_vs_brann_airborne` Brann's yaw
+   -pi on #86 vs +pi on main (the same angle; atan2 of a -0.0 that #87 now
+   canonicalises). No rule changed.
+2. **#89 close-air knockback guard (intended).** Against main, each replay first
+   drifts on a hit or counter with one fighter off the floor and the pair under
+   `air_knockback_separation` (1.5 m) apart: only the target's planar velocity
+   changes, raised to `air_light_knockback_min_out` (3 m/s) away from the
+   attacker; vertical speed is unchanged. No replay drifts first on a KO tick
+   (the KO cap acts later, inside an already drifted match).
+
+| Replay | First drift (tick) | Event that tick | Changed field | Planar knockback speed main -> merged | Fighter heights (m) / ground |
+|---|---|---|---|---|---|
+| combos_level5 | 185 | HIT 1->0 | f0.velocity | f0: 2.42 -> 3.06 (vy 0.63 = 0.63) | f0 1.45, f1 1.00 |
+| duel_brann_vs_kael | 114 | HIT 1->0 | f0.velocity | f0: 1.60 -> 3.00 (vy 1.20 = 1.20) | f0 6.39, f1 4.39 |
+| duel_kael_mirror | 336 | COUNTER 0->1 | f1.velocity | f1: 2.00 -> 3.04 (vy 0.12 = 0.12) | f0 8.82, f1 8.91 |
+| duel_low_level_mirror | 116 | COUNTER 0->1 | f1.velocity | f1: 1.48 -> 3.00 (vy 0.24 = 0.24) | f0 1.00, f1 1.29 |
+| duel_lyra_vs_brann_airborne | 21 | COUNTER 0->1 | f1.velocity | f1: 1.44 -> 3.00 (vy 0.43 = 0.43) | f0 11.78, f1 12.38 |
+| duel_vexa_vs_lyra | 122 | HIT 0->1 | f1.velocity | f1: 1.44 -> 3.00 (vy 0.43 = 0.43) | f0 5.15, f1 5.76 |
+| ffa4_all_legends | 93 | HIT 3->0 | f0.velocity | f0: 1.46 -> 3.00 (vy 0.34 = 0.34) | f0 1.45, f1 1.00, f2 1.29, f3 1.00 |
+| ko_and_second_round | 166 | HIT 0->1, HIT 1->0 | f0.velocity, f1.velocity | f0: 1.45 -> 3.00 (vy -0.40 = -0.40); f1: 2.43 -> 3.00 (vy 0.57 = 0.57) | f0 1.00, f1 1.52 |
+| pickups_heartbloom | 122 | HIT 0->1 | f1.velocity | f1: 1.47 -> 3.00 (vy 0.28 = 0.28) | f0 5.15, f1 6.53 |
+| teams_2v2 | 127 | HIT 2->0 | f0.velocity | f0: 1.12 -> 3.00 (vy 0.99 = 0.99) | f0 6.53, f1 1.00, f2 4.76, f3 1.00 |
+
+Heights are capsule centres the tick before; standing on the floor reads 1.00.
+Nothing drifted at any other kind of tick, so every replay was re-recorded on
+the merge (new AI inputs too: the merge also routes four `fighter_ai.gd` calls
+through `DetMath`).
+
 ## Re-baseline after #69 pushboxes and #72 motion pass 2 (from bc9aa29)
 
 ### Golden replays
