@@ -1,0 +1,125 @@
+{
+	"hitstops": {
+		"lance/light_1": {
+			"4": 7
+		},
+		"lance/light_1+counter": {
+			"8": 3
+		},
+		"lance/light_2": {
+			"4": 9
+		},
+		"lance/light_3": {
+			"7": 8
+		},
+		"lance/smash": {
+			"9": 1
+		},
+		"light_1": {
+			"3": 1,
+			"5": 2
+		},
+		"light_1+counter": {
+			"9": 3
+		},
+		"light_2": {
+			"3": 1,
+			"5": 5
+		},
+		"light_3": {
+			"5": 1,
+			"8": 5
+		}
+	},
+	"id": "118:verdant_falls:1v1:brann,lyra:24",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 118,
+	"sim_ms_per_tick": 0.594661666666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0113390823826194,
+		"finger_pops_per_fighter_minute": 10.5043768236765,
+		"foot_error_p95_cm": 10.4619524792481,
+		"foot_slide_cm_per_frame": 1.00501687990221,
+		"locked_on_screen_share": 0.960474308300395,
+		"pops_per_fighter_minute": 27.0112546894539
+	},
+	"view_ms_per_frame": 0.544284583333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 127,
+			"detail": "lowest sole -10.5 cm off the visible ground (IDLE, clip turn_step)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 63,
+			"worst_value": -0.104879289538822
+		},
+		{
+			"check": "pop",
+			"count": 8,
+			"detail": "RightHand turned 2.78 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 85,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 85,
+			"worst_value": 2.77904868125916
+		},
+		{
+			"check": "pop",
+			"count": 28,
+			"detail": "RightHand turned 2.78 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 90,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 90,
+			"worst_value": 2.77766156196594
+		},
+		{
+			"check": "foot_ground",
+			"count": 25,
+			"detail": "lowest sole -13.1 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 93,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1667,
+			"worst_value": -0.131299697472826
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "36 pops in 1.3 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 2.66555555555556,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 36
+		}
+	],
+	"wall_seconds": 17.514,
+	"zone": "verdant_falls"
+}
