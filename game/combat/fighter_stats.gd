@@ -14,5 +14,12 @@ extends Resource
 @export var hurtbox_radius: float = 0.5
 ## Full capsule height, end caps included.
 @export var hurtbox_height: float = 2.0
+## Pushbox: the solid body other fighters cannot pass through, a vertical capsule
+## centred on the position. Slimmer than the hurtbox so strikes still reach at contact.
+@export var pushbox_radius: float = 0.5
+## Full pushbox height, end caps included.
+@export var pushbox_height: float = 1.8
+## Weight in pushbox contacts: the lighter fighter gives way more.
+@export var mass: float = 1.0
 ## Which move each attack input performs.
 @export var move_set: MoveSet
