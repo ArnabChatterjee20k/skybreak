@@ -14,6 +14,8 @@ const GHOST_EVERY := 3
 ## Speed (m/s) that fires the sonic ring, and ticks before it can fire again.
 const SONIC_SPEED := 50.0
 const SONIC_COOLDOWN := 45
+## Flying at this share of fly_speed or faster counts as top speed (speed lines).
+const TOP_SPEED_SHARE := 0.95
 ## Falling faster than this (m/s) onto the ground kicks up dust.
 const LANDING_SPEED := 7.0
 ## Fighter position is the capsule centre; feet are this far below.
@@ -83,18 +85,28 @@ func react(events: Array[Dictionary]) -> void:
 		_watch_fighters()
 
 
-func _process(_delta: float) -> void:
-	follow_fighters()
+func _process(delta: float) -> void:
+	follow_fighters(delta)
 
 
 ## Moves the speed-line emitters onto the fighters (each drawn frame).
-func follow_fighters() -> void:
+func follow_fighters(delta: float = 1.0 / 60.0) -> void:
 	if sim == null:
 		return
 	for i in mini(_trails.size(), sim.fighters.size()):
 		var fighter := sim.fighters[i]
-		var moving := fighter.state == S.FLYING or fighter.state == S.DASHING or fighter.state == S.FALLING
-		_trails[i].follow(fighter.position, fighter.velocity if moving else Vector3.ZERO, color_of(i))
+		var lines := wants_speed_lines(fighter, sim.tuning)
+		_trails[i].follow(fighter.position, fighter.velocity if lines else Vector3.ZERO, color_of(i), delta)
+
+
+## Speed lines only for a long dash (past the tapped step), a flight boost or top speed.
+static func wants_speed_lines(fighter: FighterState, tuning: MovementTuning) -> bool:
+	match fighter.state:
+		S.DASHING:
+			return fighter.dash_kind == FighterState.DashKind.SUSTAINED or fighter.state_ticks >= tuning.dash_step_ticks
+		S.FLYING, S.FALLING:
+			return fighter.velocity.length() >= tuning.fly_speed * TOP_SPEED_SHARE
+	return false
 
 
 ## Advances every effect and overlay; tests and fast-forward scripts call this.

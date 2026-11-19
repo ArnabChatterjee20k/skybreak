@@ -13,6 +13,14 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D33 [desktop] Sim correctness bugs from the QA harness: QA-6 (a grab placed the target at
+  the hold point after its step without clamping it to the arena or the terrain, so it read
+  below the ground or past the wall for a tick; vanish anchors kept a stale stand height),
+  QA-1 (KO bounce and rest on the zone ground; a KO'd fighter sliding off a ledge falls),
+  QA-2 (Brann's spike startup 20 -> 17, inside his air light hitstun), QA-15 (AIs hold off
+  other fighters' air juggles and never start a hit from straight under/over a target:
+  FFA-4 stacking 2.73%, 1v1 1.00%).
+
 - T-D32 [desktop] Cross-platform determinism: `DetMath` (fdlibm sin, cos, atan2,
   acos, exp, log, pow on + - * / and sqrt) replaces every libm call in the sim and
   AI, -0.0 canonicalised each tick, lint test for banned calls, goldens re-blessed,
@@ -67,12 +75,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## Backlog
 
-- QA-1 [desktop] Bug (T-D31): KO bounce and rest snap the fighter to `tuning.ground_height` (y = 1) instead of the zone ground, so a knocked-out fighter on terrain or an island ends up inside it (`_bounce_or_rest`). Scenario `test_a_knockout_on_a_raised_island_rests_on_the_island_top`.
-- QA-2 [desktop] Bug (T-D31): Brann's air light_1/light_2 hitstun (18/19 ticks) is shorter than his spike startup (20), so the launcher → air string → spike route drops before the spike. (Lyra's spike also drops, but there the vanish ends inside the target: T-D29.) Scenarios in `tests/qa/scenarios/test_air_combos.gd`.
 - QA-3 [developer] Bug (T-D31): `ZoneMatch` keeps teams only in its own `teams` array and never sets `sim.fighters[i].team`, so in a real 2v2 the sim treats teammates as opponents (friendly fire, the round only ends with one fighter left).
 - QA-4 [developer] Bug (T-D31): `ZoneMatch._make_driver` looks for `next_input`/`setup` on `AIDriver`, which has neither, so every AI slot in a real zone match silently falls back to `WeaponBot`; the T-D23 `FighterAI` never plays there.
 - QA-5 [developer] Bug (T-D31): `ZoneMatch.spawn_positions` with more than two teams puts teams 0 and 2 (and 1 and 3) on the same spawn point with the same offset, so FFA-4 starts with fighters inside each other.
-- QA-6 [desktop] Bug (T-D31): a GRABBED fighter (held in front of the thrower) and a VANISHING fighter (step destination) are placed outside the arena box: 29 of 252 full-soak matches, up to ~90 m past the wall. Clamp the hold point and the vanish destination.
 - QA-7 [desktop] Bug (T-D31): animation pops far over budget: ~29 body-bone pops (> 1.2 rad in one frame) per fighter-minute against 2 allowed. Worst: forearms flipping ~3.1 rad in run/strafe (Kael, Vexa mocap), RightLowerLeg 2.8 rad in Kael's light_4, Vexa's sash, Lyra's cape and Brann's beard braid chains; fingers pop ~29/min too.
 - QA-8 [desktop] Bug (T-D31): feet off the visible ground while standing: Kael and Vexa sink 5–11 cm in `fight_idle`, Brann's `idle` stands 9 cm in the ground at round start; Brann and Lyra also read +41–50 cm in IDLE mid-match (cause not isolated yet). Worst: in Shattered Mesa a fighter running along a pillar is up to 3 m inside the visible rock (the sim's baked `ZoneGround` interpolates across the cliff edge). Repro commands in the QA report.
 - QA-12 [desktop] Bug (T-D22d): foot_ground still fails in 18/21 quick matches (545 frames, down from 3190). T-D22e (`claude/T-D22e-foot-grounding`): 542 -> 19 frames in a local replay of the quick matrix, all 19 in QA-12c.
@@ -80,8 +85,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - QA-15 [developer] Bug (T-D22e, QA harness): `QaViewChecks` keeps `_planted_previous` across a VANISHING teleport (and the first presented frames), so foot_slide counts the jump as a slide (quick match 2 tick 1007: 5.28 m in one frame; matches 4 and 19 tick 2: 0.62 / 0.54 m). Hidden before T-D22e because those feet floated.
 - QA-13 [developer] Bug (T-D22d): `ZoneMatch` never calls `FighterView.react_to_tick`, so in real matches nobody flinches at hits or looks at the lock-on target (FighterView now finds the sim's floor itself).
 - QA-14 [developer] Bug (T-D22d): zone visual goldens fail (ember_rift SSIM 0.884, frozen_peaks 80% tiles, also skyhold/mesa/verdant/stormfall). T-D22e: not the pose. Rendered with #91's view code reverted they fail the same way (0.885 / 80.4%) while the fighter shots go back to >= 0.995. They passed on bc9aa29; the zone changes between bc9aa29 and fafc61e are #81 (zone readability: `lava`/`terrain_toon` shaders, zone `.tres` palettes, props), merged without re-blessing. Re-bless the zone shots under #81's owner; not re-blessed here.
+- QA-14 [desktop] Bug (T-D22d): zone visual goldens `zone_ember_rift` (SSIM 0.884) and `zone_frozen_peaks` (80% tiles) fail on fafc61e in a cloud run; fighter shots pass. Not re-blessed: not yet shown whether it is the pose change or the renderer. Not the pose change: main 3466207 (before T-D22d) already fails all six `zone_*` shots (SSIM 0.84-0.99, 6-79% tiles) while b09ceec passed them, so the zones changed between those (likely #84 polish-environment or #88 T-127); `claude/polish-batch-2` renders the same as main.
 - QA-9 [desktop] Bug (T-D31): a held bow's string passes within 1.5–8 cm of the head centre (Brann blocking, attacking or in blockstun; Kael dashing), 7 of 252 full-soak matches.
-- QA-12 [desktop] Bug (QA re-bless after #87): `tests/ai/test_ai_spacing.gd` `test_fighters_rarely_stack_vertically` fails for FFA-4 (stacked 7.05% vs limit 7.0%) once the last four libm calls in `fighter_ai.gd` use `DetMath` (ulp shifts change the 20 seeded matches). 1v1 stays at 2.68%. The threshold is not loosened. Needs an AI spacing look, or a larger sample.
 - QA-11 [desktop] Bug (QA re-baseline): with T-D29 merged, the soak's `fighter_overlap` check is live and fails 19 of 21 quick matches (up to 0.17 m, mostly ATTACKING vs ATTACKING/BLOCKING). `QaSimChecks.check_overlap` measures hurtboxes, while T-D29 resolves the pushboxes, which are slimmer and shorter by design. Measure `pushbox_at()` instead, then see whether any real pushbox overlap remains.
 - QA-10 [desktop] Bug (QA re-baseline): the Skyhold Ruins cloud sea renders differently on every run (SSIM 0.944, 4.2% tiles between two renders of the same commit), so `zone_skyhold_ruins` sits just above the visual-golden threshold on noise alone. Make the cloud layer's time deterministic in the QA shots.
 - [desktop] Bug (found in T-D22b): `WeaponMoves.move_set(kind, unarmed)` caches by weapon kind only, so the first fighter to arm a kind (e.g. Vexa) fixes its unarmed grab/push_block for everyone after. Key the cache by the unarmed set too.

@@ -28,8 +28,9 @@ func test_free_for_alls_stay_near_the_ground_most_of_the_time() -> void:
 
 
 func test_fighters_rarely_stack_vertically() -> void:
-	assert_lt(_duel.stacked_percent(), 4.0, "1v1")
-	assert_lt(_ffa.stacked_percent(), 7.0, "FFA-4")
+	assert_lt(_duel.stacked_percent(), 2.0, "1v1")
+	# QA-15: third parties hold off other fighters' air juggles; nobody starts a hit under a juggle.
+	assert_lt(_ffa.stacked_percent(), 3.0, "FFA-4")
 
 
 func test_three_fighters_rarely_pile_onto_one() -> void:

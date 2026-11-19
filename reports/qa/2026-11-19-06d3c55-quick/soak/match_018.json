@@ -1,0 +1,114 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 2
+		},
+		"light_1": {
+			"3": 2,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 6,
+			"9": 2
+		},
+		"light_2": {
+			"3": 7,
+			"5": 4
+		},
+		"light_3": {
+			"5": 5,
+			"8": 4
+		}
+	},
+	"id": "118:verdant_falls:1v1:brann,lyra:24",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 118,
+	"sim_ms_per_tick": 0.64924,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0117345210164785,
+		"finger_pops_per_fighter_minute": 57.0237598999583,
+		"foot_error_p95_cm": 11.4115392505139,
+		"foot_slide_cm_per_frame": 0.968340490888953,
+		"locked_on_screen_share": 0.993618960802188,
+		"pops_per_fighter_minute": 81.7840766986244
+	},
+	"view_ms_per_frame": 0.582285833333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 242,
+			"detail": "lowest sole -18.0 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1693,
+			"worst_value": -0.179755609351798
+		},
+		{
+			"check": "pop",
+			"count": 39,
+			"detail": "RightHand turned 2.78 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 85,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 85,
+			"worst_value": 2.77904868125916
+		},
+		{
+			"check": "pop",
+			"count": 70,
+			"detail": "RightLowerArm turned 3.12 rad in one frame (MOVING, move , clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 90,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1023,
+			"worst_value": 3.12076711654663
+		},
+		{
+			"check": "foot_ground",
+			"count": 36,
+			"detail": "lowest sole -7.9 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 93,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1536,
+			"worst_value": -0.0793988580523504
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "109 pops in 1.3 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 2.66555555555556,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 109
+		}
+	],
+	"wall_seconds": 17.507,
+	"zone": "verdant_falls"
+}
