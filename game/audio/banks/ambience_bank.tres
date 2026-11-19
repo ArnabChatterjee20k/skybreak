@@ -1,0 +1,179 @@
+[gd_resource type="Resource" script_class="SoundBank" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_bank.gd" id="bank"]
+[ext_resource type="Script" path="res://game/audio/sound_cue.gd" id="cue"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/amb_shattered_mesa.ogg" id="s1"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/amb_skyhold_ruins.ogg" id="s2"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/amb_stormfall_city.ogg" id="s3"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/amb_frozen_peaks.ogg" id="s4"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/amb_verdant_falls.ogg" id="s5"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/amb_ember_rift.ogg" id="s6"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/amb_heartbloom_gardens.ogg" id="s7"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/stormfall_thunder_1.ogg" id="s8"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/stormfall_thunder_2.ogg" id="s9"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ambience/stormfall_thunder_3.ogg" id="s10"]
+
+[sub_resource type="Resource" id="amb_shattered_mesa"]
+script = ExtResource("cue")
+id = &"amb_shattered_mesa"
+streams = Array[AudioStream]([ExtResource("s1")])
+bus = &"Ambience"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 2
+priority = 10
+cooldown = 0.0
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="amb_skyhold_ruins"]
+script = ExtResource("cue")
+id = &"amb_skyhold_ruins"
+streams = Array[AudioStream]([ExtResource("s2")])
+bus = &"Ambience"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 2
+priority = 10
+cooldown = 0.0
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="amb_stormfall_city"]
+script = ExtResource("cue")
+id = &"amb_stormfall_city"
+streams = Array[AudioStream]([ExtResource("s3")])
+bus = &"Ambience"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 2
+priority = 10
+cooldown = 0.0
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="amb_frozen_peaks"]
+script = ExtResource("cue")
+id = &"amb_frozen_peaks"
+streams = Array[AudioStream]([ExtResource("s4")])
+bus = &"Ambience"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 2
+priority = 10
+cooldown = 0.0
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="amb_verdant_falls"]
+script = ExtResource("cue")
+id = &"amb_verdant_falls"
+streams = Array[AudioStream]([ExtResource("s5")])
+bus = &"Ambience"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 2
+priority = 10
+cooldown = 0.0
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="amb_ember_rift"]
+script = ExtResource("cue")
+id = &"amb_ember_rift"
+streams = Array[AudioStream]([ExtResource("s6")])
+bus = &"Ambience"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 2
+priority = 10
+cooldown = 0.0
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="amb_heartbloom_gardens"]
+script = ExtResource("cue")
+id = &"amb_heartbloom_gardens"
+streams = Array[AudioStream]([ExtResource("s7")])
+bus = &"Ambience"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 2
+priority = 10
+cooldown = 0.0
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="stormfall_thunder"]
+script = ExtResource("cue")
+id = &"stormfall_thunder"
+streams = Array[AudioStream]([ExtResource("s8"), ExtResource("s9"), ExtResource("s10")])
+bus = &"Ambience"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 1
+priority = 20
+cooldown = 4.0
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[resource]
+script = ExtResource("bank")
+category = &"ambience"
+cues = Array[ExtResource("cue")]([SubResource("amb_shattered_mesa"), SubResource("amb_skyhold_ruins"), SubResource("amb_stormfall_city"), SubResource("amb_frozen_peaks"), SubResource("amb_verdant_falls"), SubResource("amb_ember_rift"), SubResource("amb_heartbloom_gardens"), SubResource("stormfall_thunder")])

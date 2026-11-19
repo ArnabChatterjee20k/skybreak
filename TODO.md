@@ -13,6 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D18 [desktop] Vexa built natively in Godot code as a rigid action figure
+  (FigureKit mesh kit, humanoid-profile rig, procedural layer), stacked on
+  T-D10.
 - T-D12 [desktop] World map grey-block: 2 km procedural terrain (chunked, 4 LODs),
   six zones with landmarks, atmosphere/time of day/weather, energy dome,
   `WorldMap` API and flythrough preview, PR #39.
@@ -45,6 +48,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+
+- T-D22b [desktop] Integrate `MotionLibrary` + `MotionLayers` into `CharacterView` for Kael and Vexa (ClipSet mapping, inertialized switches, root curves, foot IK), the weapon poses and the KO flow. Re-source the launcher (no true uppercut yet) and heavy hit (stumble, not a hit reaction); a proper sweep and hit-reaction mocap set are still missing.
 
 ### Milestone 1: flight and camera (goal: flying feels great)
 
@@ -90,10 +95,13 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   poses come from Kael's clips (T-D10b); no audio (T-D20 owns it).
 - T-122 [developer] Swap the capsule for `kael_chunky.tscn` in `FighterView`
   (PR open). No hit-reaction VFX (T-121); team colour is a rim tint only (T-118).
-- T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
-  health with grey recoverable part, ki in 4 bars, guard, burst stocks.
-- T-112 [developer] Round flow in the test arena: on `round_over`, reset
-  positions and call `start_round()`.
+- T-126 [developer] Match HUD + round flow (PR open; covers T-111 and T-112):
+  plates for 2-4 fighters (name badge, health with chip trail and grey part,
+  ki x4, guard, burst, win pips, weapon "UNARMED" + 2 inventory slots read
+  generically until T-D14), round clock, ROUND n / FIGHT! intro holding
+  input, K.O.!/TIME! with 1 s slow motion, best of 3. Scales from a
+  1920x1080 design, pinned to the top. Open: positions are not reset between
+  rounds (sim-side, ask desktop), and the name badge stands in for portraits.
 
 ### Combat sim (desktop)
 
@@ -110,6 +118,11 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ### Milestone 2–3 (developer side)
 
+- T-D21b [developer] Wire `MusicDirector` (T-D21) into the game: `start_battle(zone)`
+  on arena load, `observe_sim(sim, final_round)` each tick, `set_zone()` when the
+  fight crosses a zone border, `round_started()` / `round_ended()`, `set_paused()`,
+  `play_menu()` / `play_character_select()` once menus exist.
+
 - T-201 [developer] Training dummy scene and combat debug view (hitboxes,
   frame data, input history) wired to sim state.
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
@@ -124,6 +137,16 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   WeaponBot. Open: bow draw levels, Heartstring tether, chakram return flight,
   perf benchmark on the GTX 1650, HUD weapon strip.
 
+- T-D21 [desktop] Adaptive background score: menu, character select, seven zone
+  battle themes as synced calm/combat/climax stems, victory and KO stingers,
+  composed as code and rendered offline; `MusicDirector` autoload switches
+  layers and zones on bar lines from sim state.
+- T-D22a [desktop] Motion realism spike: CMU + Bandai Namco mocap retargeted onto the humanoid profile (`game/characters/motion/`), 43 clips incl. frame-accurate strikes for all 14 Kael moves, `MotionLayers` prototype, old-vs-new metrics and comparison renders.
+- T-D18b [desktop] Vexa playable: own 16-move set (5-hit string, launcher, spike,
+  chakram heavies), IK-posed clips timed to each move, `Roster` (kael/vexa ->
+  scene, stats, slot palettes), test arena P1 Kael vs P2 Vexa (alt palette,
+  team rim), merged assembly (10 draw calls). Contains #44. Follow-ups:
+  render benchmark on the dev PC; fighters can overlap (no pushbox).
 - T-D00 [desktop] Game design document (`docs/GAME_DESIGN.md`), PR #1.
 - T-002 [developer] Graphics presets + resolution scale + vsync, F10 menu, PR #2.
 - T-003 [developer] Windows export preset (single exe), PR #4.
@@ -145,3 +168,9 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-116 [developer] VFX prewarm at arena load, PR #19.
 - T-D09b [desktop] VFX fixes (ground shockwave, aura, flame tongues), PR #18.
 - T-D03 [desktop] Moves, light string and cancels, PR #15.
+- T-D20 [desktop] Audio system and every gameplay sound effect: bus layout
+  (Master limiter, Music, SFX, Ambience, UI, Voice), `AudioDirector` autoload,
+  `CombatAudioMapper`, per-category `SoundBank`s, synthesised CC0 cues, zone
+  ambience that follows altitude. Follow-ups: weapon, pickup, ki blast/beam and
+  round-flow cues are banked and mapped but wait for sim events; audio volume
+  sliders in the settings menu.

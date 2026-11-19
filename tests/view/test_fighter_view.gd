@@ -116,9 +116,13 @@ func test_present_drives_the_character_animation_from_sim_state() -> void:
 	assert_ne(player.current_animation, idle_clip, "flying plays a different clip than idle")
 
 
-func test_the_test_arena_draws_both_fighters_as_kael() -> void:
+func test_the_test_arena_draws_p1_kael_against_p2_vexa() -> void:
 	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
 	add_child_autofree(arena)
-	for name in ["Fighter1", "Fighter2"]:
-		var view: FighterView = arena.get_node(name)
-		assert_eq(view.character_scene, KAEL, name)
+	var p1: FighterView = arena.get_node("Fighter1")
+	var p2: FighterView = arena.get_node("Fighter2")
+	assert_eq(p1.character_scene, KAEL, "P1 is Kael")
+	assert_eq(p2.character_scene.resource_path, "res://game/characters/vexa/vexa.tscn", "P2 is Vexa")
+	assert_eq(p2.find_children("*", "VexaView", true, false).size(), 1, "P2 draws Vexa's view")
+	assert_eq(arena.sim.fighters[0].stats.move_set.resource_path, "res://game/combat/moves/kael/kael_move_set.tres")
+	assert_eq(arena.sim.fighters[1].stats.move_set.resource_path, "res://game/combat/moves/vexa/vexa_move_set.tres")

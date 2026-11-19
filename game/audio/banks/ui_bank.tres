@@ -1,0 +1,200 @@
+[gd_resource type="Resource" script_class="SoundBank" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_bank.gd" id="bank"]
+[ext_resource type="Script" path="res://game/audio/sound_cue.gd" id="cue"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/ui_move_1.ogg" id="s1"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/ui_move_2.ogg" id="s2"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/ui_move_3.ogg" id="s3"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/ui_confirm.ogg" id="s4"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/ui_back.ogg" id="s5"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/round_count_3.ogg" id="s6"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/round_count_2.ogg" id="s7"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/round_count_1.ogg" id="s8"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/round_fight.ogg" id="s9"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/round_end.ogg" id="s10"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ui/victory.ogg" id="s11"]
+
+[sub_resource type="Resource" id="ui_move"]
+script = ExtResource("cue")
+id = &"ui_move"
+streams = Array[AudioStream]([ExtResource("s1"), ExtResource("s2"), ExtResource("s3")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 4
+priority = 90
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="ui_confirm"]
+script = ExtResource("cue")
+id = &"ui_confirm"
+streams = Array[AudioStream]([ExtResource("s4")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 4
+priority = 90
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="ui_back"]
+script = ExtResource("cue")
+id = &"ui_back"
+streams = Array[AudioStream]([ExtResource("s5")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 4
+priority = 90
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="round_count_3"]
+script = ExtResource("cue")
+id = &"round_count_3"
+streams = Array[AudioStream]([ExtResource("s6")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 4
+priority = 90
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="round_count_2"]
+script = ExtResource("cue")
+id = &"round_count_2"
+streams = Array[AudioStream]([ExtResource("s7")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 4
+priority = 90
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="round_count_1"]
+script = ExtResource("cue")
+id = &"round_count_1"
+streams = Array[AudioStream]([ExtResource("s8")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 4
+priority = 90
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="round_fight"]
+script = ExtResource("cue")
+id = &"round_fight"
+streams = Array[AudioStream]([ExtResource("s9")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 4
+priority = 90
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = -6.0
+duck_seconds = 0.8
+
+[sub_resource type="Resource" id="round_end"]
+script = ExtResource("cue")
+id = &"round_end"
+streams = Array[AudioStream]([ExtResource("s10")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 4
+priority = 90
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="victory"]
+script = ExtResource("cue")
+id = &"victory"
+streams = Array[AudioStream]([ExtResource("s11")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 4
+priority = 90
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[resource]
+script = ExtResource("bank")
+category = &"ui"
+cues = Array[ExtResource("cue")]([SubResource("ui_move"), SubResource("ui_confirm"), SubResource("ui_back"), SubResource("round_count_3"), SubResource("round_count_2"), SubResource("round_count_1"), SubResource("round_fight"), SubResource("round_end"), SubResource("victory")])

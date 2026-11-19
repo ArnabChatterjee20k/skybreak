@@ -1,0 +1,500 @@
+[gd_resource type="Resource" script_class="SoundBank" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_bank.gd" id="bank"]
+[ext_resource type="Script" path="res://game/audio/sound_cue.gd" id="cue"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_light_1.ogg" id="s1"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_light_2.ogg" id="s2"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_light_3.ogg" id="s3"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_light_4.ogg" id="s4"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_medium_1.ogg" id="s5"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_medium_2.ogg" id="s6"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_medium_3.ogg" id="s7"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_medium_4.ogg" id="s8"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_heavy_1.ogg" id="s9"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_heavy_2.ogg" id="s10"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/hit_heavy_3.ogg" id="s11"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/impact_thump_1.ogg" id="s12"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/impact_thump_2.ogg" id="s13"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/impact_thump_3.ogg" id="s14"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/impact_tail_1.ogg" id="s15"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/impact_tail_2.ogg" id="s16"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/launcher_1.ogg" id="s17"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/launcher_2.ogg" id="s18"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/spike_bounce_1.ogg" id="s19"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/spike_bounce_2.ogg" id="s20"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/wall_splat_1.ogg" id="s21"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/wall_splat_2.ogg" id="s22"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/armor_hit_1.ogg" id="s23"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/armor_hit_2.ogg" id="s24"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/block_1.ogg" id="s25"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/block_2.ogg" id="s26"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/block_3.ogg" id="s27"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/perfect_block_1.ogg" id="s28"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/perfect_block_2.ogg" id="s29"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/guard_break_1.ogg" id="s30"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/guard_break_2.ogg" id="s31"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/push_block_1.ogg" id="s32"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/push_block_2.ogg" id="s33"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/grab_1.ogg" id="s34"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/grab_2.ogg" id="s35"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/throw_1.ogg" id="s36"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/throw_2.ogg" id="s37"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/tech_1.ogg" id="s38"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/tech_2.ogg" id="s39"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/counter_hit_1.ogg" id="s40"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/counter_hit_2.ogg" id="s41"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/ko.ogg" id="s42"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/ko_tail.ogg" id="s43"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/combo_tick.ogg" id="s44"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_1.ogg" id="s45"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_2.ogg" id="s46"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_3.ogg" id="s47"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_4.ogg" id="s48"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_heavy_1.ogg" id="s49"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_heavy_2.ogg" id="s50"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_heavy_3.ogg" id="s51"]
+
+[sub_resource type="Resource" id="hit_light"]
+script = ExtResource("cue")
+id = &"hit_light"
+streams = Array[AudioStream]([ExtResource("s1"), ExtResource("s2"), ExtResource("s3"), ExtResource("s4")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 4
+priority = 55
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="hit_medium"]
+script = ExtResource("cue")
+id = &"hit_medium"
+streams = Array[AudioStream]([ExtResource("s5"), ExtResource("s6"), ExtResource("s7"), ExtResource("s8")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 4
+priority = 60
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="hit_heavy"]
+script = ExtResource("cue")
+id = &"hit_heavy"
+streams = Array[AudioStream]([ExtResource("s9"), ExtResource("s10"), ExtResource("s11")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 75
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([&"impact_thump", &"impact_tail"])
+duck_db = -6.0
+duck_seconds = 0.35
+
+[sub_resource type="Resource" id="impact_thump"]
+script = ExtResource("cue")
+id = &"impact_thump"
+streams = Array[AudioStream]([ExtResource("s12"), ExtResource("s13"), ExtResource("s14")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.9
+pitch_max = 1.0
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 70
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="impact_tail"]
+script = ExtResource("cue")
+id = &"impact_tail"
+streams = Array[AudioStream]([ExtResource("s15"), ExtResource("s16")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 40
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="launcher"]
+script = ExtResource("cue")
+id = &"launcher"
+streams = Array[AudioStream]([ExtResource("s17"), ExtResource("s18")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 70
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="spike_bounce"]
+script = ExtResource("cue")
+id = &"spike_bounce"
+streams = Array[AudioStream]([ExtResource("s19"), ExtResource("s20")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 70
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="wall_splat"]
+script = ExtResource("cue")
+id = &"wall_splat"
+streams = Array[AudioStream]([ExtResource("s21"), ExtResource("s22")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 75
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = -6.0
+duck_seconds = 0.4
+
+[sub_resource type="Resource" id="armor_hit"]
+script = ExtResource("cue")
+id = &"armor_hit"
+streams = Array[AudioStream]([ExtResource("s23"), ExtResource("s24")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 60
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="block"]
+script = ExtResource("cue")
+id = &"block"
+streams = Array[AudioStream]([ExtResource("s25"), ExtResource("s26"), ExtResource("s27")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 4
+priority = 55
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="perfect_block"]
+script = ExtResource("cue")
+id = &"perfect_block"
+streams = Array[AudioStream]([ExtResource("s28"), ExtResource("s29")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.99
+pitch_max = 1.01
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 85
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = -4.0
+duck_seconds = 0.2
+
+[sub_resource type="Resource" id="guard_break"]
+script = ExtResource("cue")
+id = &"guard_break"
+streams = Array[AudioStream]([ExtResource("s30"), ExtResource("s31")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 1
+priority = 85
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = -6.0
+duck_seconds = 0.4
+
+[sub_resource type="Resource" id="push_block"]
+script = ExtResource("cue")
+id = &"push_block"
+streams = Array[AudioStream]([ExtResource("s32"), ExtResource("s33")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 60
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="grab"]
+script = ExtResource("cue")
+id = &"grab"
+streams = Array[AudioStream]([ExtResource("s34"), ExtResource("s35")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 60
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="throw"]
+script = ExtResource("cue")
+id = &"throw"
+streams = Array[AudioStream]([ExtResource("s36"), ExtResource("s37")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 70
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="tech"]
+script = ExtResource("cue")
+id = &"tech"
+streams = Array[AudioStream]([ExtResource("s38"), ExtResource("s39")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 65
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="counter_hit"]
+script = ExtResource("cue")
+id = &"counter_hit"
+streams = Array[AudioStream]([ExtResource("s40"), ExtResource("s41")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 80
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="ko"]
+script = ExtResource("cue")
+id = &"ko"
+streams = Array[AudioStream]([ExtResource("s42")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 1
+priority = 100
+cooldown = 0.5
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([&"ko_tail"])
+duck_db = -12.0
+duck_seconds = 1.6
+
+[sub_resource type="Resource" id="ko_tail"]
+script = ExtResource("cue")
+id = &"ko_tail"
+streams = Array[AudioStream]([ExtResource("s43")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 1
+priority = 95
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="combo_tick"]
+script = ExtResource("cue")
+id = &"combo_tick"
+streams = Array[AudioStream]([ExtResource("s44")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 2
+priority = 50
+cooldown = 0.03
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="whoosh_light"]
+script = ExtResource("cue")
+id = &"whoosh_light"
+streams = Array[AudioStream]([ExtResource("s45"), ExtResource("s46"), ExtResource("s47"), ExtResource("s48")])
+bus = &"SFX"
+volume_db = -5.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 4
+priority = 30
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="whoosh_heavy"]
+script = ExtResource("cue")
+id = &"whoosh_heavy"
+streams = Array[AudioStream]([ExtResource("s49"), ExtResource("s50"), ExtResource("s51")])
+bus = &"SFX"
+volume_db = -4.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 35
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[resource]
+script = ExtResource("bank")
+category = &"combat"
+cues = Array[ExtResource("cue")]([SubResource("hit_light"), SubResource("hit_medium"), SubResource("hit_heavy"), SubResource("impact_thump"), SubResource("impact_tail"), SubResource("launcher"), SubResource("spike_bounce"), SubResource("wall_splat"), SubResource("armor_hit"), SubResource("block"), SubResource("perfect_block"), SubResource("guard_break"), SubResource("push_block"), SubResource("grab"), SubResource("throw"), SubResource("tech"), SubResource("counter_hit"), SubResource("ko"), SubResource("ko_tail"), SubResource("combo_tick"), SubResource("whoosh_light"), SubResource("whoosh_heavy")])

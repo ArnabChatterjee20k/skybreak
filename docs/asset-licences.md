@@ -48,3 +48,9 @@ modification only. Add a row when you add an asset.
 - **Kicks**: neither free UAL edition has kick clips; the paid "Pro" editions
   and Quaternius' character packs (per-rig kicks) would. See the PR for the
   gap list.
+
+## Music
+
+No third-party audio: the whole score (T-D21) is composed as code and
+synthesised in `game/audio/music/source/`. Per-file record:
+`game/audio/music/LICENSES.md`.
