@@ -6,6 +6,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In progress
 
+- T-107 [developer] Performance check on the GTX 1650 with two fighters flying:
+  fps and frame time, outline-pass cost, noisy ground shadow edges. Blocked:
+  needs the owner's F3 reading at the PC (Godot windows started from Claude
+  Code's session run at ~4.8 fps even for an empty scene).
+
 - T-001 [developer] Milestone 0 skeleton: Godot 4.7.2 project, combat seam
   (`FighterInput`, `CombatSim` fixed 60 Hz tick, seeded RNG, determinism
   test), keyboard/mouse bindings, debug overlay (fps, frame time), GUT, CI,
@@ -13,6 +18,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-102b [developer] Locked camera pitch limits: at most 35° down / 25° up;
+  bigger height gaps pull the camera back and widen the FOV (up to +10°).
 - T-101 [developer] Flight view: fighters drawn from sim state, facing their
   heading (visor), leaning into motion (harder while dashing), hidden while
   vanished, interpolated between ticks. Feel tuning needs the owner's playtest.
@@ -34,12 +41,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   dithers out, no snapping, no cuts during control.
 - T-106 [developer] Grey-box arena: about 600 m × 600 m, soft ceiling at 250 m,
   energy-dome boundary.
-- T-107 [developer] Performance check on the GTX 1650 with two fighters flying;
-  record fps and frame time. Includes outline-pass cost and the noisy ground
-  shadow edges seen in the PR #3 check.
-  Must be measured at the PC by the owner: from Claude Code's session every
-  Godot window (even an empty scene) runs at ~4.8 fps, so that measurement is
-  not trustworthy (see the T-101 PR).
 - T-109 [developer] Debug overlay text is clipped at the left edge in a
   1280x720 movie-writer capture; check anchoring at other window sizes.
 - T-108 [developer] Graphics presets follow-up (from PR #2): try
