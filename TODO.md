@@ -133,6 +133,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D23 [desktop] Real AI opponents (`game/ai/`): `FighterAI` levels 1–5 with reaction delay, utility neutral, guard/perfect block/push-block, whiff punishes, grab techs, combo routes up to launcher → vanish → air string → spike, weapons, FFA targets; `AIDriver` from the menus' fighter list; optional P2 hookup in the test arena. Open: burst escape (no burst in the sim yet), habit adaptation (§10), rubber-banding.
 - T-D27 [desktop] VFX polish: pooled `MatchVfx` layer (game/view/vfx): heavy/counter anime burst + two-tone impact frame, guard-break shatter, KO dome + colour pop, Stormfall lightning, Heartbloom petals, weapon smears, afterimages, speed lines, sonic ring, zone landing dust, aura flare, ki blast/beam components; GLES3-safe (no instance uniforms).
 
 - T-D24 [desktop] Brann playable: FigureKit stone smith (merged mesh, ember cracks, apron, braided beard, boulder shoulders, stowed hammer and cannon), P1/P2 palettes, heavy armoured MoveSet and stats, posed move clips, roster entry, renders. Open: per-fighter flight speed needs a FighterStats field.
