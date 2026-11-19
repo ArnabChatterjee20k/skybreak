@@ -17,6 +17,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   movement (ground, flight, falling, dash step/sustained/rush, vanish step),
   `MovementTuning`, `FighterState` state machine, sim-owned lock-on (toggle,
   target switch, 1v1 starts mutually locked), determinism test over all of it.
+- T-D09 [desktop] Aura and impact VFX shaders, per-fighter `rim_energy_*`
+  instance uniforms, PR #12.
 
 ## Backlog
 
@@ -55,8 +57,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D08b [desktop] Outline on hard-edged props: bake smoothed normals into
   vertex colour/UV2, or use bevelled prop meshes (box outline nearly invisible
   in the PR #3 check).
-- T-D09 [desktop] Aura and impact VFX shaders. Make `rim_energy_*` per fighter
-  (instance uniforms or a duplicated material).
 
 ### Milestone 2–3 (developer side)
 
