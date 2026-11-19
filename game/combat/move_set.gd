@@ -18,5 +18,7 @@ extends Resource
 @export var spike: MoveData
 ## RMB sideways.
 @export var sweep: MoveData
-## RMB while blocking (used from T-D05).
+## RMB while blocking, or late in blockstun.
 @export var push_block: MoveData
+## F: beats block, loses to strikes.
+@export var grab: MoveData
