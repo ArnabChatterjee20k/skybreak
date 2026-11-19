@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="ClipSet" format=3]
+
+[ext_resource type="Script" path="res://game/characters/clip_set.gd" id="1_clips"]
+[ext_resource type="AnimationLibrary" path="res://game/characters/kael_chunky/animations/kael_chunky_clips.res" id="2_library"]
+
+[resource]
+script = ExtResource("1_clips")
+library = ExtResource("2_library")
+state_clips = Dictionary[StringName, StringName]({
+&"BLOCKSTUN": &"block_hit",
+&"CHARGING": &"power_up",
+&"DASHING": &"dash",
+&"FALLING": &"fall",
+&"FLYING": &"hover",
+&"GUARD_BROKEN": &"guard_broken",
+&"HITSTUN": &"hit",
+&"IDLE": &"idle",
+&"KNOCKDOWN": &"knockdown",
+&"MOVING": &"run",
+&"VANISHING": &"dash"
+})
+move_clips = Dictionary[StringName, StringName]({
+&"breaker": &"breaker",
+&"charged_smash_1": &"charged_smash_1",
+&"charged_smash_2": &"charged_smash_2",
+&"charged_smash_3": &"charged_smash_3",
+&"launcher": &"launcher",
+&"light_1": &"light_1",
+&"light_2": &"light_2",
+&"light_3": &"light_3",
+&"light_4": &"light_4",
+&"push_block": &"push_block",
+&"rising": &"rising",
+&"smash": &"smash",
+&"spike": &"spike",
+&"sweep": &"sweep"
+})
+fallback_move_clip = &"light_1"
+charge_hold_clip = &"smash_hold"
+impact_windows = Dictionary[StringName, Vector2]({
+&"breaker": Vector2(0.3, 0.36666667),
+&"charged_smash_1": Vector2(0.16666667, 0.23333333),
+&"charged_smash_2": Vector2(0.16666667, 0.23333333),
+&"charged_smash_3": Vector2(0.16666667, 0.25),
+&"launcher": Vector2(0.21666667, 0.26666668),
+&"light_1": Vector2(0.1, 0.13333334),
+&"light_2": Vector2(0.11666667, 0.15),
+&"light_3": Vector2(0.13333334, 0.18333334),
+&"light_4": Vector2(0.16666667, 0.21666667),
+&"push_block": Vector2(0.033333335, 0.1),
+&"rising": Vector2(0.15, 0.21666667),
+&"smash": Vector2(0.23333333, 0.3),
+&"spike": Vector2(0.25, 0.3),
+&"sweep": Vector2(0.2, 0.28333333)
+})

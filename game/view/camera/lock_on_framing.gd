@@ -3,14 +3,27 @@ extends RefCounted
 ## Where the fight camera wants to be, as pure functions of fighter positions.
 ## FighterCamera smooths toward these poses; tests check them directly.
 
-## Range bands in metres: at CLOSE_RANGE the camera sits to the side, at
-## FAR_RANGE directly behind and low.
+## Range bands (design §4.2). Near: shorter boom swung ~25° aside so spacing
+## reads. Mid: the standard framing. Far: behind and low with a narrowed FOV so
+## the opponent stays readable. Entering and leaving a band use different
+## distances (hysteresis) so the framing doesn't flicker at the edges.
+enum Band { NEAR, MID, FAR }
+const NEAR_ENTER := 9.0
+const NEAR_EXIT := 11.0
+const FAR_ENTER := 32.0
+const FAR_EXIT := 28.0
+## far_blend each band eases toward: 0 = near framing, 1 = far framing.
+const BAND_BLEND := {Band.NEAR: 0.0, Band.MID: 0.5, Band.FAR: 1.0}
+## Far band zoom: keep a 2 m fighter at least this tall (px at 1080p), but
+## never narrower than MIN_ZOOM_FOV.
+const FAR_OPPONENT_PIXELS := 40.0
+const MIN_ZOOM_FOV := 40.0
 const CLOSE_RANGE := 5.0
 const FAR_RANGE := 40.0
 const CLOSE_SIDE_ANGLE := deg_to_rad(25.0)
 ## Boom lengths keep the camera about 6-6.5 m from the player, so the 2 m tall fighter
 ## stays at least ~15% of screen height even with the FOV fully widened.
-const CLOSE_BOOM_LENGTH := 6.0
+const CLOSE_BOOM_LENGTH := 4.5
 const FAR_BOOM_LENGTH := 6.5
 const CLOSE_HEIGHT := 1.8
 const FAR_HEIGHT := 0.7
@@ -32,9 +45,20 @@ const MAX_VIEW_PITCH_DOWN := deg_to_rad(35.0)
 const MAX_VIEW_PITCH_UP := deg_to_rad(25.0)
 ## Most the FOV widens (degrees) for big height gaps.
 const MAX_FOV_BOOST := 10.0
+## Height of a fighter, for on-screen size targets (m).
+const FIGHTER_HEIGHT := 2.0
+const FIGHTER_RADIUS := 0.5
+## Near band: aim for at least this gap between the fighters on screen, as a
+## fraction of the width (the asserted minimum is 10%; the extra leaves margin
+## while the band blend settles). The side swing grows in steps up to the maximum.
+const MIN_NEAR_SCREEN_GAP := 0.13
+const SIDE_ANGLE_STEP := deg_to_rad(5.0)
+const MAX_EXTRA_SIDE_ANGLE := deg_to_rad(65.0)
 ## Where the player sits while locked: this far from the screen centre toward
 ## the edge away from the shoulder, as a fraction of the half width (1/3 from the edge).
 const PLAYER_SCREEN_OFFSET := 1.0 / 3.0
+## In the near band the player moves further toward the edge to make room.
+const NEAR_PLAYER_SCREEN_OFFSET := 0.45
 ## The opponent must cross past the player by this much (fraction of the half
 ## width) before the shoulder flips.
 const SHOULDER_SWITCH_MARGIN := 0.05
@@ -50,15 +74,50 @@ const ASPECT := 16.0 / 9.0
 ## vertical_fov: degrees, used to put the player at PLAYER_SCREEN_OFFSET.
 static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit: Vector2,
 		far_blend: float = -1.0, vertical_fov: float = DEFAULT_VERTICAL_FOV) -> Transform3D:
+	if far_blend < 0.0:
+		far_blend = BAND_BLEND[band_for(player.distance_to(target), Band.MID)]
+	var pose := _pose_with_side(player, target, shoulder, orbit, far_blend, vertical_fov, 0.0)
+	# Near band: swing further aside until the fighters' silhouettes are apart.
+	var near_weight := clampf(1.0 - far_blend * 2.0, 0.0, 1.0)
+	var wanted_gap := MIN_NEAR_SCREEN_GAP
+	var extra := 0.0
+	while near_weight > 0.0 and extra < MAX_EXTRA_SIDE_ANGLE 			and screen_gap(pose, vertical_fov, player, target) < wanted_gap:
+		extra += SIDE_ANGLE_STEP
+		pose = _pose_with_side(player, target, shoulder, orbit, far_blend, vertical_fov, extra)
+	return pose
+
+
+## Horizontal gap between the two fighters' screen boxes as a fraction of the
+## screen width; negative when they overlap, 1 when either is behind the camera.
+static func screen_gap(camera: Transform3D, vertical_fov: float, a: Vector3, b: Vector3) -> float:
+	var box_a := _screen_box_ndc(camera, vertical_fov, a)
+	var box_b := _screen_box_ndc(camera, vertical_fov, b)
+	if not box_a.has_area() or not box_b.has_area():
+		return 1.0
+	return maxf(box_b.position.x - box_a.end.x, box_a.position.x - box_b.end.x) / 2.0
+
+
+## A standing fighter's box in normalised screen space (x and y in -1..1).
+static func _screen_box_ndc(camera: Transform3D, vertical_fov: float, centre: Vector3) -> Rect2:
+	var local := camera.affine_inverse() * centre
+	if local.z >= -0.1:
+		return Rect2()
+	var tan_half_v := tan(deg_to_rad(vertical_fov) / 2.0)
+	var depth := -local.z
+	var at := Vector2(local.x / (depth * tan_half_v * ASPECT), local.y / (depth * tan_half_v))
+	var half := Vector2(FIGHTER_RADIUS / (depth * tan_half_v * ASPECT), FIGHTER_HEIGHT * 0.5 / (depth * tan_half_v))
+	return Rect2(at - half, half * 2.0)
+
+
+static func _pose_with_side(player: Vector3, target: Vector3, shoulder: float, orbit: Vector2,
+		far_blend: float, vertical_fov: float, extra_side: float) -> Transform3D:
 	var to_target := target - player
 	var flat := Vector3(to_target.x, 0.0, to_target.z)
 	var facing := flat.normalized() if flat.length() > 0.01 else Vector3.FORWARD
-	if far_blend < 0.0:
-		far_blend = range_blend(to_target.length())
 	var clamped := clamp_orbit(orbit)
 
 	var behind := -facing
-	var side_angle := lerpf(CLOSE_SIDE_ANGLE, 0.0, far_blend) * shoulder
+	var side_angle := (lerpf(CLOSE_SIDE_ANGLE, 0.0, far_blend) + extra_side) * shoulder
 	var boom := behind.rotated(Vector3.UP, side_angle + clamped.x)
 	var boom_side := boom.cross(Vector3.UP).normalized()
 	var elevation := atan2(to_target.y, maxf(flat.length(), 0.01))
@@ -72,7 +131,9 @@ static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit
 	# Aim beside the player so they sit 1/3 from the edge and the opponent gets
 	# the open side; pitch still frames the midpoint.
 	var tan_half_h := tan(deg_to_rad(vertical_fov) / 2.0) * ASPECT
-	var aside := atan(PLAYER_SCREEN_OFFSET * tan_half_h) * shoulder
+	var near_weight := clampf(1.0 - far_blend * 2.0, 0.0, 1.0)
+	var player_offset := lerpf(PLAYER_SCREEN_OFFSET, NEAR_PLAYER_SCREEN_OFFSET, near_weight)
+	var aside := atan(player_offset * tan_half_h) * shoulder
 	var to_player := player - position
 	var heading := Vector3(to_player.x, 0.0, to_player.z).rotated(Vector3.UP, -aside)
 	var midpoint_pitch := _clamp_pitch(player.lerp(target, 0.5) - position)
@@ -80,7 +141,7 @@ static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit
 	var pose := _looking_at(position, position + look)
 	# Pitch skews where a yaw offset lands on screen; nudge the yaw until the
 	# player is at the intended screen x.
-	var wanted_x := -PLAYER_SCREEN_OFFSET * shoulder * tan_half_h
+	var wanted_x := -player_offset * shoulder * tan_half_h
 	for _pass in 3:
 		var local := pose.affine_inverse() * player
 		if local.z >= -0.01:
@@ -108,6 +169,24 @@ static func free_pose(player: Vector3, yaw: float, pitch: float) -> Transform3D:
 	var boom := Vector3.BACK.rotated(Vector3.RIGHT, -clamped_pitch).rotated(Vector3.UP, yaw)
 	var pivot := player + Vector3.UP * FREE_LOOK_HEIGHT
 	return _looking_at(pivot + boom * FREE_BOOM_LENGTH, pivot)
+
+
+## The band for a fighter distance, given the current band (hysteresis).
+static func band_for(distance: float, current: Band) -> Band:
+	var near_edge := NEAR_EXIT if current == Band.NEAR else NEAR_ENTER
+	var far_edge := FAR_EXIT if current == Band.FAR else FAR_ENTER
+	if distance < near_edge:
+		return Band.NEAR
+	if distance > far_edge:
+		return Band.FAR
+	return Band.MID
+
+
+## Narrowest useful FOV (degrees) for an opponent this far from the camera:
+## keeps them FAR_OPPONENT_PIXELS tall, between MIN_ZOOM_FOV and base_fov.
+static func far_zoom_fov(base_fov: float, camera_to_opponent: float) -> float:
+	var half_tan := FIGHTER_HEIGHT * 1080.0 / (2.0 * FAR_OPPONENT_PIXELS * maxf(camera_to_opponent, 0.01))
+	return clampf(rad_to_deg(2.0 * atan(half_tan)), MIN_ZOOM_FOV, base_fov)
 
 
 ## 0 at close range, 1 at far range.

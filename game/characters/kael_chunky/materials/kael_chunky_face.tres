@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" load_steps=4 format=3]
+
+[ext_resource type="Shader" path="res://game/view/shaders/toon.gdshader" id="1_toon"]
+[ext_resource type="Material" path="res://game/characters/kael_chunky/materials/kael_chunky_outline.tres" id="2_outline"]
+[ext_resource type="Texture2D" path="res://game/characters/kael_chunky/textures/kael_chunky_face.png" id="3_face"]
+
+[resource]
+resource_name = "kael_chunky_face"
+next_pass = ExtResource("2_outline")
+shader = ExtResource("1_toon")
+shader_parameter/albedo_color = Color(1, 1, 1, 1)
+shader_parameter/albedo_texture = ExtResource("3_face")
+shader_parameter/specular_enabled = false
+shader_parameter/shadow_tint = Color(0.78, 0.50, 0.52, 1)

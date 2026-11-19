@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://game/levels/test_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://game/input/keyboard_mouse_input.gd" id="2_input"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://game/view/camera/fighter_camera.gd" id="5_camera"]
 [ext_resource type="Script" path="res://game/view/fighter/fighter_view.gd" id="6_fighter_view"]
 [ext_resource type="Script" path="res://game/ui/opponent_marker.gd" id="7_marker"]
+[ext_resource type="PackedScene" path="res://game/characters/kael_chunky/kael_chunky.tscn" id="8_kael"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.25, 0.45, 0.85, 1)
@@ -44,10 +45,20 @@ surface_material_override/0 = SubResource("ground_material")
 [node name="Fighter1" type="Node3D" parent="."]
 script = ExtResource("6_fighter_view")
 body_color = Color(0.9, 0.4, 0.15, 1)
+character_scene = ExtResource("8_kael")
+energy_color = Color(1, 0.55, 0.2, 0.6)
 
 [node name="Fighter2" type="Node3D" parent="."]
 script = ExtResource("6_fighter_view")
 body_color = Color(0.2, 0.45, 0.95, 1)
+character_scene = ExtResource("8_kael")
+energy_color = Color(0.3, 0.8, 1, 0.8)
+palette = {
+"boots": Color(0.15, 0.5, 0.9, 1),
+"coat": Color(0.5, 0.07, 0.15, 1),
+"scarf": Color(0.12, 0.72, 0.95, 1),
+"tunic": Color(0.27, 0.15, 0.24, 1)
+}
 
 [node name="FighterCamera" type="Camera3D" parent="."]
 base_fov = 75.0

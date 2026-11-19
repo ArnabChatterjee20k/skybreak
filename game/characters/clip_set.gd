@@ -8,6 +8,11 @@ extends Resource
 ## FighterState.State name (e.g. "IDLE", "HITSTUN") -> clip. Names, so states
 ## added later map without code changes; unmapped states fall back to idle.
 @export var state_clips: Dictionary[StringName, StringName] = {}
+## State name -> clip used instead of state_clips while airborne (e.g. a dash
+## in the air plays an air dash; on the ground the state_clips one).
+@export var air_state_clips: Dictionary[StringName, StringName] = {}
+## Looping clip -> a short clip played first when a state enters it.
+@export var intro_clips: Dictionary[StringName, StringName] = {}
 ## MoveData.id -> clip.
 @export var move_clips: Dictionary[StringName, StringName] = {}
 ## Clip played when a move has no entry.
@@ -27,7 +32,9 @@ extends Resource
 @export var blend_time: float = 0.12
 
 
-func clip_for_state(state_name: StringName) -> StringName:
+func clip_for_state(state_name: StringName, airborne := false) -> StringName:
+	if airborne and air_state_clips.has(state_name):
+		return air_state_clips[state_name]
 	return state_clips.get(state_name, state_clips.get(&"IDLE", &"idle"))
 
 
@@ -39,7 +46,8 @@ func clip_for_move(move_id: StringName) -> StringName:
 ## Every clip this set refers to.
 func mapped_clips() -> Array[StringName]:
 	var clips: Array[StringName] = []
-	for clip: StringName in state_clips.values() + move_clips.values() \
+	for clip: StringName in state_clips.values() + air_state_clips.values() \
+			+ intro_clips.values() + move_clips.values() \
 			+ [fallback_move_clip, charge_hold_clip, block_clip, fly_fast_clip, get_up_clip]:
 		if not clips.has(clip):
 			clips.append(clip)
