@@ -133,6 +133,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-D09 [desktop] Aura and impact VFX, PR #12.
 - T-114 [developer] Shoulder offset: player a third from the edge, PR #16.
 - T-115 [developer] Camera turn limits and teleport glide, PR #17.
+- T-D11c [desktop] Re-bake chunky Kael clips for push_block 2/4/14 (T-D05); fixes the clip-length test.
 - T-116 [developer] VFX prewarm at arena load, PR #19.
 - T-D09b [desktop] VFX fixes (ground shockwave, aura, flame tongues), PR #18.
 - T-D03 [desktop] Moves, light string and cancels, PR #15.
