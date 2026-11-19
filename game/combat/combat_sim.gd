@@ -48,6 +48,12 @@ func add_fighter(start_position: Vector3) -> FighterState:
 	return fighter
 
 
+## Locks every fighter onto its nearest opponent; a 1v1 match starts this way.
+func lock_everyone_onto_nearest() -> void:
+	for index in fighters.size():
+		fighters[index].lock_on_target = _nearest_opponent(index)
+
+
 ## Advances the sim by one tick. inputs[i] belongs to fighters[i].
 func tick(inputs: Array[FighterInput]) -> void:
 	assert(inputs.size() == fighters.size(), "one input per fighter")

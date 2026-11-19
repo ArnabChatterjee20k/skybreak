@@ -197,6 +197,7 @@ func test_dashing_toward_the_lock_on_target_rushes_and_stops_in_front_of_it() ->
 	assert_ne(_fighter().state, FighterState.State.DASHING, "the rush ends")
 	var distance := _fighter().position.distance_to(_sim.fighters[1].position)
 	assert_almost_eq(distance, _tuning.rush_stop_distance, 0.05)
+	assert_eq(_fighter().velocity, Vector3.ZERO, "stops dead, ready for a follow-up")
 
 
 func test_a_neutral_dash_while_locked_on_rushes_the_target() -> void:
@@ -276,6 +277,19 @@ func test_lock_toggle_locks_onto_the_nearest_opponent_then_unlocks() -> void:
 	assert_eq(_fighter().lock_on_target, 2)
 	_drive(1)
 	_drive(1, LOCK)
+	assert_eq(_fighter().lock_on_target, -1)
+
+
+func test_a_match_can_start_with_every_fighter_locked_onto_the_nearest_opponent() -> void:
+	_start([Vector3.ZERO, Vector3(0, 0, -20)])
+	_sim.lock_everyone_onto_nearest()
+	assert_eq(_sim.fighters[0].lock_on_target, 1)
+	assert_eq(_sim.fighters[1].lock_on_target, 0)
+
+
+func test_target_switch_without_a_lock_does_nothing() -> void:
+	_start([Vector3.ZERO, Vector3(0, 0, -50)])
+	_drive(1, 0, Vector2.ZERO, 0, 0.0, 1)
 	assert_eq(_fighter().lock_on_target, -1)
 
 
