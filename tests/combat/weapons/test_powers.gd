@@ -324,6 +324,18 @@ func test_the_state_hash_covers_powers_and_gadgets() -> void:
 	assert_ne(before, _sim.state_hash())
 
 
+func test_gadgets_spare_teammates() -> void:
+	_start(Vector3(0, 0, -8))
+	_sim.fighters[1].team = _sim.fighters[0].team
+	_take(P.SPIKE_BOMB)
+	var health := _sim.fighters[1].health
+	_drive(1, A.PICKUP)
+	var seen := _drive(Power.BOMB_FUSE_TICKS + 10)
+	assert_eq(_of(seen, E.GADGET_EXPLODE).size(), 1, "goes off on its fuse, not on the teammate")
+	assert_eq(_of(seen, E.HIT).size(), 0)
+	assert_eq(_sim.fighters[1].health, health)
+
+
 # Bot match.
 
 ## A seeded 2-bot match with busy power drops; returns [hash, event type -> count, powers taken].
@@ -367,3 +379,4 @@ func test_bot_matches_with_powers_are_deterministic() -> void:
 	var first := _bot_match(5, 3600)
 	assert_eq(first[0], _bot_match(5, 3600)[0])
 	assert_ne(first[0], _bot_match(6, 3600)[0], "a different seed plays differently")
+

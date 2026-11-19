@@ -449,3 +449,79 @@ func test_the_state_hash_covers_the_new_weapon_state() -> void:
 	var before := _sim.state_hash()
 	shot.returning = true
 	assert_ne(before, _sim.state_hash())
+
+
+# Knockout and round reset (T-D16 merge).
+
+func test_a_knockout_during_a_tether_cuts_it_at_both_ends() -> void:
+	_tether()
+	_drive(30)
+	var them := _sim.fighters[1]
+	assert_eq(them.tether_partner, 0)
+	them.powers.haste_ticks = 100
+	them.powers.aegis = true
+	them.health = 0
+	var seen := _drive(1)
+	assert_eq(them.state, S.KO_FALL)
+	assert_eq(_of(seen, E.TETHER_END).size(), 1)
+	assert_eq(_sim.fighters[0].tether_partner, -1)
+	assert_eq(them.tether_partner, -1)
+	assert_eq(them.tether_ticks, 0)
+	assert_eq(them.powers.haste_ticks, 0, "powers end on a KO")
+	assert_false(them.powers.aegis)
+	assert_eq(_of(seen, E.POWER_END).size(), 1)
+	seen = _drive(30)
+	assert_eq(_of(seen, E.TETHER_END).size(), 0, "cut only once")
+
+
+func test_a_knockout_while_pinned_releases_the_pin() -> void:
+	var edge := 300.0
+	_start(Vector3(0, 0, -edge + 4.0), Vector3(0, 0, -edge + 16.0))
+	_arm(K.KI_BOW)
+	_drive(14 + Weapon.DRAW_LEVEL_TICKS[1] + 2, A.LIGHT)
+	_drive(30)
+	var them := _sim.fighters[1]
+	assert_true(them.pinned)
+	them.health = 0
+	_drive(1)
+	assert_eq(them.state, S.KO_FALL)
+	assert_false(them.pinned)
+	assert_eq(them.pin_ticks, 0)
+	_drive(30)
+	assert_false(them.pinned, "a KO'd fighter is never pinned again")
+	assert_true(them.is_ko_state(), "stays knocked out")
+
+
+func test_start_round_clears_gadgets_and_weapon_and_power_state() -> void:
+	_tether()
+	_drive(30)
+	var me := _sim.fighters[0]
+	me.heat = 9
+	me.overheated = true
+	me.draw_ticks = 4
+	me.last_slot = 1
+	me.powers.haste_ticks = 50
+	me.powers.overdrive_ticks = 50
+	me.powers.aegis = true
+	me.powers.gadget = Power.Kind.SPIKE_BOMB
+	var them := _sim.fighters[1]
+	them.pin_ticks = 5
+	them.pinned = true
+	them.combo_starter_percent = 80
+	_sim.gadgets.append(Gadget.new())
+	_sim.start_round()
+	assert_eq(_sim.gadgets.size(), 0)
+	for fighter in _sim.fighters:
+		assert_eq(fighter.tether_partner, -1)
+		assert_eq(fighter.tether_ticks, 0)
+		assert_eq(fighter.heat, 0)
+		assert_false(fighter.overheated)
+		assert_eq(fighter.draw_ticks, 0)
+		assert_eq(fighter.last_slot, -1)
+		assert_eq(fighter.pin_ticks, 0)
+		assert_false(fighter.pinned)
+		assert_eq(fighter.combo_starter_percent, 100)
+		assert_eq(fighter.held_weapon(), K.NONE)
+		assert_eq(fighter.powers.state_values(), FighterPowers.new().state_values())
+	_drive(10)
+	assert_eq(_sim.gadgets.size(), 0)

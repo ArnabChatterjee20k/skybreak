@@ -127,6 +127,20 @@ static func step(sim: CombatSim) -> void:
 	sim.gadgets = kept
 
 
+## Knockout: timed powers and Aegis end at once and the held gadget is lost.
+static func end_all(sim: CombatSim, index: int) -> void:
+	var powers := sim.fighters[index].powers
+	var at := sim.fighters[index].position
+	if powers.overdrive_ticks > 0:
+		sim.events.append(event(sim, _E.POWER_END, index, at, Power.Kind.OVERDRIVE_ORB, -1))
+	if powers.haste_ticks > 0:
+		sim.events.append(event(sim, _E.POWER_END, index, at, Power.Kind.HASTE, -1))
+	powers.overdrive_ticks = 0
+	powers.haste_ticks = 0
+	powers.aegis = false
+	powers.gadget = Power.Kind.NONE
+
+
 static func _count_powers(sim: CombatSim, index: int) -> void:
 	var fighter := sim.fighters[index]
 	var powers := fighter.powers
@@ -169,10 +183,15 @@ static func _step_bomb(sim: CombatSim, bomb: Gadget) -> bool:
 	return true
 
 
+## The owner itself or a teammate: gadgets spare them (friendly fire is off).
+static func _ally(sim: CombatSim, owner: int, index: int) -> bool:
+	return index == owner or sim.fighters[index].team == sim.fighters[owner].team
+
+
 static func _touches_opponent(sim: CombatSim, bomb: Gadget, from: Vector3) -> bool:
 	for index in sim.fighters.size():
 		var target := sim.fighters[index]
-		if index == bomb.owner or not target.can_be_hit():
+		if _ally(sim, bomb.owner, index) or not target.can_be_hit():
 			continue
 		var body := target.hurtbox()
 		var points := CombatSim._closest_points(from, bomb.position, body.start, body.end)
@@ -189,7 +208,7 @@ static func _explode(sim: CombatSim, bomb: Gadget) -> void:
 		return
 	for index in sim.fighters.size():
 		var target := sim.fighters[index]
-		if index == bomb.owner or not target.can_be_hit() or sim.round_over:
+		if _ally(sim, bomb.owner, index) or not target.can_be_hit() or sim.round_over:
 			continue
 		var body := target.hurtbox()
 		var points := CombatSim._closest_points(bomb.position, bomb.position, body.start, body.end)
@@ -225,7 +244,7 @@ static func _step_mine(sim: CombatSim, mine: Gadget) -> bool:
 				mine.phase_ticks = 0
 		Gadget.Phase.ARMED:
 			for index in sim.fighters.size():
-				if index != mine.owner and sim.fighters[index].can_be_hit() \
+				if not _ally(sim, mine.owner, index) and sim.fighters[index].can_be_hit() \
 						and sim.fighters[index].position.distance_to(mine.position) <= Power.MINE_TRIGGER_RADIUS:
 					mine.phase = Gadget.Phase.PULLING
 					mine.phase_ticks = 0
@@ -247,7 +266,7 @@ static func _step_mine(sim: CombatSim, mine: Gadget) -> bool:
 static func _pull(sim: CombatSim, mine: Gadget) -> void:
 	for index in sim.fighters.size():
 		var fighter := sim.fighters[index]
-		if index == mine.owner or fighter.state in _UNPULLABLE:
+		if _ally(sim, mine.owner, index) or fighter.state in _UNPULLABLE:
 			continue
 		var to_mine := mine.position - fighter.position
 		var distance := to_mine.length()
