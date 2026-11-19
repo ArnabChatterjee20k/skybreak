@@ -108,11 +108,13 @@ func lock_everyone_onto_nearest() -> void:
 func tick(inputs: Array[FighterInput]) -> void:
 	assert(inputs.size() == fighters.size(), "one input per fighter")
 	events = []
+	var frozen: Array[bool] = []
 	for i in fighters.size():
+		frozen.append(fighters[i].hitstop_ticks > 0)
 		# After a KO everyone gets neutral input until the next round.
 		_step_fighter(i, FighterInput.new() if round_over else inputs[i])
 	if not round_over:
-		_resolve_hits()
+		_resolve_hits(frozen)
 	current_tick += 1
 
 
@@ -460,6 +462,8 @@ func _begin_heavy(index: int, input: FighterInput, wish: Vector3) -> void:
 	consume_buffered(index, _HEAVY)
 	_update_facing(index)
 	_aim_at_target(index)
+	var right := _attack_forward(index).cross(Vector3.UP)
+	fighter.aim_side = -1 if wish.dot(right) < 0.0 else 1
 	fighter.begin_move(move)
 	if move.can_charge() and input.is_held(_HEAVY):
 		fighter.charge_ticks = 1
@@ -501,6 +505,7 @@ func _attack_forward(index: int) -> Vector3:
 func _aim_at_target(index: int) -> void:
 	var fighter := fighters[index]
 	fighter.aim_pitch = 0.0
+	fighter.aim_side = 1
 	if fighter.lock_on_target < 0:
 		return
 	var to_target := fighters[fighter.lock_on_target].position - fighter.position
@@ -710,12 +715,13 @@ func _bounce_or_knock_down(fighter: FighterState) -> void:
 
 
 ## Finds every hitbox touching an opponent this tick, then applies them in
-## fighter index order. All hits are found first, so trades happen.
-func _resolve_hits() -> void:
+## fighter index order. All hits are found first, so trades happen. Fighters
+## frozen in hitstop this tick do not hit.
+func _resolve_hits(frozen: Array[bool]) -> void:
 	var contacts: Array[Dictionary] = []
 	for attacker_index in fighters.size():
 		var attacker := fighters[attacker_index]
-		if attacker.hitstop_ticks > 0 or attacker.state != FighterState.State.ATTACKING:
+		if frozen[attacker_index] or attacker.state != FighterState.State.ATTACKING:
 			continue
 		var shapes := attacker.active_hitboxes()
 		if shapes.is_empty():
@@ -765,9 +771,9 @@ func _find_contact(attacker_index: int, target_index: int, shapes: Array[Diction
 		return {
 			"type": type, "attacker": attacker_index, "target": target_index,
 			"move": attacker.move, "yaw": attacker.facing_yaw, "pitch": attacker.aim_pitch,
-			"from": attacker.position,
-			# Contact point: on the line between the two closest points, at the hurtbox surface.
-			"position": points[1].lerp(points[0], body.radius / maxf(reach, 0.0001)),
+			"side": attacker.aim_side,
+			# Contact point: on the hurtbox surface toward the hitbox, or the hitbox centre line inside it.
+			"position": points[1] + (points[0] - points[1]).limit_length(body.radius),
 		}
 	return {}
 
@@ -807,7 +813,7 @@ func _apply_hit(contact: Dictionary) -> void:
 		knockback = move.knockback_type
 		_enter_stun(target, FighterState.State.HITSTUN, decayed_hitstun(move, combo_hit))
 		target.knockback_type = knockback
-		target.velocity = _knockback_velocity(contact, target.position)
+		target.velocity = _knockback_velocity(contact)
 		target.combo_hits = combo_hit
 		target.combo_damage = combo_damage + damage
 	var knocked_out := target.is_knocked_out()
@@ -853,8 +859,8 @@ func _enter_stun(fighter: FighterState, stun: FighterState.State, ticks: int) ->
 
 
 ## Target velocity from the move's knockback. LAUNCH and SPIKE turn by yaw only,
-## so up stays up and down stays down; SWEEP pushes to the side the target is on.
-func _knockback_velocity(contact: Dictionary, target_position: Vector3) -> Vector3:
+## so up stays up and down stays down; SWEEP pushes to the attacker's aim side.
+func _knockback_velocity(contact: Dictionary) -> Vector3:
 	var move: MoveData = contact.move
 	var knockback := move.knockback
 	var yaw := Basis(Vector3.UP, contact.yaw)
@@ -862,9 +868,9 @@ func _knockback_velocity(contact: Dictionary, target_position: Vector3) -> Vecto
 		MoveData.KnockbackType.LAUNCH, MoveData.KnockbackType.SPIKE:
 			return yaw * knockback
 		MoveData.KnockbackType.SWEEP:
-			var right := yaw * Vector3.RIGHT
-			var side := 1.0 if (target_position - (contact.from as Vector3)).dot(right) >= 0.0 else -1.0
-			return right * (side * Vector2(knockback.x, knockback.z).length()) + Vector3.UP * knockback.y
+			var side: int = contact.side
+			return yaw * Vector3.RIGHT * (side * Vector2(knockback.x, knockback.z).length()) \
+				+ Vector3.UP * knockback.y
 	return yaw * Basis(Vector3.RIGHT, contact.pitch) * knockback
 
 

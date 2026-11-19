@@ -97,6 +97,8 @@ var contact_blocked: bool = false
 var hit_targets: int = 0
 ## Hitbox pitch in radians (up is positive), captured when the attack starts; 0 when not attacking.
 var aim_pitch: float = 0.0
+## Side a SWEEP pushes the target to: 1 right, -1 left, from the move input at attack start.
+var aim_side: int = 1
 
 # Being hit.
 ## Length of the current HITSTUN, BLOCKSTUN or KNOCKDOWN in ticks.
@@ -121,6 +123,7 @@ func enter_state(new_state: State) -> void:
 	if new_state != State.ATTACKING:
 		_clear_attack()
 		aim_pitch = 0.0
+		aim_side = 1
 	if new_state != State.HITSTUN:
 		knockback_type = MoveData.KnockbackType.NONE
 		spike_bounced = false
@@ -255,7 +258,7 @@ func state_values() -> Array:
 		blocking, last_stand_used,
 		move_id(), move_tick, holding_charge, charge_ticks, charge_level,
 		string_index, string_dropped, string_queued, contact_hit, contact_blocked,
-		hit_targets, aim_pitch, stun_ticks, hitstop_ticks, knockback_type, spike_bounced,
+		hit_targets, aim_pitch, aim_side, stun_ticks, hitstop_ticks, knockback_type, spike_bounced,
 		combo_hits, combo_damage,
 	]
 
