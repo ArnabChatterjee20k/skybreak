@@ -10,6 +10,7 @@ const _UNIT := FighterState.METER_UNIT
 const _UNPULLABLE: Array[FighterState.State] = [
 	FighterState.State.GRABBED, FighterState.State.THROWING,
 	FighterState.State.VANISHING, FighterState.State.KNOCKDOWN,
+	FighterState.State.KO_FALL, FighterState.State.KO_DOWN,
 ]
 
 

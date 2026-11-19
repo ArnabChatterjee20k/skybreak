@@ -133,6 +133,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D26 [desktop] Powers and gadgets (Overdrive Orb, Burst Shard, Aegis, Haste, Spike Bomb, Gravity Mine, Mirror Decoy) as sky drops alternating with weapons, plus T-D14's gaps: bow draw levels and level-3 pin, Heartstring Tether and yank, chakram out-and-back disc, repeater heat/slowed fire/dash absorb, swap-cancel, C quick-swap, 80% ranged combo starters, counter-hit heavy drops, nocked arrow, `held_ammo()` for the HUD.
 - T-D24 [desktop] Brann playable: FigureKit stone smith (merged mesh, ember cracks, apron, braided beard, boulder shoulders, stowed hammer and cannon), P1/P2 palettes, heavy armoured MoveSet and stats, posed move clips, roster entry, renders. Open: per-fighter flight speed needs a FighterStats field.
 - T-106 + T-D13 + T-D19 [desktop] Zone match (`zone_match.tscn`, `configure()`) in all 7 zones: only the chosen zone's props, far terrain at its lowest LOD, per-zone arena box; sim floor from a quantised `ZoneGround` (`CombatSim.ground_height`), landing on islands and falling off their rims; atmosphere, weather and ambience pinned to the zone (no Stormfall rain in Heartbloom). Open: `CharacterView.is_airborne` and `WeaponLayer` pillar still use the flat floor (read `FighterState.stand_height` / the sim ground), sim lock-on and hits ignore teams, `rounds` is stored but MatchFlow is best of 3, no AIDriver yet (WeaponBot drives AI slots); Skyhold Ruins' floating stones are props only, so fighters hover there over the terrain.
 - T-D25 [desktop] Lyra playable: star-cartographer zoner built with FigureKit (merged mesh, star-map
@@ -150,7 +151,6 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   weapons, pickups and projectiles; MatchFlow passes spawn points and credits
   teams. Open: flat ground only (no TerrainHeightmap in the sim yet); KO clip is
   the existing knockdown fall (MotionLibrary `ko_fall` left to T-D22b).
-- T-D26 [desktop] Powers and gadgets (Overdrive Orb, Burst Shard, Aegis, Haste, Spike Bomb, Gravity Mine, Mirror Decoy) as sky drops alternating with weapons, plus T-D14's gaps: bow draw levels and level-3 pin, Heartstring Tether and yank, chakram out-and-back disc, repeater heat/slowed fire/dash absorb, swap-cancel, C quick-swap, 80% ranged combo starters, counter-hit heavy drops, nocked arrow, `held_ammo()` for the HUD.
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
