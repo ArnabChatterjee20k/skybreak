@@ -17,6 +17,12 @@ extends Camera3D
 ## Fastest the view may turn, in degrees per second (anti-nausea). At 60 fps
 ## that is 3 degrees per frame, so re-locks never snap.
 @export var max_turn_speed := 180.0
+## Near band only, while the locked opponent is off screen or behind: the
+## cap eases up to this (an opponent dashing past at ~5 m crosses the view
+## faster than 180 deg/s), then back down once they are in view again.
+@export var near_catch_up_turn_speed := 300.0
+## How fast the cap itself changes, in deg/s per second (180 -> 300 in 0.5 s).
+@export var turn_cap_ramp := 240.0
 ## A player jump longer than this in one frame (m) is a teleport, e.g. a vanish
 ## step; normal movement tops out around 1.3 m per frame.
 @export var teleport_distance := 3.0
@@ -71,6 +77,8 @@ const LAG_EXTRA_FOV := 10.0
 const LAG_EXTRA_BOOM := 0.25
 const LAG_SHARPNESS := 3.0
 var _lag := 0.0
+## Turn cap in force now (deg/s), between max_turn_speed and near_catch_up_turn_speed.
+var _turn_cap := 180.0
 var _shake_time := 0.0
 
 
@@ -97,6 +105,11 @@ func _remember_facing(player: Vector3, target: Vector3) -> void:
 	var flat := Vector3(target.x - player.x, 0.0, target.z - player.z)
 	if flat.length() > 0.01 and (LockOnFraming.stack_weight(player, target) < 0.01 or _held_facing == Vector3.ZERO):
 		_held_facing = flat.normalized()
+
+
+## Turn speed cap in force now (deg/s).
+func turn_cap() -> float:
+	return _turn_cap
 
 
 ## Adds hit shake; trauma 0-1, capped at 1 in total.
@@ -187,17 +200,20 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		_has_pose = true
 		return
 	fov = lerpf(fov, fov_goal, _blend(fov_sharpness, delta))
+	var catch_up := locked and _band == LockOnFraming.Band.NEAR and not _relock_turning 		and not LockOnFraming.is_in_view(global_transform, fov, target)
+	_turn_cap = move_toward(_turn_cap, near_catch_up_turn_speed if catch_up else max_turn_speed,
+		turn_cap_ramp * delta)
 	# The offset turns around the player (never through or over them), capped
 	# like the view turn so the two stay in step.
 	_offset = step_offset(_offset, goal.origin - player, _blend(position_sharpness, delta),
-		_blend(boom_sharpness, delta), deg_to_rad(max_turn_speed) * delta)
+		_blend(boom_sharpness, delta), deg_to_rad(_turn_cap) * delta)
 	_follow_anchor(player, delta)
 	var position_now := _anchor + _offset
 	var rotation_from := global_basis.get_rotation_quaternion()
 	var rotation_now := rotation_from.slerp(
 		goal.basis.get_rotation_quaternion(), _blend(rotation_sharpness, delta))
 	var turn := rotation_from.angle_to(rotation_now)
-	var max_turn := deg_to_rad(max_turn_speed) * delta
+	var max_turn := deg_to_rad(_turn_cap) * delta
 	if turn > max_turn:
 		rotation_now = rotation_from.slerp(rotation_now, max_turn / turn)
 	global_transform = Transform3D(Basis(rotation_now), position_now)

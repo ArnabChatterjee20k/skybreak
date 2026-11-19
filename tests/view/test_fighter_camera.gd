@@ -96,3 +96,27 @@ func test_stacked_framing_takes_over_only_for_close_steep_gaps() -> void:
 	assert_eq(LockOnFraming.stack_weight(player, player + Vector3(0, -5, -0.3)), 1.0, "5 m straight below")
 	assert_eq(LockOnFraming.stack_weight(player, player + Vector3(0, -1, -8)), 0.0, "level-ish")
 	assert_eq(LockOnFraming.stack_weight(player, player + Vector3(0, -60, -5)), 0.0, "far below keeps widen + arrow")
+
+
+func test_near_turn_cap_ramps_up_only_while_the_opponent_is_out_of_view() -> void:
+	var camera := FighterCamera.new()
+	add_child_autofree(camera)
+	var player := Vector3(0, 10, 0)
+	var ahead := Vector3(0, 10, -5)
+	for i in 120:
+		camera.follow(player, ahead, true, 1.0 / 60.0)
+	assert_eq(camera.turn_cap(), camera.max_turn_speed, "normal cap with the opponent in view")
+	# Opponent jumps behind the camera, 5 m away (near band).
+	var behind := Vector3(0, 10, 5)
+	var previous := camera.turn_cap()
+	var highest := previous
+	for i in 30:
+		camera.follow(player, behind, true, 1.0 / 60.0)
+		assert_lte(camera.turn_cap() - previous, camera.turn_cap_ramp / 60.0 + 0.001, "ramps, never jumps")
+		previous = camera.turn_cap()
+		highest = maxf(highest, previous)
+	assert_gt(highest, camera.max_turn_speed, "speeds up to catch the opponent")
+	assert_lte(highest, camera.near_catch_up_turn_speed)
+	for i in 240:
+		camera.follow(player, behind, true, 1.0 / 60.0)
+	assert_eq(camera.turn_cap(), camera.max_turn_speed, "back to normal once the opponent is in view")

@@ -11,9 +11,12 @@ enum Phase { INTRO, FIGHT, KO, MATCH_OVER }
 const TICKS_PER_SECOND := 60
 const ROUND_SECONDS := 99
 const WINS_NEEDED := 2
-## "ROUND n" for the first part of the intro, then "FIGHT!".
-const INTRO_TICKS := 120
-const INTRO_ROUND_TICKS := 70
+## Intro: "ROUND n" for INTRO_ROUND_TICKS, then a 3-2-1 count, one number
+## every COUNT_TICKS; "FIGHT!" shows for FIGHT_BANNER_TICKS once input is live.
+const INTRO_ROUND_TICKS := 60
+const COUNT_TICKS := 30
+const INTRO_TICKS := INTRO_ROUND_TICKS + 3 * COUNT_TICKS
+const FIGHT_BANNER_TICKS := 50
 ## KO banner time before the next round; the first KO_SLOW_TICKS run slowed.
 const KO_TICKS := 180
 const KO_SLOW_TICKS := 60
@@ -79,13 +82,23 @@ func banner(names: Array) -> Dictionary:
 		Phase.INTRO:
 			if phase_ticks < INTRO_ROUND_TICKS:
 				return {"title": "ROUND %d" % round_number, "subtitle": ""}
-			return {"title": "FIGHT!", "subtitle": ""}
+			return {"title": str(count()), "subtitle": ""}
+		Phase.FIGHT:
+			if phase_ticks < FIGHT_BANNER_TICKS:
+				return {"title": "FIGHT!", "subtitle": ""}
 		Phase.KO:
 			var title := "TIME!" if timed_out else "K.O.!"
 			return {"title": title, "subtitle": _winner_text(names, "WINS THE ROUND")}
 		Phase.MATCH_OVER:
 			return {"title": _winner_text(names, "WINS!"), "subtitle": ""}
 	return {"title": "", "subtitle": ""}
+
+
+## The intro count showing now (3, 2, 1), or 0 outside the count.
+func count() -> int:
+	if phase != Phase.INTRO or phase_ticks < INTRO_ROUND_TICKS:
+		return 0
+	return 3 - mini((phase_ticks - INTRO_ROUND_TICKS) / COUNT_TICKS, 2)
 
 
 ## Whole seconds left on the round clock.
