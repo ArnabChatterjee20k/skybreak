@@ -40,6 +40,8 @@ const FLINCH_KO := 2.4
 ## stands fighters at MovementTuning.ground_height.
 const AIRBORNE_MARGIN := 0.05
 static var _ground_height := MovementTuning.new().ground_height
+## How much of a one-hand attack follows the swing arc rather than the clip.
+const SWING_WEIGHT := 0.85
 ## Knocked-out states: they play the knockdown fall unless the clip set maps them.
 const KO_STATES: Array[int] = [FighterState.State.KO_FALL, FighterState.State.KO_DOWN]
 
@@ -469,7 +471,13 @@ func _update_arms(fighter: FighterState) -> void:
 		return
 	match WeaponGrip.hold_of(kind):
 		WeaponGrip.Hold.ONE_HAND:
-			if not attacking:
+			if attacking:
+				# The swing arc: held out in front of the shoulder, sweeping as the attack runs.
+				layers.arm_pose = MotionLayers.ArmPose.SWING
+				layers.arm_weight = SWING_WEIGHT
+				layers.arm_phase = float(fighter.move_tick) / float(maxi(fighter.move_total_ticks(), 1)) \
+					if fighter.move != null else 0.0
+			else:
 				layers.arm_pose = MotionLayers.ArmPose.GUARD
 				layers.arm_weight = 0.8
 		WeaponGrip.Hold.HEAVY:

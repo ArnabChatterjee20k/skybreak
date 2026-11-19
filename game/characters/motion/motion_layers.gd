@@ -23,7 +23,7 @@ const ARMS := [[&"LeftUpperArm", &"LeftLowerArm", &"LeftHand"], [&"RightUpperArm
 const FLIGHT_FULL_SPEED := 22.0
 const FLUTTER_HZ := 2.4
 ## Arm poses for held weapons (T-D30), solved by two-bone IK on top of the clip.
-enum ArmPose { NONE, TWO_HANDED, BOW_DRAW, PISTOL_AIM, GUARD, BRACED }
+enum ArmPose { NONE, TWO_HANDED, BOW_DRAW, PISTOL_AIM, GUARD, BRACED, SWING }
 ## Main-hand grip point per pose, from its shoulder in chest space (+Y up, +Z forward, +X to the
 ## holder's left), in arm lengths, then the weapon's +Y and its forward (-Z) in the same space.
 const ARM_POSES := {
@@ -32,6 +32,11 @@ const ARM_POSES := {
 	ArmPose.PISTOL_AIM: [Vector3(0.12, 0.02, 0.96), Vector3(0, 1, 0), Vector3(0, 0, 1)],
 	ArmPose.BRACED: [Vector3(-0.3, -0.62, 0.62), Vector3(0, 1, 0), Vector3(0, 0, 1)],
 }
+## One-hand swing arc (from the shoulder, chest space, arm lengths): the hand sweeps from the
+## weapon side across the front at this height and reach, as the attack runs (arm_phase 0..1).
+const SWING_FROM := deg_to_rad(-55.0)
+const SWING_TO := deg_to_rad(25.0)
+const SWING_POINT := Vector3(0.0, -0.12, 0.97)
 ## Bow draw: the string hand anchors this far beside the head capsule's surface (m), at jaw height.
 const BOW_ANCHOR_GAP := 0.08
 const BOW_ANCHOR_DROP := 0.04
@@ -76,6 +81,8 @@ var ground_probe: Callable
 ## Held-weapon arm pose and how much of it to apply (0..1, sprung).
 @export var arm_pose := ArmPose.NONE
 @export_range(0.0, 1.0) var arm_weight := 0.0
+## Progress through the attack for the swing arc (0..1).
+var arm_phase := 0.0
 ## Lean, flight, look, secondary, flinch and landing layers; off keeps only the IK stages.
 @export var body_layers := true
 ## Held weapon: the hand bone it sits on (empty = none), its transform in that bone's space,
@@ -467,6 +474,14 @@ func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> vo
 		var side := -1.0 if weapon_hand == &"LeftHand" else 1.0
 		var up := (frame * Vector3(side * BOW_CANT, 1, 0)).normalized()
 		goal_basis = _weapon_basis(up, forward)
+	elif _arm_pose_now == ArmPose.SWING:
+		# Authored for the right hand (sweeping from its side); a left hand mirrors.
+		var mirror := Vector3(-1, 1, 1) if weapon_hand == &"LeftHand" else Vector3.ONE
+		var yaw := lerpf(SWING_FROM, SWING_TO, clampf(arm_phase, 0.0, 1.0))
+		var out := Basis(Vector3.UP, yaw) * SWING_POINT
+		goal_point = shoulder + frame * (out * mirror * reach)
+		var outward := (frame * (out * mirror)).normalized()
+		goal_basis = _weapon_basis((frame * Vector3.UP * 0.5 + outward).normalized(), outward)
 	elif ARM_POSES.has(_arm_pose_now):
 		var pose: Array = ARM_POSES[_arm_pose_now]
 		# Poses are authored for the right hand; a left main hand mirrors them.
@@ -603,7 +618,10 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
 		var depth := float(hit[0]) + CLEARANCE_MARGIN
 		# Swing: turn the weapon about the wrist so the overlapping part moves out along the push,
 		# then move the hand for whatever the swing did not clear.
-		var lever: Vector3 = (hit[3] as Vector3) - hand.origin
+		# Lever: the overlapping part's centre, or the contact point when that centre is at the wrist.
+		var lever: Vector3 = (hit[4] as Vector3) - hand.origin
+		if lever.length() <= SWING_MIN_LEVER:
+			lever = (hit[3] as Vector3) - hand.origin
 		var hand_rotation := hand.basis.get_rotation_quaternion()
 		var moved := 0.0
 		var axis := lever.cross(push)

@@ -176,11 +176,12 @@ static func _point_segment(p: Vector3, a: Vector3, b: Vector3) -> float:
 
 
 ## How deep box (a transform of the unit cube) reaches into capsule a-b of radius r, and the
-## direction that moves the box out: [depth, push]. depth <= 0 means clear.
+## direction that moves the box out: [depth, push, contact point]. depth <= 0 means clear.
 static func box_depth(a: Vector3, b: Vector3, r: float, box: Transform3D) -> Array:
 	var inverse := box.affine_inverse()
 	var deepest := -INF
 	var push := Vector3.ZERO
+	var contact := box.origin
 	var half := Vector3(box.basis.x.length(), box.basis.y.length(), box.basis.z.length())
 	var samples := 9
 	for k in samples:
@@ -189,6 +190,7 @@ static func box_depth(a: Vector3, b: Vector3, r: float, box: Transform3D) -> Arr
 		var clamped := local.clamp(-Vector3.ONE, Vector3.ONE)
 		var depth: float
 		var direction: Vector3
+		var at := p
 		if clamped.is_equal_approx(local):
 			# Inside: the distance to the nearest face, pushed out through it.
 			var room := (Vector3.ONE - local.abs()) * half
@@ -201,15 +203,18 @@ static func box_depth(a: Vector3, b: Vector3, r: float, box: Transform3D) -> Arr
 			var q := box * clamped
 			depth = r - p.distance_to(q)
 			direction = (q - p).normalized()
+			at = q
 		if depth > deepest:
 			deepest = depth
 			push = direction
-	return [deepest, push]
+			contact = at
+	return [deepest, push, contact]
 
 
-## Deepest overlap of boxes with capsules ({name: [a, b, r]}): [depth, push, capsule name, box centre].
+## Deepest overlap of boxes with capsules ({name: [a, b, r]}):
+## [depth, push, capsule name, contact point, the overlapping box's centre].
 static func deepest_box(capsule_set: Dictionary, boxes: Array[Transform3D]) -> Array:
-	var result := [-INF, Vector3.ZERO, &"", Vector3.ZERO]
+	var result := [-INF, Vector3.ZERO, &"", Vector3.ZERO, Vector3.ZERO]
 	for name: StringName in capsule_set:
 		var c: Array = capsule_set[name]
 		for box in boxes:
@@ -219,7 +224,7 @@ static func deepest_box(capsule_set: Dictionary, boxes: Array[Transform3D]) -> A
 				continue
 			var hit := box_depth(c[0], c[1], c[2], box)
 			if hit[0] > result[0]:
-				result = [hit[0], hit[1], name, box.origin]
+				result = [hit[0], hit[1], name, hit[2], box.origin]
 	return result
 
 
