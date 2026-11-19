@@ -457,6 +457,8 @@ func _bot_match(seed_value: int, ticks: int, zone := &"skyhold_ruins") -> Array:
 	var sim := CombatSim.new(seed_value)
 	sim.zone = zone
 	sim.pickups_enabled = true
+	# Weapon drops only; powers and gadgets have their own bot match (tests/combat/weapons).
+	sim.pickup_tuning.powers_enabled = false
 	sim.add_fighter(Vector3(0, 1, 6))
 	sim.add_fighter(Vector3(0, 1, -6))
 	sim.lock_everyone_onto_nearest()
@@ -525,7 +527,7 @@ func test_longer_bot_matches_land_every_weapon_event() -> void:
 	for seed_value in [3, 4]:
 		types.merge(_bot_match(seed_value, 7200)[2])
 	# Bots grab every drop, so PICKUP_DESPAWN is covered by its own test above.
-	for type in range(E.PICKUP_SPAWN, E.size()):
+	for type in range(E.PICKUP_SPAWN, E.PROJECTILE_HIT + 1):
 		if type != E.PICKUP_DESPAWN:
 			assert_true(types.has(type), "a %s event" % E.keys()[type])
 
