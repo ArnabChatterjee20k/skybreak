@@ -480,6 +480,13 @@ Online versus is planned for later, using **Appwrite** (auth, lobbies, presence)
   - all pickup spawns come from the seeded rng in the sim, never from the view
 - **AI is part of the deterministic sim** (or a pure function of sim state plus seeded rng), so AI fighters never need to be sent over the network.
 - **Appwrite project (owner's decision):** use the **same Appwrite Cloud project as MisterMime** (`6a113777000db893b12e`, region `sgp`, endpoint `https://sgp.cloud.appwrite.io/v1`). The project is shared with other apps: only **add** Skybreak resources (its own database, collections and functions, prefixed `skybreak`), never change or delete existing ones.
+- **Online tracking with Appwrite Presence** (as MisterMime does it): each signed-in player calls `realtime.upsertPresence({presenceId, status, metadata, permissions})` over the Realtime socket:
+  - `status` is `menu`, `lobby` or `in_match`
+  - `metadata` holds the display name, fighter, lobby id and platform
+  - Friends and lobbies watch the `presences` channel live; menus can also read the HTTP `presences.list`.
+  - The record is **deleted automatically when the socket drops**, so a partner disconnecting mid-match is detected at once. The match then **pauses for up to 30 s or hands that fighter to the AI** until they reconnect (setting).
+  - Presence metadata is client-published over the socket, so the spike also tests it as the **WebRTC signalling** channel (offer/answer/ICE), avoiding database writes.
+- **Godot client:** a small GDScript Appwrite client (HTTPRequest for REST, WebSocketPeer for Realtime), so the same code runs on Windows and in the web build. No addon is needed for that part.
 - **Transport decision pending a spike:** Appwrite (Auth, a lobbies collection, Realtime presence) is the lobby and **signalling** layer for certain. Whether per-tick inputs travel over **Appwrite Realtime** or **directly peer-to-peer over WebRTC data channels** (with Appwrite only doing signalling) is decided by measured latency and jitter from the target devices. Target: under 80 ms round trip on home Wi-Fi.
 - **Transport abstraction:** a `NetTransport` interface, so Appwrite Realtime (or the Appwrite Push/MQTT path already used by MisterMime) can be swapped in without touching the sim.
 - **Lobbies and matchmaking:** Appwrite Auth plus a lobbies collection; Realtime presence shows who is online.
