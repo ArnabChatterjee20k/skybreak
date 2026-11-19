@@ -385,9 +385,10 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 	if foot_ik:
 		hips = _foot_ik(rotations, hips)
 	_last_hips_now = hips
-	_pop_guard(rotations, delta)
-	# The guard's twist and turn limits can bring the weapon back into the body: clear it once more.
+	_twist_guard(rotations)
+	# The twist limits can bring the weapon back into the body: clear it once more, before the turn cap.
 	_clearance(rotations, hips)
+	_pop_guard(rotations, delta)
 	_prev_out = _last_out.duplicate()
 	_last_out = rotations.duplicate()
 	_prev_hips = _last_hips
@@ -938,9 +939,8 @@ static func _yaw_of(q: Quaternion) -> float:
 	return wrapf(2.0 * atan2(q.y, q.w), -PI, PI)
 
 
-## Unwraps and limits arm twist, then caps how far any body bone turns per frame in model space
-## (parents first, so a child's limit accounts for what its parent already did): no pops.
-func _pop_guard(rotations: Array[Quaternion], delta: float) -> void:
+## Unwraps and limits arm twist; hands posed by the weapon IK keep their world rotation.
+func _twist_guard(rotations: Array[Quaternion]) -> void:
 	# Hands posed by the weapon IK keep their world rotation: the wrist takes the twist the arm gives up.
 	var held := {}
 	if _arm > 0.01 and weapon_hand != &"":
@@ -958,6 +958,11 @@ func _pop_guard(rotations: Array[Quaternion], delta: float) -> void:
 		var parent := _world_at(rotations, _last_hips_now, _parents[i]).basis.get_rotation_quaternion()
 		rotations[i] = parent.inverse() * (held[i] as Quaternion)
 	_world_cache.clear()
+
+
+## Caps how far any body bone turns per frame in model space
+## (parents first, so a child's limit accounts for what its parent already did): no pops.
+func _pop_guard(rotations: Array[Quaternion], delta: float) -> void:
 	if _last_out.size() != rotations.size() or delta <= 0.0:
 		_guard_world.clear()
 		return
