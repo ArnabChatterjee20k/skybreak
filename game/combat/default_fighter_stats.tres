@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="FighterStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/fighter_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+max_health = 10000
+guard_max = 100
+vanish_counter_ki_cost = 25
+second_vanish_counter_ki_cost = 40

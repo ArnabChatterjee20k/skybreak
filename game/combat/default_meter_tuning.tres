@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="MeterTuning" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/meter_tuning.gd" id="1_tuning"]
+
+[resource]
+script = ExtResource("1_tuning")
+grey_percent = 40
+grey_regen_per_second = 150
+grey_regen_delay_ticks = 180
+last_stand_health_percent = 15
+ki_max = 100
+round_start_ki = 50
+ki_passive_per_second = 2
+ki_charge_per_second = 25
+ki_per_landed_hit = 3
+ki_per_blocked_hit = 2
+dash_ki_cost = 8
+rush_dash_ki_cost = 15
+vanish_step_ki_cost = 20
+sustained_dash_ki_per_second = 0
+guard_regen_per_second = 20
+guard_regen_delay_ticks = 60
+guard_break_ticks = 60
+burst_stock_size = 100
+burst_max_stocks = 3
+burst_per_1000_damage_dealt = 10
+burst_per_1000_damage_taken = 15
+burst_per_perfect_block = 15
+last_stand_burst_stocks = 1
