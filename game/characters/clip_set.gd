@@ -16,6 +16,8 @@ extends Resource
 @export var charge_hold_clip: StringName = &"charge"
 ## Clip played while blocking on the ground or in the air.
 @export var block_clip: StringName = &"block"
+## Clip for the second half of a knockdown.
+@export var get_up_clip: StringName = &"get_up"
 ## Clip for fast flight; hovering uses state_clips["FLYING"].
 @export var fly_fast_clip: StringName = &"fly"
 ## Clip -> Vector2(start, end) in seconds: the part of the strike shown during
@@ -38,7 +40,7 @@ func clip_for_move(move_id: StringName) -> StringName:
 func mapped_clips() -> Array[StringName]:
 	var clips: Array[StringName] = []
 	for clip: StringName in state_clips.values() + move_clips.values() \
-			+ [fallback_move_clip, charge_hold_clip, block_clip, fly_fast_clip]:
+			+ [fallback_move_clip, charge_hold_clip, block_clip, fly_fast_clip, get_up_clip]:
 		if not clips.has(clip):
 			clips.append(clip)
 	return clips

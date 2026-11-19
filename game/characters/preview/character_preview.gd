@@ -107,6 +107,8 @@ func _next_entry() -> void:
 		_fighter.holding_charge = entry.get("hold", false)
 	else:
 		_fighter.enter_state(entry.state)
+		# Stun states (HITSTUN, BLOCKSTUN, KNOCKDOWN) last the whole entry.
+		_fighter.stun_ticks = int(STATE_SECONDS * 60)
 	_fighter.velocity = entry.get("velocity", Vector3.ZERO)
 	if entry.state == FighterState.State.MOVING:
 		_fighter.velocity = Vector3(0, 0, -12)

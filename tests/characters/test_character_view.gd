@@ -157,6 +157,51 @@ func test_states_added_later_fall_back_or_map_by_name() -> void:
 	assert_eq(_view.clips.clip_for_state(&"KNOCKDOWN"), &"knockdown")
 
 
+func test_hit_states_pick_their_clips() -> void:
+	var expected := {&"HITSTUN": &"hit", &"BLOCKSTUN": &"block_hit", &"KNOCKDOWN": &"knockdown"}
+	for state_name: StringName in expected:
+		if not FighterState.State.has(state_name):
+			continue
+		_fighter.enter_state(FighterState.State[state_name])
+		_fighter.stun_ticks = 20
+		_view.apply_state(_fighter, FRAME)
+		assert_eq(_view.current_clip(), expected[state_name])
+
+
+func test_knockdown_ends_getting_up() -> void:
+	if not FighterState.State.has("KNOCKDOWN"):
+		pass_test("no KNOCKDOWN state yet")
+		return
+	_fighter.enter_state(FighterState.State.KNOCKDOWN)
+	_fighter.stun_ticks = 40
+	_view.apply_state(_fighter, FRAME)
+	assert_eq(_view.current_clip(), &"knockdown")
+	_fighter.state_ticks = 30
+	_view.apply_state(_fighter, FRAME)
+	assert_eq(_view.current_clip(), _view.clips.get_up_clip)
+
+
+func test_hitstun_clip_fills_the_stun() -> void:
+	_fighter.enter_state(FighterState.State.HITSTUN)
+	_fighter.stun_ticks = 16
+	for frame in 16:
+		_fighter.state_ticks = frame
+		_view.apply_state(_fighter, FRAME)
+	var length := _view.clips.library.get_animation(&"hit").length
+	assert_almost_eq(_view.current_clip_time(), length, length * 0.1, "the hit clip ends with the stun")
+
+
+func test_hitstop_freezes_the_pose() -> void:
+	_fighter.enter_state(FighterState.State.HITSTUN)
+	_fighter.stun_ticks = 30
+	_view.apply_state(_fighter, FRAME)
+	var before := _view.current_clip_time()
+	_fighter.hitstop_ticks = 4
+	for _frame in 4:
+		_view.apply_state(_fighter, FRAME)
+	assert_eq(_view.current_clip_time(), before)
+
+
 func test_apply_state_never_moves_or_turns_the_node() -> void:
 	var before := _view.transform
 	for state_value: int in FighterState.State.values():

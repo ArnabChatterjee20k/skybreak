@@ -11,6 +11,9 @@ const FLY_FAST_SPEED := 14.0
 const RUN_CLIP_SPEED := 9.0
 const RUN_SPEED_SCALE_MIN := 0.6
 const RUN_SPEED_SCALE_MAX := 1.6
+## Stun clips are sped up or slowed to fill the stun, within these limits.
+const STUN_SPEED_SCALE_MIN := 0.5
+const STUN_SPEED_SCALE_MAX := 2.5
 const TICK_SECONDS := 1.0 / 60.0
 const ENERGY_COLOR_PARAM := &"rim_energy_color"
 const ENERGY_MIX_PARAM := &"rim_energy_mix"
@@ -43,8 +46,10 @@ func _ready() -> void:
 
 
 ## Call every rendered frame. Picks the clip for the fighter's state and
-## advances it; attack clips are timed by the move's ticks.
+## advances it; attack clips are timed by the move's ticks. Hitstop freezes it.
 func apply_state(fighter: FighterState, delta: float) -> void:
+	if fighter.hitstop_ticks > 0:
+		delta = 0.0
 	var state_name := StringName(FighterState.State.find_key(fighter.state))
 	var restarted := fighter.state != _state or fighter.state_ticks < _state_ticks
 	_state = fighter.state
@@ -87,6 +92,8 @@ func _clip_for(fighter: FighterState, state_name: StringName) -> StringName:
 		return clips.block_clip
 	if fighter.state == FighterState.State.FLYING and fighter.velocity.length() > FLY_FAST_SPEED:
 		return clips.fly_fast_clip
+	if fighter.state == FighterState.State.KNOCKDOWN and fighter.state_ticks >= _knockdown_split(fighter):
+		return clips.get_up_clip
 	return clips.clip_for_state(state_name)
 
 
@@ -94,7 +101,30 @@ func _speed_scale(fighter: FighterState, clip: StringName) -> float:
 	if fighter.state == FighterState.State.MOVING and clip == clips.clip_for_state(&"MOVING"):
 		var ground_speed := Vector2(fighter.velocity.x, fighter.velocity.z).length()
 		return clampf(ground_speed / RUN_CLIP_SPEED, RUN_SPEED_SCALE_MIN, RUN_SPEED_SCALE_MAX)
+	var stun_ticks := _stun_ticks_for(fighter, clip)
+	if stun_ticks > 0:
+		var seconds := stun_ticks * TICK_SECONDS
+		var length := clips.library.get_animation(clip).length
+		return clampf(length / seconds, STUN_SPEED_SCALE_MIN, STUN_SPEED_SCALE_MAX)
 	return 1.0
+
+
+## Ticks a stun clip has to play in, 0 for clips that are not stun clips.
+## Knockdown spends its first half falling and the rest getting up.
+func _stun_ticks_for(fighter: FighterState, clip: StringName) -> int:
+	if fighter.stun_ticks <= 0:
+		return 0
+	match fighter.state:
+		FighterState.State.HITSTUN, FighterState.State.BLOCKSTUN:
+			return fighter.stun_ticks
+		FighterState.State.KNOCKDOWN:
+			var split := _knockdown_split(fighter)
+			return fighter.stun_ticks - split if clip == clips.get_up_clip else split
+	return 0
+
+
+func _knockdown_split(fighter: FighterState) -> int:
+	return maxi(fighter.stun_ticks / 2, 1)
 
 
 func _apply_attack(fighter: FighterState, delta: float) -> void:
