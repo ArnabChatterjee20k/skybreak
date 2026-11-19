@@ -35,7 +35,11 @@ func is_finished() -> bool:
 ## tick, locked, camera (Transform3D), fov, player, opponent (positions),
 ## player_on_screen, opponent_on_screen, player_screen_height (fraction),
 ## camera_distance (to the player, m), view_pitch (radians, negative = down),
-## opponent_hidden (fraction of the opponent's screen box the player covers).
+## opponent_hidden (fraction of the opponent's screen box the player covers),
+## opponent_pixels (opponent's on-screen height at 1080p), silhouette_gap
+## (horizontal space between the two fighters' screen boxes as a fraction of
+## the screen width; negative when they overlap), band (the camera's
+## LockOnFraming.Band), player_visible (false while vanished).
 func advance() -> Dictionary:
 	arena.step_tick()
 	arena.present_frame(1.0, FRAME_SECONDS)
@@ -60,7 +64,22 @@ func advance() -> Dictionary:
 		"camera_distance": view.origin.distance_to(player),
 		"view_pitch": asin(clampf(-view.basis.z.y, -1.0, 1.0)),
 		"opponent_hidden": opponent_hidden_fraction(view, camera.fov, screen, player, opponent),
+		"opponent_pixels": _screen_box(view, camera.fov, screen, opponent).size.y,
+		"silhouette_gap": silhouette_gap(view, camera.fov, screen, player, opponent),
+		"band": camera.range_band(),
+		"player_visible": arena.sim.fighters[0].state != FighterState.State.VANISHING,
 	}
+
+
+## Horizontal gap between the fighters' screen boxes / screen width (< 0 = overlap).
+static func silhouette_gap(view: Transform3D, fov: float, screen: Vector2,
+		player: Vector3, opponent: Vector3) -> float:
+	var a := _screen_box(view, fov, screen, player)
+	var b := _screen_box(view, fov, screen, opponent)
+	if not a.has_area() or not b.has_area():
+		return 1.0
+	var gap := maxf(b.position.x - a.end.x, a.position.x - b.end.x)
+	return gap / screen.x
 
 
 ## How much of the opponent's on-screen box the player's box covers (0..1),

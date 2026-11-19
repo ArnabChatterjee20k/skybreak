@@ -21,7 +21,14 @@ someone else's, ask on the MisterMime bus first.
 | Owner | Paths |
 |---|---|
 | `desktop` (cloud agents) | `game/combat/**`, `game/view/shaders/**`, `tests/combat/**`, `tests/shaders/**`, `docs/GAME_DESIGN.md` |
+| `desktop` (cloud agents), characters (T-D10) | `game/characters/**` (models, materials, animation libraries, `CharacterView`), `tests/characters/**`, their entries in `docs/asset-licences.md` |
 | `developer` (Windows PC) | everything else: `game/input/**` (incl. `FighterInput`), camera, flight feel, arenas, UI, `.github/`, `project.godot`, `addons/` |
+
+`CharacterView` is a pure animation node that `FighterView` (developer's) places
+under its body node: no root motion, no own position/rotation, origin at the
+capsule centre, facing -Z, about 2 m tall; `apply_state(fighter, delta)` each
+frame. Characters prefer glTF/GLB; adding anything under `addons/` goes through
+developer.
 
 `MovementTuning` (in `game/combat/`, when added) is the exception: `developer`
 may edit its values freely to tune feel.
