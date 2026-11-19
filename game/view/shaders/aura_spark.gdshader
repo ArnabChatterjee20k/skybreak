@@ -60,5 +60,6 @@ void fragment() {
 		life = sin(clamp(age, 0.0, 1.0) * PI);
 	}
 	vec3 hot = mix(tint.rgb * COLOR.rgb, vec3(1.0), core * core_whiteness);
-	ALBEDO = hot * shape * life * intensity;
+	// Never negative: additive layers only brighten.
+	ALBEDO = max(hot * shape * life * intensity, vec3(0.0));
 }

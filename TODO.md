@@ -14,6 +14,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 ## In review
 
 - T-116 [developer] VFX prewarm at arena load behind a short loading cover.
+- T-D09b [desktop] VFX fixes from the GTX 1650 check of T-D09: shockwave no
+  longer cut by the ground, aura never darkens the body, flames break into
+  tongues, PR #18.
 
 ## Backlog
 

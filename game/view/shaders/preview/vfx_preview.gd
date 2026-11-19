@@ -30,6 +30,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_aura.power_level = float(key.keycode - KEY_0)
 	elif EFFECTS.has(key.keycode):
 		_spawn(EFFECTS[key.keycode])
+	elif key.keycode == KEY_G:
+		_spawn(EFFECTS[KEY_N], true)
 	elif key.keycode == KEY_M:
 		_impact_frame.flash()
 	elif key.keycode == KEY_S:
@@ -42,8 +44,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_fighter.set_instance_shader_parameter("rim_energy_color", energy)
 
 
-func _spawn(scene: PackedScene) -> void:
+func _spawn(scene: PackedScene, on_ground := false) -> void:
 	var effect := scene.instantiate() as ImpactEffect
 	add_child(effect)
 	effect.global_position = _impact_point.global_position
+	if on_ground:
+		effect.global_position.y = 0.0
 	effect.play(OPPONENT_COLOR if _opponent_colors else Color.TRANSPARENT, 1.0)

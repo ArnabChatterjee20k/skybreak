@@ -35,6 +35,14 @@ const AURA_DEFAULTS := {
 	"grow": "0.12",
 	"fresnel_power": "2.5",
 	"flame_scale": "7.0",
+	"tongue_stretch": "0.14",
+	"root_threshold": "0.4",
+	"tip_threshold": "0.66",
+	"tongue_softness": "0.07",
+	"root_glow": "0.7",
+	"center_clear": "0.55",
+	"rim_base": "0.1",
+	"body_height": "1.85",
 }
 const AURA_INSTANCE_UNIFORMS := ["color", "power_level"]
 
@@ -73,6 +81,9 @@ const SHOCKWAVE_DEFAULTS := {
 	"edge_softness": "0.7",
 	"start_radius": "0.05",
 	"inner_glow": "0.3",
+	"lie_flat": "false",
+	"surface_plane": "vec4(0.0, 1.0, 0.0, 0.0)",
+	"surface_fade": "0.0",
 }
 
 const IMPACT_FRAME_DEFAULTS := {
@@ -91,6 +102,18 @@ const SPEED_LINES_DEFAULTS := {
 	"line_width": "0.3",
 	"redraw_fps": "24.0",
 }
+
+const ADDITIVE_BLEND := "blend_add"
+const NON_ADDITIVE_MODES := ["blend_mix", "blend_sub", "blend_mul", "blend_premul_alpha",
+	"depth_draw_always", "depth_draw_opaque", "depth_prepass_alpha"]
+const VFX_SCENES := [AURA_SCENE_PATH] + [
+	SHADER_DIR + "vfx/hit_spark_light.tscn",
+	SHADER_DIR + "vfx/hit_spark_heavy.tscn",
+	SHADER_DIR + "vfx/counter_hit.tscn",
+	SHADER_DIR + "vfx/perfect_block_flash.tscn",
+	SHADER_DIR + "vfx/guard_break_shatter.tscn",
+	SHADER_DIR + "vfx/shockwave.tscn",
+]
 
 const AURA_PARTICLE_BUDGET := 64
 const IMPACT_PARTICLE_BUDGET := 32
@@ -144,6 +167,41 @@ func _particle_count(root: Node) -> int:
 func _source_without_comments(path: String) -> String:
 	var regex := RegEx.create_from_string("//[^\\n]*")
 	return regex.sub(FileAccess.get_file_as_string(path), "", true)
+
+
+func _render_modes(shader: Shader) -> PackedStringArray:
+	var found := RegEx.create_from_string("render_mode\\s+([^;]+);").search(shader.code)
+	var modes := PackedStringArray()
+	if found:
+		for mode in found.get_string(1).split(","):
+			modes.append(mode.strip_edges())
+	return modes
+
+
+# Every material a VFX node can draw with: overrides, mesh surfaces and particle draw passes.
+func _materials_of(node: GeometryInstance3D) -> Array[Material]:
+	var found: Array[Material] = []
+	if node.material_override:
+		found.append(node.material_override)
+	var meshes: Array[Mesh] = []
+	if node is MeshInstance3D:
+		var mesh_node := node as MeshInstance3D
+		meshes.append(mesh_node.mesh)
+		for i in mesh_node.get_surface_override_material_count():
+			if mesh_node.get_surface_override_material(i):
+				found.append(mesh_node.get_surface_override_material(i))
+	elif node is GPUParticles3D:
+		var particles := node as GPUParticles3D
+		for i in particles.draw_passes:
+			meshes.append(particles.get_draw_pass_mesh(i))
+	for mesh in meshes:
+		if mesh is PrimitiveMesh and (mesh as PrimitiveMesh).material:
+			found.append((mesh as PrimitiveMesh).material)
+		elif mesh:
+			for i in mesh.get_surface_count():
+				if mesh.surface_get_material(i):
+					found.append(mesh.surface_get_material(i))
+	return found
 
 
 func test_vfx_spatial_shaders_load_as_spatial_shaders() -> void:
@@ -211,11 +269,39 @@ func test_world_vfx_shaders_are_additive_unshaded_and_skip_depth_writes() -> voi
 			assert_string_contains(code, mode, false)
 
 
+func test_every_aura_and_impact_material_is_additive_and_never_writes_depth() -> void:
+	for path: String in VFX_SCENES:
+		var scene := _instantiate(path)
+		var checked := 0
+		for node in scene.find_children("*", "GeometryInstance3D", true, false):
+			var materials := _materials_of(node as GeometryInstance3D)
+			assert_gt(materials.size(), 0, "%s/%s has a material" % [path.get_file(), node.name])
+			for material in materials:
+				var label := "%s/%s" % [path.get_file(), node.name]
+				assert_true(material is ShaderMaterial, "%s uses a VFX shader, not a StandardMaterial3D" % label)
+				var modes := _render_modes((material as ShaderMaterial).shader)
+				assert_has(modes, ADDITIVE_BLEND, label)
+				assert_has(modes, "depth_draw_never", label)
+				for mode: String in NON_ADDITIVE_MODES:
+					assert_does_not_have(modes, mode, label)
+				checked += 1
+		assert_gt(checked, 0, path)
+
+
+func test_world_vfx_shaders_clamp_their_output_so_they_never_darken() -> void:
+	var clamped := RegEx.create_from_string("ALBEDO\\s*=\\s*max\\(.*,\\s*vec3\\(0\\.0\\)\\);")
+	for path: String in SPATIAL_SHADERS:
+		var code := _source_without_comments(path)
+		assert_not_null(clamped.search(code), path)
+		assert_false(code.contains("ALPHA"), "%s leaves ALPHA alone so blend_add stays purely additive" % path)
+
+
 func test_only_the_impact_frame_reads_the_screen_texture() -> void:
 	for path: String in SPATIAL_SHADERS + [SPEED_LINES_SHADER_PATH]:
 		var code := _source_without_comments(path)
 		assert_false(code.contains("hint_screen_texture"), path)
 		assert_false(code.contains("SCREEN_TEXTURE"), path)
+		assert_false(code.contains("hint_depth_texture"), "%s reads no depth texture" % path)
 	assert_string_contains(_source_without_comments(IMPACT_FRAME_SHADER_PATH), "hint_screen_texture")
 
 
@@ -465,6 +551,16 @@ func test_preview_keys_spawn_each_effect() -> void:
 	assert_eq(spawned.size(), 6)
 
 
+func test_preview_g_key_drops_a_shockwave_flat_on_the_ground() -> void:
+	var preview := _instantiate(PREVIEW_PATH)
+	_press(preview, KEY_G)
+	var spawned := preview.find_children("*", "Node3D", false, false).filter(
+		func(node: Node) -> bool: return node is ShockwaveEffect)
+	assert_eq(spawned.size(), 1)
+	var ring: MeshInstance3D = (spawned[0] as Node).get_node("Ring")
+	assert_true(ring.get_instance_shader_parameter("lie_flat"))
+
+
 func test_preview_keys_drive_the_impact_frame_and_speed_lines() -> void:
 	var preview := _instantiate(PREVIEW_PATH)
 	_press(preview, KEY_M)
@@ -472,3 +568,54 @@ func test_preview_keys_drive_the_impact_frame_and_speed_lines() -> void:
 	_press(preview, KEY_S)
 	var lines := (preview.get_node("Screen/SpeedLines") as ColorRect).material as ShaderMaterial
 	assert_eq(lines.get_shader_parameter("amount"), 1.0)
+
+
+func test_aura_flames_fade_out_on_faces_pointing_at_the_camera() -> void:
+	var code := _source_without_comments(AURA_PATH)
+	assert_string_contains(code, "center_clear")
+	assert_string_contains(code, "dot(NORMAL, VIEW)")
+
+
+func test_aura_flames_erode_more_toward_the_top() -> void:
+	var shader: Shader = load(AURA_PATH)
+	assert_gt(float(_declared_default(shader, "tip_threshold")), float(_declared_default(shader, "root_threshold")))
+	assert_lt(float(_declared_default(shader, "tongue_stretch")), 1.0, "tongues are stretched vertically")
+
+
+func test_shockwave_scene_is_a_shockwave_effect() -> void:
+	assert_true(_instantiate(_impact_path("shockwave")) is ShockwaveEffect)
+
+
+func test_shockwave_near_the_ground_lies_flat_on_it() -> void:
+	var effect := _instantiate(_impact_path("shockwave")) as ShockwaveEffect
+	effect.global_position = Vector3(2.0, 0.3, -1.0)
+	effect.play(Color.TRANSPARENT, 2.0)
+	var ring: MeshInstance3D = effect.get_node("Ring")
+	assert_true(ring.get_instance_shader_parameter("lie_flat"))
+	assert_eq(ring.get_instance_shader_parameter("surface_fade"), 0.0)
+	var basis := effect.global_transform.basis
+	assert_almost_eq(basis.z.normalized().dot(Vector3.UP), 1.0, 0.001, "ring faces up")
+	assert_almost_eq(basis.get_scale(), Vector3.ONE * 2.0, Vector3.ONE * 0.001, "scale kept")
+	assert_almost_eq(effect.global_position, Vector3(2.0, effect.surface_lift, -1.0), Vector3.ONE * 0.001)
+
+
+func test_shockwave_in_the_air_faces_the_camera_and_fades_softly_into_the_ground() -> void:
+	var effect := _instantiate(_impact_path("shockwave")) as ShockwaveEffect
+	effect.global_position = Vector3(0.0, 1.5, 0.0)
+	effect.play()
+	var ring: MeshInstance3D = effect.get_node("Ring")
+	assert_false(ring.get_instance_shader_parameter("lie_flat"))
+	assert_eq(ring.get_instance_shader_parameter("surface_fade"), effect.ground_fade)
+	assert_gt(effect.ground_fade, 0.0)
+	assert_eq(ring.get_instance_shader_parameter("surface_plane"), Vector4(0.0, 1.0, 0.0, effect.ground_height))
+	assert_almost_eq(effect.global_position.y, 1.5, 0.001, "stays where it was spawned")
+
+
+func test_shockwave_on_a_surface_lies_flat_along_its_normal() -> void:
+	var effect := _instantiate(_impact_path("shockwave")) as ShockwaveEffect
+	effect.global_position = Vector3(0.0, 3.0, 0.0)
+	effect.play_on_surface(Vector3.RIGHT, Color.CYAN)
+	var ring: MeshInstance3D = effect.get_node("Ring")
+	assert_true(ring.get_instance_shader_parameter("lie_flat"))
+	assert_eq(ring.get_instance_shader_parameter("tint"), Color.CYAN)
+	assert_almost_eq(effect.global_transform.basis.z.normalized().dot(Vector3.RIGHT), 1.0, 0.001)
