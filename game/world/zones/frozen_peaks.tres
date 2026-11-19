@@ -28,5 +28,6 @@ rim_colors = PackedColorArray(1, 0.78, 0.55, 1, 1, 0.66, 0.45, 1, 0.7, 0.8, 1, 1
 rim_energies = PackedFloat32Array(0.2, 0.3, 0.45)
 rim_angles = Vector2(40, 25)
 spawn_points = PackedVector3Array(-670, 0, -530, -630, 0, -530)
+extra_spawn_points = PackedVector3Array(-650, 0, -542, -650, 0, -518)
 landmark_names = PackedStringArray("Glacier Valley", "Ice Crown Peak", "Shelf Cliffs")
 landmark_positions = PackedVector3Array(-650, 72, -530, -800, 250, -750, -500, 150, -700)

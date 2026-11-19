@@ -25,5 +25,6 @@ rim_colors = PackedColorArray(1, 0.94, 0.82, 1, 1, 0.74, 0.55, 1, 0.65, 0.78, 1,
 rim_energies = PackedFloat32Array(0.15, 0.4, 0.6)
 rim_angles = Vector2(-35, 30)
 spawn_points = PackedVector3Array(20, 150, -560, 60, 150, -560)
+extra_spawn_points = PackedVector3Array(40, 150, -572, 40, 150, -548)
 landmark_names = PackedStringArray("Crown Island", "Watch Island", "Fang Rocks")
 landmark_positions = PackedVector3Array(60, 190, -780, -130, 150, -460, -120, 120, -640)

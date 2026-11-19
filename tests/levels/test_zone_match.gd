@@ -90,3 +90,24 @@ func test_the_ambience_stays_on_the_zone() -> void:
 	var zone_match := _match({"zone": &"frozen_peaks"})
 	assert_eq(zone_match.match_audio.default_zone, &"frozen_peaks")
 	assert_null(zone_match.match_audio.world, "no position-based ambience switching")
+
+
+func test_every_mode_spawns_fighters_at_least_2_m_apart_between_their_bodies() -> void:
+	var legends := [&"kael", &"vexa", &"lyra", &"brann"]
+	var modes := {"1v1": [0, 1], "2v2": [0, 0, 1, 1], "ffa4": [0, 1, 2, 3]}
+	for zone_id in [&"heartbloom_gardens", &"frozen_peaks", &"shattered_mesa", &"stormfall_city",
+			&"verdant_falls", &"ember_rift", &"skyhold_ruins"]:
+		for mode: String in modes:
+			var teams: Array = modes[mode]
+			var fighters := []
+			for i in teams.size():
+				fighters.append({"character": legends[i], "team": teams[i], "is_ai": true})
+			var zone_match := _match({"zone": zone_id, "fighters": fighters})
+			var sim := zone_match.sim
+			for i in sim.fighters.size():
+				for j in range(i + 1, sim.fighters.size()):
+					var gap := \
+						sim.fighters[i].position.distance_to(sim.fighters[j].position) \
+						- sim.fighters[i].stats.pushbox_radius - sim.fighters[j].stats.pushbox_radius
+					assert_gte(gap, 2.0, "%s %s: fighters %d and %d" % [zone_id, mode, i, j])
+			zone_match.free()

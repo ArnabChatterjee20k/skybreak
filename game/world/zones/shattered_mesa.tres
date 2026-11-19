@@ -26,5 +26,6 @@ rim_colors = PackedColorArray(1, 0.9, 0.78, 1, 1, 0.72, 0.52, 1, 0.62, 0.74, 1, 
 rim_energies = PackedFloat32Array(0.3, 0.45, 0.55)
 rim_angles = Vector2(30, 28)
 spawn_points = PackedVector3Array(490, 0, 490, 530, 0, 490)
+extra_spawn_points = PackedVector3Array(510, 0, 478, 510, 0, 502)
 landmark_names = PackedStringArray("Great Mesa", "Anvil Mesa", "Canyon Maze", "Red Arch", "Hoodoo Field")
 landmark_positions = PackedVector3Array(400, 96, 540, 690, 104, 460, 850, 70, 750, 590, 0.6, 330, 560, 20, 640)

@@ -141,7 +141,10 @@ func test_spawn_points_are_kept_clear_of_props() -> void:
 			for i in mm.instance_count:
 				var origin := mm.get_instance_transform(i).origin
 				for id in world.zone_ids():
-					for p in world.spawn_points(id):
+					var spawns := world.spawn_points(id)
+					for extra in world.zone(id).extra_spawn_points:
+						spawns.append(Vector3(extra.x, maxf(extra.y, world.ground_height_at(extra.x, extra.z)), extra.z))
+					for p in spawns:
 						# Floating islands and their columns may sit high above a spawn.
 						if absf(origin.y - p.y) > 60.0:
 							continue

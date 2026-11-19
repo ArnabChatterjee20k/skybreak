@@ -28,6 +28,7 @@ rim_colors = PackedColorArray(1, 0.92, 0.95, 1, 1, 0.75, 0.62, 1, 0.7, 0.75, 1, 
 rim_energies = PackedFloat32Array(0.3, 0.45, 0.55)
 rim_angles = Vector2(-35, 32)
 spawn_points = PackedVector3Array(120, 0, -96, 160, 0, -96)
+extra_spawn_points = PackedVector3Array(140, 0, -108, 140, 0, -84)
 landmark_names = PackedStringArray("Heart Arch", "Wishing Fountain", "Lantern Rise", "Blossom Falls")
 landmark_positions = PackedVector3Array(0, 288, -26, -150, 278.6, 72, 152, 282, 76, -170, 298, -112)
 metadata/petal_whirlwinds = [{

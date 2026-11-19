@@ -48,6 +48,8 @@ extends Resource
 @export_group("Gameplay")
 ## Two spawn points about 40 m apart; y is a minimum, raised above the ground if needed.
 @export var spawn_points: PackedVector3Array = []
+## Spawns of the third and fourth sides in a free-for-all, clear of the two above.
+@export var extra_spawn_points: PackedVector3Array = []
 @export var landmark_names: PackedStringArray = []
 @export var landmark_positions: PackedVector3Array = []
 

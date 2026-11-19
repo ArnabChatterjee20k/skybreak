@@ -147,6 +147,7 @@ func _build_fighters() -> void:
 		if not is_ai and player < 0:
 			player = i
 	player = maxi(player, 0)
+	_keep_bodies_apart()
 	_lock_onto_nearest_rival()
 
 
@@ -168,6 +169,10 @@ func spawn_positions() -> Array[Vector3]:
 		var side := team_ids.find(team)
 		var point := points[side % points.size()]
 		var other := points[(side + 1) % points.size()]
+		if side >= points.size() and side - points.size() < data.extra_spawn_points.size():
+			# Further sides of a free-for-all get their own spawn.
+			point = data.extra_spawn_points[side - points.size()]
+			other = points[0]
 		var across := Vector3(other.z - point.z, 0.0, point.x - other.x).normalized()
 		if across == Vector3.ZERO:
 			across = Vector3.RIGHT
@@ -190,6 +195,17 @@ func _make_driver(index: int, level: int) -> Object:
 				driver.call("setup", index, level)
 			return driver
 	return WeaponBot.new(index, 7919 * (index + 1) + level)
+
+
+## Each fighter's drawn core body keeps out of the others' (MotionLayers separation).
+func _keep_bodies_apart() -> void:
+	var all: Array = []
+	for view in fighter_views:
+		var found := view.find_children("*", "MotionLayers", true, false)
+		if not found.is_empty():
+			all.append(found[0])
+	for layers: MotionLayers in all:
+		layers.rivals = all.filter(func(other: MotionLayers) -> bool: return other != layers)
 
 
 func _lock_onto_nearest_rival() -> void:
