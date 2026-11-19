@@ -16,6 +16,11 @@ const MAX_LEAN := deg_to_rad(28.0)
 const MAX_BANK := deg_to_rad(55.0)
 const PLANTED_HEIGHT := 0.06
 const MAX_PELVIS_DROP := 0.25
+## Foot lock: a planted foot stays where it touched down (world) until the clip pulls it this far
+## away (m), then steps back over the lock blend, lifted by STEP_LIFT of the distance left.
+const LOCK_RELEASE := 0.22
+const LOCK_BLEND_FREQUENCY := 16.0
+const STEP_LIFT := 0.5
 const ARMS := [[&"LeftUpperArm", &"LeftLowerArm", &"LeftHand"], [&"RightUpperArm", &"RightLowerArm", &"RightHand"]]
 ## Flight: speed (m/s) for the full flight body, and the flutter of the trailing legs.
 const FLIGHT_FULL_SPEED := 22.0
@@ -24,6 +29,9 @@ const MAX_FLIGHT_PITCH := deg_to_rad(78.0)
 ## Twist limits about the bone (radians) and the fastest any body bone may turn (rad/s).
 const TWIST_LIMITS := {&"LeftLowerArm": 1.6, &"RightLowerArm": 1.6, &"LeftUpperArm": 1.8, &"RightUpperArm": 1.8}
 const MAX_TURN_RATE := 54.0
+## Costume spring chains (hood points, sash, cape, beard braid, apron) the pop guard covers too: their
+## springs lag the clip's pose, which the layers then move, so they can whip round in one frame.
+const CHAIN_PARTS := ["Hood", "Sash", "Cape", "Beard", "Apron"]
 ## Inertialization never carries in more angular velocity than this (rad/s).
 const MAX_BLEND_SPEED := 14.0
 const FLUTTER_HZ := 2.4
@@ -43,6 +51,13 @@ const ARM_POSES := {
 @export var look_target := Vector3(0, 1.5, 5)
 @export_range(0.0, 1.0) var look_weight := 0.0
 @export var foot_ik := true
+## Planted feet hold their world position (standing states); needs body_to_world.
+@export var foot_lock := false
+## Ground under a world point, in skeleton space relative to the stand floor (overrides ground
+## when valid, so a locked foot is placed on the floor where it actually is).
+var ground_at: Callable
+## The skeleton's world transform this frame (read from the skeleton in skeleton mode).
+var body_to_world := Transform3D.IDENTITY
 ## Ground height under each foot in skeleton space (left, right).
 @export var ground := Vector2.ZERO
 ## Lean per m/s^2 of acceleration and per m/s of velocity (radians).
@@ -89,7 +104,19 @@ var _last_out: Array[Quaternion] = []
 var _prev_out: Array[Quaternion] = []
 var _last_hips := Vector3.ZERO
 var _prev_hips := Vector3.ZERO
+# The blended clip pose (inertialization only, before the other layers) of the last two frames: a
+# clip switch blends from it, so the layers are never captured into the offsets and re-applied.
+var _last_base: Array[Quaternion] = []
+var _prev_base: Array[Quaternion] = []
+var _last_base_hips := Vector3.ZERO
 var _last_delta := 1.0 / 60.0
+# Foot lock per side: the locked world point (INF: none) and the sprung skeleton-space offset.
+var _lock_world: Array[Vector3] = [Vector3.INF, Vector3.INF]
+var _lock_offset: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _lock_offset_velocity: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+# Frame stepping (advance_frame): the delta still to step, or -1 once stepped this frame.
+var _frame_delta := -1.0
+var _frame_driven := false
 # Flight body: amount (0..1), arm reach (dive), dash burst and the flutter phase.
 var _flight := 0.0
 var _flight_velocity := 0.0
@@ -168,7 +195,7 @@ func setup_bones(names: PackedStringArray, parents: PackedInt32Array, rests: Arr
 	body.append_array([&"LeftShoulder", &"RightShoulder", &"LeftToes", &"RightToes"])
 	for i in names.size():
 		_rest_parent_rot.append(Quaternion.IDENTITY if parents[i] < 0 else world[parents[i]].basis.get_rotation_quaternion())
-		if body.has(_names[i]):
+		if body.has(_names[i]) or _is_chain(_names[i]):
 			_used.append(i)
 	_used_parent.clear()
 	for k in _used.size():
@@ -180,6 +207,13 @@ func setup_bones(names: PackedStringArray, parents: PackedInt32Array, rests: Arr
 		_used_parent.append(parent_k if parent_k < k else -1)
 	_guard_world_now.resize(_used.size())
 	reset()
+
+
+static func _is_chain(bone: StringName) -> bool:
+	for part: String in CHAIN_PARTS:
+		if String(bone).contains(part):
+			return true
+	return false
 
 
 ## Clears all spring state (e.g. after a teleport).
@@ -205,6 +239,8 @@ func reset() -> void:
 	_hips_offset_velocity = Vector3.ZERO
 	_last_out.clear()
 	_prev_out.clear()
+	_last_base.clear()
+	_prev_base.clear()
 	_pending_blend = false
 	_flight = 0.0
 	_flight_velocity = 0.0
@@ -218,6 +254,9 @@ func reset() -> void:
 	_crouch_velocity = 0.0
 	_twists.clear()
 	_poles.clear()
+	_lock_world = [Vector3.INF, Vector3.INF]
+	_lock_offset = [Vector3.ZERO, Vector3.ZERO]
+	_lock_offset_velocity = [Vector3.ZERO, Vector3.ZERO]
 	_guard_world.clear()
 
 
@@ -240,7 +279,7 @@ func apply_profile(profile: MotionProfile) -> void:
 
 ## Blend from the last output pose into whatever the next clip gives, without a linear crossfade.
 func inertialize() -> void:
-	_pending_blend = not _last_out.is_empty()
+	_pending_blend = not _last_base.is_empty()
 
 
 ## Additive hit flinch: the upper body snaps away from direction (skeleton space), then recovers.
@@ -259,6 +298,14 @@ func burst(strength := 1.0) -> void:
 	_burst_velocity += strength * 14.0
 
 
+## Steps the layers by delta (the view's frame time) on the next skeleton update. The skeleton can
+## update several times per frame (Godot runs a delta-0 pass too); only the first steps, the rest
+## re-apply that result. Without calls, each update steps by the skeleton's own delta.
+func advance_frame(delta: float) -> void:
+	_frame_delta = maxf(delta, 0.0)
+	_frame_driven = true
+
+
 func _process_modification_with_delta(delta: float) -> void:
 	var skeleton := get_skeleton()
 	if skeleton == null or _names.is_empty():
@@ -267,9 +314,20 @@ func _process_modification_with_delta(delta: float) -> void:
 		_scratch.resize(_names.size())
 		_scratch.fill(Quaternion.IDENTITY)
 	var rotations := _scratch
+	var hips_id: int = _index.get(&"Hips", -1)
+	if _frame_driven and _frame_delta < 0.0 and _last_out.size() == rotations.size():
+		# Same frame, same input pose: the same output (the skeleton undid it after the last pass).
+		for i in _used:
+			skeleton.set_bone_pose_rotation(i, _last_out[i])
+		if hips_id >= 0:
+			skeleton.set_bone_pose_position(hips_id, _last_hips)
+		return
+	if _frame_driven:
+		delta = _frame_delta
+		_frame_delta = -1.0
+	body_to_world = skeleton.global_transform
 	for i in _used:
 		rotations[i] = skeleton.get_bone_pose_rotation(i)
-	var hips_id: int = _index.get(&"Hips", -1)
 	var hips := skeleton.get_bone_pose_position(hips_id) if hips_id >= 0 else Vector3.ZERO
 	hips = process_pose(rotations, hips, delta)
 	for i in _used:
@@ -284,6 +342,9 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 		delta = 0.0
 	_inertialize(rotations, delta)
 	hips = _inertialize_hips(hips, delta)
+	_prev_base = _last_base
+	_last_base = rotations.duplicate()
+	_last_base_hips = hips
 	_lean_layer(rotations, delta)
 	_flight_layer(rotations, delta)
 	_look_layer(rotations, delta)
@@ -293,7 +354,9 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 	_arm_layer(rotations, hips, delta)
 	hips = _stance_layer(hips, delta)
 	if foot_ik:
-		hips = _foot_ik(rotations, hips)
+		hips = _foot_ik(rotations, hips, delta)
+	else:
+		_release_locks()
 	_pop_guard(rotations, delta)
 	_prev_out = _last_out.duplicate()
 	_last_out = rotations.duplicate()
@@ -333,10 +396,10 @@ func _inertialize(rotations: Array[Quaternion], delta: float) -> void:
 	if _pending_blend:
 		_pending_blend = false
 		for i in rotations.size():
-			_offsets[i] = rotvec(_last_out[i] * rotations[i].inverse())
+			_offsets[i] = rotvec(_last_base[i] * rotations[i].inverse())
 			_offset_velocity[i] = Vector3.ZERO
-			if _prev_out.size() == rotations.size():
-				_offset_velocity[i] = (rotvec(_last_out[i] * _prev_out[i].inverse()) / _last_delta).limit_length(MAX_BLEND_SPEED)
+			if _prev_base.size() == rotations.size():
+				_offset_velocity[i] = (rotvec(_last_base[i] * _prev_base[i].inverse()) / _last_delta).limit_length(MAX_BLEND_SPEED)
 		_hips_offset = Vector3(INF, 0, 0)  # Resolved against the new hips in _inertialize_hips.
 		_hips_offset_velocity = Vector3.ZERO
 	for i in rotations.size():
@@ -355,7 +418,7 @@ func _inertialize(rotations: Array[Quaternion], delta: float) -> void:
 
 func _inertialize_hips(hips: Vector3, delta: float) -> Vector3:
 	if is_inf(_hips_offset.x):
-		_hips_offset = _last_hips - hips
+		_hips_offset = _last_base_hips - hips
 		return hips + _hips_offset
 	if _hips_offset == Vector3.ZERO:
 		return hips
@@ -609,10 +672,11 @@ func _pop_guard(rotations: Array[Quaternion], delta: float) -> void:
 		var i: int = _index.get(bone, -1)
 		if i >= 0:
 			rotations[i] = _limit_twist(i, rotations[i], TWIST_LIMITS[bone])
-	if _last_out.size() != rotations.size() or delta <= 0.0:
+	if _last_out.size() != rotations.size():
 		_guard_world.clear()
 		return
-	var step := MAX_TURN_RATE * delta
+	# A frozen frame (hitstop) still may not turn a bone further than one 60 Hz frame would.
+	var step := MAX_TURN_RATE * (delta if delta > 0.0 else 1.0 / 60.0)
 	var count := _used.size()
 	if _guard_world.size() != count:
 		_guard_world.resize(count)
@@ -657,9 +721,45 @@ func _limit_twist(i: int, q: Quaternion, limit: float) -> Quaternion:
 	return rest * swing * Quaternion(axis, angle)
 
 
-func _foot_ik(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
+func _release_locks() -> void:
+	_lock_world = [Vector3.INF, Vector3.INF]
+	_lock_offset = [Vector3.ZERO, Vector3.ZERO]
+	_lock_offset_velocity = [Vector3.ZERO, Vector3.ZERO]
+
+
+## Where a planted foot goes horizontally: its locked world point while the lock holds, else back
+## toward the clip's foot (sprung, lifted a little so it reads as a step). Skeleton space.
+func _locked_target(side: int, ankle: Vector3, planted: bool, delta: float) -> Vector3:
+	if foot_lock and planted:
+		if _lock_world[side] == Vector3.INF:
+			_lock_world[side] = body_to_world * (ankle + _lock_offset[side])
+		var locked := body_to_world.affine_inverse() * _lock_world[side]
+		var offset := Vector3(locked.x - ankle.x, 0.0, locked.z - ankle.z)
+		if offset.length() <= LOCK_RELEASE:
+			_lock_offset[side] = offset
+			_lock_offset_velocity[side] = Vector3.ZERO
+			return ankle + offset
+	_lock_world[side] = Vector3.INF
+	if _lock_offset[side] != Vector3.ZERO:
+		var s := spring(_lock_offset[side], _lock_offset_velocity[side], Vector3.ZERO, LOCK_BLEND_FREQUENCY, delta)
+		_lock_offset[side] = s[0]
+		_lock_offset_velocity[side] = s[1]
+		if (s[0] as Vector3).length() < 0.002:
+			_lock_offset[side] = Vector3.ZERO
+			_lock_offset_velocity[side] = Vector3.ZERO
+	return ankle + _lock_offset[side]
+
+
+## Height (skeleton space, over the rest ankle) a foot stepping back from its lock lifts to. Absolute,
+## not added to the clip's foot, so re-inertialized frames (which start from this output) can't stack it.
+func _step_lift(side: int) -> float:
+	return _lock_offset[side].length() * STEP_LIFT if _lock_world[side] == Vector3.INF else 0.0
+
+
+func _foot_ik(rotations: Array[Quaternion], hips: Vector3, delta := 0.0) -> Vector3:
 	var hips_id: int = _index.get(&"Hips", -1)
 	if hips_id < 0 or flying:
+		_release_locks()
 		return hips
 	_world_cache.clear()
 	var world := _legs_world(rotations, hips)
@@ -676,9 +776,17 @@ func _foot_ik(rotations: Array[Quaternion], hips: Vector3) -> Vector3:
 		var ankle: Vector3 = (world[foot] as Transform3D).origin
 		var rest_y := _rest_heights[foot]
 		# A foot near the floor is planted: it follows the ground; others only stay above it.
-		var target := ankle
-		if ankle.y < rest_y + PLANTED_HEIGHT:
-			target.y = ankle.y + heights[side]
+		var planted := ankle.y < rest_y + PLANTED_HEIGHT
+		var target := _locked_target(side, ankle, planted, delta)
+		target.y = maxf(target.y, rest_y + _step_lift(side))
+		if ground_at.is_valid():
+			heights[side] = ground_at.call(body_to_world * target)
+		if planted:
+			if foot_lock:
+				# Standing: the sole goes flat on the floor, easing out as the clip lifts the foot.
+				var pin := 1.0 - smoothstep(PLANTED_HEIGHT * 0.5, PLANTED_HEIGHT, ankle.y - rest_y)
+				target.y = lerpf(target.y, rest_y + _step_lift(side), pin)
+			target.y += heights[side]
 		target.y = maxf(target.y, heights[side] + rest_y)
 		targets.append(target)
 		var reach := (_origins[lo].length() + _origins[foot].length()) * 0.999
