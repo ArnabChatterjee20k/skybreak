@@ -271,6 +271,11 @@ Rules that keep ranged weapons fair in a melee-first game:
 - **Losing a weapon:** you drop it on guard break, knockdown, or when hit by a counter-hit heavy. Dropped weapons stay on the map for 10 s and anyone can grab them.
 - Each weapon is a `MoveSet` (the same data as unarmed), so balance is pure data tuning.
 
+**Zone-exclusive weapon: Heartstring Bow** (spawns only in Heartbloom Gardens):
+- **Shots (LMB):** arrows that make the target **Smitten** for 1.5 s: it drifts toward the shooter with hearts over its head and can't attack (it can still block). Repeat Smitten within 6 s lasts half as long, so it can't be chained.
+- **Charged shot (hold LMB):** a **Heartstring Tether**, a glowing string linking shooter and target for 4 s. Neither can move further apart than the string's length at the moment it hit. Either fighter can **yank** the other closer with RMB, which sets up combos for whoever yanks first.
+- 8 arrows, then auto-thrown like other weapons. Pink-gold projectiles, so they still read as an item colour (§11).
+
 **Carrying several weapons (inventory):**
 - You always have **Unarmed** plus **two weapon slots**. Any mix works: two melee, two ranged, or one of each.
 - **Switching:**
@@ -319,7 +324,7 @@ Fights happen on **one continuous world map** instead of small separate arenas. 
 
 ### 7.1 Map
 - **About 2 km x 2 km**, sky ceiling at about 400 m, an energy-dome boundary at the edge that acts as a wall-splat surface. No ring-outs.
-- **Six zones**, each roughly 600–800 m across, blending into each other at the borders (terrain, colour and fog transitions over about 100 m).
+- **Seven zones** (six main zones plus the special Heartbloom Gardens), each roughly 600–800 m across, blending into each other at the borders (terrain, colour and fog transitions over about 100 m).
 - **Match setup:** pick a **start zone** (or random) and **time of day** (day / dusk / night). Fighters spawn about 40 m apart in that zone.
 - **Navigation aids:** zone name on entering, and the off-screen opponent arrow (§4.7) always works across the map.
 
@@ -333,6 +338,7 @@ Fights happen on **one continuous world map** instead of small separate arenas. 
 | **Frozen Peaks** | Glaciers, ice cliffs, snow storms | Vertical cliffs, ice shelves; visibility drops in storms | Ice spires shatter, avalanche slabs |
 | **Verdant Falls** | Jungle valley, giant trees, a huge waterfall and lake | Mixed cover; water spray hides you briefly | Giant trunks snap, waterfall curtain |
 | **Ember Rift** | Volcanic crater, lava rivers, obsidian spires, glowing at night | Open crater with hot zones: lava geysers knock fighters up | Obsidian spires, geyser vents |
+| **Heartbloom Gardens** (special) | Floating islands of cherry-blossom trees, a pink-gold sunset sky, a slow river of falling petals, lantern bridges, a big heart-shaped stone arch; fireflies and glowing lanterns at night; softer music | Romantic, playful zone made for the owner and their partner: open sky between islands, lots of mid-range space | Petal whirlwinds lift fighters (no damage); the Wishing Fountain slowly heals whoever stands in its spray; lanterns and blossom branches break into petal bursts |
 
 All zones share these rules: knocked-into-ground craters (decals), destructibles respawn after 30 s, and no instant-kill hazards (hazards deal small damage and knock up; they never decide a round on their own).
 
@@ -378,6 +384,18 @@ The owner chose **free-for-all from the start**. Every mode that can have more t
 - **Spawns:** each zone defines 4 spawn points about 40 m apart around a centre.
 - **AI bots** use the same input interface and know about all fighters (they pick targets by threat and distance, and avoid being the third wheel too often).
 - **Online (§12.1):** rollback with up to 4 peers. Each peer sends its input to the others. The transport (Appwrite Realtime) relays them, and every peer simulates all fighters.
+
+## 8.2 Duo mode (co-op: two players vs AI, online)
+
+The owner's priority mode: **the owner and their partner, each on their own device (Windows PC and/or the web build), as one team against AI fighters.**
+
+- **Teams:** 2 humans on team A against **1–4 AI fighters** on team B (or split into AI teams). Each AI's fighter and level can be set separately.
+- **Friendly fire:** off by default (teammates' hitboxes pass through each other), with a toggle in match setup.
+- **Team stocks:** each team shares a pool (default 6 lives for the duo). While one partner respawns (§8.1 rules), the other holds on. The team that runs out first loses.
+- **Team assists:** a hit on an enemy that is in your partner's combo **continues that combo** (shared combo count, shared scaling) instead of starting a new one, so partners can extend each other's combos. Burst gains for both.
+- **Shared camera rules:** each player's camera works as usual (you plus your target). The partner gets a coloured marker and name tag, and an arrow when off-screen.
+- **Pickups:** item spawn rate as in §8.1; the Heartstring Bow appears in Heartbloom Gardens as usual.
+- **Online path:** this mode is the first online mode to ship. AI fighters must be **computed inside the deterministic sim** from sim state and the seeded rng, so every peer simulates the same AI inputs without sending them (§12.1).
 
 ## 9. Scripting: story beats and dramatic moments
 
@@ -460,6 +478,28 @@ Online versus is planned for later, using **Appwrite** (auth, lobbies, presence)
   - **snapshot and restore** of the whole sim state in under 1 ms, so rollback can rewind
   - **compact, serializable inputs**: action bitmask plus quantised stick, camera yaw and offset (about 10–12 bytes per tick)
   - all pickup spawns come from the seeded rng in the sim, never from the view
+- **AI is part of the deterministic sim** (or a pure function of sim state plus seeded rng), so AI fighters never need to be sent over the network.
+- **Appwrite project (owner's decision):** use the **same Appwrite Cloud project as MisterMime** (`6a113777000db893b12e`, region `sgp`, endpoint `https://sgp.cloud.appwrite.io/v1`). The project is shared with other apps: only **add** Skybreak resources (its own database, collections and functions, prefixed `skybreak`), never change or delete existing ones.
+- **Online tracking with Appwrite Presence** (as MisterMime does it): each signed-in player calls `realtime.upsertPresence({presenceId, status, metadata, permissions})` over the Realtime socket:
+  - `status` is `menu`, `lobby` or `in_match`
+  - `metadata` holds the display name, fighter, lobby id and platform
+  - Friends and lobbies watch the `presences` channel live; menus can also read the HTTP `presences.list`.
+  - The record is **deleted automatically when the socket drops**, so a partner disconnecting mid-match is detected at once. The match then **pauses for up to 30 s or hands that fighter to the AI** until they reconnect (setting).
+  - Presence metadata is client-published over the socket, so the spike also tests it as the **WebRTC signalling** channel (offer/answer/ICE), avoiding database writes.
+- **Godot client:** a small GDScript Appwrite client (HTTPRequest for REST, WebSocketPeer for Realtime), so the same code runs on Windows and in the web build. No addon is needed for that part.
+- **Transport decision (measured 2026-11-19, India to the Appwrite `sgp` region, two test users):**
+
+  | Path | p50 | p95 |
+  |---|---|---|
+  | TCP connect to Appwrite | 98 ms | — |
+  | Presence one-way (A publishes → B sees it) | 196 ms | 317 ms |
+  | Presence round trip (A → B → A) | 411 ms | 548 ms |
+
+  Presence also coalesces fast updates: 9 of 40 were overwritten, because it is state, not a queue.
+  - **Decision:** **per-tick inputs travel peer-to-peer over WebRTC data channels** (unreliable/unordered channel for inputs plus redundancy, reliable channel for match control). Expect about 2–10 ms on the same home Wi-Fi.
+  - **Appwrite Presence** is the **signalling channel** (offer/answer/ICE in presence metadata), and it also handles online status and disconnect detection. Signalling tolerates about 400 ms.
+  - Godot: WebRTC is built in for the web export. Windows needs the official `webrtc-native` GDExtension, which `developer` vendors in `addons/` when the netcode task starts.
+  - TURN fallback: for networks where direct P2P fails; decide later (STUN-only first).
 - **Transport abstraction:** a `NetTransport` interface, so Appwrite Realtime (or the Appwrite Push/MQTT path already used by MisterMime) can be swapped in without touching the sim.
 - **Lobbies and matchmaking:** Appwrite Auth plus a lobbies collection; Realtime presence shows who is online.
 - **Known risk:** floating-point determinism across different CPUs. The same build on Windows x86-64 is fine. If cross-platform play is ever wanted, the sim's movement math may need fixed-point.
