@@ -103,6 +103,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D11c [desktop] Re-bake chunky Kael clips for push_block 2/4/14 (T-D05); fixes the clip-length test.
 - T-D00 [desktop] Game design document (`docs/GAME_DESIGN.md`), PR #1.
 - T-002 [developer] Graphics presets + resolution scale + vsync, F10 menu, PR #2.
 - T-003 [developer] Windows export preset (single exe), PR #4.
