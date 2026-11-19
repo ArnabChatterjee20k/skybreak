@@ -29,6 +29,12 @@ extends Camera3D
 ## How fast the close/far framing follows the fighters' distance, per second.
 ## Low on purpose: boom length and side angle change over ~0.5 s or more.
 @export var range_blend_sharpness := 2.5
+## How fast the boom length (camera distance to the player) eases, per second.
+## Slower than position_sharpness so lock/unlock and band changes never pump.
+@export var boom_sharpness := 4.0
+## The player's centre is kept inside this fraction of the half-screen, so a
+## capped re-lock turn can never swing them out of frame.
+@export var player_frame_limit := 0.8
 ## Seconds without mouse movement before the orbit starts springing back.
 @export var orbit_return_delay := 0.2
 
@@ -112,7 +118,10 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		# The zoom follows the band directly; fov_sharpness eases it over ~0.5 s.
 		# A big height gap widens the view instead; zooming then would lose the opponent.
 		var height_gap_widening := widened > base_fov + 0.01
-		fov_goal = zoomed if _band == LockOnFraming.Band.FAR and not height_gap_widening else widened
+		# No zoom mid re-lock either: a narrow FOV while the view is still turning
+		# would crop the player out.
+		var zoom := _band == LockOnFraming.Band.FAR and not height_gap_widening and not _relock_turning
+		fov_goal = zoomed if zoom else widened
 		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, fov_goal)
 		if _relock_turning and (-global_basis.z).angle_to(-goal.basis.z) < deg_to_rad(10.0):
 			_relock_turning = false
@@ -134,11 +143,16 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	# slerp turns the offset around the player instead of cutting through it;
 	# its orbit is capped like the view turn so the two stay in step.
 	var offset_from := _offset
-	_offset = offset_from.slerp(goal.origin - player, _blend(position_sharpness, delta))
+	var goal_offset := goal.origin - player
+	_offset = offset_from.slerp(goal_offset, _blend(position_sharpness, delta))
 	var orbit_angle := offset_from.angle_to(_offset)
 	var max_orbit := deg_to_rad(max_turn_speed) * delta
 	if orbit_angle > max_orbit:
 		_offset = offset_from.slerp(_offset, max_orbit / orbit_angle)
+	# Direction from the slerp, length eased on its own, slower.
+	var boom := lerpf(offset_from.length(), goal_offset.length(), _blend(boom_sharpness, delta))
+	if _offset.length() > 0.001:
+		_offset = _offset.normalized() * boom
 	_follow_anchor(player, delta)
 	var position_now := _anchor + _offset
 	var rotation_from := global_basis.get_rotation_quaternion()
@@ -149,6 +163,12 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	if turn > max_turn:
 		rotation_now = rotation_from.slerp(rotation_now, max_turn / turn)
 	global_transform = Transform3D(Basis(rotation_now), position_now)
+	# Keep the followed point in frame, still within the turn cap.
+	_keep_in_frame(_anchor)
+	var kept := global_basis.get_rotation_quaternion()
+	var total := rotation_from.angle_to(kept)
+	if total > max_turn:
+		global_basis = Basis(rotation_from.slerp(kept, max_turn / total))
 
 
 ## Follows the player rigidly, but glides over ~0.2 s after a teleport so a
@@ -163,6 +183,33 @@ func _follow_anchor(player: Vector3, delta: float) -> void:
 	if _anchor.distance_to(player) < 0.05:
 		_anchor = player
 		_gliding = false
+
+
+## Turns the view just enough to bring point back inside player_frame_limit of
+## the screen; does nothing while it is already inside.
+func _keep_in_frame(point: Vector3) -> void:
+	var local := global_transform.affine_inverse() * point
+	if local.z > -0.01:
+		return
+	var tan_v := tan(deg_to_rad(fov) / 2.0) * player_frame_limit
+	var tan_h := tan_v * _aspect()
+	var yaw_excess := atan(-local.x / local.z) - atan(tan_h) * signf(local.x)
+	var pitch_excess := atan(local.y / -local.z) - atan(tan_v) * signf(local.y)
+	var yaw := yaw_excess if absf(local.x / -local.z) > tan_h else 0.0
+	var pitch := pitch_excess if absf(local.y / -local.z) > tan_v else 0.0
+	if yaw == 0.0 and pitch == 0.0:
+		return
+	var b := global_basis.rotated(Vector3.UP, -yaw)
+	b = b.rotated(b.x, pitch)
+	global_basis = b.orthonormalized()
+
+
+func _aspect() -> float:
+	var viewport := get_viewport()
+	if viewport == null:
+		return LockOnFraming.ASPECT
+	var size := viewport.get_visible_rect().size
+	return size.x / size.y if size.y > 0.0 else LockOnFraming.ASPECT
 
 
 ## Starts the free orbit where the camera already is, so unlocking doesn't swing it.

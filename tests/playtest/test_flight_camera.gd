@@ -201,17 +201,20 @@ func _frames_in_range(scenario_name: String, low: float, high: float, settle: in
 
 
 func test_far_opponent_stays_at_least_40_pixels_tall_until_the_zoom_floor() -> void:
-	# T-117: beyond 30 m the FOV narrows (40° floor) so the opponent stays >= ~40 px.
-	for scenario_name in _results:
-		for frame in _frames_in_range(scenario_name, 32.0, 70.0, 60):
-			var gap: Vector3 = frame.opponent - frame.player
-			var height_angle := atan2(absf(gap.y), Vector2(gap.x, gap.z).length())
-			# Big height gaps widen the view instead of zooming (the marker covers it).
-			if not frame.opponent_on_screen or height_angle > LockOnFraming.MAX_VIEW_PITCH_UP:
-				continue
-			assert_gte(frame.opponent_pixels, 38.0,
-				"%s tick %d: opponent %.0f px at %.0f m" % [scenario_name, frame.tick,
-				frame.opponent_pixels, frame.player.distance_to(frame.opponent)])
+	# T-117: beyond 30 m the FOV narrows (40° floor, reached near 74 m) so the
+	# opponent stays >= ~40 px. Drives the real camera directly at fixed gaps:
+	# the flight routes no longer hold a locked 32-70 m gap for a full second.
+	for gap in [35.0, 50.0, 70.0]:
+		var camera := FighterCamera.new()
+		add_child_autofree(camera)
+		var player := Vector3(0, 10, 0)
+		var opponent := Vector3(0, 10, -gap)
+		for i in 180:
+			camera.follow(player, opponent, true, FlightPlaytest.FRAME_SECONDS)
+		var view := camera.global_transform
+		var box := FlightPlaytest._screen_box(view, camera.fov, Vector2(1920, 1080), opponent)
+		assert_eq(camera.range_band(), LockOnFraming.Band.FAR, "%.0f m is the far band" % gap)
+		assert_gte(box.size.y, 38.0, "opponent %.0f px at %.0f m" % [box.size.y, gap])
 
 
 func test_fov_never_narrows_below_40_degrees() -> void:
