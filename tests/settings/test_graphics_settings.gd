@@ -26,12 +26,14 @@ func test_saved_settings_load_back_unchanged() -> void:
 	settings.quality = GraphicsSettings.Quality.LOW
 	settings.resolution_scale = 0.75
 	settings.vsync_enabled = false
+	settings.fullscreen = false
 	assert_eq(settings.save(TEST_PATH), OK)
 
 	var loaded := GraphicsSettings.load_saved(TEST_PATH)
 	assert_eq(loaded.quality, GraphicsSettings.Quality.LOW)
 	assert_eq(loaded.resolution_scale, 0.75)
 	assert_false(loaded.vsync_enabled)
+	assert_false(loaded.fullscreen)
 
 
 func test_missing_file_gives_defaults() -> void:
@@ -54,3 +56,26 @@ func test_apply_sets_viewport_quality_and_scale() -> void:
 	settings.apply_to(viewport)
 	assert_eq(viewport.msaa_3d, Viewport.MSAA_2X)
 	assert_almost_eq(viewport.scaling_3d_scale, 0.8, 0.001)
+
+
+func test_defaults_to_fullscreen() -> void:
+	assert_true(GraphicsSettings.new().fullscreen)
+
+
+func test_windowed_rect_is_1600x900_centred_on_a_big_screen() -> void:
+	var rect := GraphicsSettings.windowed_rect(Rect2i(0, 0, 2560, 1400))
+	assert_eq(rect.size, Vector2i(1600, 900))
+	assert_eq(rect.position, Vector2i(480, 250))
+
+
+func test_windowed_rect_never_exceeds_the_usable_area() -> void:
+	# A 1366x728 usable area (small laptop with taskbar) can't fit 1600x900.
+	var usable := Rect2i(0, 0, 1366, 728)
+	var rect := GraphicsSettings.windowed_rect(usable)
+	assert_true(usable.encloses(rect), "fits: %s" % rect)
+	assert_almost_eq(float(rect.size.x) / rect.size.y, 16.0 / 9.0, 0.01, "keeps 16:9")
+
+
+func test_windowed_rect_respects_a_screen_offset() -> void:
+	var usable := Rect2i(1920, 0, 1920, 1040)
+	assert_true(usable.encloses(GraphicsSettings.windowed_rect(usable)))
