@@ -120,3 +120,98 @@ func test_near_turn_cap_ramps_up_only_while_the_opponent_is_out_of_view() -> voi
 	for i in 240:
 		camera.follow(player, behind, true, 1.0 / 60.0)
 	assert_eq(camera.turn_cap(), camera.max_turn_speed, "back to normal once the opponent is in view")
+
+
+# --- Issue #75: obstacles, ease-in turns, target glide, cuts ---
+
+func _locked_camera(obstacles: CameraObstacles = null) -> FighterCamera:
+	var camera := FighterCamera.new()
+	camera.obstacles = obstacles
+	add_child_autofree(camera)
+	return camera
+
+
+func _settle(camera: FighterCamera, player: Vector3, target: Vector3, frames: int) -> void:
+	for i in frames:
+		camera.follow(player, target, true, 1.0 / 60.0)
+
+
+func test_camera_never_sits_inside_a_prop_behind_the_player() -> void:
+	var player := Vector3(0, 10, 0)
+	var target := Vector3(0, 10, -12)
+	var free := _locked_camera()
+	_settle(free, player, target, 120)
+	# A wall right where the free camera would sit.
+	var obstacles := CameraObstacles.new()
+	var spot := free.global_position
+	obstacles.add_box(AABB(spot - Vector3(3, 3, 1), Vector3(6, 6, 2)))
+	var camera := _locked_camera(obstacles)
+	for i in 120:
+		camera.follow(player, target, true, 1.0 / 60.0)
+		assert_false(obstacles.is_inside(camera.global_position), "never inside the wall (frame %d)" % i)
+	assert_false(obstacles.blocks(player + Vector3.UP * 0.5, camera.global_position), "nothing between player and camera")
+
+
+func test_camera_stays_above_the_ground() -> void:
+	var obstacles := CameraObstacles.new()
+	obstacles.ground_height = func(_x: float, _z: float, _from_y: float) -> float: return 9.8
+	var camera := _locked_camera(obstacles)
+	# Opponent far above: the boom swings low, toward the ground.
+	for i in 180:
+		camera.follow(Vector3(0, 10.2, 0), Vector3(0, 30, -6), true, 1.0 / 60.0)
+		assert_gte(camera.global_position.y, 9.8 + CameraObstacles.CLEARANCE - 0.001)
+
+
+func test_pulled_in_camera_eases_back_out() -> void:
+	var player := Vector3(0, 10, 0)
+	var target := Vector3(0, 10, -12)
+	var obstacles := CameraObstacles.new()
+	var camera := _locked_camera(obstacles)
+	_settle(camera, player, target, 120)
+	var free_distance := camera.global_position.distance_to(player)
+	var wall := CameraObstacles.new()
+	wall.add_box(AABB(camera.global_position - Vector3(3, 3, 1), Vector3(6, 6, 2)))
+	camera.obstacles = wall
+	_settle(camera, player, target, 30)
+	var pulled := camera.global_position.distance_to(player)
+	assert_lt(pulled, free_distance - 0.5, "pulled in front of the wall")
+	camera.obstacles = obstacles  # wall gone
+	var previous := pulled
+	for i in 30:
+		camera.follow(player, target, true, 1.0 / 60.0)
+		var now := camera.global_position.distance_to(player)
+		assert_lte(now - previous, camera.obstacle_release_speed / 60.0 + 0.02, "eases out, no pop")
+		previous = now
+
+
+func test_turns_ease_in_instead_of_snapping() -> void:
+	var camera := _locked_camera()
+	var player := Vector3(0, 10, 0)
+	_settle(camera, player, Vector3(0, 10, -12), 120)
+	var before := camera.global_basis.get_rotation_quaternion()
+	camera.follow(player, Vector3(12, 10, 0), true, 1.0 / 60.0)  # target swings 90 deg
+	var first_turn := before.angle_to(camera.global_basis.get_rotation_quaternion())
+	var limit := deg_to_rad(camera.max_turn_acceleration) / 60.0 / 60.0
+	assert_lte(first_turn, limit + 0.0005, "first frame of a turn is gentle")
+
+
+func test_a_target_switch_glides_instead_of_cutting() -> void:
+	var camera := _locked_camera()
+	var player := Vector3(0, 10, 0)
+	_settle(camera, player, Vector3(0, 10, -12), 120)
+	var worst := 0.0
+	var previous := camera.global_basis.get_rotation_quaternion()
+	for i in 60:
+		camera.follow(player, Vector3(-14, 12, -4), true, 1.0 / 60.0)  # new target, 15 m away
+		var now := camera.global_basis.get_rotation_quaternion()
+		worst = maxf(worst, rad_to_deg(previous.angle_to(now)))
+		previous = now
+	assert_lte(worst, camera.max_turn_speed / 60.0 + 0.01, "no frame turns faster than the cap")
+
+
+func test_a_huge_teleport_cuts_to_the_new_framing() -> void:
+	var camera := _locked_camera()
+	_settle(camera, Vector3(0, 300, 0), Vector3(0, 300, -12), 120)
+	var landed := Vector3(0, 20, 0)
+	camera.follow(landed, Vector3(0, 300, -12), false, 1.0 / 60.0)
+	assert_lt(camera.global_position.distance_to(landed), 12.0, "the camera is with the player at once")

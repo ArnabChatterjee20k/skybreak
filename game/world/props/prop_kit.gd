@@ -109,6 +109,10 @@ static func append_mesh(st: SurfaceTool, mesh: Mesh, xform: Transform3D, color: 
 		st.add_vertex(xform * verts[i])
 
 
+## Meta on each prop MultiMeshInstance3D: its instance transforms (Array[Transform3D]).
+const INSTANCE_TRANSFORMS_META := &"instance_transforms"
+
+
 ## One MultiMeshInstance3D for many copies of a mesh; `colors` tints each copy.
 func multimesh(parent: Node3D, node_name: String, mesh: Mesh, mat: Material,
 		transforms: Array[Transform3D], colors: PackedColorArray = PackedColorArray(),
@@ -130,6 +134,9 @@ func multimesh(parent: Node3D, node_name: String, mesh: Mesh, mat: Material,
 	node.multimesh = mm
 	node.material_override = mat
 	node.custom_aabb = bounds
+	# Kept CPU-side: headless runs can't read MultiMesh data back from the
+	# rendering server, and the camera's obstacle boxes need it (issue #75).
+	node.set_meta(INSTANCE_TRANSFORMS_META, transforms)
 	node.visibility_range_end = PROP_VISIBILITY_END
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows \
 		else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

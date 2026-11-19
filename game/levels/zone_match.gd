@@ -54,6 +54,10 @@ var match_hud := MatchHud.new()
 var match_audio := MatchAudio.new()
 ## Round cues and music from the match flow (T-127).
 var match_cues := MatchCues.new()
+## Through a KO the camera keeps framing both fighters while within this (m).
+const KO_FRAMING_RANGE := 40.0
+## Last lock-on target of the followed fighter, kept for KO framing.
+var _camera_target := -1
 var weapon_layer := WeaponLayer.new()
 var fighter_views: Array[FighterView] = []
 
@@ -81,6 +85,7 @@ func _ready() -> void:
 	_build_world()
 	_build_fighters()
 	sim.pickups_enabled = true
+	camera.obstacles = CameraObstacles.from_zone_match(self)
 	add_child(weapon_layer)
 	weapon_layer.setup(sim, fighter_views)
 	$DebugOverlay.sim = sim
@@ -262,7 +267,16 @@ func present_frame(blend: float, delta: float) -> void:
 	weapon_layer.present(blend, delta)
 	var me := sim.fighters[player]
 	var locked := me.lock_on_target >= 0
-	var target := me.lock_on_target if locked else (1 if player == 0 and fighter_views.size() > 1 else 0)
+	if locked:
+		_camera_target = me.lock_on_target
+	# Through a KO the lock drops: keep framing the last target so the winner
+	# and the launched loser both stay in view (issue #75).
+	# Only while they are close enough to share a frame: a loser falling off a
+	# floating island can end up hundreds of metres away.
+	if match_flow.phase == MatchFlow.Phase.KO and _camera_target >= 0:
+		var apart := fighter_views[player].position.distance_to(fighter_views[_camera_target].position)
+		locked = apart < KO_FRAMING_RANGE
+	var target := _camera_target if locked else (1 if player == 0 and fighter_views.size() > 1 else 0)
 	var opponent := fighter_views[target].position
 	camera.follow(fighter_views[player].position, opponent, locked, delta)
 	for view in fighter_views:
