@@ -16,19 +16,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-114 [developer] Shoulder offset: player pinned 1/3 from the screen edge
   (yaw corrected for pitch skew), shoulder flips when the opponent crosses the
   player rather than the screen centre, opponent-hidden metric + asserts.
-- T-110 [developer] Window mode: borderless fullscreen at desktop resolution by
-  default; windowed = 1600x900 centred, shrunk to fit the usable screen area;
-  Fullscreen toggle in the F10 menu, saved with the graphics settings.
-- T-107 [developer] Render benchmark (`game/debug/render_benchmark.gd`): GPU/CPU
-  frame time per preset on a scripted locked-on flight. Baseline at 1080p on
-  the GTX 1650: GPU p95 1.4 / 1.6 / 1.8 ms (low/med/high). Grey-box only;
-  re-run as shaders, characters and arenas land.
-- T-102b [developer] Locked camera pitch limits: at most 35° down / 25° up;
-  bigger height gaps pull the camera back and widen the FOV (up to +10°).
-- T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst,
-  PR #9.
-- T-D09 [desktop] Aura and impact VFX shaders, per-fighter `rim_energy_*`
-  instance uniforms, PR #12.
 
 ## Backlog
 
@@ -60,6 +47,8 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   high preset is fine on the grey-box arena (T-107: GPU p95 1.8 ms); recheck
   once real content lands.
 
+- T-116 [developer] Prewarm VFX materials and particle pipelines at match load
+  (first impact costs ~396 ms, first shockwave ~88 ms on the GTX 1650).
 - T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
   health with grey recoverable part, ki in 4 bars, guard, burst stocks.
 - T-112 [developer] Round flow in the test arena: on `round_over`, reset
@@ -80,6 +69,8 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   push-block.
 - T-D06 [desktop] Vanish rules: direction guess, Sense, max 2, then Clash.
 - T-D07 [desktop] Chase/tech and wall-splat.
+- T-D09b [desktop] VFX fixes from the PR #12 Windows check: shockwave clipped by
+  the ground, aura darkening the body at power 3, glassy flames (cloud).
 - T-D08b [desktop] Outline on hard-edged props: bake smoothed normals into
   vertex colour/UV2, or use bevelled prop meshes (box outline nearly invisible
   in the PR #3 check).
@@ -102,3 +93,8 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-101 [developer] Flight view: facing, lean, vanish hide, PR #7.
 - T-113 [developer] Camera distance model, opponent marker, scripted playtest
   harness, PR #14.
+- T-110 [developer] Borderless fullscreen default + windowed option, PR #11.
+- T-107 [developer] Render benchmark (GPU/CPU frame time per preset), PR #10.
+- T-102b [developer] Locked camera pitch limits, PR #8 (pull-back later replaced by T-113).
+- T-D02 [desktop] Meters, PR #9.
+- T-D09 [desktop] Aura and impact VFX, PR #12.
