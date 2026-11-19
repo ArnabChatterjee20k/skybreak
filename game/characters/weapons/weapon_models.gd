@@ -250,7 +250,8 @@ static func _bow(root: Node3D, limb: Color, trim: Color, string_color: Color, he
 			var z := 0.24 * t * t
 			_box(root, Vector3(0.08, 0.14, 0.07), limb, Vector3(0, y, z), Vector3(-side * t * 40.0, 0, 0))
 		_sphere(root, 0.055, trim, Vector3(0, side * 0.7, 0.25))
-	_cylinder(root, 0.012, 1.38, string_color, Vector3(0, 0, 0.26), Vector3.ZERO, -1.0, true)
+	var string := _cylinder(root, 0.012, 1.38, string_color, Vector3(0, 0, 0.26), Vector3.ZERO, -1.0, true)
+	string.name = "String"
 	if hearts:
 		_heart(root, 0.26, GOLD, Vector3(0.06, 0, -0.04))
 		_heart(root, 0.26, GOLD, Vector3(-0.06, 0, -0.04))

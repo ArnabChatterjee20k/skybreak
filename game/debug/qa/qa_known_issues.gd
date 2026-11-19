@@ -6,6 +6,8 @@ extends RefCounted
 ## Id -> one line on what is wrong. Ids are TODO.md task ids.
 const ISSUES := {
 	&"T-D29": "No fighter-fighter pushboxes on main: fighters can overlap and pass through each other.",
+	&"QA-11": "Drawn bodies overlap: sim pushboxes are slimmer than the drawn core bodies (pushbox sizing lane).",
+	&"QA-12": "Drawn soles off the visible ground in a few standing frames (foot grounding lane).",
 }
 
 

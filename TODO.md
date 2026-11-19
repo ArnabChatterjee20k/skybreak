@@ -13,6 +13,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D30e [desktop] Weapon holds, view-only port of #70 (supersedes it): `WeaponGrip`, per-build
+  holds, clearance solver with carry-over, KO weapon drop, bow reach, `VisualQa`; plus fixed
+  one-hand hit-reaction tuck and flight hold, eased hold changes, bow string kept off the head.
+  Open: VisualQa weapon_vs_holder and bow_vs_head not yet 0 (see PR); VisualQa ground_contact
+  and fighter_vs_fighter are tracked under QA-12 / QA-11; the strip's flight column renders
+  upright (preview script does not reach the flight body).
 - T-D34 [desktop] QA cleanup: QA-ID hygiene (#95's harness item is QA-16 now; QA-15 stays
   #94's FFA stacking, done), QA-16 (foot slide resets on vanish/teleport, hidden frames and
   round starts; floating feet skipped and counted; trend re-baselined as foot slide v2),

@@ -39,21 +39,81 @@ const MAX_FLIGHT_PITCH := deg_to_rad(78.0)
 ## Twist limits about the bone (radians) and the fastest any body bone may turn (rad/s).
 const TWIST_LIMITS := {&"LeftLowerArm": 1.6, &"RightLowerArm": 1.6, &"LeftUpperArm": 1.8, &"RightUpperArm": 1.8}
 const MAX_TURN_RATE := 54.0
+## Largest turn (rad) an arm bone may make in one frame after the late weapon clearance (pops are 1.2).
+const MAX_ARM_FRAME_TURN := 1.1
+## Clear-then-limit rounds after the turn cap: a trimmed arm gets another solve within the limit.
+const POST_CAP_ROUNDS := 6
 ## Costume spring chains (hood points, sash, cape, beard braid, apron) the pop guard covers too: their
 ## springs lag the clip's pose, which the layers then move, so they can whip round in one frame.
 const CHAIN_PARTS := ["Hood", "Sash", "Cape", "Beard", "Apron"]
 ## Inertialization never carries in more angular velocity than this (rad/s).
 const MAX_BLEND_SPEED := 14.0
 const FLUTTER_HZ := 2.4
-## Arm poses for held weapons; each hand target is in chest space (+Y up, +Z forward, +X left).
-enum ArmPose { NONE, TWO_HANDED, BOW_DRAW, PISTOL_AIM }
+## Arm poses for held weapons (T-D30), solved by two-bone IK on top of the clip.
+enum ArmPose { NONE, TWO_HANDED, BOW_DRAW, PISTOL_AIM, GUARD, BRACED, SWING, BOW_LOW, SIDE, PISTOL_LOW, TUCK, FLY }
+## Main-hand grip point per pose, from its shoulder in chest space (+Y up, +Z forward, +X to the
+## holder's left), in arm lengths, then the weapon's +Y and its forward (-Z) in the same space.
 const ARM_POSES := {
-	# Two-handed: the left hand grips the haft just below the right hand (offset from the right hand).
-	ArmPose.TWO_HANDED: {&"LeftHand": Vector3(0.03, -0.16, -0.02)},
-	ArmPose.BOW_DRAW: {&"LeftHand": Vector3(0.12, 0.22, 0.62), &"RightHand": Vector3(-0.06, 0.26, 0.12)},
-	ArmPose.PISTOL_AIM: {&"RightHand": Vector3(-0.08, 0.22, 0.62)},
+	ArmPose.GUARD: [Vector3(-0.15, -0.62, 0.62), Vector3(-0.15, 0.8, 0.58), Vector3(0, -0.4, 1)],
+	ArmPose.TWO_HANDED: [Vector3(0.2, -0.78, 0.55), Vector3(0.62, 0.62, 0.48), Vector3(0, 0, 1)],
+	ArmPose.PISTOL_AIM: [Vector3(0.12, 0.02, 0.96), Vector3(0, 1, 0), Vector3(0, 0, 1)],
+	ArmPose.BRACED: [Vector3(-0.3, -0.62, 0.62), Vector3(0, 1, 0), Vector3(0, 0, 1)],
+	# A bow not drawn: held low and out at the side, limbs pointing ahead, never across the body.
+	ArmPose.BOW_LOW: [Vector3(-0.45, -0.72, 0.4), Vector3(-0.25, 0.2, 1), Vector3(0, -1, 0)],
+	# A pistol between shots: low ready, out in front, muzzle down the line.
+	ArmPose.PISTOL_LOW: [Vector3(-0.2, -0.55, 0.65), Vector3(0, 1, 0.35), Vector3(0, -0.35, 1)],
+	# A heavy weapon carried at the side in one hand, its head low and out.
+	ArmPose.SIDE: [Vector3(-0.55, -0.85, 0.12), Vector3(-0.25, -1, 0.15), Vector3(0, 0, 1)],
+	# Hit reaction: a one-hand weapon tucked low at the side, pointing down and out, whatever the clip does.
+	ArmPose.TUCK: [Vector3(-0.5, -0.8, 0.05), Vector3(-0.35, -1, -0.2), Vector3(0, 0, 1)],
+	# Flight: held at the side, trailing back along the body.
+	ArmPose.FLY: [Vector3(-0.45, -0.75, -0.1), Vector3(-0.3, -0.35, -1), Vector3(0, -1, 0.2)],
+}
+## Poses that replace the clip's arm (weight 1), eased in over about 8 frames (spring rate, 1/s).
+const BASE_HOLDS: Array[ArmPose] = [ArmPose.TUCK, ArmPose.FLY]
+const BASE_HOLD_FREQUENCY := 36.0
+## Spring rate (1/s) of the weapon's goal in chest space: pose changes glide in a few frames.
+const GOAL_FREQUENCY := 36.0
+const GOAL_DRAW_FREQUENCY := 48.0
+## One-hand swing arc (from the shoulder, chest space, arm lengths): the hand sweeps from the
+## weapon side across the front at this height and reach, as the attack runs (arm_phase 0..1).
+const SWING_FROM := deg_to_rad(-55.0)
+const SWING_TO := deg_to_rad(25.0)
+const SWING_POINT := Vector3(0.0, -0.12, 0.97)
+## Bow draw: the string hand anchors this far beside the head capsule's surface (m), at jaw height.
+const BOW_ANCHOR_GAP := 0.13
+const BOW_ANCHOR_DROP := 0.04
+## Bow cant (sideways lean of its top per unit up) and the shortest bow-hand distance from the anchor (m).
+const BOW_CANT := 0.12
+const BOW_MIN_DRAW := 0.3
+## Arm weight from which the drawn string shows (before it the string hand is still on its way).
+const BOW_SHOWN_WEIGHT := 0.95
+## Spring frequency (1/s) of the arm weight while drawing a bow.
+const BOW_DRAW_FREQUENCY := 24.0
+const STRING_FREQUENCY := 60.0
+## Torso turn (radians) toward the bow side at full draw.
+const BOW_TWIST := deg_to_rad(70.0)
+## Clearance solver: passes, and the margin it leaves (m).
+const CLEARANCE_PASSES := 16
+const CLEARANCE_MARGIN := 0.01
+## Gap the solver keeps between weapon and body (m): the drawn spine can sit a few cm off the solved one.
+const CLEARANCE_GAP := 0.03
+## Share of last frame's clearance correction carried into the next frame (the rest relaxes).
+const CLEARANCE_CARRY := 0.9
+## Swing correction: largest turn of the weapon about the wrist per pass, and the shortest lever it acts on.
+const SWING_STEP := 0.35
+const SWING_MIN_LEVER := 0.12
+## Capsules a held weapon must stay out of, per main hand (its own forearm and hand grip it).
+const CLEAR_OF := {
+	&"RightHand": [&"pelvis", &"chest", &"head", &"upper_arm_l", &"lower_arm_l", &"upper_arm_r"],
+	&"LeftHand": [&"pelvis", &"chest", &"head", &"upper_arm_l", &"upper_arm_r", &"lower_arm_r"],
 }
 
+
+var body_capsules := {}
+## Weapon hold points pushed forward and out (arm lengths; MotionProfile).
+var hold_forward := 0.0
+var hold_out := 0.0
 ## Fighter velocity in skeleton space (m/s).
 @export var velocity := Vector3.ZERO
 @export var flying := false
@@ -85,6 +145,40 @@ var body_to_world := Transform3D.IDENTITY
 ## Held-weapon arm pose and how much of it to apply (0..1, sprung).
 @export var arm_pose := ArmPose.NONE
 @export_range(0.0, 1.0) var arm_weight := 0.0
+## Progress through the attack for the swing arc (0..1).
+var arm_phase := 0.0
+## Lean, flight, look, secondary, flinch and landing layers; off keeps only the IK stages.
+@export var body_layers := true
+## Held weapon: the hand bone it sits on (empty = none), its transform in that bone's space,
+## its part boxes in its own space and the off-hand grip point (INF = one-handed).
+var weapon_hand := &""
+var weapon_grip := Transform3D.IDENTITY
+var weapon_boxes: Array[Transform3D] = []
+var weapon_off_hand := Vector3.INF
+## The off hand's palm socket in its bone's space (see WeaponGrip.hand_socket).
+var off_hand_socket := Transform3D.IDENTITY
+## The holder's body capsules; the clearance solver keeps the weapon out of them.
+var body: BodyCapsules
+## Deepest weapon-into-body overlap left after the last solve (m), for tests and QA.
+var weapon_overlap := 0.0
+## Largest arm turn the per-frame arm limit took back in the last solve (rad), for QA.
+var arm_trim := 0.0
+var arm_trim_bone := &""
+# Clearance carry-over: last frame's main-hand correction (chest space), so the cleared weapon stays
+# on the side it was cleared to instead of flipping as the clip passes it through the body.
+var _carry_offset := Vector3.ZERO
+var _carry_turn := Quaternion.IDENTITY
+var _carry_from := Transform3D.IDENTITY
+var _carry_live := false
+# The eased weapon goal in chest space (see _ease_goal).
+var _goal := Transform3D.IDENTITY
+var _goal_velocity := Vector3.ZERO
+var _goal_live := false
+# Bow draw weight (string hand at the anchor), sprung on its own.
+var _string := 0.0
+var _string_velocity := 0.0
+# Hips as posed this frame before the pop guard (its hand fix-up works from them).
+var _last_hips_now := Vector3.ZERO
 ## Hips lowered in grounded poses (m, from the profile); the foot IK bends the knees.
 @export var crouch := 0.0
 ## Personality multipliers (see MotionProfile).
@@ -151,6 +245,8 @@ var _bob_phase := 0.0
 var _twists := {}
 var _poles := {}
 var _rest_rot: Array[Quaternion] = []
+## Rest rotation of each bone in skeleton space.
+var _rest_world_rot: Array[Quaternion] = []
 var _bone_axis: Array[Vector3] = []
 # Pop guard: per body bone (index into _used), its body parent's index (-1: none) and world rotations.
 var _used_parent: PackedInt32Array = []
@@ -197,9 +293,11 @@ func setup_bones(names: PackedStringArray, parents: PackedInt32Array, rests: Arr
 		_rest_heights.append(world[i].origin.y)
 	_parents = parents
 	_rest_rot.clear()
+	_rest_world_rot.clear()
 	_bone_axis.clear()
 	for i in names.size():
 		_rest_rot.append(rests[i].basis.get_rotation_quaternion())
+		_rest_world_rot.append(world[i].basis.get_rotation_quaternion())
 		_bone_axis.append(Vector3.UP)
 	for i in names.size():
 		if parents[i] >= 0 and rests[i].origin.length() > 1e-4 and _bone_axis[parents[i]] == Vector3.UP:
@@ -275,6 +373,11 @@ func reset() -> void:
 	_lock_offset = [Vector3.ZERO, Vector3.ZERO]
 	_lock_offset_velocity = [Vector3.ZERO, Vector3.ZERO]
 	_guard_world.clear()
+	_carry_offset = Vector3.ZERO
+	_carry_turn = Quaternion.IDENTITY
+	_goal_live = false
+	_string = 0.0
+	_string_velocity = 0.0
 	_shift = 0.0
 	_shift_velocity = 0.0
 
@@ -294,6 +397,8 @@ func apply_profile(profile: MotionProfile) -> void:
 	hover_bob_hz = profile.hover_bob_hz
 	flight_arm_scale = profile.flight_arm_scale
 	dive_pitch = deg_to_rad(profile.dive_pitch)
+	hold_forward = profile.hold_forward
+	hold_out = profile.hold_out
 
 
 ## Blend from the last output pose into whatever the next clip gives, without a linear crossfade.
@@ -345,7 +450,8 @@ func _process_modification_with_delta(delta: float) -> void:
 		delta = _frame_delta
 		_frame_delta = -1.0
 	body_to_world = skeleton.global_transform
-	for i in _used:
+	# Every bone, so world transforms through bones the layers never turn (twist, spine helpers) are right.
+	for i in rotations.size():
 		rotations[i] = skeleton.get_bone_pose_rotation(i)
 	var hips := skeleton.get_bone_pose_position(hips_id) if hips_id >= 0 else Vector3.ZERO
 	hips = process_pose(rotations, hips, delta)
@@ -359,26 +465,42 @@ func _process_modification_with_delta(delta: float) -> void:
 func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> Vector3:
 	if delta <= 0.0:
 		delta = 0.0
-	_inertialize(rotations, delta)
-	hips = _inertialize_hips(hips, delta)
-	_prev_base = _last_base
-	_last_base = rotations.duplicate()
-	_last_base_hips = hips
-	_lean_layer(rotations, delta)
-	_flight_layer(rotations, delta)
-	_look_layer(rotations, delta)
-	_secondary_layer(rotations, delta)
-	_flinch_layer(rotations, delta)
-	hips = _landing_layer(rotations, hips, delta)
+	if body_layers:
+		_inertialize(rotations, delta)
+		hips = _inertialize_hips(hips, delta)
+		_prev_base = _last_base
+		_last_base = rotations.duplicate()
+		_last_base_hips = hips
+		_lean_layer(rotations, delta)
+		_flight_layer(rotations, delta)
+		_look_layer(rotations, delta)
+		_secondary_layer(rotations, delta)
+		_flinch_layer(rotations, delta)
+		hips = _landing_layer(rotations, hips, delta)
 	_arm_layer(rotations, hips, delta)
 	hips = _stance_layer(hips, delta)
 	hips = _stance_shift(rotations, hips, delta)
+	_carry_clearance(rotations, hips)
+	_clearance(rotations, hips)
 	if foot_ik:
 		hips = _foot_ik(rotations, hips, delta)
 	else:
 		_release_locks()
 	_ground_pass(rotations, hips)
+	_last_hips_now = hips
+	_twist_guard(rotations)
+	# The twist limits can bring the weapon back into the body: clear it once more, before the turn cap.
+	_clearance(rotations, hips)
 	_pop_guard(rotations, delta)
+	# The turn cap can bring the weapon back in: clear it after the cap too, under the arm pop limit.
+	for _round in POST_CAP_ROUNDS:
+		_clearance(rotations, hips)
+		_arm_pop_limit(rotations)
+		if arm_trim <= 0.0:
+			break
+	_remember_clearance(rotations, hips)
+	# Next frame's turn cap starts from this output as drawn (cleared), not the pre-clearance pose.
+	_guard_world.clear()
 	hips = _lift_sunk_feet(rotations, hips)
 	_prev_out = _last_out.duplicate()
 	_last_out = rotations.duplicate()
@@ -550,42 +672,338 @@ func _flight_layer(rotations: Array[Quaternion], delta: float) -> void:
 	_offset(rotations, &"Head", Vector3(-0.35 * f, 0, 0))
 
 
-## Held-weapon arm pose: two-bone IK of the hands to chest-space targets, blended by weight.
+
+## Held-weapon arm pose: the main hand to its grip point with the weapon turned to the pose,
+## the off hand onto the weapon's off-hand grip; bows draw the string to beside the face.
+## How far the bow anchor slides back behind the ear for an arm too short to reach a full draw (m).
+var _bow_pull_back := 0.0
+
+
 func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> void:
 	if arm_pose != ArmPose.NONE:
 		_arm_pose_now = arm_pose
-	var s := spring(_arm, _arm_velocity, arm_weight if arm_pose != ArmPose.NONE else 0.0, 14.0, delta)
+	# A bow draw comes up faster, so the string hand spends little time on its way to the anchor.
+	var frequency := BOW_DRAW_FREQUENCY if arm_pose == ArmPose.BOW_DRAW else 14.0
+	if arm_pose in BASE_HOLDS:
+		frequency = BASE_HOLD_FREQUENCY
+	var s := spring(_arm, _arm_velocity, arm_weight if arm_pose != ArmPose.NONE else 0.0, frequency, delta)
 	_arm = clampf(s[0], 0.0, 1.0)
 	_arm_velocity = s[1]
-	if _arm < 0.01 or not ARM_POSES.has(_arm_pose_now):
+	# The draw (string hand at the anchor, archer's turn) eases in and out on its own weight.
+	var draw := spring(_string, _string_velocity, 1.0 if arm_pose == ArmPose.BOW_DRAW else 0.0, STRING_FREQUENCY, delta)
+	_string = clampf(draw[0], 0.0, 1.0)
+	_string_velocity = draw[1]
+	if _arm < 0.01 or _arm_pose_now == ArmPose.NONE or weapon_hand == &"":
+		_goal_live = false
 		return
 	var chest: int = _index.get(&"UpperChest", _index.get(&"Chest", -1))
-	if chest < 0:
+	var main: int = _index.get(weapon_hand, -1)
+	if chest < 0 or main < 0:
 		return
-	var targets: Dictionary = ARM_POSES[_arm_pose_now]
 	_world_cache.clear()
-	var chest_world := _world_at(rotations, hips, chest)
-	for chain: Array in ARMS:
-		if not targets.has(chain[2]):
-			continue
-		var up: int = _index.get(chain[0], -1)
-		var lo: int = _index.get(chain[1], -1)
-		var hand: int = _index.get(chain[2], -1)
-		if up < 0 or lo < 0 or hand < 0:
-			continue
-		var before := [rotations[up], rotations[lo], rotations[hand]]
-		var world := _chain_world(rotations, hips, [up, lo, hand])
-		var target: Vector3 = chest_world * (targets[chain[2]] as Vector3)
-		if _arm_pose_now == ArmPose.TWO_HANDED:
-			var right: int = _index.get(&"RightHand", -1)
-			if right < 0:
-				continue
-			target = _world_at(rotations, hips, right).origin + chest_world.basis.orthonormalized() * (targets[chain[2]] as Vector3)
-		_two_bone(rotations, world, up, lo, hand, target)
-		rotations[up] = (before[0] as Quaternion).slerp(rotations[up], _arm)
-		rotations[lo] = (before[1] as Quaternion).slerp(rotations[lo], _arm)
-		rotations[hand] = before[2]
+	# The chest's turn from rest, in the model's axes (+Y up, +Z forward), whatever the rig's bone axes.
+	var frame := Basis(_world_at(rotations, hips, chest).basis.get_rotation_quaternion() * _rest_world_rot[chest].inverse())
+	var main_chain := _arm_chain(weapon_hand)
+	if main_chain.is_empty():
+		return
+	var drawing := weapon_hand == &"LeftHand" and weapon_off_hand == Vector3.INF and _string > 0.01
+	if drawing:
+		_archer_stance(rotations, _arm * _string)
 		_world_cache.clear()
+	var shoulder := _world_at(rotations, hips, main_chain[0]).origin
+	var reach := _arm_length(main_chain)
+	var grip := weapon_grip.orthonormalized()
+	var goal_point: Vector3
+	var goal_basis: Basis
+	if _arm_pose_now == ArmPose.BOW_DRAW:
+		var anchor := _bow_anchor(rotations, hips, frame)
+		# Bow hand on the line from the anchor straight toward the target, at the arm's reach.
+		var aim := frame * Vector3(0, 0, 1)
+		var to_anchor := anchor - shoulder
+		var r := reach * 0.97
+		var b := to_anchor.dot(aim)
+		var d := -b + sqrt(maxf(b * b - to_anchor.length_squared() + r * r, 0.0))
+		# A short arm (chibi or bulky build) cannot reach a full draw: the anchor slides back past the ear.
+		_bow_pull_back = maxf(BOW_MIN_DRAW + 0.02 - d, 0.0)
+		goal_point = anchor + aim * maxf(d, BOW_MIN_DRAW - _bow_pull_back)
+		anchor += _bow_pull_offset(frame)
+		var forward := (goal_point - anchor).normalized()
+		# The bow cants its top away from the head.
+		var side := -1.0 if weapon_hand == &"LeftHand" else 1.0
+		var up := (frame * Vector3(side * BOW_CANT, 1, 0)).normalized()
+		goal_basis = _weapon_basis(up, forward)
+	elif _arm_pose_now == ArmPose.SWING:
+		# Authored for the right hand (sweeping from its side); a left hand mirrors.
+		var mirror := Vector3(-1, 1, 1) if weapon_hand == &"LeftHand" else Vector3.ONE
+		var yaw := lerpf(SWING_FROM, SWING_TO, clampf(arm_phase, 0.0, 1.0))
+		var out := Basis(Vector3.UP, yaw) * SWING_POINT
+		goal_point = shoulder + frame * (out * mirror * reach)
+		var outward := (frame * (out * mirror)).normalized()
+		goal_basis = _weapon_basis((frame * Vector3.UP * 0.5 + outward).normalized(), outward)
+	elif ARM_POSES.has(_arm_pose_now):
+		var pose: Array = ARM_POSES[_arm_pose_now]
+		# Poses are authored for the right hand; a left main hand mirrors them.
+		var mirror := Vector3(-1, 1, 1) if weapon_hand == &"LeftHand" else Vector3.ONE
+		var point := (pose[0] as Vector3) + Vector3(-hold_out, 0, hold_forward)
+		goal_point = shoulder + frame * (point * mirror * reach)
+		goal_basis = _weapon_basis(frame * ((pose[1] as Vector3) * mirror).normalized(), frame * (pose[2] as Vector3).normalized())
+	else:
+		return
+	var eased := _ease_goal(Transform3D(goal_basis, goal_point), _world_at(rotations, hips, chest), delta)
+	goal_basis = eased.basis
+	goal_point = eased.origin
+	var hand_basis := goal_basis * grip.basis.inverse()
+	var hand_point := goal_point - hand_basis * grip.origin
+	_reach_hand(rotations, hips, main_chain, hand_point, hand_basis.get_rotation_quaternion(), _arm)
+	if drawing:
+		var anchor := _bow_anchor(rotations, hips, frame) + _bow_pull_offset(frame)
+		var string_chain := _arm_chain(&"RightHand" if weapon_hand == &"LeftHand" else &"LeftHand")
+		if not string_chain.is_empty():
+			_world_cache.clear()
+			var bow := _world_at(rotations, hips, main_chain[2]) * weapon_grip
+			var pull := (anchor - bow.origin).normalized()
+			var palm := _weapon_basis(frame * Vector3.UP, -pull).orthonormalized()
+			# The palm (where the string sits), not the wrist, goes to the anchor.
+			var wrist := anchor - palm * off_hand_socket.origin
+			_reach_hand(rotations, hips, string_chain, wrist, palm.get_rotation_quaternion(), _arm * _string)
+	elif _arm_pose_now != ArmPose.SIDE:
+		_grip_off_hand(rotations, hips, _arm)
+
+
+## A new weapon in hand: no carried clearance from the last one (the goal still eases over).
+func new_weapon() -> void:
+	_carry_offset = Vector3.ZERO
+	_carry_turn = Quaternion.IDENTITY
+
+
+## Eases the weapon's goal toward this frame's in chest space, so a pose change (guard to tuck,
+## swing to guard) glides over a few frames instead of jumping the arm.
+func _ease_goal(goal: Transform3D, chest: Transform3D, delta: float) -> Transform3D:
+	var local := chest.affine_inverse() * goal
+	if not _goal_live:
+		_goal_live = true
+		_goal = local
+		_goal_velocity = Vector3.ZERO
+	else:
+		# A bow draw tracks its aim line closely; other holds glide.
+		var frequency := GOAL_DRAW_FREQUENCY if _arm_pose_now == ArmPose.BOW_DRAW else GOAL_FREQUENCY
+		var s := spring(_goal.origin, _goal_velocity, local.origin, frequency, delta)
+		var t := 1.0 - exp(-frequency * delta)
+		var turn := _goal.basis.get_rotation_quaternion().slerp(local.basis.get_rotation_quaternion(), t)
+		_goal = Transform3D(Basis(turn), s[0])
+		_goal_velocity = s[1]
+	return chest * _goal
+
+
+## Where a short-armed draw moves the anchor: back along the draw and out, away from the head.
+func _bow_pull_offset(frame: Basis) -> Vector3:
+	var side := -1.0 if weapon_hand == &"LeftHand" else 1.0
+	return frame * Vector3(side * _bow_pull_back * 0.6, 0, -_bow_pull_back)
+
+
+## True once a bow draw has fully arrived: the string hand is at the anchor beside the face.
+func bow_at_anchor() -> bool:
+	return _arm_pose_now == ArmPose.BOW_DRAW and arm_pose == ArmPose.BOW_DRAW and _arm * _string >= BOW_SHOWN_WEIGHT
+
+
+## Archer's stance: the torso turns bow shoulder toward the target, the neck and head turn
+## back to face it, so the bow arm reaches the line that runs beside the face.
+func _archer_stance(rotations: Array[Quaternion], weight: float) -> void:
+	var turn := BOW_TWIST * weight * (-1.0 if weapon_hand == &"LeftHand" else 1.0)
+	for bone: StringName in [&"Spine", &"Chest", &"UpperChest"]:
+		_offset(rotations, bone, Vector3(0, turn / 3.0, 0))
+	_offset(rotations, &"Neck", Vector3(0, -turn * 0.5, 0))
+	_offset(rotations, &"Head", Vector3(0, -turn * 0.5, 0))
+
+
+## Where the bow string hand anchors: beside the head capsule on the string-hand side, at the jaw.
+func _bow_anchor(rotations: Array[Quaternion], hips: Vector3, frame: Basis) -> Vector3:
+	var head: int = _index.get(&"Head", -1)
+	var radius := 0.12
+	if body != null and body.radii.has(&"head"):
+		radius = body.radii[&"head"]
+	var at := _world_at(rotations, hips, head).origin if head >= 0 else Vector3(0, 1.4, 0)
+	var side := -1.0 if weapon_hand == &"LeftHand" else 1.0
+	return at + frame * Vector3(side * (radius + BOW_ANCHOR_GAP), -BOW_ANCHOR_DROP, 0.04)
+
+
+## A weapon basis whose +Y is up and whose -Z points along forward (made orthogonal).
+static func _weapon_basis(up: Vector3, forward: Vector3) -> Basis:
+	var y := up.normalized()
+	var z := -(forward - y * forward.dot(y))
+	z = z.normalized() if z.length() > 1e-4 else y.cross(Vector3.RIGHT).normalized()
+	return Basis(y.cross(z), y, z).orthonormalized()
+
+
+## [upper arm, lower arm, hand] bone indices of a hand, or empty.
+func _arm_chain(hand: StringName) -> Array:
+	for chain: Array in ARMS:
+		if chain[2] == hand:
+			var ids := [_index.get(chain[0], -1), _index.get(chain[1], -1), _index.get(chain[2], -1)]
+			return [] if ids.has(-1) else ids
+	return []
+
+
+func _arm_length(chain: Array) -> float:
+	return (_origins[chain[1]] as Vector3).length() + (_origins[chain[2]] as Vector3).length()
+
+
+## Two-bone IK of one arm to a hand position and world rotation, blended by weight.
+func _reach_hand(rotations: Array[Quaternion], hips: Vector3, chain: Array, point: Vector3,
+		hand_rotation: Quaternion, weight: float) -> void:
+	var up: int = chain[0]
+	var lo: int = chain[1]
+	var hand: int = chain[2]
+	var before := [rotations[up], rotations[lo], rotations[hand]]
+	_world_cache.clear()
+	_two_bone(rotations, _chain_world(rotations, hips, chain), up, lo, hand, point)
+	_world_cache.clear()
+	var lower := _world_at(rotations, hips, lo).basis.get_rotation_quaternion()
+	rotations[hand] = lower.inverse() * hand_rotation
+	rotations[up] = (before[0] as Quaternion).slerp(rotations[up], weight)
+	rotations[lo] = (before[1] as Quaternion).slerp(rotations[lo], weight)
+	rotations[hand] = (before[2] as Quaternion).slerp(rotations[hand], weight)
+	_world_cache.clear()
+
+
+## The off hand onto the weapon's off-hand grip (two-handed weapons).
+func _grip_off_hand(rotations: Array[Quaternion], hips: Vector3, weight: float) -> void:
+	if weapon_off_hand == Vector3.INF:
+		return
+	var main: Array = _arm_chain(weapon_hand)
+	var off: Array = _arm_chain(&"RightHand" if weapon_hand == &"LeftHand" else &"LeftHand")
+	if main.is_empty() or off.is_empty():
+		return
+	_world_cache.clear()
+	var weapon := (_world_at(rotations, hips, main[2]) * weapon_grip).orthonormalized()
+	# The off hand's palm socket closes around the off-hand grip, along the haft.
+	var hand_basis := weapon.basis * off_hand_socket.basis.orthonormalized().inverse()
+	var point := weapon * (weapon_off_hand * weapon_grip.basis.get_scale()) - hand_basis * off_hand_socket.origin
+	_reach_hand(rotations, hips, off, point, hand_basis.get_rotation_quaternion(), weight)
+
+
+## Body clearance: while the held weapon's boxes reach into the holder's torso, head or arms,
+## move the main hand (and the weapon with it) out along the push and solve the arm again.
+func _clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
+	_clear_string(rotations, hips)
+	_clear_weapon(rotations, hips)
+
+
+## While drawing a bow, its string and arrow (limb tips to the string hand, through the grip) keep
+## CLEARANCE_GAP from the head: the bow hand moves out along the shortest way.
+func _clear_string(rotations: Array[Quaternion], hips: Vector3) -> void:
+	if arm_pose != ArmPose.BOW_DRAW or _string <= 0.01 or body == null or weapon_hand != &"LeftHand" or weapon_off_hand != Vector3.INF:
+		return
+	var main := _arm_chain(weapon_hand)
+	var off := _arm_chain(&"RightHand")
+	if main.is_empty() or off.is_empty():
+		return
+	for pass_index in CLEARANCE_PASSES:
+		_world_cache.clear()
+		var head: Array = body.capsules(func(bone: int) -> Transform3D: return _world_at(rotations, hips, bone),
+			Transform3D.IDENTITY, [&"head"]).get(&"head", [])
+		if head.is_empty():
+			return
+		var hand := _world_at(rotations, hips, main[2])
+		var bow := hand * weapon_grip
+		var nock := (_world_at(rotations, hips, off[2]) * off_hand_socket).origin
+		var top := bow * WeaponGrip.BOW_TIP
+		var bottom := bow * Vector3(WeaponGrip.BOW_TIP.x, -WeaponGrip.BOW_TIP.y, WeaponGrip.BOW_TIP.z)
+		var deepest := -INF
+		var push := Vector3.ZERO
+		for segment: Array in [[top, nock], [nock, bottom], [nock, bow.origin]]:
+			var closest := Geometry3D.get_closest_points_between_segments(segment[0], segment[1], head[0], head[1])
+			var depth := float(head[2]) - closest[0].distance_to(closest[1])
+			if depth > deepest:
+				deepest = depth
+				push = closest[0] - closest[1]
+		if deepest <= -CLEARANCE_GAP or push.length() < 1e-5:
+			return
+		var target := hand.origin + push.normalized() * (deepest + CLEARANCE_GAP + CLEARANCE_MARGIN)
+		_reach_hand(rotations, hips, main, target, hand.basis.get_rotation_quaternion(), 1.0)
+
+
+func _clear_weapon(rotations: Array[Quaternion], hips: Vector3) -> void:
+	weapon_overlap = 0.0
+	if weapon_hand == &"" or body == null or weapon_boxes.is_empty():
+		return
+	var main := _arm_chain(weapon_hand)
+	if main.is_empty():
+		return
+	var names: Array = CLEAR_OF.get(weapon_hand, [])
+	if weapon_off_hand != Vector3.INF:
+		names = names.filter(func(n: StringName) -> bool: return not n.begins_with("lower_arm"))
+	for pass_index in CLEARANCE_PASSES + 1:
+		_world_cache.clear()
+		var hand := _world_at(rotations, hips, main[2])
+		var weapon := hand * weapon_grip
+		var boxes: Array[Transform3D] = []
+		for box in weapon_boxes:
+			boxes.append(weapon * box)
+		var capsules := body.capsules(func(bone: int) -> Transform3D: return _world_at(rotations, hips, bone),
+			Transform3D.IDENTITY, names)
+		var hit := BodyCapsules.deepest_box(capsules, boxes)
+		weapon_overlap = maxf(float(hit[0]), 0.0)
+		if float(hit[0]) <= -CLEARANCE_GAP or pass_index == CLEARANCE_PASSES:
+			return
+		var push: Vector3 = hit[1]
+		var depth := float(hit[0]) + CLEARANCE_GAP + CLEARANCE_MARGIN
+		# Swing: turn the weapon about the wrist so the overlapping part moves out along the push,
+		# then move the hand for whatever the swing did not clear.
+		# Lever: the overlapping part's centre, or the contact point when that centre is at the wrist.
+		var lever: Vector3 = (hit[4] as Vector3) - hand.origin
+		if lever.length() <= SWING_MIN_LEVER:
+			lever = (hit[3] as Vector3) - hand.origin
+		var hand_rotation := hand.basis.get_rotation_quaternion()
+		var moved := 0.0
+		var axis := lever.cross(push)
+		if lever.length() > SWING_MIN_LEVER and axis.length() > 1e-4:
+			var angle := minf(depth / lever.length(), SWING_STEP)
+			hand_rotation = Quaternion(axis.normalized(), angle) * hand_rotation
+			moved = angle * lever.length() * axis.length() / lever.length()
+		var target := hand.origin + push * maxf(depth - moved, CLEARANCE_MARGIN)
+		_reach_hand(rotations, hips, main, target, hand_rotation, 1.0)
+		_grip_off_hand(rotations, hips, 1.0)
+
+
+## Re-applies most of last frame's clearance correction to the main hand before this frame's solve.
+func _carry_clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
+	_carry_live = false
+	var chest: int = _index.get(&"UpperChest", _index.get(&"Chest", -1))
+	var main := _arm_chain(weapon_hand) if weapon_hand != &"" else []
+	# A bow draw places both hands on the aim line itself: nothing carries into it.
+	if body == null or weapon_boxes.is_empty() or main.is_empty() or chest < 0 or _arm_pose_now == ArmPose.BOW_DRAW:
+		_carry_offset = Vector3.ZERO
+		_carry_turn = Quaternion.IDENTITY
+		return
+	_world_cache.clear()
+	var space := _world_at(rotations, hips, chest)
+	_carry_from = space.affine_inverse() * _world_at(rotations, hips, main[2])
+	_carry_live = true
+	if _carry_offset == Vector3.ZERO and _carry_turn.is_equal_approx(Quaternion.IDENTITY):
+		return
+	var point := space * (_carry_from.origin + _carry_offset * CLEARANCE_CARRY)
+	var turn := Quaternion.IDENTITY.slerp(_carry_turn, CLEARANCE_CARRY)
+	var rotation := space.basis.get_rotation_quaternion() * turn * _carry_from.basis.get_rotation_quaternion()
+	_reach_hand(rotations, hips, main, point, rotation.normalized(), 1.0)
+	_grip_off_hand(rotations, hips, 1.0)
+
+
+## Stores this frame's main-hand correction (drawn hand against the hand before the clearance).
+func _remember_clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
+	if not _carry_live:
+		return
+	var chest: int = _index.get(&"UpperChest", _index.get(&"Chest", -1))
+	var main := _arm_chain(weapon_hand)
+	_world_cache.clear()
+	var now := _world_at(rotations, hips, chest).affine_inverse() * _world_at(rotations, hips, main[2])
+	_world_cache.clear()
+	_carry_offset = now.origin - _carry_from.origin
+	_carry_turn = (now.basis.get_rotation_quaternion() * _carry_from.basis.get_rotation_quaternion().inverse()).normalized()
+	if _carry_offset.length() < 0.002 and _carry_turn.get_angle() < 0.01:
+		_carry_offset = Vector3.ZERO
+		_carry_turn = Quaternion.IDENTITY
+
 
 
 ## World transforms of one chain (plus its parent), as a sparse array _two_bone can read.
@@ -690,13 +1108,30 @@ static func _yaw_of(q: Quaternion) -> float:
 	return wrapf(2.0 * atan2(q.y, q.w), -PI, PI)
 
 
-## Unwraps and limits arm twist, then caps how far any body bone turns per frame in model space
-## (parents first, so a child's limit accounts for what its parent already did): no pops.
-func _pop_guard(rotations: Array[Quaternion], delta: float) -> void:
+## Unwraps and limits arm twist; hands posed by the weapon IK keep their world rotation.
+func _twist_guard(rotations: Array[Quaternion]) -> void:
+	# Hands posed by the weapon IK keep their world rotation: the wrist takes the twist the arm gives up.
+	var held := {}
+	if _arm > 0.01 and weapon_hand != &"":
+		for hand: StringName in [&"LeftHand", &"RightHand"]:
+			var i: int = _index.get(hand, -1)
+			if i >= 0:
+				_world_cache.clear()
+				held[i] = _world_at(rotations, _last_hips_now, i).basis.get_rotation_quaternion()
 	for bone: StringName in TWIST_LIMITS:
 		var i: int = _index.get(bone, -1)
 		if i >= 0:
 			rotations[i] = _limit_twist(i, rotations[i], TWIST_LIMITS[bone])
+	for i: int in held:
+		_world_cache.clear()
+		var parent := _world_at(rotations, _last_hips_now, _parents[i]).basis.get_rotation_quaternion()
+		rotations[i] = parent.inverse() * (held[i] as Quaternion)
+	_world_cache.clear()
+
+
+## Caps how far any body bone turns per frame in model space
+## (parents first, so a child's limit accounts for what its parent already did): no pops.
+func _pop_guard(rotations: Array[Quaternion], delta: float) -> void:
 	if _last_out.size() != rotations.size():
 		_guard_world.clear()
 		return
@@ -724,6 +1159,32 @@ func _pop_guard(rotations: Array[Quaternion], delta: float) -> void:
 	var swap := _guard_world
 	_guard_world = _guard_world_now
 	_guard_world_now = swap
+
+
+## Limits each arm bone's model-space turn since the last output to MAX_ARM_FRAME_TURN (parents first).
+func _arm_pop_limit(rotations: Array[Quaternion]) -> void:
+	arm_trim = 0.0
+	if _last_out.size() != rotations.size():
+		return
+	for chain: Array in ARMS:
+		for bone: StringName in chain:
+			var i: int = _index.get(bone, -1)
+			if i < 0:
+				continue
+			var parent_now := _world_rotation(rotations, _parents[i]) if _parents[i] >= 0 else Quaternion.IDENTITY
+			var now := parent_now * rotations[i]
+			var last := _world_rotation(_last_out, i)
+			if last.dot(now) < 0.0:
+				now = -now
+			var angle := last.angle_to(now)
+			if angle > MAX_ARM_FRAME_TURN:
+				if angle - MAX_ARM_FRAME_TURN > arm_trim:
+					arm_trim = angle - MAX_ARM_FRAME_TURN
+					arm_trim_bone = bone
+				now = last.slerp(now, MAX_ARM_FRAME_TURN / angle).normalized()
+				rotations[i] = (parent_now.inverse() * now).normalized()
+	_world_cache.clear()
+
 
 
 ## A bone's local rotation with its twist about the bone (away from rest) unwrapped against the
