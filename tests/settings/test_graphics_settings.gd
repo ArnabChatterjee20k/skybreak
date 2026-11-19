@@ -79,3 +79,22 @@ func test_windowed_rect_never_exceeds_the_usable_area() -> void:
 func test_windowed_rect_respects_a_screen_offset() -> void:
 	var usable := Rect2i(1920, 0, 1920, 1040)
 	assert_true(usable.encloses(GraphicsSettings.windowed_rect(usable)))
+
+
+func test_web_builds_default_to_the_web_tier_windowed_at_reduced_scale() -> void:
+	var settings := GraphicsSettings.new(true)
+	assert_eq(settings.quality, GraphicsSettings.Quality.WEB)
+	assert_eq(settings.resolution_scale, GraphicsSettings.WEB_RESOLUTION_SCALE)
+	assert_false(settings.fullscreen)
+
+
+func test_web_default_is_used_when_nothing_is_saved() -> void:
+	var loaded := GraphicsSettings.load_saved("user://does_not_exist.cfg", true)
+	assert_eq(loaded.quality, GraphicsSettings.Quality.WEB)
+
+
+func test_saved_quality_wins_over_the_web_default() -> void:
+	var settings := GraphicsSettings.new()
+	settings.quality = GraphicsSettings.Quality.LOW
+	settings.save(TEST_PATH)
+	assert_eq(GraphicsSettings.load_saved(TEST_PATH, true).quality, GraphicsSettings.Quality.LOW)

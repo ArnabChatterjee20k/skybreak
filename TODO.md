@@ -132,6 +132,10 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-123 [developer] Web build: single-threaded Compatibility/WebGL2 preset, `web` quality tier,
+  `tools/web/build_web.sh` (checksummed templates), loading/click-to-start shell, headless
+  Chromium smoke test, Appwrite Sites steps in `tools/web/DEPLOY.md` (not deployed yet). Follow-up: VFX,
+  terrain and post read `quality_value("vfx_density" / "terrain_chunk_radius" / "post_effects")`.
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
