@@ -135,6 +135,23 @@ var spike_bounced: bool = false
 var combo_hits: int = 0
 var combo_damage: int = 0
 
+# Weapons (T-D14).
+## Weapon in each inventory slot (Weapon.Kind, NONE = empty).
+var weapons := PackedInt32Array([0, 0, 0])
+## Ammo left per slot; kept per weapon so a swap keeps it.
+var ammo := PackedInt32Array([0, 0, 0])
+## Slot in hand, or -1 for unarmed.
+var active_slot: int = -1
+## Ticks left in which a weapon switch blocks attacks.
+var switch_lockout: int = 0
+## Ticks left reloading (revolver cylinder).
+var reload_ticks: int = 0
+## Ticks left Smitten (Heartstring Bow): drifts toward smitten_by, cannot attack.
+var smitten_ticks: int = 0
+var smitten_by: int = -1
+## Ticks since Smitten last started, capped; a repeat inside the window lasts half as long.
+var ticks_since_smitten: int = 1 << 20
+
 
 ## Switches to new_state and restarts the tick counter, even if it is the same state.
 ## Leaving ATTACKING clears the attack; leaving HITSTUN ends the combo. Any change drops the vanish anchor.
@@ -291,7 +308,23 @@ func state_values() -> Array:
 		combo_hits, combo_damage,
 		perfect_block_armed, perfect_block_ticks, perfect_block_lockout, grab_partner,
 		extra_recovery_ticks,
+		weapons, ammo, active_slot, switch_lockout, reload_ticks,
+		smitten_ticks, smitten_by, ticks_since_smitten,
 	]
+
+
+## Weapon in hand (Weapon.Kind), NONE when unarmed.
+func held_weapon() -> Weapon.Kind:
+	return weapons[active_slot] as Weapon.Kind if active_slot >= 0 else Weapon.Kind.NONE
+
+
+## Number of filled weapon slots.
+func weapon_count() -> int:
+	var count := 0
+	for kind in weapons:
+		if kind != Weapon.Kind.NONE:
+			count += 1
+	return count
 
 
 func _clear_attack() -> void:

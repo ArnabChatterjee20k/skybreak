@@ -19,6 +19,10 @@ enum Action {
 	TRANSFORM = 1 << 11,
 	BREAKER = 1 << 12,
 	LOCK_TOGGLE = 1 << 13,
+	PICKUP = 1 << 14, ## G: pick up a weapon in reach; with none in reach, throw the held one.
+	WEAPON_NEXT = 1 << 15, ## Cycle Unarmed -> slot 1 -> slot 2 -> slot 3.
+	WEAPON_PREVIOUS = 1 << 16,
+	THROW = 1 << 17, ## Throw the held weapon.
 }
 
 ## Bitmasks of Action values: held this tick, went down this tick, went up this tick.
