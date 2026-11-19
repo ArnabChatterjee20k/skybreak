@@ -49,6 +49,10 @@ static var _ground_height := MovementTuning.new().ground_height
 ## Standing states whose planted feet lock to the ground.
 const FOOT_LOCK_STATES: Array[int] = [FighterState.State.IDLE, FighterState.State.BLOCKING,
 	FighterState.State.CHARGING]
+## Seconds before touchdown at which a descending fighter brings its legs under it.
+const LANDING_LEAD_SECONDS := 0.2
+## Ground under a foot further than this (m) from the stand floor is a ledge or wall, not a slope.
+const LEDGE_HEIGHT := 0.75
 const FOOT_BONES: Array[StringName] = [&"LeftFoot", &"RightFoot"]
 ## Knocked-out states: they play the knockdown fall unless the clip set maps them.
 const KO_STATES: Array[int] = [FighterState.State.KO_FALL, FighterState.State.KO_DOWN]
@@ -74,6 +78,8 @@ var _playing_motion := false
 var _airborne := false
 var _fall_speed := 0.0
 var _landing := &""
+## Landing clip held at its first frame while the fighter comes down onto the ground (&"": none).
+var _bracing := &""
 var _look_world := Vector3.ZERO
 var _look_weight := 0.0
 ## Motion personality (clips.motion_profile, or the defaults).
@@ -366,6 +372,13 @@ func _apply_motion_state(fighter: FighterState, delta: float, restarted: bool) -
 		return false
 	var local := to_model(fighter.velocity, fighter.facing_yaw)
 	var clip := MotionSlots.state_clip(fighter, local, _airborne, _clip if _playing_motion else &"", _landing)
+	if _bracing != &"" and _motion.has_animation(_bracing):
+		# About to land: the landing clip's first frame, so the legs are under the body at touchdown.
+		if not _playing_motion or _clip != _bracing:
+			_play_motion(_bracing)
+		_player.speed_scale = 1.0
+		_player.advance(0.0)
+		return true
 	if clip == &"" or not _motion.has_animation(clip):
 		return false
 	clip = _turn_clip(fighter, clip)
@@ -474,15 +487,18 @@ func _update_layers(fighter: FighterState, delta: float) -> void:
 		_fall_speed = maxf(-fighter.velocity.y, 0.0)
 	if fighter.state != FighterState.State.IDLE:
 		_landing = &""
+	_bracing = _brace_clip(fighter, airborne)
 	if fighter.state == FighterState.State.DASHING and fighter.state_ticks <= 1 and airborne:
 		layers.burst(1.0)
 	_airborne = airborne
 	layers.velocity = local
 	layers.crouch = 0.0 if airborne or fighter.state == FighterState.State.KNOCKDOWN else profile.crouch
-	layers.flying = airborne and fighter.state in [FighterState.State.FLYING, FighterState.State.DASHING,
-		FighterState.State.VANISHING]
+	layers.flying = airborne and _bracing == &"" and fighter.state in [FighterState.State.FLYING,
+		FighterState.State.DASHING, FighterState.State.VANISHING]
 	layers.foot_ik = not airborne and fighter.state != FighterState.State.KNOCKDOWN
 	layers.foot_lock = layers.foot_ik and fighter.state in FOOT_LOCK_STATES
+	layers.stance = layers.foot_lock
+	layers.brace = _bracing != &""
 	layers.ground = _feet_ground(fighter) if layers.foot_ik else Vector2.ZERO
 	layers.ground_at = _ground_under.bind(fighter) if layers.foot_ik and ground_height.is_valid() else Callable()
 	layers.advance_frame(delta)
@@ -493,6 +509,18 @@ func _update_layers(fighter: FighterState, delta: float) -> void:
 	layers.look_weight = _look_weight if fighter.state in [FighterState.State.IDLE, FighterState.State.MOVING,
 		FighterState.State.FLYING, FighterState.State.BLOCKING, FighterState.State.ATTACKING] else 0.0
 	_update_arms(fighter)
+
+
+## The landing clip to brace with when the fighter will touch down within LANDING_LEAD_SECONDS
+## (flying or falling, coming down, not guarding), else &"".
+func _brace_clip(fighter: FighterState, airborne: bool) -> StringName:
+	if not airborne or fighter.blocking or fighter.velocity.y >= -0.5 \
+			or fighter.state not in [FighterState.State.FLYING, FighterState.State.FALLING]:
+		return &""
+	var height := fighter.position.y - fighter.stand_height
+	if height > -fighter.velocity.y * LANDING_LEAD_SECONDS:
+		return &""
+	return &"heavy_land" if _fall_speed > MotionSlots.HEAVY_LANDING_SPEED else &"land"
 
 
 ## Floor under each foot relative to the floor the fighter stands on, in skeleton space (slopes,
@@ -514,7 +542,7 @@ func _feet_ground(fighter: FighterState) -> Vector2:
 		var at := to_world * skeleton.get_bone_global_pose(_feet[side]).origin
 		var under: float = ground_height.call(at.x, at.z, fighter.position.y)
 		# A ledge or wall far off the stand floor is not under the foot; keep the stand floor.
-		out[side] = clampf(under - floor_y, -0.3, 0.3) / scale
+		out[side] = clampf(under - floor_y, -LEDGE_HEIGHT, LEDGE_HEIGHT) / scale
 	return out
 
 
@@ -522,7 +550,7 @@ func _feet_ground(fighter: FighterState) -> Vector2:
 func _ground_under(at: Vector3, fighter: FighterState) -> float:
 	var scale := maxf(model.get_node("%GeneralSkeleton").global_transform.basis.get_scale().y, 0.001)
 	var under: float = ground_height.call(at.x, at.z, fighter.position.y)
-	return clampf(under - (fighter.stand_height - _ground_height), -0.3, 0.3) / scale
+	return clampf(under - (fighter.stand_height - _ground_height), -LEDGE_HEIGHT, LEDGE_HEIGHT) / scale
 
 
 ## Per-weapon-class arm overlay: two-handed hold, bow draw, pistol aim.
