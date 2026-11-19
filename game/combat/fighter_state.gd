@@ -15,8 +15,11 @@ enum State {
 	GUARD_BROKEN, ## Stunned after the guard meter ran out.
 	ATTACKING, ## Performing a move; attack_phase() says which part.
 	HITSTUN, ## Hit: unable to act for stun_ticks, flying with the knockback (a juggle when airborne).
-	BLOCKSTUN, ## Blocked a hit: unable to act for stun_ticks.
+	BLOCKSTUN, ## Blocked a hit, or pushed (push-block, grab tech): unable to act for stun_ticks, sliding with velocity.
 	KNOCKDOWN, ## On the floor after a spike bounce, for stun_ticks; cannot be hit.
+	BLOCKING, ## Holding block: guard up, slow drift only, no attacks except push-block.
+	GRABBED, ## Held by grab_partner until the throw or a tech.
+	THROWING, ## Holding grab_partner before throwing it.
 }
 
 ## Part of the current move, derived from move_tick.
@@ -68,10 +71,23 @@ var burst: int = 0
 var ticks_since_hit: int = 0
 ## Ticks since the last block or guard damage, counted up to the guard regen delay.
 var ticks_since_block: int = 0
-## True while blocking; T-D05 sets it. Blocking pauses guard regeneration.
+## True while the guard is up: BLOCKING, blockstun from a block, and push-block.
+## Blocking pauses guard regeneration.
 var blocking: bool = false
 ## Last Stand gives its free burst once per match.
 var last_stand_used: bool = false
+
+# Perfect block.
+## A block press is live: a strike landing now is perfect-blocked.
+var perfect_block_armed: bool = false
+## Ticks since the live block press, 0 on the press tick.
+var perfect_block_ticks: int = 0
+## Ticks left in which a block press cannot perfect-block (anti-mash).
+var perfect_block_lockout: int = 0
+
+# Grab.
+## The fighter held (THROWING) or holding this one (GRABBED), or -1.
+var grab_partner: int = -1
 
 # Attack, all reset when the fighter leaves ATTACKING.
 ## The move being performed, or null.
@@ -99,6 +115,8 @@ var hit_targets: int = 0
 var aim_pitch: float = 0.0
 ## Side a SWEEP pushes the target to: 1 right, -1 left, from the move input at attack start.
 var aim_side: int = 1
+## Recovery added to the current move (a perfect block against it).
+var extra_recovery_ticks: int = 0
 
 # Being hit.
 ## Length of the current HITSTUN, BLOCKSTUN or KNOCKDOWN in ticks.
@@ -153,6 +171,11 @@ func attack_phase() -> AttackPhase:
 	if move_tick < move.recovery_start_tick():
 		return AttackPhase.ACTIVE
 	return AttackPhase.RECOVERY
+
+
+## Ticks the current move lasts, extra recovery included; 0 when not attacking.
+func move_total_ticks() -> int:
+	return move.total_ticks() + extra_recovery_ticks if move else 0
 
 
 ## Ticks into the current attack phase, 0 on its first tick. HOLD counts from the button press.
@@ -260,6 +283,8 @@ func state_values() -> Array:
 		string_index, string_dropped, string_queued, contact_hit, contact_blocked,
 		hit_targets, aim_pitch, aim_side, stun_ticks, hitstop_ticks, knockback_type, spike_bounced,
 		combo_hits, combo_damage,
+		perfect_block_armed, perfect_block_ticks, perfect_block_lockout, grab_partner,
+		extra_recovery_ticks,
 	]
 
 
@@ -275,3 +300,4 @@ func _clear_attack() -> void:
 	contact_hit = false
 	contact_blocked = false
 	hit_targets = 0
+	extra_recovery_ticks = 0
