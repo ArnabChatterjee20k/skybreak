@@ -126,6 +126,11 @@ var events: Array[Dictionary] = []
 var pickup_tuning := PickupTuning.new()
 ## Zone the match is in; picks the spawn table. Set before the first tick.
 var zone: StringName = &"skyhold_ruins"
+## Floor height under (x, z) for something at height y: func(x, z, y) -> float (T-D13).
+## Unset is the flat floor at 0; a zone sets its quantised ground before the first tick.
+var ground_height: Callable
+## Centre (x, z) of the arena box; a zone moves it off the world origin.
+var arena_centre := Vector2.ZERO
 ## True to drop weapons from the sky; off by default (a "pure duel"), on in the arena.
 var pickups_enabled: bool = false
 ## Weapons in the world, and shots/thrown weapons in flight.
@@ -154,10 +159,11 @@ func add_fighter(start_position: Vector3, stats: FighterStats = null) -> Fighter
 	fighter.position = start_position
 	for _action in FighterInput.Action.size():
 		fighter.press_ages.append(INPUT_BUFFER_TICKS)
-	if start_position.y > tuning.ground_height:
+	if start_position.y > _stand_height(fighter) + _FLOOR_EPSILON:
 		fighter.enter_state(FighterState.State.FLYING)
 	else:
-		fighter.position.y = tuning.ground_height
+		fighter.position.y = _stand_height(fighter)
+	fighter.stand_height = _stand_height(fighter)
 	fighters.append(fighter)
 	return fighter
 
@@ -427,6 +433,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		_bounce_or_knock_down(fighter)
 	_clamp_to_arena(fighter)
 	_land_if_on_floor(fighter)
+	fighter.stand_height = _stand_height(fighter)
 	# Attacks and stuns keep the facing they started with; an unlocked guard holds its facing.
 	if fighter.state not in _FACING_LOCKED_STATES \
 			and (fighter.state != FighterState.State.BLOCKING or fighter.lock_on_target >= 0):
@@ -837,7 +844,7 @@ func _end_dash(fighter: FighterState) -> void:
 ## Back to standing on the floor, or flying above it, keeping capped momentum.
 func _enter_free_state(fighter: FighterState) -> void:
 	if _is_on_floor(fighter):
-		fighter.position.y = tuning.ground_height
+		fighter.position.y = _stand_height(fighter)
 		fighter.velocity.y = 0.0
 		fighter.velocity = fighter.velocity.limit_length(tuning.ground_speed)
 		fighter.enter_state(FighterState.State.IDLE)
@@ -855,7 +862,11 @@ func _move_on_ground(fighter: FighterState, input: FighterInput, wish: Vector3) 
 	var rate := tuning.ground_acceleration if wish != Vector3.ZERO else tuning.ground_deceleration
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
 	fighter.velocity = planar.move_toward(wish * tuning.ground_speed, rate * TICK_SECONDS)
-	fighter.position.y = tuning.ground_height
+	if fighter.position.y > _stand_height(fighter) + _LEDGE_DROP:
+		# Walked off a ledge (an island rim): fall.
+		fighter.enter_state(FighterState.State.FALLING)
+		return
+	fighter.position.y = _stand_height(fighter)
 	var next_state := FighterState.State.IDLE
 	if fighter.velocity != Vector3.ZERO:
 		next_state = FighterState.State.MOVING
@@ -935,7 +946,7 @@ func _move_blocking(fighter: FighterState, wish: Vector3) -> void:
 	fighter.velocity = fighter.velocity.move_toward(target, rate)
 	if _is_on_floor(fighter):
 		fighter.velocity.y = 0.0
-		fighter.position.y = tuning.ground_height
+		fighter.position.y = _stand_height(fighter)
 
 
 ## Where a grabber holds its target: in front along its aim.
@@ -977,7 +988,7 @@ func _bounce_or_knock_down(fighter: FighterState) -> void:
 	if fighter.knockback_type != MoveData.KnockbackType.SPIKE or not _is_on_floor(fighter) \
 			or fighter.velocity.y >= 0.0:
 		return
-	fighter.position.y = tuning.ground_height
+	fighter.position.y = _stand_height(fighter)
 	if not fighter.spike_bounced:
 		fighter.spike_bounced = true
 		fighter.velocity.y = hit_tuning.spike_bounce_speed
@@ -1366,8 +1377,8 @@ static func _closest_points(p1: Vector3, q1: Vector3, p2: Vector3, q2: Vector3) 
 ## Keeps fighters inside the arena box and stops motion into its walls.
 func _clamp_to_arena(fighter: FighterState) -> void:
 	var half := tuning.arena_half_size
-	var low := Vector3(-half, tuning.ground_height, -half)
-	var high := Vector3(half, tuning.arena_ceiling, half)
+	var low := Vector3(arena_centre.x - half, _stand_height(fighter), arena_centre.y - half)
+	var high := Vector3(arena_centre.x + half, tuning.arena_ceiling, arena_centre.y + half)
 	var clamped := fighter.position.clamp(low, high)
 	var velocity := fighter.velocity
 	for axis in 3:
@@ -1381,7 +1392,7 @@ func _land_if_on_floor(fighter: FighterState) -> void:
 	var airborne := fighter.state == FighterState.State.FLYING \
 		or fighter.state == FighterState.State.FALLING
 	if airborne and _is_on_floor(fighter) and fighter.velocity.y <= 0.0:
-		fighter.position.y = tuning.ground_height
+		fighter.position.y = _stand_height(fighter)
 		fighter.velocity.y = 0.0
 		fighter.enter_state(FighterState.State.IDLE)
 
@@ -1491,7 +1502,17 @@ func _points_at_target(index: int, direction: Vector3) -> bool:
 
 
 func _is_on_floor(fighter: FighterState) -> bool:
-	return fighter.position.y <= tuning.ground_height
+	return fighter.position.y <= _stand_height(fighter) + _FLOOR_EPSILON
+
+
+## Height of a standing fighter's origin at its (x, z).
+func _stand_height(fighter: FighterState) -> float:
+	return tuning.ground_height + _ground_at(fighter.position - Vector3.UP * _FIGHTER_HALF_HEIGHT)
+
+
+## Floor height under a point; flat 0 without a zone's ground.
+func _ground_at(at: Vector3) -> float:
+	return ground_height.call(at.x, at.z, at.y) if ground_height.is_valid() else 0.0
 
 
 func _nearest_opponent(index: int) -> int:
@@ -1607,6 +1628,10 @@ static func _action_index(action: int) -> int:
 
 ## A standing fighter's origin sits this far above the floor (capsule centre).
 const _FIGHTER_HALF_HEIGHT := 1.0
+## A grounded fighter whose floor drops by more than this in a tick falls instead.
+const _LEDGE_DROP := 0.75
+## Positions are 32-bit; a floor this close counts as touching.
+const _FLOOR_EPSILON := 0.001
 ## States a smitten fighter drifts in.
 const _NO_DRIFT_STATES: Array[FighterState.State] = [
 	FighterState.State.GRABBED, FighterState.State.THROWING,
@@ -1765,7 +1790,7 @@ func _drop_pickup(kind: Weapon.Kind, ammo: int, at: Vector3) -> WeaponPickup:
 	pickup.kind = kind
 	pickup.ammo = ammo
 	pickup.position = _inside_arena(at)
-	pickup.position.y = maxf(pickup.position.y, floor_height() + pickup_tuning.rest_height)
+	pickup.position.y = maxf(pickup.position.y, _ground_at(pickup.position) + pickup_tuning.rest_height)
 	pickup.phase = WeaponPickup.Phase.FALLING
 	pickup.ticks_left = pickup_tuning.dropped_lifetime_ticks
 	pickup.dropped = true
@@ -1863,7 +1888,7 @@ func _step_projectiles() -> void:
 		if not round_over:
 			spent = _projectile_contact(projectile, from)
 		var outside := projectile.position != _inside_arena(projectile.position) \
-			or projectile.position.y <= floor_height()
+			or projectile.position.y <= _ground_at(projectile.position)
 		if not spent and projectile.ticks_left > 0 and not outside:
 			kept.append(projectile)
 		elif projectile.thrown:
@@ -1956,7 +1981,6 @@ func _step_pickups() -> void:
 		if spawned < pickup_tuning.max_pickups:
 			_spawn_pickup()
 	var kept: Array[WeaponPickup] = []
-	var rest := floor_height() + pickup_tuning.rest_height
 	for pickup in pickups:
 		pickup.phase_ticks += 1
 		pickup.ticks_left -= 1
@@ -1969,6 +1993,7 @@ func _step_pickups() -> void:
 				pickup.fall_speed = maxf(pickup.fall_speed - pickup_tuning.drop_gravity * TICK_SECONDS,
 					-pickup_tuning.drop_max_speed)
 				pickup.position.y += pickup.fall_speed * TICK_SECONDS
+				var rest := _ground_at(pickup.position) + pickup_tuning.rest_height
 				if pickup.position.y <= rest:
 					pickup.position.y = rest
 					pickup.fall_speed = 0.0
@@ -1993,7 +2018,8 @@ func _spawn_pickup() -> void:
 	pickup.kind = _pick_kind(pickup_tuning.table_for(zone))
 	pickup.ammo = Weapon.full_ammo(pickup.kind)
 	pickup.position = _inside_arena(middle + Vector3(sin(angle), 0.0, cos(angle)) * distance)
-	pickup.position.y = floor_height() + pickup_tuning.drop_height
+	pickup.position.y = _ground_at(Vector3(pickup.position.x, middle.y, pickup.position.z)) \
+		+ pickup_tuning.drop_height
 	pickup.phase = WeaponPickup.Phase.TELEGRAPH
 	pickup.ticks_left = pickup_tuning.spawn_lifetime_ticks
 	pickups.append(pickup)
@@ -2020,7 +2046,8 @@ func _pick_kind(table: Dictionary) -> Weapon.Kind:
 ## Planar position kept a little inside the arena walls.
 func _inside_arena(at: Vector3) -> Vector3:
 	var half := tuning.arena_half_size - 1.0
-	return Vector3(clampf(at.x, -half, half), at.y, clampf(at.z, -half, half))
+	return Vector3(clampf(at.x, arena_centre.x - half, arena_centre.x + half), at.y,
+		clampf(at.z, arena_centre.y - half, arena_centre.y + half))
 
 
 func _new_entity_id() -> int:

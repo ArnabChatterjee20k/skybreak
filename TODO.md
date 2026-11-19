@@ -132,6 +132,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-106 + T-D13 + T-D19 [desktop] Zone match (`zone_match.tscn`, `configure()`) in all 7 zones: only the chosen zone's props, far terrain at its lowest LOD, per-zone arena box; sim floor from a quantised `ZoneGround` (`CombatSim.ground_height`), landing on islands and falling off their rims; atmosphere, weather and ambience pinned to the zone (no Stormfall rain in Heartbloom). Open: `CharacterView.is_airborne` and `WeaponLayer` pillar still use the flat floor (read `FighterState.stand_height` / the sim ground), sim lock-on and hits ignore teams, `rounds` is stored but MatchFlow is best of 3, no AIDriver yet (WeaponBot drives AI slots); Skyhold Ruins' floating stones are props only, so fighters hover there over the terrain.
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
