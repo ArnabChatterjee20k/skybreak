@@ -90,3 +90,10 @@ func test_the_ambience_stays_on_the_zone() -> void:
 	var zone_match := _match({"zone": &"frozen_peaks"})
 	assert_eq(zone_match.match_audio.default_zone, &"frozen_peaks")
 	assert_null(zone_match.match_audio.world, "no position-based ambience switching")
+
+
+func test_rounds_get_cues_music_zone_and_spawn_points() -> void:
+	var zone_match := _match({})
+	assert_true(zone_match.match_cues.is_inside_tree(), "round cues wired")
+	assert_eq(zone_match.match_cues.zone, zone_match.zone_id, "the zone's battle theme")
+	assert_eq(zone_match.match_flow.spawn_points, zone_match.spawn_positions(), "rounds restart on the zone spawns")
