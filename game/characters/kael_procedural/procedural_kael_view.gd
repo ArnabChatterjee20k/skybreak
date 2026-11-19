@@ -31,6 +31,7 @@ const STATE_CLIPS := {
 	"HITSTUN_LIGHT": &"hitstun_light",
 	"HITSTUN_HEAVY": &"hitstun_heavy",
 	"LAUNCHED": &"hitstun_heavy",
+	"GRABBED": &"hitstun_heavy",
 	"KNOCKDOWN": &"knockdown",
 	"GETTING_UP": &"get_up",
 	"GET_UP": &"get_up",
