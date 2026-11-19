@@ -144,13 +144,14 @@ func test_each_heavy_direction_picks_its_move_when_locked_on() -> void:
 
 
 func test_heavy_direction_is_relative_to_the_target_not_the_camera() -> void:
-	_start(Vector3(6, 0, 0))
-	# Camera yaw -90 degrees turns forward input toward +X, where the target is.
-	_drive(1, HEAVY, FORWARD, 0, -PI / 2)
-	assert_eq(_fighter().move_id(), &"breaker")
-	_start(Vector3(6, 0, 0))
-	_drive(1, HEAVY, FORWARD)
-	assert_eq(_fighter().move_id(), &"sweep", "forward on camera is sideways to the target")
+	# Locked on, W is toward the target whatever the camera yaw (T-D01b).
+	for camera_yaw in [-PI / 2, 0.0, PI]:
+		_start(Vector3(6, 0, 0))
+		_drive(1, HEAVY, FORWARD, 0, camera_yaw)
+		assert_eq(_fighter().move_id(), &"breaker", "camera yaw %.2f" % camera_yaw)
+		_start(Vector3(6, 0, 0))
+		_drive(1, HEAVY, RIGHT, 0, camera_yaw)
+		assert_eq(_fighter().move_id(), &"sweep", "camera yaw %.2f" % camera_yaw)
 
 
 func test_heavy_direction_is_relative_to_the_facing_when_unlocked() -> void:
