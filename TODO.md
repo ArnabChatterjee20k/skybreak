@@ -13,6 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- [desktop] QA re-baseline after #69/#72: golden replays and character visual goldens re-blessed
+  (causes in `tests/qa/goldens/README.md`), rollback timing bound made machine-relative, VFX
+  node-growth assert counts lazy pool fills instead of a fixed slack.
 - T-D31 [desktop] Gameplay QA harness: `tools/qa/run_qa.sh --quick|--full` (AI soak over
   every legend x zone x 1v1/FFA-4/2v2 with sim and view invariants, scenario library in
   `tests/qa/scenarios/`, golden replays, visual goldens, feel-metric trend, markdown/JSON
@@ -66,7 +69,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - QA-7 [desktop] Bug (T-D31): animation pops far over budget: ~29 body-bone pops (> 1.2 rad in one frame) per fighter-minute against 2 allowed. Worst: forearms flipping ~3.1 rad in run/strafe (Kael, Vexa mocap), RightLowerLeg 2.8 rad in Kael's light_4, Vexa's sash, Lyra's cape and Brann's beard braid chains; fingers pop ~29/min too.
 - QA-8 [desktop] Bug (T-D31): feet off the visible ground while standing: Kael and Vexa sink 5–11 cm in `fight_idle`, Brann's `idle` stands 9 cm in the ground at round start; Brann and Lyra also read +41–50 cm in IDLE mid-match (cause not isolated yet). Worst: in Shattered Mesa a fighter running along a pillar is up to 3 m inside the visible rock (the sim's baked `ZoneGround` interpolates across the cliff edge). Repro commands in the QA report.
 - QA-9 [desktop] Bug (T-D31): a held bow's string passes within 1.5–8 cm of the head centre (Brann blocking, attacking or in blockstun; Kael dashing), 7 of 252 full-soak matches.
-- [desktop] Flaky on main (T-D31 baseline run): `test_re_simulating_8_frames_for_4_fighters_takes_at_most_4_ms` (4.47 ms on a 4-core cloud box) and `test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_new` (329 vs 327 nodes).
+- QA-11 [desktop] Bug (QA re-baseline): with T-D29 merged, the soak's `fighter_overlap` check is live and fails 19 of 21 quick matches (up to 0.17 m, mostly ATTACKING vs ATTACKING/BLOCKING). `QaSimChecks.check_overlap` measures hurtboxes, while T-D29 resolves the pushboxes, which are slimmer and shorter by design. Measure `pushbox_at()` instead, then see whether any real pushbox overlap remains.
+- QA-10 [desktop] Bug (QA re-baseline): the Skyhold Ruins cloud sea renders differently on every run (SSIM 0.944, 4.2% tiles between two renders of the same commit), so `zone_skyhold_ruins` sits just above the visual-golden threshold on noise alone. Make the cloud layer's time deterministic in the QA shots.
 - [desktop] Bug (found in T-D22b): `WeaponMoves.move_set(kind, unarmed)` caches by weapon kind only, so the first fighter to arm a kind (e.g. Vexa) fixes its unarmed grab/push_block for everyone after. Key the cache by the unarmed set too.
 
 

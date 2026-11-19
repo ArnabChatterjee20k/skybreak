@@ -1,0 +1,238 @@
+{
+	"hitstops": {
+		"blade/breaker+counter": {
+			"12": 1
+		},
+		"blade/launcher": {
+			"8": 4
+		},
+		"blade/light_1": {
+			"4": 2
+		},
+		"blade/light_1+counter": {
+			"8": 2
+		},
+		"blade/light_2": {
+			"4": 4
+		},
+		"blade/light_3": {
+			"4": 4
+		},
+		"bow/projectile": {
+			"6": 4
+		},
+		"bow/projectile+counter": {
+			"10": 2
+		},
+		"breaker": {
+			"7": 2
+		},
+		"launcher": {
+			"7": 8,
+			"8": 2
+		},
+		"light_1": {
+			"3": 13,
+			"5": 6
+		},
+		"light_1+counter": {
+			"7": 5,
+			"8": 3,
+			"9": 1
+		},
+		"light_2": {
+			"3": 12,
+			"4": 2,
+			"5": 5,
+			"20": 1
+		},
+		"light_3": {
+			"3": 6,
+			"4": 2,
+			"5": 3,
+			"8": 4
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "114:shattered_mesa:2v2:kael,vexa,brann,lyra:3355",
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		3,
+		3,
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 114,
+	"sim_ms_per_tick": 2.16605416666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00614256458356977,
+		"finger_pops_per_fighter_minute": 20.6335973322218,
+		"foot_error_p95_cm": 9.90383784861741,
+		"foot_slide_cm_per_frame": 1.27875861140544,
+		"locked_on_screen_share": 0.977695167286245,
+		"pops_per_fighter_minute": 35.6398499374739
+	},
+	"view_ms_per_frame": 1.53954041666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 132,
+			"detail": "lowest sole -17.0 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1884,
+			"worst_value": -0.169883207889981
+		},
+		{
+			"check": "pop",
+			"count": 23,
+			"detail": "RightLowerArm turned 3.10 rad in one frame (MOVING, move , clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 67,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1691,
+			"worst_value": 3.09983944892883
+		},
+		{
+			"check": "pop",
+			"count": 15,
+			"detail": "RightLowerArm turned 3.08 rad in one frame (MOVING, move , clip walk)",
+			"fighter": 0,
+			"first_tick": 76,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 394,
+			"worst_value": 3.08451557159424
+		},
+		{
+			"check": "pop",
+			"count": 27,
+			"detail": "RightLowerArm turned 2.93 rad in one frame (MOVING, move , clip fight_idle)",
+			"fighter": 3,
+			"first_tick": 85,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 196,
+			"worst_value": 2.92583608627319
+		},
+		{
+			"check": "foot_ground",
+			"count": 4,
+			"detail": "lowest sole -23.9 cm off the visible ground (MOVING, clip walk)",
+			"fighter": 0,
+			"first_tick": 88,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 394,
+			"worst_value": -0.239288956413048
+		},
+		{
+			"check": "pop",
+			"count": 30,
+			"detail": "RightHand turned 2.78 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 90,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 90,
+			"worst_value": 2.77766156196594
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 38,
+			"detail": "fighters 0 and 3 overlap 0.17 m (FLYING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 606,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1030,
+			"worst_value": 0.172741763591766
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 51,
+			"detail": "fighters 1 and 2 overlap 0.12 m (ATTACKING vs BLOCKING)",
+			"fighter": 1,
+			"first_tick": 691,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 883,
+			"worst_value": 0.124961662292481
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -5.6 cm off the visible ground (MOVING, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 1691,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1691,
+			"worst_value": -0.0561458048876311
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 3,
+			"detail": "fighters 2 and 3 overlap 0.63 m (ATTACKING vs ATTACKING)",
+			"fighter": 2,
+			"first_tick": 1891,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1892,
+			"worst_value": 0.627754508256912
+		},
+		{
+			"check": "bow_string_head",
+			"count": 2,
+			"detail": "bow string 8.9 cm from the head centre (draw 1, ATTACKING)",
+			"fighter": 2,
+			"first_tick": 2280,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "bow",
+			"worst_tick": 2280,
+			"worst_value": 0.0893048271536827
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "95 pops in 2.7 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 5.33111111111111,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 95
+		}
+	],
+	"wall_seconds": 26.648,
+	"zone": "shattered_mesa"
+}

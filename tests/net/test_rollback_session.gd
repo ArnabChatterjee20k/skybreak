@@ -5,6 +5,10 @@ const NetScript := preload("res://tests/net/net_script.gd")
 const SEED := 21
 const TICKS := 3600
 const TICK_MS := 1000.0 / 60.0
+## 8 snapshotted ticks measure ~13-14x one plain tick (cloud box and under load); 1.5x headroom.
+const ROLLBACK_TICK_RATIO_MAX := 20.0
+## Most of a 60 fps frame; only a pathological slowdown or machine trips it.
+const ROLLBACK_MS_SANITY_MAX := 12.0
 
 var _now := [0.0]
 
@@ -125,16 +129,20 @@ func test_a_peer_that_hears_nothing_stalls_within_the_rollback_window() -> void:
 	assert_gt(peers[0].stalls, 0)
 
 
-func test_re_simulating_8_frames_for_4_fighters_takes_at_most_4_ms() -> void:
+func test_re_simulating_8_frames_for_4_fighters_costs_at_most_20_plain_ticks() -> void:
 	var sim := DuoMatch.new_sim(SEED, 2)
 	var bots := DuoMatch.new_bots(sim, SEED)
 	var session := RollbackSession.new(sim, null, 0, 1, DuoMatch.fighter_peers(sim), bots, 0, _clock)
 	session.fighter_peers = [0, 0, -1, -1]
 	var script := NetScript.new(9)
+	var next_inputs := func() -> Array[FighterInput]:
+		return [script.next_input(), script.next_input(), bots[2].next_input(sim), bots[3].next_input(sim)] as Array[FighterInput]
 	for i in 600:
-		sim.tick([script.next_input(), script.next_input(), bots[2].next_input(sim), bots[3].next_input(sim)] as Array[FighterInput])
+		sim.tick(next_inputs.call())
 	# Worst case: restore, then 8 ticks each with bot inputs and a fresh snapshot.
-	var timings: Array[float] = []
+	# Each trial also times 8 plain ticks right after, so both share the machine's speed and load.
+	var rollbacks: Array[float] = []
+	var plain_ticks: Array[float] = []
 	for trial in 41:
 		var saved := sim.snapshot()
 		var saved_bots := [SimSnapshot.capture(bots[2]), SimSnapshot.capture(bots[3])]
@@ -146,9 +154,18 @@ func test_re_simulating_8_frames_for_4_fighters_takes_at_most_4_ms() -> void:
 			sim.snapshot()
 			SimSnapshot.capture(bots[2])
 			SimSnapshot.capture(bots[3])
-			sim.tick([script.next_input(), script.next_input(), bots[2].next_input(sim), bots[3].next_input(sim)] as Array[FighterInput])
-		timings.append((Time.get_ticks_usec() - start) / 1000.0)
-	timings.sort()
-	var median := timings[timings.size() / 2]
-	gut.p("8-frame rollback, 4 fighters: median %.2f ms, max %.2f ms" % [median, timings[-1]])
-	assert_lte(median, 4.0)
+			sim.tick(next_inputs.call())
+		rollbacks.append((Time.get_ticks_usec() - start) / 1000.0)
+		start = Time.get_ticks_usec()
+		for f in RollbackSession.MAX_ROLLBACK:
+			sim.tick(next_inputs.call())
+		plain_ticks.append((Time.get_ticks_usec() - start) / 1000.0 / RollbackSession.MAX_ROLLBACK)
+	rollbacks.sort()
+	plain_ticks.sort()
+	var median := rollbacks[rollbacks.size() / 2]
+	var tick_median := plain_ticks[plain_ticks.size() / 2]
+	var ratio := median / maxf(tick_median, 0.001)
+	gut.p("8-frame rollback, 4 fighters: median %.2f ms (max %.2f), plain tick median %.3f ms, ratio %.1f"
+		% [median, rollbacks[-1], tick_median, ratio])
+	assert_lte(ratio, ROLLBACK_TICK_RATIO_MAX, "rollback cost relative to a plain tick on this machine")
+	assert_lte(median, ROLLBACK_MS_SANITY_MAX, "hard sanity bound, whatever the machine")
