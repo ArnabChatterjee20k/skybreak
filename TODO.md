@@ -46,6 +46,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## Backlog
 
+- T-D22b [desktop] Integrate `MotionLibrary` + `MotionLayers` into `CharacterView` for Kael and Vexa (ClipSet mapping, inertialized switches, root curves, foot IK), the weapon poses and the KO flow. Re-source the launcher (no true uppercut yet) and heavy hit (stumble, not a hit reaction); a proper sweep and hit-reaction mocap set are still missing.
+
 ### Milestone 1: flight and camera (goal: flying feels great)
 
 Playtest #1 (flight and camera) scored movement 2/5, camera 1/5. Target after
@@ -116,6 +118,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D22a [desktop] Motion realism spike: CMU + Bandai Namco mocap retargeted onto the humanoid profile (`game/characters/motion/`), 43 clips incl. frame-accurate strikes for all 14 Kael moves, `MotionLayers` prototype, old-vs-new metrics and comparison renders.
 - T-D00 [desktop] Game design document (`docs/GAME_DESIGN.md`), PR #1.
 - T-002 [developer] Graphics presets + resolution scale + vsync, F10 menu, PR #2.
 - T-003 [developer] Windows export preset (single exe), PR #4.
