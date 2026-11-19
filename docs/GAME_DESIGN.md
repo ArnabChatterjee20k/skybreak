@@ -50,7 +50,7 @@ Most 3D arena fighters fail in the same ways: button mashing wins, auto-combos p
 
 A round is a sequence of these loops. Meters (ki, guard, burst) carry over between loops, so every exchange changes the next one.
 
-**Match format:** best of 3 rounds, 99-second timer per round (optional ∞). Health carries no regen between rounds; meters reset to defaults each round.
+**Match format:** best of 3 rounds, 99-second timer per round (optional ∞). Each round starts with full health, 50 ki and full guard. **Burst carries over** between rounds, so saving meter for the next round is a real choice.
 
 ---
 
@@ -107,6 +107,9 @@ The camera is a gameplay system, not a presentation detail. Rules:
 - All moves are data (`MoveData` resources): startup, active and recovery frames, hitbox shape and offset per frame, damage, hitstun, blockstun, hitstop, knockback vector, guard damage, ki cost and gain, burst gain, cancel windows, armor frames and properties.
 
 ### 5.2 Meters (all integers in the sim)
+
+**Fixed-point rule:** the sim stores every meter as an integer in **sixtieths** (value × 60). That way every per-second rate in this document is a whole number per tick (ki +2/s = +2 per tick, health regen 150/s = +150 per tick), with no floats and no rounding drift. Displays divide by 60. Costs and maximums in the table are in display units (ki 100 = 6,000 stored).
+
 
 | Meter | Max | Gains | Spends | Notes |
 |---|---|---|---|---|
@@ -170,10 +173,10 @@ The camera is a gameplay system, not a presentation detail. Rules:
 
 The classic arena-fighter problem: teleport, counter-teleport, counter-counter-teleport, forever. Skybreak's rules:
 
-1. A **vanish counter** puts the defender behind, above or below the attacker. The **defender chooses** by holding back, Space or Ctrl. It's a guess, not a reflex.
+1. A **vanish counter** puts the defender behind, above or below the attacker. The **defender chooses** with the direction held on the tick the vanish triggers: `Space` = above, `Ctrl` = below, anything else (including `S`, nothing, or both `Space` and `Ctrl`) = behind. Movement doesn't apply while blocking, in hitstun or during a vanish, so these keys can't collide with ascend, descend or back-dash. It's a guess, not a reflex. The attacker's counter-vanish guess is read the same way on the tick they press it.
 2. The attacker can answer in two ways:
    - **Counter-vanish** (`Shift+E`, costs 40 ki): this only works against a vanish *in the direction they press*. A wrong guess wastes the ki.
-   - **Sense** (tap `E` within 12 f after the opponent disappears): the attacker turns and blocks the incoming strike. It's cheap (0 ki), but only blocks, so the attacker loses the advantage.
+   - **Sense** (tap `E` within 12 f after the opponent disappears): the attacker turns and blocks the incoming strike. It's cheap (0 ki), but only blocks, so the attacker loses the advantage. Sense is its own input context: a tap of `E` while an opponent is vanished is a Sense attempt, **not** a missed perfect block, so it never triggers the 20 f perfect-block lockout. One Sense attempt per vanish; a wrong-timed tap uses it up.
 3. **Maximum of 2 vanish exchanges per sequence.** After the second, a **Clash** happens: both fighters' fists meet with a shockwave, they're pushed apart to mid range, and neutral resets. It looks spectacular and ends the loop.
 
 The result: vanishing is a read with real costs, and it can never loop.
@@ -322,7 +325,7 @@ on round_end(player):       dialogue(Kael, "Next time, the sky breaks for me.")
 ```
 game/
   combat/      # deterministic sim: no Nodes, unit-tested headless
-    sim.gd             # tick(inputs) -> state
+    combat_sim.gd      # CombatSim: tick(inputs: Array[FighterInput]) -> void, then read its state
     fighter_state.gd   # position, velocity, state machine, meters
     move_data.gd       # Resource: frame data, hitboxes, cancels
     collision.gd       # hitbox vs hurtbox (capsules/spheres, simple math)
@@ -338,6 +341,7 @@ tests/         # GUT tests: frame data, cancels, meters, vanish limits, determin
 ```
 
 Key rules:
+- **`CombatSim.tick()` returns nothing.** The view and tests read `current_tick` and `fighters` (each a `FighterState`) after each tick.
 - **The sim never reads the clock or uses randomness without a seeded RNG** carried in the state. Same inputs give the same state (there's a determinism test: run 10,000 ticks twice, compare hashes).
 - **Interpolation:** the view interpolates between the last two sim states, so rendering at any fps stays smooth.
 - **Data-driven tuning:** a dev overlay (F1) shows and edits live frame data in a running match, with save-back to `.tres`.
