@@ -1,10 +1,16 @@
-// Expanding soft ring for heavy hits and clashes: additive, no screen-texture reads.
+// Expanding soft ring for heavy hits and clashes: additive, no screen or depth texture reads.
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 // Per instance, set by ImpactEffect.play() and its animation.
 instance uniform vec4 tint : source_color = vec4(1.0, 0.85, 0.6, 1.0);
 instance uniform float progress : hint_range(0.0, 1.0) = 0.0;
+// Per instance, set by ShockwaveEffect: lie in the node's XY plane instead of facing the camera.
+instance uniform bool lie_flat = false;
+// Per instance: world surface plane (xyz normal, w = normal · point) the ring fades into.
+instance uniform vec4 surface_plane = vec4(0.0, 1.0, 0.0, 0.0);
+// Per instance: metres above surface_plane over which the ring fades in; 0 = no surface fade.
+instance uniform float surface_fade = 0.0;
 
 // true faces the camera; false keeps the quad flat (rotate the node to the clash axis).
 uniform bool billboard = true;
@@ -16,8 +22,10 @@ uniform float start_radius : hint_range(0.0, 0.9) = 0.05;
 // Faint fill inside the ring early on.
 uniform float inner_glow : hint_range(0.0, 1.0) = 0.3;
 
+varying vec3 world_pos;
+
 void vertex() {
-	if (billboard) {
+	if (billboard && !lie_flat) {
 		mat4 world = mat4(
 			vec4(INV_VIEW_MATRIX[0].xyz * length(MODEL_MATRIX[0].xyz), 0.0),
 			vec4(INV_VIEW_MATRIX[1].xyz * length(MODEL_MATRIX[1].xyz), 0.0),
@@ -25,6 +33,9 @@ void vertex() {
 			MODEL_MATRIX[3]);
 		MODELVIEW_MATRIX = VIEW_MATRIX * world;
 		MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+		world_pos = (world * vec4(VERTEX, 1.0)).xyz;
+	} else {
+		world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	}
 }
 
@@ -38,5 +49,8 @@ void fragment() {
 	float ring = 1.0 - smoothstep(hard_edge, width, abs(r - radius));
 	float inner = inner_glow * (1.0 - smoothstep(0.0, radius + 1e-3, r)) * (1.0 - ease);
 	float fade = pow(1.0 - t, 1.5) * (1.0 - step(1.0, r));
-	ALBEDO = tint.rgb * (ring + inner) * fade * intensity;
+	// Soft fade toward the surface so the ground never cuts the ring with a straight edge.
+	float height = dot(world_pos, surface_plane.xyz) - surface_plane.w;
+	float ground = surface_fade > 0.0 ? smoothstep(0.0, surface_fade, height) : 1.0;
+	ALBEDO = max(tint.rgb * (ring + inner) * fade * ground * intensity, vec3(0.0));
 }
