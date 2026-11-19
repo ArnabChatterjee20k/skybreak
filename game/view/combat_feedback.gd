@@ -25,10 +25,19 @@ const ITEM_COLOR := Color(1.0, 0.8, 0.3)
 ## Set by the arena.
 var camera: FighterCamera
 var impact_frame: ImpactFrame
+## Pooled T-D27 effects (smears, afterimages, KO finisher, zone extras); same events.
+var vfx := MatchVfx.new()
+
+
+func _ready() -> void:
+	# Internal, so the feedback's own children stay just the one-shot sparks.
+	add_child(vfx, false, Node.INTERNAL_MODE_FRONT)
 
 
 ## Spawns the feedback for one tick's events.
 func react(events: Array[Dictionary]) -> void:
+	if vfx.is_inside_tree():
+		vfx.react(events)
 	for event in events:
 		var plan := plan_for(event)
 		for scene: PackedScene in plan.effects:
@@ -96,4 +105,15 @@ static func plan_for(event: Dictionary) -> Dictionary:
 			plan.effects = [SPARK_LIGHT]
 			plan.color = ITEM_COLOR
 			plan.scale = 0.4
+		E.GADGET_EXPLODE, E.MINE_TRIGGER:
+			plan.effects = [SHOCKWAVE]
+			plan.color = ITEM_COLOR
+			plan.shake = 0.25 if event.type == E.GADGET_EXPLODE else 0.08
+		E.POWER_PICKUP, E.POWER_END, E.AEGIS_BREAK, E.GADGET_THROW, E.DECOY_POP, E.GADGET_END, \
+				E.BOW_DRAW, E.ARROW_PIN, E.TETHER, E.TETHER_YANK, E.TETHER_END, E.OVERHEAT, \
+				E.BULLET_ABSORB, E.SWAP_CANCEL, E.DISC_CATCH:
+			# T-D26 items and weapon extras: small gold sparks.
+			plan.effects = [SPARK_LIGHT]
+			plan.color = ITEM_COLOR
+			plan.scale = 0.5 if event.type in [E.AEGIS_BREAK, E.ARROW_PIN, E.TETHER_YANK] else 0.35
 	return plan
