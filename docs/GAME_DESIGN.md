@@ -67,6 +67,7 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 | **Block** | `E` (hold) | **Tap** just before a hit = perfect block (§5.4) |
 | **Dash** | `Left Shift` + direction | Tap = short step. Hold = sustained flight-dash. Toward the target while locked = rush dash |
 | Grab | `F` | Beats block. Loses to strikes |
+| Pick up / throw item | `G` | Tap near an item to pick it up. Tap while holding a weapon to throw it at the target |
 | Ki blast | `Q` | Tap = rapid shot. Hold = charged blast |
 | Charge ki | `R` (hold) | Fast ki gain, but you're vulnerable |
 | Specials 1 / 2 / 3 | `1` `2` `3` | Character-specific (cost ki) |
@@ -227,6 +228,43 @@ Every wakeup has 6 f of invincibility, then is vulnerable. The attacker reads it
 
 ---
 
+### 5.11 Pickups: weapons, powers and gadgets
+
+Inspired by platform fighters like Brawlhalla, adapted to 3D flight: items **drop from the sky during the fight** and change how you fight for a while. Every pickup creates a decision: grab it, deny it to the opponent, or keep pressing your advantage. All of it can be switched off in match setup ("pure duel").
+
+**Spawning (deterministic, in the sim):**
+- Every 12–18 s (seeded rng), an item spawns 25–60 m from the midpoint between the fighters, above the ground, with a **2 s telegraph**: a light pillar from the sky plus a sound, visible on the HUD as an edge marker when off-screen.
+- At most 3 items on the map at once. Items despawn after 30 s. Weapons and powers alternate, so each type appears about evenly.
+- Picking up takes `G` within 2.5 m. The pickup is instant but has 6 f of recovery, so grabbing in front of the opponent is a risk.
+
+**Weapons** (each replaces your unarmed move set while held; unarmed stays fully viable):
+
+| Weapon | Style | Strength | Weakness |
+|---|---|---|---|
+| **Ki Gauntlets** | Fast, short, combo-heavy | Longest strings, quick cancels | Short reach |
+| **Storm Blade** | Balanced sword arcs | Good reach and speed | No standout tool |
+| **Sky Lance** | Long pokes, a dash-thrust | Best range control | Slow recovery on whiff |
+| **Titan Hammer** | Slow, huge hits | Guard crush, wall-splats | Easy to punish |
+| **Orbit Chakram** | Thrown and returning disc | Hits from mid range twice (out and back) | Weak up close |
+| **Ember Scythe** | Wide sweeping arcs | Pulls opponents in, hits sidesteppers | Long startup |
+
+- **Throwing:** `G` while holding a weapon throws it at the target as a fast projectile (damage plus a short stun). It's the classic "throw it before you lose it" play.
+- **Losing a weapon:** you drop it on guard break, knockdown, or when hit by a counter-hit heavy. Dropped weapons stay on the map for 10 s and anyone can grab them.
+- Each weapon is a `MoveSet` (the same data as unarmed), so balance is pure data tuning.
+
+**Powers** (instant, timed buffs that show as an aura colour):
+- **Overdrive Orb:** ki regen ×3 for 10 s.
+- **Burst Shard:** +50 burst.
+- **Aegis:** absorbs the next hit completely (shield flash).
+- **Haste:** +20% movement and dash speed for 8 s.
+
+**Gadgets** (one-shot throwables, thrown with `G`):
+- **Spike Bomb:** explodes after 1.5 s or on contact; launches.
+- **Gravity Mine:** placed in the air; pulls nearby fighters in for 2 s.
+- **Mirror Decoy:** spawns a fake that copies your last action for 3 s.
+
+**Readability:** weapons and items have bold silhouettes and their own colour family (gold), so they never get confused with fighter energy colours (§11).
+
 ## 6. Fighters (launch roster: 4)
 
 Each fighter has a clear playstyle, one strength, one weakness and one unique mechanic. All are **original characters**.
@@ -362,6 +400,20 @@ Key rules:
 
 ---
 
+## 12.1 Online play (future: Appwrite Realtime)
+
+Online versus is planned for later, using **Appwrite** (auth, lobbies, presence) with **Appwrite Realtime** as the transport. Design for it now so nothing has to be rebuilt:
+
+- **Netcode model: rollback with input delay.** Only inputs travel. Each peer runs the same deterministic sim, predicts the remote input, and rolls back and re-simulates when the real input arrives. Targets: 2 frames of input delay, up to 8 frames of rollback.
+- **Requirements on the sim, starting today:**
+  - fully deterministic: already the rule, with seeded rng and no wall clock
+  - **snapshot and restore** of the whole sim state in under 1 ms, so rollback can rewind
+  - **compact, serializable inputs**: action bitmask plus quantised stick, camera yaw and offset (about 10–12 bytes per tick)
+  - all pickup spawns come from the seeded rng in the sim, never from the view
+- **Transport abstraction:** a `NetTransport` interface, so Appwrite Realtime (or the Appwrite Push/MQTT path already used by MisterMime) can be swapped in without touching the sim.
+- **Lobbies and matchmaking:** Appwrite Auth plus a lobbies collection; Realtime presence shows who is online.
+- **Known risk:** floating-point determinism across different CPUs. The same build on Windows x86-64 is fine. If cross-platform play is ever wanted, the sim's movement math may need fixed-point.
+
 ## 13. Playtest plan
 
 Each milestone ends with a playtest by the owner, with a short checklist:
@@ -390,6 +442,8 @@ Tuning targets: an average round lasts 45–75 s; an average combo deals 12–20
 ---
 
 ## 15. Open questions for the owner
+
+*(Pickups and online answered by the owner on 2026-11-19: yes to Brawlhalla-style weapons and powers in the arena, and Appwrite Realtime online later.)*
 
 1. Is a 99 s round timer right, or do you want ∞ by default?
 2. Do you want **Arcade story mode** in the first full version (milestone 7), or later?
