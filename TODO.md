@@ -13,6 +13,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-131 [developer] Camera #75, PR #97: `CameraObstacles` (prop boxes, terrain, island bodies
+  by shape), turn-acceleration cap, target glide, big-jump cut, KO framing. Finished by the cloud
+  controller: main merged, 5_rush_from_far near-gap floor 0.099 (the cap eases the swing in),
+  Heartbloom KO drop rechecked (gone since #94).
+
 - T-D34 [desktop] QA cleanup: QA-ID hygiene (#95's harness item is QA-16 now; QA-15 stays
   #94's FFA stacking, done), QA-16 (foot slide resets on vanish/teleport, hidden frames and
   round starts; floating feet skipped and counted; trend re-baselined as foot slide v2),

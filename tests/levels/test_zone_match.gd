@@ -97,3 +97,9 @@ func test_rounds_get_cues_music_zone_and_spawn_points() -> void:
 	assert_true(zone_match.match_cues.is_inside_tree(), "round cues wired")
 	assert_eq(zone_match.match_cues.zone, zone_match.zone_id, "the zone's battle theme")
 	assert_eq(zone_match.match_flow.spawn_points, zone_match.spawn_positions(), "rounds restart on the zone spawns")
+
+
+func test_the_camera_knows_the_zone_obstacles() -> void:
+	var zone_match := _match({"zone": &"stormfall_city"})
+	assert_not_null(zone_match.camera.obstacles)
+	assert_gt(zone_match.camera.obstacles.boxes.size(), 50, "buildings and props become boxes")
