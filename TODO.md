@@ -15,6 +15,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 - T-003 [developer] Export preset for a Windows .exe build: `export_presets.cfg`,
   single exe with embedded pck, tests and GUT left out.
+- T-D08 [desktop] Toon + outline + rim shaders. PR #3.
 
 ## Backlog
 
@@ -51,7 +52,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   push-block.
 - T-D06 [desktop] Vanish rules: direction guess, Sense, max 2, then Clash.
 - T-D07 [desktop] Chase/tech and wall-splat.
-- T-D08 [desktop] Toon + outline + rim shaders.
 - T-D09 [desktop] Aura and impact VFX shaders.
 
 ### Milestone 2–3 (developer side)

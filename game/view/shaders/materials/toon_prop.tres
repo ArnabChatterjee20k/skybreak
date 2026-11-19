@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" load_steps=4 format=3]
+
+[ext_resource type="Shader" path="res://game/view/shaders/toon.gdshader" id="1_toon"]
+[ext_resource type="Shader" path="res://game/view/shaders/outline.gdshader" id="2_outline"]
+
+[sub_resource type="ShaderMaterial" id="outline_pass"]
+shader = ExtResource("2_outline")
+shader_parameter/outline_width = 1.25
+shader_parameter/outline_min_width = 0.5
+
+[resource]
+next_pass = SubResource("outline_pass")
+shader = ExtResource("1_toon")
+shader_parameter/specular_enabled = false
+shader_parameter/rim_strength = 0.2
