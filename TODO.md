@@ -13,6 +13,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D11 [desktop] Kael built entirely in code (Blender-as-module generator, humanoid rig,
+  31 clips timed to the sim's frame data), for comparison with T-D10, PR #36.
 - T-116 [developer] VFX prewarm at arena load behind a short loading cover.
 - T-D09b [desktop] VFX fixes from the GTX 1650 check of T-D09: shockwave no
   longer cut by the ground, aura never darkens the body, flames break into
