@@ -132,6 +132,13 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D15 [desktop] Rollback core + Duo online prototype: `CombatSim.snapshot()`/
+  `restore()` (reflection deep copy, `SimSnapshot`), compact `InputCodec` (8-18 B),
+  transport-agnostic `RollbackSession` (2-tick delay, prediction, 8-tick rollback,
+  hash desync check, frame-advantage sync), loopback + WebRTC transports, Appwrite
+  lobby/signalling, `duo_lobby.tscn`. Open: provision the `skybreak_` resources
+  (game/net/README.md), vendor webrtc-native in `addons/` [developer], draw the
+  session in the arena, Presence-based signalling, team rules (stocks, friendly fire).
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,

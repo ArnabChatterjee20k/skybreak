@@ -219,6 +219,16 @@ func state_hash() -> int:
 	return hash(var_to_bytes(parts))
 
 
+## Copy of the whole sim state (fighters, pickups, projectiles, rng) for rollback.
+func snapshot() -> SimSnapshot:
+	return SimSnapshot.capture(self)
+
+
+## Puts a snapshot() back; fighters keep their object identity for the view.
+func restore(saved: SimSnapshot) -> void:
+	saved.restore_into(self)
+
+
 ## True while a press of action is inside the buffer window and not yet consumed.
 func is_buffered(fighter_index: int, action: FighterInput.Action) -> bool:
 	var fighter := fighters[fighter_index]
