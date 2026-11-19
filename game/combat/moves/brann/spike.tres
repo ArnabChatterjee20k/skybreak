@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"spike"
+display_name = "Ground Pound"
+startup_ticks = 20
+active_ticks = 5
+recovery_ticks = 28
+step_distance = 0.4
+hitbox_offsets = PackedVector3Array(0, -0.65, -0.9, 0, -0.75, -0.8, 0, -0.8, -0.7, 0, -0.8, -0.6, 0, -0.8, -0.5)
+hitbox_radii = PackedFloat32Array(0.9, 1.4, 1.9, 2.3, 2.6)
+damage = 900
+hitstun_ticks = 44
+blockstun_ticks = 18
+hitstop_ticks = 11
+knockback_type = 3
+knockback = Vector3(0, -30, -6)
+guard_damage = 26
+cancel_level = 2
+cancel_start_tick = 20
+cancel_end_tick = 34
+armor_start_tick = 6
+armor_end_tick = 20

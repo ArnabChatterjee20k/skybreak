@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"rising"
+display_name = "Ascending Sextant"
+startup_ticks = 9
+active_ticks = 4
+recovery_ticks = 24
+step_distance = 0
+hitbox_offsets = PackedVector3Array(0, 0.5, -0.85, 0, 0.7, -0.85, 0, 0.9, -0.8, 0, 1.1, -0.8)
+hitbox_radii = PackedFloat32Array(0.55, 0.55, 0.55, 0.55)
+hitbox_lengths = PackedFloat32Array(1, 1, 1, 1)
+hitbox_axes = PackedVector3Array(0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0)
+damage = 480
+hitstun_ticks = 34
+blockstun_ticks = 12
+hitstop_ticks = 7
+knockback_type = 2
+knockback = Vector3(0, 17, -3)
+guard_damage = 14
+cancel_level = 2
+cancel_start_tick = 9
+cancel_end_tick = 22
+invincible_start_tick = 2
+invincible_end_tick = 9
+invincible_upper_body_only = true

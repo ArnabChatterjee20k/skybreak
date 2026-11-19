@@ -17,16 +17,27 @@ const SHOCKWAVE := preload("res://game/view/shaders/vfx/shockwave.tscn")
 const HEAVY_HITSTOP := 7
 const BLOCK_COLOR := Color(0.65, 0.85, 1.0)
 const ARMOR_COLOR := Color(0.75, 0.75, 0.8)
+## Floor impacts of a knocked-out fighter (KO bounce and rest).
+const DUST_COLOR := Color(0.8, 0.72, 0.6)
 ## Weapon events use the gold item colour (GAME_DESIGN §5.11); the weapon layer draws the rest.
 const ITEM_COLOR := Color(1.0, 0.8, 0.3)
 
 ## Set by the arena.
 var camera: FighterCamera
 var impact_frame: ImpactFrame
+## Pooled T-D27 effects (smears, afterimages, KO finisher, zone extras); same events.
+var vfx := MatchVfx.new()
+
+
+func _ready() -> void:
+	# Internal, so the feedback's own children stay just the one-shot sparks.
+	add_child(vfx, false, Node.INTERNAL_MODE_FRONT)
 
 
 ## Spawns the feedback for one tick's events.
 func react(events: Array[Dictionary]) -> void:
+	if vfx.is_inside_tree():
+		vfx.react(events)
 	for event in events:
 		var plan := plan_for(event)
 		for scene: PackedScene in plan.effects:
@@ -79,9 +90,30 @@ static func plan_for(event: Dictionary) -> Dictionary:
 		E.GRAB, E.GRAB_TECH:
 			plan.effects = [SPARK_LIGHT]
 			plan.scale = 0.6
+		E.KO_BOUNCE:
+			plan.effects = [SHOCKWAVE]
+			plan.color = DUST_COLOR
+			plan.scale = 0.6
+			plan.shake = 0.25
+		E.KO_REST:
+			plan.effects = [SHOCKWAVE]
+			plan.color = DUST_COLOR
+			plan.scale = 0.35
+			plan.shake = 0.08
 		E.PICKUP_SPAWN, E.PICKUP, E.PICKUP_DESPAWN, E.WEAPON_SWITCH, E.WEAPON_THROW, \
 				E.WEAPON_DROP, E.FIRE, E.PROJECTILE_HIT:
 			plan.effects = [SPARK_LIGHT]
 			plan.color = ITEM_COLOR
 			plan.scale = 0.4
+		E.GADGET_EXPLODE, E.MINE_TRIGGER:
+			plan.effects = [SHOCKWAVE]
+			plan.color = ITEM_COLOR
+			plan.shake = 0.25 if event.type == E.GADGET_EXPLODE else 0.08
+		E.POWER_PICKUP, E.POWER_END, E.AEGIS_BREAK, E.GADGET_THROW, E.DECOY_POP, E.GADGET_END, \
+				E.BOW_DRAW, E.ARROW_PIN, E.TETHER, E.TETHER_YANK, E.TETHER_END, E.OVERHEAT, \
+				E.BULLET_ABSORB, E.SWAP_CANCEL, E.DISC_CATCH:
+			# T-D26 items and weapon extras: small gold sparks.
+			plan.effects = [SPARK_LIGHT]
+			plan.color = ITEM_COLOR
+			plan.scale = 0.5 if event.type in [E.AEGIS_BREAK, E.ARROW_PIN, E.TETHER_YANK] else 0.35
 	return plan

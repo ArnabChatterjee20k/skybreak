@@ -32,6 +32,11 @@ const WEAPON_SLOT_CLIPS := {&"bash": &"breaker", &"throw": &"light_2", &"shot": 
 @export var impact_windows: Dictionary[StringName, Vector2] = {}
 ## Crossfade between looping clips, seconds.
 @export var blend_time: float = 0.12
+## Mocap clips (T-D22). When set, CharacterView plays these for every slot MotionSlots maps and
+## falls back to the clips above, per slot, where the motion library has no clip.
+@export var motion: MotionLibrary
+## Move id -> motion clip, overriding MotionSlots.MOVES for this character.
+@export var motion_moves: Dictionary[StringName, StringName] = {}
 
 
 func clip_for_state(state_name: StringName, airborne := false) -> StringName:
@@ -66,7 +71,11 @@ func mapped_clips() -> Array[StringName]:
 ## impact window, ACTIVE spans it, recovery plays the rest of the clip.
 func attack_clip_time(clip: StringName, move: MoveData, tick: float) -> float:
 	var length := library.get_animation(clip).length
-	var window: Vector2 = impact_windows.get(clip, Vector2(length * 0.4, length * 0.5))
+	return phase_clip_time(length, impact_windows.get(clip, Vector2(length * 0.4, length * 0.5)), move, tick)
+
+
+## attack_clip_time for any clip: its length and impact window (seconds).
+static func phase_clip_time(length: float, window: Vector2, move: MoveData, tick: float) -> float:
 	var active_start := float(move.startup_ticks)
 	var active_end := float(move.recovery_start_tick())
 	if tick < active_start:

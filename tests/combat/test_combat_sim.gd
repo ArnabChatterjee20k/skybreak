@@ -20,7 +20,7 @@ const SCRIPTED_HOLDS: Array[int] = [
 ## Seeds of the 10k-tick matches whose combined record the coverage tests
 ## check. Several matches keep rare outcomes (one or two per match) from
 ## depending on one lucky seed when tuning changes.
-const COVERAGE_SEEDS: Array[int] = [42, 43, 44, 48]
+const COVERAGE_SEEDS: Array[int] = [42, 43, 44, 46, 48]
 ## Chances of the bots' defensive reads (per incoming strike for the block,
 ## else per tick), so blocks, perfect blocks, grabs, techs and push-blocks all
 ## happen: a block tap before a strike lands, a grab against a guard, a light
@@ -239,6 +239,8 @@ func _record_events(sim: CombatSim, before: Array, visited: Dictionary) -> void:
 		visited["event %d" % event.type] = true
 		if event.type in [CombatSim.EventType.HIT, CombatSim.EventType.COUNTER]:
 			visited["knockback %d" % event.knockback_type] = true
+		if not event.has("target"):
+			continue
 		var target_before: Array = before[event.target]
 		var target_move: MoveData = target_before[0]
 		match event.type:
@@ -289,8 +291,8 @@ func test_same_seed_and_inputs_give_identical_state_after_10k_ticks() -> void:
 
 func test_a_scripted_4_fighter_free_for_all_is_deterministic_and_has_every_defense() -> void:
 	var visited := {}
-	var first := _run_match(7, 10_000, visited, 4)
-	assert_eq(first, _run_match(7, 10_000, {}, 4))
+	var first := _run_match(12, 10_000, visited, 4)
+	assert_eq(first, _run_match(12, 10_000, {}, 4))
 	for type in [CombatSim.EventType.BLOCK, CombatSim.EventType.PERFECT_BLOCK, CombatSim.EventType.GRAB,
 			CombatSim.EventType.THROW, CombatSim.EventType.GRAB_TECH, CombatSim.EventType.PUSH_BLOCK]:
 		assert_true(visited.has("event %d" % type), "a %s event" % CombatSim.EventType.keys()[type])

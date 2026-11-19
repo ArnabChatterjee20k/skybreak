@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"smash"
+display_name = "Quench Punch"
+startup_ticks = 18
+active_ticks = 4
+recovery_ticks = 26
+step_distance = 0.9
+hitbox_offsets = PackedVector3Array(0, 0.25, -1.35, 0, 0.25, -1.35, 0, 0.25, -1.35, 0, 0.25, -1.35)
+hitbox_radii = PackedFloat32Array(0.8, 0.8, 0.8, 0.8)
+damage = 950
+hitstun_ticks = 42
+blockstun_ticks = 18
+hitstop_ticks = 10
+knockback_type = 1
+knockback = Vector3(0, 6, -34)
+guard_damage = 24
+cancel_level = 2
+cancel_start_tick = 18
+cancel_end_tick = 32
+armor_start_tick = 4
+armor_end_tick = 18
+charge_level_ticks = PackedInt32Array(16, 42, 70)
