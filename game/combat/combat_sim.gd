@@ -272,6 +272,7 @@ func _canonicalize_zeros() -> void:
 		fighter.dash_direction = DetMath.canon(fighter.dash_direction)
 		fighter.vanish_offset = DetMath.canon(fighter.vanish_offset)
 		fighter.pushback_velocity = DetMath.canon(fighter.pushback_velocity)
+		fighter.ko_origin = DetMath.canon(fighter.ko_origin)
 		fighter.facing_yaw += 0.0
 		fighter.aim_pitch += 0.0
 		fighter.tether_length += 0.0
@@ -1637,7 +1638,7 @@ func _air_knockback_guarded(attacker: FighterState, target: FighterState, move: 
 	if out.length_squared() >= separation * separation:
 		return velocity
 	if out.length_squared() < 0.0001:
-		out = Basis(Vector3.UP, attacker.facing_yaw) * Vector3.FORWARD
+		out = DetMath.forward(attacker.facing_yaw)
 	out = out.normalized()
 	var min_out := hit_tuning.air_knockback_min_out
 	if move.cancel_level == MoveData.CancelLevel.LIGHT:
