@@ -70,7 +70,18 @@ vec3 zone_colour(int i, float h, float rock_mix, float blotch) {
 	float band = step(0.5, fract(world_pos.y / 6.0 + blotch * 0.35));
 	vec3 rock = zone_rock[i].rgb * mix(1.0, 0.78 + 0.22 * band, p.z);
 	vec3 col = mix(ground, rock, rock_mix);
-	if (p.w > 0.5) {
+	if (p.w > 1.5 && p.w < 2.5) {
+		// Snow: wind-carved sastrugi ridges with blue-grey lee sides, faded out where
+		// they would alias (far away) so the ground behind fighters stays calm.
+		float phase = dot(world_pos.xz, vec2(0.83, 0.56)) / 2.6 + blotch * 7.0;
+		float ridge = smoothstep(0.35, 0.95, sin(phase) * 0.5 + 0.5);
+		float fade = 1.0 - smoothstep(0.15, 0.45, fwidth(phase));
+		vec3 lee = col * vec3(0.8, 0.86, 0.97);
+		col = mix(col, lee, ridge * fade * (1.0 - rock_mix) * 0.85);
+		// Wind-scoured patches where older, greyer snow shows through.
+		float scour = smoothstep(0.62, 0.7, value_noise(world_pos.xz / 23.0 + 3.1));
+		col = mix(col, col * vec3(0.84, 0.87, 0.93), scour * (1.0 - rock_mix));
+	} else if (p.w > 0.5) {
 		// City: darker streets on a 48 m block grid.
 		vec2 g = abs(fract((world_pos.xz + 6.0) / 48.0) - 0.5) * 48.0;
 		float street = 1.0 - step(6.0, min(g.x, g.y));
