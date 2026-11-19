@@ -13,6 +13,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D13 fix [desktop] Flat floor bit-identical to pre-terrain: floor epsilon and
+  ledge drop only apply with an injected `ground_height`; golden per-tick
+  fingerprints from f1d2dba (`tests/combat/test_flat_floor_equivalence.gd`).
+  Open: goldens recorded on Linux; confirm they also match on the Windows PC.
 - T-D18 [desktop] Vexa built natively in Godot code as a rigid action figure
   (FigureKit mesh kit, humanoid-profile rig, procedural layer), stacked on
   T-D10.
