@@ -11,17 +11,18 @@ const VIEW_TO_MODEL := Transform3D(Basis(Vector3.UP, PI), Vector3(0, 1, 0))
 
 ## How each move looks. limb: the striking hand or foot (BothHands strikes with
 ## both, RightHand leads). windup: where it pulls back to. follow: where it
-## travels after the hit, relative to the hitbox. twist/lean in degrees.
+## travels after the hit, relative to the hitbox. off: where the other hand
+## goes while striking (a throw pulls it back). twist/lean in degrees.
 const STYLES := {
 	&"light_1": {"limb": &"LeftHand", "windup": Vector3(0.2, 1.3, 0.05), "twist": [10, -20], "lean": 6},
 	&"light_2": {"limb": &"RightHand", "windup": Vector3(-0.22, 1.28, -0.02), "twist": [-25, 30], "lean": 8},
 	&"light_3": {"limb": &"LeftHand", "windup": Vector3(-0.15, 1.35, 0.15), "twist": [45, -40], "lean": 4},
 	&"light_4": {"limb": &"RightFoot", "windup": Vector3(-0.15, 0.45, 0.25), "twist": [-10, 15], "lean": -12},
 	&"light_5": {"limb": &"BothHands", "windup": Vector3(0.0, 1.2, -0.05), "twist": [0, 0], "lean": 16, "crouch": 0.1},
-	&"smash": {"limb": &"RightHand", "windup": Vector3(-0.3, 1.25, -0.2), "twist": [-40, 35], "lean": 15, "crouch": 0.1},
-	&"charged_smash_1": {"limb": &"RightHand", "windup": Vector3(0.3, 1.45, -0.15), "twist": [-50, 40], "lean": 12},
-	&"charged_smash_2": {"limb": &"RightHand", "windup": Vector3(0.3, 1.5, -0.2), "twist": [-55, 45], "lean": 14},
-	&"charged_smash_3": {"limb": &"RightHand", "windup": Vector3(0.35, 1.55, -0.25), "twist": [-60, 50], "lean": 16, "crouch": 0.08},
+	&"smash": {"limb": &"RightHand", "off": Vector3(0.18, 1.2, 0.05), "windup": Vector3(-0.3, 1.25, -0.2), "twist": [-40, 35], "lean": 15, "crouch": 0.1},
+	&"charged_smash_1": {"limb": &"RightHand", "off": Vector3(0.3, 1.05, -0.25), "windup": Vector3(0.3, 1.45, -0.15), "twist": [-50, 40], "lean": 12},
+	&"charged_smash_2": {"limb": &"RightHand", "off": Vector3(0.32, 1.0, -0.3), "windup": Vector3(0.3, 1.5, -0.2), "twist": [-55, 45], "lean": 14},
+	&"charged_smash_3": {"limb": &"RightHand", "off": Vector3(0.35, 0.95, -0.35), "windup": Vector3(0.35, 1.55, -0.25), "twist": [-60, 50], "lean": 16, "crouch": 0.08},
 	&"breaker": {"limb": &"LeftHand", "windup": Vector3(0.25, 1.2, -0.15), "twist": [25, -30], "lean": 22, "crouch": 0.12},
 	&"launcher": {"limb": &"LeftHand", "windup": Vector3(0.15, 0.75, 0.3), "follow": Vector3(0, 0.6, -0.2), "twist": [20, -25], "lean": -8, "crouch": 0.18, "strike_crouch": 0.0},
 	&"rising": {"limb": &"RightHand", "windup": Vector3(-0.15, 0.8, 0.3), "follow": Vector3(0, 0.5, -0.1), "twist": [-15, 20], "lean": -14, "crouch": 0.2, "strike_crouch": 0.0},
@@ -110,9 +111,9 @@ static func bake(poser: FigurePoser, move: MoveData) -> Animation:
 	var keys := [
 		[0.0, _pose(style, Vector3.ZERO, 0.0, 0.0, 0.0)],
 		[wind_tick * TICK, _pose(style, windup, deg_to_rad(twist[0]), -lean * 0.3, crouch)],
-		[start * TICK, _pose(style, windup.lerp(point, 0.8), turn * 0.8, lean * 0.8, strike_crouch)],
-		[(start + move.active_ticks * 0.5) * TICK, _pose(style, point, turn, lean, strike_crouch)],
-		[active_end * TICK, _pose(style, point.lerp(follow, 0.5), turn, lean, strike_crouch)],
+		[start * TICK, _strike(style, windup.lerp(point, 0.8), turn * 0.8, lean * 0.8, strike_crouch)],
+		[(start + move.active_ticks * 0.5) * TICK, _strike(style, point, turn, lean, strike_crouch)],
+		[active_end * TICK, _strike(style, point.lerp(follow, 0.5), turn, lean, strike_crouch)],
 		[(active_end + move.recovery_ticks * 0.45) * TICK, _pose(style, follow, turn * 0.6, lean * 0.5, strike_crouch * 0.6)],
 		[move.total_ticks() * TICK, _pose(style, Vector3.ZERO, 0.0, 0.0, 0.0)],
 	]
@@ -122,7 +123,7 @@ static func bake(poser: FigurePoser, move: MoveData) -> Animation:
 ## Where the striking limb ends up when it reaches for goal in the strike pose.
 static func reached_point(poser: FigurePoser, style: Dictionary, goal: Vector3, twist: float, lean: float,
 		crouch: float) -> Vector3:
-	var at := poser.positions(_pose(style, goal, twist, lean, crouch))
+	var at := poser.positions(_strike(style, goal, twist, lean, crouch))
 	if style.limb == &"BothHands":
 		return at[&"RightHand"] + Vector3(HAND_GAP, 0, 0)
 	return at[style.limb]
@@ -139,3 +140,11 @@ static func _pose(style: Dictionary, goal: Vector3, twist: float, lean: float, c
 		else:
 			targets[limb] = goal
 	return {"crouch": GUARD_CROUCH + crouch, "twist": twist, "lean": lean, "targets": targets}
+
+
+## A strike pose: as _pose, with the other hand at the style's "off" mark.
+static func _strike(style: Dictionary, goal: Vector3, twist: float, lean: float, crouch: float) -> Dictionary:
+	var pose := _pose(style, goal, twist, lean, crouch)
+	if style.has("off"):
+		pose.targets[&"LeftHand" if style.limb == &"RightHand" else &"RightHand"] = style.off
+	return pose
