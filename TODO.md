@@ -6,6 +6,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In progress
 
+- T-107 [developer] Performance check on the GTX 1650 with two fighters flying:
+  fps and frame time, outline-pass cost, noisy ground shadow edges. Blocked:
+  needs the owner's F3 reading at the PC (Godot windows started from Claude
+  Code's session run at ~4.8 fps even for an empty scene).
+
 - T-001 [developer] Milestone 0 skeleton: Godot 4.7.2 project, combat seam
   (`FighterInput`, `CombatSim` fixed 60 Hz tick, seeded RNG, determinism
   test), keyboard/mouse bindings, debug overlay (fps, frame time), GUT, CI,
@@ -13,10 +18,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
-- T-D01 [developer, from desktop] Sim skeleton: 6-frame input buffer, sim-side
-  movement (ground, flight, falling, dash step/sustained/rush, vanish step),
-  `MovementTuning`, `FighterState` state machine, sim-owned lock-on (toggle,
-  target switch, 1v1 starts mutually locked), determinism test over all of it.
+- T-102b [developer] Locked camera pitch limits: at most 35° down / 25° up;
+  bigger height gaps pull the camera back and widen the FOV (up to +10°).
 - T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst,
   PR #9.
 
@@ -24,8 +27,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ### Milestone 1: flight and camera (goal: flying feels great)
 
-- T-101 [developer] Free flight and ground movement in the view/controller on
-  top of sim movement: ascend/descend, camera-relative move.
 - T-103 [developer] Target switching (mouse wheel) and lock-on toggle (MMB/Tab).
   Input and sim sides are done (T-001, T-D01); left: camera transition when
   the target changes, and an on-screen lock-on marker.
@@ -35,9 +36,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   dithers out, no snapping, no cuts during control.
 - T-106 [developer] Grey-box arena: about 600 m × 600 m, soft ceiling at 250 m,
   energy-dome boundary.
-- T-107 [developer] Performance check on the GTX 1650 with two fighters flying;
-  record fps and frame time. Includes outline-pass cost and the noisy ground
-  shadow edges seen in the PR #3 check.
 - T-109 [developer] Debug overlay text is clipped at the left edge in a
   1280x720 movie-writer capture; check anchoring at other window sizes.
 - T-108 [developer] Graphics presets follow-up (from PR #2): try
@@ -72,3 +70,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-003 [developer] Windows export preset (single exe), PR #4.
 - T-D08 [desktop] Toon + outline + rim shaders, PR #3.
 - T-102 [developer] Fight camera: free orbit + lock-on framing, PR #5.
+- T-D01 [developer, from desktop] Combat sim skeleton: input buffer, movement,
+  `MovementTuning`, sim-owned lock-on, PR #6.
+- T-101 [developer] Flight view: facing, lean, vanish hide, PR #7.

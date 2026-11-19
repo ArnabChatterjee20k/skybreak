@@ -3,6 +3,10 @@ extends Camera3D
 ## Fight camera. Free orbit around the player when unlocked; over-the-shoulder
 ## framing of both fighters when locked on. Click captures the mouse, Esc frees it.
 
+## Vertical FOV in degrees; the locked camera widens it for big height gaps.
+@export var base_fov := 75.0
+## How fast the FOV eases to its goal, per second.
+@export var fov_sharpness := 6.0
 ## Radians of camera turn per pixel of mouse movement.
 @export var mouse_sensitivity := 0.0025
 ## Exponential smoothing rates (per second): position follows faster than rotation.
@@ -54,6 +58,7 @@ func view_yaw() -> float:
 func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> void:
 	_seconds_since_mouse_moved += delta
 	var goal: Transform3D
+	var fov_goal := LockOnFraming.locked_fov(base_fov, player, target) if locked else base_fov
 	if locked:
 		if _seconds_since_mouse_moved > orbit_return_delay:
 			orbit = orbit.lerp(Vector2.ZERO, _blend(orbit_return_sharpness, delta))
@@ -66,8 +71,10 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 
 	if not _has_pose:
 		global_transform = goal
+		fov = fov_goal
 		_has_pose = true
 		return
+	fov = lerpf(fov, fov_goal, _blend(fov_sharpness, delta))
 	var position_now := global_position.lerp(goal.origin, _blend(position_sharpness, delta))
 	var rotation_now := global_basis.get_rotation_quaternion().slerp(
 		goal.basis.get_rotation_quaternion(), _blend(rotation_sharpness, delta))

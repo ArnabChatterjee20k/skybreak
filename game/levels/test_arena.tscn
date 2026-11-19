@@ -1,10 +1,11 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://game/levels/test_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://game/input/keyboard_mouse_input.gd" id="2_input"]
 [ext_resource type="Script" path="res://game/debug/debug_overlay.gd" id="3_overlay"]
 [ext_resource type="Script" path="res://game/ui/graphics_menu.gd" id="4_graphics"]
 [ext_resource type="Script" path="res://game/view/camera/fighter_camera.gd" id="5_camera"]
+[ext_resource type="Script" path="res://game/view/fighter/fighter_view.gd" id="6_fighter_view"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.25, 0.45, 0.85, 1)
@@ -25,14 +26,6 @@ size = Vector2(600, 600)
 [sub_resource type="StandardMaterial3D" id="ground_material"]
 albedo_color = Color(0.35, 0.5, 0.3, 1)
 
-[sub_resource type="CapsuleMesh" id="fighter_mesh"]
-
-[sub_resource type="StandardMaterial3D" id="fighter1_material"]
-albedo_color = Color(0.9, 0.4, 0.15, 1)
-
-[sub_resource type="StandardMaterial3D" id="fighter2_material"]
-albedo_color = Color(0.2, 0.45, 0.95, 1)
-
 [node name="TestArena" type="Node3D"]
 script = ExtResource("1_arena")
 
@@ -47,16 +40,16 @@ shadow_enabled = true
 mesh = SubResource("ground_mesh")
 surface_material_override/0 = SubResource("ground_material")
 
-[node name="Fighter1" type="MeshInstance3D" parent="."]
-mesh = SubResource("fighter_mesh")
-surface_material_override/0 = SubResource("fighter1_material")
+[node name="Fighter1" type="Node3D" parent="."]
+script = ExtResource("6_fighter_view")
+body_color = Color(0.9, 0.4, 0.15, 1)
 
-[node name="Fighter2" type="MeshInstance3D" parent="."]
-mesh = SubResource("fighter_mesh")
-surface_material_override/0 = SubResource("fighter2_material")
+[node name="Fighter2" type="Node3D" parent="."]
+script = ExtResource("6_fighter_view")
+body_color = Color(0.2, 0.45, 0.95, 1)
 
 [node name="FighterCamera" type="Camera3D" parent="."]
-fov = 75.0
+base_fov = 75.0
 far = 2000.0
 script = ExtResource("5_camera")
 
