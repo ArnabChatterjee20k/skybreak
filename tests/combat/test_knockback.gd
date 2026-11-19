@@ -140,6 +140,19 @@ func test_spike_slams_down_bounces_once_then_knocks_down() -> void:
 	assert_eq(_target().combo_hits, 0, "the combo is over")
 
 
+func test_a_new_spike_after_a_bounce_bounces_again() -> void:
+	_start()
+	_target().enter_state(State.HITSTUN)
+	_target().stun_ticks = 60
+	# Left over from an earlier spike in the combo.
+	_target().spike_bounced = true
+	_land_heavy(Vector2.ZERO, -1)
+	assert_false(_target().spike_bounced)
+	_tick()
+	assert_true(_target().spike_bounced)
+	assert_eq(_target().state, State.HITSTUN, "bounced, not knocked down")
+
+
 func test_a_knocked_down_fighter_cannot_be_hit_and_stands_up_after_40_ticks() -> void:
 	_start()
 	_target().enter_state(State.KNOCKDOWN)

@@ -505,7 +505,6 @@ func _attack_forward(index: int) -> Vector3:
 func _aim_at_target(index: int) -> void:
 	var fighter := fighters[index]
 	fighter.aim_pitch = 0.0
-	fighter.aim_side = 1
 	if fighter.lock_on_target < 0:
 		return
 	var to_target := fighters[fighter.lock_on_target].position - fighter.position
@@ -813,6 +812,7 @@ func _apply_hit(contact: Dictionary) -> void:
 		knockback = move.knockback_type
 		_enter_stun(target, FighterState.State.HITSTUN, decayed_hitstun(move, combo_hit))
 		target.knockback_type = knockback
+		target.spike_bounced = false
 		target.velocity = _knockback_velocity(contact)
 		target.combo_hits = combo_hit
 		target.combo_damage = combo_damage + damage
