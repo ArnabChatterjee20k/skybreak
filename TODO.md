@@ -85,9 +85,9 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-120 [developer] Attack pose placeholder on the capsule (lunge/scale per
   `attack_phase()`, armor/invincibility flash) and the T-201 hitbox debug draw
   from `active_hitboxes()`, interpolated like the fighter.
-- T-121 [developer] Combat feedback when T-D04 lands: map `CombatSim.events` to
-  the T-D09 VFX, hitstop camera shake (§5.10), hitstun/blockstun/knockdown
-  poses, combo counter on the HUD.
+- T-121 [developer] Combat feedback (PR open): `CombatSim.events` -> T-D09 VFX,
+  hit camera shake, impact frames on KO/guard break, combo counter. Stun
+  poses come from Kael's clips (T-D10b); no audio (T-D20 owns it).
 - T-122 [developer] Swap the capsule for `kael_chunky.tscn` in `FighterView`
   (PR open). No hit-reaction VFX (T-121); team colour is a rim tint only (T-118).
 - T-111 [developer] HUD meter bars from the T-D02 read API (`*_display()`):
