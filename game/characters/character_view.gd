@@ -42,10 +42,14 @@ const FLINCH_KO := 2.4
 const TWO_HANDED: Array[Weapon.Kind] = [Weapon.Kind.SKY_LANCE, Weapon.Kind.TITAN_HAMMER,
 	Weapon.Kind.EMBER_SCYTHE, Weapon.Kind.STORM_REPEATER, Weapon.Kind.SCATTER_CANNON]
 const BOWS: Array[Weapon.Kind] = [Weapon.Kind.KI_BOW, Weapon.Kind.HEARTSTRING_BOW]
-## Height (capsule centre) above which a fighter counts as airborne; the sim
-## stands fighters at MovementTuning.ground_height.
+## Height above its standing height (capsule centre over the floor under it, which zones raise
+## and slope) at which a fighter counts as airborne.
 const AIRBORNE_MARGIN := 0.05
 static var _ground_height := MovementTuning.new().ground_height
+## Standing states whose planted feet lock to the ground.
+const FOOT_LOCK_STATES: Array[int] = [FighterState.State.IDLE, FighterState.State.BLOCKING,
+	FighterState.State.CHARGING]
+const FOOT_BONES: Array[StringName] = [&"LeftFoot", &"RightFoot"]
 ## Knocked-out states: they play the knockdown fall unless the clip set maps them.
 const KO_STATES: Array[int] = [FighterState.State.KO_FALL, FighterState.State.KO_DOWN]
 
@@ -79,6 +83,11 @@ var _move_overrides: Dictionary = {}
 var _turn_yaw := 0.0
 var _turning := false
 var _impact_move := &""
+## Floor height at (x, z, from_y), the sim's (CombatSim.ground_height); empty is a flat floor.
+var ground_height: Callable
+var _feet: PackedInt32Array = []
+## Other skeleton modifiers stepped by the frame time (e.g. Kael's ScarfLag).
+var _frame_modifiers: Array[SkeletonModifier3D] = []
 
 
 func _ready() -> void:
@@ -114,6 +123,9 @@ func _setup_motion() -> void:
 	skeleton.add_child(layers)
 	# First modifier, so the scarf and other secondary chains follow the layered body.
 	skeleton.move_child(layers, 0)
+	for child in skeleton.get_children():
+		if child != layers and child is SkeletonModifier3D and child.has_method(&"advance_frame"):
+			_frame_modifiers.append(child)
 
 
 ## Moves whose strike is fitted onto a mocap take (MotionClips.fit_specs); characters with their
@@ -245,9 +257,10 @@ func _clip_for(fighter: FighterState, state_name: StringName) -> StringName:
 	return clip
 
 
-## Off the floor: flying, falling or dashing in the air.
+## Off the floor: flying, falling or dashing in the air. On a zone's terrain the floor is the sim's
+## stand_height, not the flat ground height.
 static func is_airborne(fighter: FighterState) -> bool:
-	return fighter.position.y > _ground_height + AIRBORNE_MARGIN
+	return fighter.position.y > fighter.stand_height + AIRBORNE_MARGIN
 
 
 func _speed_scale(fighter: FighterState, clip: StringName) -> float:
@@ -469,12 +482,47 @@ func _update_layers(fighter: FighterState, delta: float) -> void:
 	layers.flying = airborne and fighter.state in [FighterState.State.FLYING, FighterState.State.DASHING,
 		FighterState.State.VANISHING]
 	layers.foot_ik = not airborne and fighter.state != FighterState.State.KNOCKDOWN
-	layers.ground = Vector2.ZERO
+	layers.foot_lock = layers.foot_ik and fighter.state in FOOT_LOCK_STATES
+	layers.ground = _feet_ground(fighter) if layers.foot_ik else Vector2.ZERO
+	layers.ground_at = _ground_under.bind(fighter) if layers.foot_ik and ground_height.is_valid() else Callable()
+	layers.advance_frame(delta)
+	for modifier in _frame_modifiers:
+		modifier.advance_frame(delta)
 	var to_target := to_model(_look_world - fighter.position, fighter.facing_yaw)
 	layers.look_target = to_target + Vector3(0, 1.0, 0)
 	layers.look_weight = _look_weight if fighter.state in [FighterState.State.IDLE, FighterState.State.MOVING,
 		FighterState.State.FLYING, FighterState.State.BLOCKING, FighterState.State.ATTACKING] else 0.0
 	_update_arms(fighter)
+
+
+## Floor under each foot relative to the floor the fighter stands on, in skeleton space (slopes,
+## steps). Zero on a flat floor or without ground_height.
+func _feet_ground(fighter: FighterState) -> Vector2:
+	if not ground_height.is_valid():
+		return Vector2.ZERO
+	var skeleton := model.get_node("%GeneralSkeleton") as Skeleton3D
+	if _feet.is_empty():
+		for bone in FOOT_BONES:
+			_feet.append(skeleton.find_bone(bone))
+	var floor_y := fighter.stand_height - _ground_height
+	var to_world := skeleton.global_transform
+	var scale := maxf(to_world.basis.get_scale().y, 0.001)
+	var out := Vector2.ZERO
+	for side in 2:
+		if _feet[side] < 0:
+			continue
+		var at := to_world * skeleton.get_bone_global_pose(_feet[side]).origin
+		var under: float = ground_height.call(at.x, at.z, fighter.position.y)
+		# A ledge or wall far off the stand floor is not under the foot; keep the stand floor.
+		out[side] = clampf(under - floor_y, -0.3, 0.3) / scale
+	return out
+
+
+## Floor under a world point relative to the fighter's stand floor, in skeleton space.
+func _ground_under(at: Vector3, fighter: FighterState) -> float:
+	var scale := maxf(model.get_node("%GeneralSkeleton").global_transform.basis.get_scale().y, 0.001)
+	var under: float = ground_height.call(at.x, at.z, fighter.position.y)
+	return clampf(under - (fighter.stand_height - _ground_height), -0.3, 0.3) / scale
 
 
 ## Per-weapon-class arm overlay: two-handed hold, bow draw, pistol aim.

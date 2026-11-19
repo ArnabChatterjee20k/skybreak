@@ -49,6 +49,9 @@ var _body: Node3D
 var _character: CharacterView
 var _height_marker := HeightMarker.new()
 var _camera_fade := 0.0
+## The level's sim, for its floor (found once among the ancestors; levels that call react_to_tick set it).
+var _sim: CombatSim
+var _sim_searched := false
 
 
 func _ready() -> void:
@@ -96,6 +99,8 @@ func remember_previous_tick() -> void:
 func react_to_tick(sim: CombatSim, index: int) -> void:
 	if _character == null:
 		return
+	_sim = sim
+	_character.ground_height = sim.ground_height
 	for event: Dictionary in sim.events:
 		if event.get("target", -1) == index:
 			_character.react_to_event(event, fighter)
@@ -118,7 +123,19 @@ func present(blend: float, delta: float) -> void:
 	visible = fighter.state != FighterState.State.VANISHING
 	_height_marker.update(position)
 	if _character != null:
+		_character.ground_height = _level_sim().ground_height if _level_sim() != null else Callable()
 		_character.apply_state(fighter, delta)
+
+
+## The CombatSim of the level this view is in (a `sim` property on an ancestor), or null.
+func _level_sim() -> CombatSim:
+	if _sim == null and not _sim_searched:
+		_sim_searched = true
+		var node := get_parent()
+		while node != null and _sim == null:
+			_sim = node.get(&"sim") as CombatSim
+			node = node.get_parent()
+	return _sim
 
 
 ## Transparency for a body at body_centre seen from a camera at camera_position.

@@ -8,6 +8,9 @@ extends SkeletonModifier3D
 const STEP := 1.0 / 60.0
 ## At most this many steps per frame, so a long hitch doesn't stall the frame.
 const MAX_STEPS := 4
+## Fastest a chain bone may turn in skeleton space (rad/s), as MotionLayers.MAX_TURN_RATE: when
+## the body whips round, the scarf follows instead of flipping in one frame.
+const MAX_TURN_RATE := 54.0
 
 @export var bones: Array[StringName] = [&"Scarf1", &"Scarf2", &"Scarf3", &"Scarf4", &"Scarf5"]
 ## Fraction of the way back to the animated pose per step.
@@ -27,13 +30,34 @@ var _lengths: PackedFloat32Array = []
 var _points: PackedVector3Array = []
 var _previous: PackedVector3Array = []
 var _accumulator := 0.0
+# Frame stepping (advance_frame): delta still to step (-1 once stepped) and the last output.
+var _frame_delta := -1.0
+var _frame_driven := false
+var _out: Array[Quaternion] = []
+var _last_global: Array = []
+var _turn_step := MAX_TURN_RATE / 60.0
+
+
+## Steps the chain by delta (the view's frame time) on the next skeleton update; further updates
+## in the same frame (Godot also runs a delta-0 pass) re-apply that result.
+func advance_frame(delta: float) -> void:
+	_frame_delta = maxf(delta, 0.0)
+	_frame_driven = true
 
 
 func _process_modification_with_delta(delta: float) -> void:
 	var skeleton := get_skeleton()
 	if skeleton == null or not _ensure_chain(skeleton):
 		return
+	if _frame_driven and _frame_delta < 0.0 and _out.size() == _bone_ids.size():
+		for i in _bone_ids.size():
+			skeleton.set_bone_pose_rotation(_bone_ids[i], _out[i])
+		return
+	if _frame_driven:
+		delta = _frame_delta
+		_frame_delta = -1.0
 	var to_world := skeleton.global_transform
+	_turn_step = MAX_TURN_RATE * (delta if delta > 0.0 else 1.0 / 60.0)
 	advance(_targets(skeleton, to_world), delta)
 	_apply(skeleton, to_world)
 
@@ -48,14 +72,25 @@ func advance(targets: PackedVector3Array, delta: float) -> PackedVector3Array:
 		for i in _lengths.size():
 			_lengths[i] = targets[i].distance_to(targets[i + 1])
 	_accumulator = minf(_accumulator + delta, STEP * MAX_STEPS)
+	var stepped := false
 	while _accumulator >= STEP - 0.000001:
 		_accumulator -= STEP
 		_step(targets)
+		stepped = true
+	if not stepped:
+		# No step this frame: the chain still travels with its root, or the bones would aim at
+		# points the body has left (a pop at speed).
+		var shift := targets[0] - _points[0]
+		for i in _points.size():
+			_points[i] += shift
+			_previous[i] += shift
 	return _points
 
 
 ## Clears the chain so it snaps to the next targets.
 func reset_chain() -> void:
+	_out.clear()
+	_last_global.clear()
 	_points = []
 	_previous = []
 	_accumulator = 0.0
@@ -120,6 +155,24 @@ static func droop(chain: PackedVector3Array, amount: float) -> PackedVector3Arra
 	return out
 
 
+## A chain bone's skeleton-space rotation, turned at most _turn_step from last frame's.
+func _limit_turn(i: int, q: Quaternion) -> Quaternion:
+	if _last_global.size() != _bone_ids.size():
+		_last_global.resize(_bone_ids.size())
+		_last_global.fill(null)
+	if _last_global[i] == null:
+		_last_global[i] = q
+		return q
+	var last: Quaternion = _last_global[i]
+	if last.dot(q) < 0.0:
+		q = -q
+	var angle := last.angle_to(q)
+	if angle > _turn_step:
+		q = last.slerp(q, _turn_step / angle).normalized()
+	_last_global[i] = q
+	return q
+
+
 ## Turns each chain bone so its tail points at the next simulated joint.
 func _apply(skeleton: Skeleton3D, to_world: Transform3D) -> void:
 	var to_skeleton := to_world.affine_inverse()
@@ -133,6 +186,10 @@ func _apply(skeleton: Skeleton3D, to_world: Transform3D) -> void:
 		if current.length() > 0.0001 and wanted.length() > 0.0001:
 			var turn := Quaternion(current.normalized(), wanted.normalized())
 			global.basis = Basis(turn) * global.basis
+		global.basis = Basis(_limit_turn(i, global.basis.get_rotation_quaternion())).scaled(global.basis.get_scale())
 		var local := parent.affine_inverse() * global
 		skeleton.set_bone_pose_rotation(id, local.basis.get_rotation_quaternion())
+		if _out.size() != _bone_ids.size():
+			_out.resize(_bone_ids.size())
+		_out[i] = local.basis.get_rotation_quaternion()
 		parent = parent * Transform3D(Basis(local.basis.get_rotation_quaternion()), local.origin)
