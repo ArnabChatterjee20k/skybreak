@@ -262,7 +262,15 @@ func test_beam_charges_fires_and_lights_the_scene() -> void:
 	assert_false(beam.is_playing())
 
 
-func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_new() -> void:
+func _pooled_nodes(vfx: MatchVfx) -> int:
+	var count := 0
+	for pool in vfx.pools():
+		for effect in pool.effects():
+			count += 1 + effect.find_children("*", "", true, false).size()
+	return count
+
+
+func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_outside_them() -> void:
 	var vfx := _vfx_with_sim(&"heartbloom_gardens")
 	var sim := CombatSim.new(11)
 	sim.zone = &"heartbloom_gardens"
@@ -274,6 +282,7 @@ func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_new() -> 
 	var bots: Array[WeaponBot] = [WeaponBot.new(0, 34), WeaponBot.new(1, 35)]
 	var plays := {}
 	var nodes_after_warmup := 0
+	var pooled_after_warmup := 0
 	for tick in 3600:
 		var inputs: Array[FighterInput] = []
 		for bot in bots:
@@ -287,11 +296,14 @@ func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_new() -> 
 				plays[pool.kind] = true
 		if tick == 1800:
 			nodes_after_warmup = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+			pooled_after_warmup = _pooled_nodes(vfx)
 	gut.p("effects seen: %s" % [plays.keys()])
 	assert_true(plays.has(&"smear_fist") or plays.has(&"smear_chakram"), "swings smeared")
 	assert_true(plays.size() >= 5, "a real fight shows a spread of effects")
-	assert_lte(int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), nodes_after_warmup + 8,
-		"no node growth in the second half")
+	# Pools fill lazily up to capacity (bounded above), so only pooled effects may add nodes.
+	var pooled_growth := _pooled_nodes(vfx) - pooled_after_warmup
+	assert_eq(int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)) - nodes_after_warmup, pooled_growth,
+		"every node added in the second half is a pooled effect")
 	for i in 180:
 		vfx.advance(TICK)
 	for pool in vfx.pools():
