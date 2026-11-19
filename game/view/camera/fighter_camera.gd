@@ -64,6 +64,13 @@ var _band := LockOnFraming.Band.MID
 ## shoulder side stays fixed meanwhile so it can't flip mid-swing.
 var _relock_turning := false
 var _trauma := 0.0
+## Last fighter-to-fighter direction measured while not stacked; the stacked
+## framing keeps it, since their horizontal direction is noise then (T-117b).
+var _held_facing := Vector3.ZERO
+const LAG_EXTRA_FOV := 10.0
+const LAG_EXTRA_BOOM := 0.25
+const LAG_SHARPNESS := 3.0
+var _lag := 0.0
 var _shake_time := 0.0
 
 
@@ -84,6 +91,12 @@ func add_mouse_motion(relative: Vector2) -> void:
 	free_pitch += turn.y
 	orbit = LockOnFraming.clamp_orbit(orbit + Vector2(-turn.x, turn.y))
 	_seconds_since_mouse_moved = 0.0
+
+
+func _remember_facing(player: Vector3, target: Vector3) -> void:
+	var flat := Vector3(target.x - player.x, 0.0, target.z - player.z)
+	if flat.length() > 0.01 and (LockOnFraming.stack_weight(player, target) < 0.01 or _held_facing == Vector3.ZERO):
+		_held_facing = flat.normalized()
 
 
 ## Adds hit shake; trauma 0-1, capped at 1 in total.
@@ -121,7 +134,9 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 			orbit = orbit.lerp(Vector2.ZERO, _blend(orbit_return_sharpness, delta))
 		if not _was_locked and _has_pose:
 			_relock_turning = true
-		if not _relock_turning:
+		# Shoulder frozen mid re-lock, and while stacked: then the fighters are
+		# level on screen and the side would flip every frame (T-117b).
+		if not _relock_turning and LockOnFraming.stack_weight(player, target) < 0.01:
 			_shoulder_goal = LockOnFraming.shoulder_side_for(global_transform, player, target, _shoulder_goal)
 		_shoulder = move_toward(_shoulder, _shoulder_goal, shoulder_switch_speed * delta)
 		_band = LockOnFraming.band_for(player.distance_to(target), _band)
@@ -139,9 +154,24 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		# would crop the player out.
 		var zoom := _band == LockOnFraming.Band.FAR and not height_gap_widening and not _relock_turning
 		fov_goal = zoomed if zoom else widened
-		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, fov_goal)
+		_remember_facing(player, target)
+		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, fov_goal, _held_facing)
 		if _relock_turning and (-global_basis.z).angle_to(-goal.basis.z) < deg_to_rad(10.0):
 			_relock_turning = false
+		# Falling behind the framing (e.g. an opponent circling faster than the
+		# turn cap allows): widen and pull back instead of turning faster, so
+		# both fighters stay in frame without a nauseating whip (T-117b).
+		if _has_pose and not _relock_turning:
+			var lag := LockOnFraming.lag_widen((-global_basis.z).angle_to(-goal.basis.z))
+			# Eased, so the widening itself never pumps.
+			_lag = lerpf(_lag, lag, _blend(LAG_SHARPNESS, delta))
+		else:
+			_lag = 0.0
+		if _lag > 0.001:
+			fov_goal += _lag * LAG_EXTRA_FOV
+			# Re-frame for the wider view, so the near-band spacing still holds.
+			goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, fov_goal, _held_facing)
+			goal.origin = player + (goal.origin - player) * (1.0 + _lag * LAG_EXTRA_BOOM)
 	else:
 		if _was_locked and _has_pose:
 			_continue_free_orbit_from_here(player)
@@ -157,19 +187,10 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		_has_pose = true
 		return
 	fov = lerpf(fov, fov_goal, _blend(fov_sharpness, delta))
-	# slerp turns the offset around the player instead of cutting through it;
-	# its orbit is capped like the view turn so the two stay in step.
-	var offset_from := _offset
-	var goal_offset := goal.origin - player
-	_offset = offset_from.slerp(goal_offset, _blend(position_sharpness, delta))
-	var orbit_angle := offset_from.angle_to(_offset)
-	var max_orbit := deg_to_rad(max_turn_speed) * delta
-	if orbit_angle > max_orbit:
-		_offset = offset_from.slerp(_offset, max_orbit / orbit_angle)
-	# Direction from the slerp, length eased on its own, slower.
-	var boom := lerpf(offset_from.length(), goal_offset.length(), _blend(boom_sharpness, delta))
-	if _offset.length() > 0.001:
-		_offset = _offset.normalized() * boom
+	# The offset turns around the player (never through or over them), capped
+	# like the view turn so the two stay in step.
+	_offset = step_offset(_offset, goal.origin - player, _blend(position_sharpness, delta),
+		_blend(boom_sharpness, delta), deg_to_rad(max_turn_speed) * delta)
 	_follow_anchor(player, delta)
 	var position_now := _anchor + _offset
 	var rotation_from := global_basis.get_rotation_quaternion()
@@ -199,6 +220,28 @@ func _apply_shake(delta: float) -> void:
 	var jitter := Vector3(sin(_shake_time * 71.0), sin(_shake_time * 53.0 + 1.3), 0.0)
 	global_position += global_basis * jitter * amount
 	_trauma = maxf(_trauma - shake_decay * delta, 0.0)
+
+
+## One smoothing step of the camera's offset from the player, as heading,
+## elevation and length: the heading turns the short way round, capped at
+## max_yaw, so a big swing goes around the player, never over their head
+## (a 3D slerp between near-opposite offsets can arc overhead, T-117b).
+static func step_offset(from: Vector3, goal: Vector3, weight: float, length_weight: float,
+		max_yaw: float) -> Vector3:
+	var from_length := from.length()
+	var goal_length := goal.length()
+	if from_length < 0.001 or goal_length < 0.001:
+		return goal
+	var from_yaw := atan2(from.x, from.z)
+	var goal_yaw := atan2(goal.x, goal.z)
+	var yaw_step := clampf(angle_difference(from_yaw, goal_yaw) * weight, -max_yaw, max_yaw)
+	var from_pitch := asin(clampf(from.y / from_length, -1.0, 1.0))
+	var goal_pitch := asin(clampf(goal.y / goal_length, -1.0, 1.0))
+	var pitch_step := clampf((goal_pitch - from_pitch) * weight, -max_yaw, max_yaw)
+	var pitch := from_pitch + pitch_step
+	var length := lerpf(from_length, goal_length, length_weight)
+	var flat := Vector3(sin(from_yaw + yaw_step), 0.0, cos(from_yaw + yaw_step)) * cos(pitch)
+	return (flat + Vector3.UP * sin(pitch)) * length
 
 
 ## Follows the player rigidly, but glides over ~0.2 s after a teleport so a

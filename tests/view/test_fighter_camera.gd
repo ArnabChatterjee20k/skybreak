@@ -65,3 +65,34 @@ func test_shoulder_side_is_frozen_while_turning_back_after_a_relock() -> void:
 	for _frame in 20:
 		_camera.follow(player, behind, true, 1.0 / 60.0)
 		assert_eq(_camera.shoulder_side(), side, "no shoulder flip mid-turn")
+
+
+# --- T-117b ---
+
+func test_a_half_turn_of_the_offset_goes_around_the_player_not_over_them() -> void:
+	var offset := Vector3(0, 1.5, 6)
+	var goal := Vector3(0.01, 1.5, -6)
+	var highest := 0.0
+	for i in 120:
+		offset = FighterCamera.step_offset(offset, goal, 0.2, 0.2, deg_to_rad(3.0))
+		highest = maxf(highest, offset.y)
+	assert_lt(highest, 1.6, "the camera never rises over the player's head")
+	assert_lt(offset.distance_to(goal), 0.1, "and still arrives")
+
+
+func test_offset_heading_turns_at_most_the_cap_per_step() -> void:
+	var offset := FighterCamera.step_offset(Vector3(0, 0, 6), Vector3(6, 0, 0), 1.0, 1.0, deg_to_rad(3.0))
+	assert_almost_eq(Vector3(0, 0, 6).angle_to(offset), deg_to_rad(3.0), 0.0001)
+
+
+func test_lag_widening_starts_past_15_degrees_and_is_full_at_60() -> void:
+	assert_eq(LockOnFraming.lag_widen(deg_to_rad(10.0)), 0.0)
+	assert_between(LockOnFraming.lag_widen(deg_to_rad(35.0)), 0.1, 0.9)
+	assert_eq(LockOnFraming.lag_widen(deg_to_rad(70.0)), 1.0)
+
+
+func test_stacked_framing_takes_over_only_for_close_steep_gaps() -> void:
+	var player := Vector3(0, 10, 0)
+	assert_eq(LockOnFraming.stack_weight(player, player + Vector3(0, -5, -0.3)), 1.0, "5 m straight below")
+	assert_eq(LockOnFraming.stack_weight(player, player + Vector3(0, -1, -8)), 0.0, "level-ish")
+	assert_eq(LockOnFraming.stack_weight(player, player + Vector3(0, -60, -5)), 0.0, "far below keeps widen + arrow")

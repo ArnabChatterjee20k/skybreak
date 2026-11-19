@@ -41,6 +41,12 @@ func test_disabled_flow_always_accepts_input_and_never_counts_down() -> void:
 	assert_eq(flow.seconds_left(), MatchFlow.ROUND_SECONDS)
 
 
+func test_disabled_flow_shows_no_banner() -> void:
+	var flow := MatchFlow.new()
+	flow.enabled = false
+	assert_eq(flow.banner([]).title, "", "no ROUND 1 stuck on screen in playtests")
+
+
 func test_clock_counts_down_in_the_fight() -> void:
 	var flow := MatchFlow.new()
 	var sim := _sim()

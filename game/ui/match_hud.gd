@@ -69,7 +69,8 @@ func _draw() -> void:
 	var count := sim.fighters.size()
 	for i in count:
 		_draw_plate(i, plate_rect(i, count))
-	if flow != null:
+	# No clock or banners when the round flow is off (scripted playtests).
+	if flow != null and flow.enabled:
 		_draw_clock()
 		_draw_banner()
 	draw_set_transform(Vector2.ZERO)

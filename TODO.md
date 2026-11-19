@@ -76,9 +76,12 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   above/below and "behind". Fill light and back cue dropped: the toon
   shader's shadow tint keeps backlit Kael readable and the model's front and
   back are distinct (both were capsule-era problems).
-- T-117b [developer] Point-blank framing (0-1 m gap, fighters overlapping):
-  the camera can put a fighter at the screen edge or cut it off (media-1.5).
-  After T-118.
+- T-117b [developer] Point-blank framing (PR open): side-on view for stacked
+  fighters, offset turns around (never over) the player, widen + pull back
+  when the view lags. Bot fight vs main: off-screen frames 289 -> 152,
+  mostly-ground 458 -> 61, over-pitch 248 -> 0. Left: an opponent dashing
+  past at ~5 m outruns the 180 deg/s turn cap (decision for owner: raise the
+  near-band cap?).
 - T-119 [developer] Playtest capture: render key motion events (re-lock, vanish,
   rush arrival) at every frame for the playtester. Add a check for Space+RMB
   on the ground giving Rising only on the same tick (T-D03 feel note).
