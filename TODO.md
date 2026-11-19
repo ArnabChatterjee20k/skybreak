@@ -17,6 +17,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   movement (ground, flight, falling, dash step/sustained/rush, vanish step),
   `MovementTuning`, `FighterState` state machine, sim-owned lock-on (toggle,
   target switch, 1v1 starts mutually locked), determinism test over all of it.
+- T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst,
+  PR #9.
 
 ## Backlog
 
@@ -44,7 +46,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ### Combat sim (desktop)
 
-- T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst.
 - T-D03 [desktop] `MoveData` Resource + light string + cancels.
 - T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
   damage scaling, hitstun decay.
