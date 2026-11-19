@@ -385,6 +385,18 @@ The owner chose **free-for-all from the start**. Every mode that can have more t
 - **AI bots** use the same input interface and know about all fighters (they pick targets by threat and distance, and avoid being the third wheel too often).
 - **Online (§12.1):** rollback with up to 4 peers. Each peer sends its input to the others. The transport (Appwrite Realtime) relays them, and every peer simulates all fighters.
 
+## 8.2 Duo mode (co-op: two players vs AI, online)
+
+The owner's priority mode: **the owner and their partner, each on their own device (Windows PC and/or the web build), as one team against AI fighters.**
+
+- **Teams:** 2 humans on team A against **1–4 AI fighters** on team B (or split into AI teams). Each AI's fighter and level can be set separately.
+- **Friendly fire:** off by default (teammates' hitboxes pass through each other), with a toggle in match setup.
+- **Team stocks:** each team shares a pool (default 6 lives for the duo). While one partner respawns (§8.1 rules), the other holds on. The team that runs out first loses.
+- **Team assists:** a hit on an enemy that is in your partner's combo **continues that combo** (shared combo count, shared scaling) instead of starting a new one, so partners can extend each other's combos. Burst gains for both.
+- **Shared camera rules:** each player's camera works as usual (you plus your target). The partner gets a coloured marker and name tag, and an arrow when off-screen.
+- **Pickups:** item spawn rate as in §8.1; the Heartstring Bow appears in Heartbloom Gardens as usual.
+- **Online path:** this mode is the first online mode to ship. AI fighters must be **computed inside the deterministic sim** from sim state and the seeded rng, so every peer simulates the same AI inputs without sending them (§12.1).
+
 ## 9. Scripting: story beats and dramatic moments
 
 A small data-driven **event system** lets designers script moments without code.
@@ -466,6 +478,8 @@ Online versus is planned for later, using **Appwrite** (auth, lobbies, presence)
   - **snapshot and restore** of the whole sim state in under 1 ms, so rollback can rewind
   - **compact, serializable inputs**: action bitmask plus quantised stick, camera yaw and offset (about 10–12 bytes per tick)
   - all pickup spawns come from the seeded rng in the sim, never from the view
+- **AI is part of the deterministic sim** (or a pure function of sim state plus seeded rng), so AI fighters never need to be sent over the network.
+- **Transport decision pending a spike:** Appwrite (Auth, a lobbies collection, Realtime presence) is the lobby and **signalling** layer for certain. Whether per-tick inputs travel over **Appwrite Realtime** or **directly peer-to-peer over WebRTC data channels** (with Appwrite only doing signalling) is decided by measured latency and jitter from the target devices. Target: under 80 ms round trip on home Wi-Fi.
 - **Transport abstraction:** a `NetTransport` interface, so Appwrite Realtime (or the Appwrite Push/MQTT path already used by MisterMime) can be swapped in without touching the sim.
 - **Lobbies and matchmaking:** Appwrite Auth plus a lobbies collection; Realtime presence shows who is online.
 - **Known risk:** floating-point determinism across different CPUs. The same build on Windows x86-64 is fine. If cross-platform play is ever wanted, the sim's movement math may need fixed-point.
