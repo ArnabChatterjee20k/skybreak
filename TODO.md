@@ -20,13 +20,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 - T-102b [developer] Locked camera pitch limits: at most 35° down / 25° up;
   bigger height gaps pull the camera back and widen the FOV (up to +10°).
-- T-101 [developer] Flight view: fighters drawn from sim state, facing their
-  heading (visor), leaning into motion (harder while dashing), hidden while
-  vanished, interpolated between ticks. Feel tuning needs the owner's playtest.
-- T-D01 [developer, from desktop] Sim skeleton: 6-frame input buffer, sim-side
-  movement (ground, flight, falling, dash step/sustained/rush, vanish step),
-  `MovementTuning`, `FighterState` state machine, sim-owned lock-on (toggle,
-  target switch, 1v1 starts mutually locked), determinism test over all of it.
 
 ## Backlog
 
@@ -76,3 +69,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-003 [developer] Windows export preset (single exe), PR #4.
 - T-D08 [desktop] Toon + outline + rim shaders, PR #3.
 - T-102 [developer] Fight camera: free orbit + lock-on framing, PR #5.
+- T-D01 [developer, from desktop] Combat sim skeleton: input buffer, movement,
+  `MovementTuning`, sim-owned lock-on, PR #6.
+- T-101 [developer] Flight view: facing, lean, vanish hide, PR #7.
