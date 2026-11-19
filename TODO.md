@@ -13,12 +13,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-002 [developer] Graphics settings: low/med/high presets + resolution scale,
+  saved to user settings. Menu on F10.
+
 ## Backlog
 
 ### Milestone 0: setup
 
-- T-002 [developer] Graphics settings: low/med/high presets + resolution scale,
-  saved to user settings.
 - T-003 [developer] Export preset for a Windows .exe build (export templates in
   `D:\Tools\Godot\editor_data`).
 
