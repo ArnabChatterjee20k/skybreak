@@ -22,6 +22,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   re-run as shaders, characters and arenas land.
 - T-102b [developer] Locked camera pitch limits: at most 35° down / 25° up;
   bigger height gaps pull the camera back and widen the FOV (up to +10°).
+- T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst,
+  PR #9.
 
 ## Backlog
 
@@ -74,7 +76,6 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   0.15 s (`MovementTuning`) instead of 80 → 0 in one tick; vanish steps keep
   distance and height relative to the target (no 12 → 17 m drift). Regression
   test for each.
-- T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst.
 - T-D03 [desktop] `MoveData` Resource + light string + cancels.
 - T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
   damage scaling, hitstun decay.
