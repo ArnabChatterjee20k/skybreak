@@ -94,7 +94,7 @@ func ground_at(point: Vector3) -> float:
 func is_inside(point: Vector3) -> bool:
 	if point.y < ground_at(point):
 		return true
-	if islands != null and islands.contains(point):
+	if _in_island(point, _islands_near(point, point)):
 		return true
 	for index in _candidates(point, point):
 		if boxes[index].has_point(point):
@@ -123,17 +123,42 @@ func clear_fraction(pivot: Vector3, camera: Vector3, clearance: float = CLEARANC
 		if hit != null:
 			best = minf(best, pivot.distance_to(hit) / length)
 	var lift := Vector3.UP * clearance
-	if ground_height.is_valid() or islands != null:
+	var near := _islands_near(pivot, camera)
+	if ground_height.is_valid() or not near.is_empty():
 		for s in range(1, TERRAIN_SAMPLES + 1):
 			var f := float(s) / TERRAIN_SAMPLES
 			if f >= best:
 				break
 			var point := pivot + segment * f
-			var in_island := islands != null and (islands.contains(point - lift) or islands.contains(point + lift))
+			var in_island := _in_island(point - lift, near) or _in_island(point + lift, near)
 			if in_island or point.y < ground_at(point) + clearance:
 				best = minf(best, float(s - 1) / TERRAIN_SAMPLES)
 				break
 	return best
+
+
+## Islands whose outline can reach the planar segment a-b.
+func _islands_near(a: Vector3, b: Vector3) -> PackedInt32Array:
+	var found := PackedInt32Array()
+	if islands == null:
+		return found
+	var from := Vector2(a.x, a.z)
+	var to := Vector2(b.x, b.z)
+	for i in islands.size():
+		var c := islands.centres[i]
+		var closest := Geometry2D.get_closest_point_to_segment(c, from, to)
+		# Rim radius wobbles at most 11% over the base radius.
+		if closest.distance_to(c) <= islands.radii[i] * 1.12:
+			found.append(i)
+	return found
+
+
+func _in_island(p: Vector3, near: PackedInt32Array) -> bool:
+	for i in near:
+		var s := islands.rim_fraction(i, p.x, p.z)
+		if s <= 1.0 and p.y < islands.top_profile(i, s) and p.y > islands.underside_profile(i, s):
+			return true
+	return false
 
 
 func _candidates(a: Vector3, b: Vector3) -> PackedInt32Array:
