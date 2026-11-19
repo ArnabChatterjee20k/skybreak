@@ -10,6 +10,7 @@ const FOG_END_STORM := 450.0
 const WEATHER_RAIN := 1
 const WEATHER_SNOW := 2
 const WEATHER_EMBERS := 3
+const WEATHER_PETALS := 4
 
 ## Camera to follow; defaults to the viewport's current camera.
 @export var camera: Camera3D
@@ -23,6 +24,8 @@ var weather: Dictionary = {}  # weather type -> GPUParticles3D
 var night_materials: Array[ShaderMaterial] = []
 ## Last blended preset, for tests and debug.
 var current: Dictionary = {}
+## Map overview: blend the ground zones only, wherever the camera is.
+var ground_only := false
 var _applied_weights := PackedFloat32Array()
 var _applied_time := -1
 
@@ -43,9 +46,9 @@ func set_time_of_day(id: int) -> void:
 		sky_material.set_shader_parameter("star_amount", 1.0 if time_of_day == TimeOfDay.NIGHT else 0.0)
 
 
-## Preset blended at (x, z) for the current time of day.
-func blend_at(x: float, z: float) -> Dictionary:
-	var w := layout.weights_at(x, z)
+## Preset blended at (x, z) and altitude `y` for the current time of day.
+func blend_at(x: float, z: float, y: float = -INF) -> Dictionary:
+	var w := layout.weights_at(x, z, y)
 	var t := int(time_of_day)
 	var out := {
 		"fog_color": Color(0, 0, 0, 0), "fog_end": 0.0, "sun_color": Color(0, 0, 0, 0),
@@ -75,12 +78,13 @@ func apply_at(position: Vector3) -> void:
 	for particles: GPUParticles3D in weather.values():
 		particles.global_position = position
 	# Skip the writes when nothing changed (most frames, away from borders).
-	var weights := layout.weights_at(position.x, position.z)
+	var y := -INF if ground_only else position.y
+	var weights := layout.weights_at(position.x, position.z, y)
 	if int(time_of_day) == _applied_time and _same(weights, _applied_weights):
 		return
 	_applied_weights = weights
 	_applied_time = int(time_of_day)
-	current = blend_at(position.x, position.z)
+	current = blend_at(position.x, position.z, y)
 	if environment:
 		environment.fog_light_color = current.fog_color
 		environment.fog_depth_end = current.fog_end
@@ -125,6 +129,8 @@ func _build_weather() -> void:
 		Color(1, 1, 1, 0.9), 6.0, BaseMaterial3D.BILLBOARD_ENABLED, 0.6)
 	weather[WEATHER_EMBERS] = _particles("Embers", 240, Vector3(0, 2.5, 0), Vector2(0.1, 0.1),
 		Color(1.0, 0.5, 0.15, 1.0), 6.0, BaseMaterial3D.BILLBOARD_ENABLED, 0.8)
+	weather[WEATHER_PETALS] = _particles("Petals", 280, Vector3(1.2, -1.4, 0.5), Vector2(0.26, 0.18),
+		Color(1.0, 0.74, 0.84, 1.0), 10.0, BaseMaterial3D.BILLBOARD_PARTICLES, 1.0)
 
 
 func _particles(node_name: String, count: int, velocity: Vector3, quad: Vector2, color: Color,
@@ -150,6 +156,17 @@ func _particles(node_name: String, count: int, velocity: Vector3, quad: Vector2,
 	draw.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
 	draw.distance_fade_min_distance = 1.5
 	draw.distance_fade_max_distance = 6.0
+	if node_name == "Petals":
+		# Tumbling petals: a soft pointed-oval texture, spun per particle.
+		draw.albedo_texture = _petal_texture()
+		draw.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+		draw.alpha_scissor_threshold = 0.5
+		process.angle_min = -180.0
+		process.angle_max = 180.0
+		process.angular_velocity_min = -90.0
+		process.angular_velocity_max = 90.0
+		process.color_initial_ramp = _petal_ramp()
+		draw.vertex_color_use_as_albedo = true
 	if node_name == "Embers":
 		draw.emission_enabled = true
 		draw.emission = color
@@ -170,3 +187,23 @@ func _particles(node_name: String, count: int, velocity: Vector3, quad: Vector2,
 	particles.emitting = false
 	add_child(particles)
 	return particles
+
+
+static func _petal_texture() -> ImageTexture:
+	var image := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+	for y in 16:
+		for x in 16:
+			var p := Vector2((x - 7.5) / 7.5, (y - 7.5) / 7.5)
+			var inside := p.x * p.x * 1.6 + absf(p.y) * 0.9 + p.y * p.y * 0.3 < 1.0
+			image.set_pixel(x, y, Color(1, 1, 1, 1.0 if inside else 0.0))
+	return ImageTexture.create_from_image(image)
+
+
+# Petals vary from white to deep pink.
+static func _petal_ramp() -> GradientTexture1D:
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(1, 1, 1))
+	gradient.set_color(1, Color(0.95, 0.6, 0.78))
+	var texture := GradientTexture1D.new()
+	texture.gradient = gradient
+	return texture
