@@ -12,7 +12,7 @@ const SWEEP_STEP := 0.25
 const SWEEP_BISECTIONS := 8
 ## Overlap below this (m) counts as touching.
 const EPSILON := 0.0005
-## Mass of a fighter that is not moved (held in a grab).
+## Mass of a fighter that is not moved (held in a grab, or pinned to a wall).
 const IMMOVABLE := 1.0e6
 
 
@@ -57,8 +57,10 @@ static func _apply_pushback(sim: CombatSim, frozen: Array[bool]) -> void:
 			continue
 		var step := fighter.pushback_velocity * CombatSim.TICK_SECONDS
 		var start := fighter.position
-		fighter.position += step
-		sim.settle(fighter)
+		# A fighter pinned by an arrow stays on the wall; the whole slide goes to the attacker.
+		if not fighter.pinned:
+			fighter.position += step
+			sim.settle(fighter)
 		var direction := step.normalized()
 		var lost := step.length() - (fighter.position - start).dot(direction)
 		var attacker := fighter.pushback_from
@@ -113,12 +115,25 @@ static func _stop_fast_approaches(sim: CombatSim, before: PackedVector3Array,
 			_stop_closing(first, second, direction, _mass(first), _mass(second))
 
 
+## Cheap test: true when the two upright capsules cannot touch (too far apart sideways or vertically).
+static func apart(first: FighterState, second: FighterState) -> bool:
+	var offset := second.position - first.position
+	var reach := first.stats.pushbox_radius + second.stats.pushbox_radius
+	if offset.x * offset.x + offset.z * offset.z >= reach * reach:
+		return true
+	var tall := maxf(first.stats.pushbox_height * 0.5, first.stats.pushbox_radius) \
+		+ maxf(second.stats.pushbox_height * 0.5, second.stats.pushbox_radius)
+	return absf(offset.y) >= tall
+
+
 ## Pushes one overlapping pair apart, the lighter one further. On the floor the
 ## push is planar; two airborne fighters can also part vertically. Whatever a
 ## wall stops goes to the other fighter. Returns true if anything moved.
 static func _separate(sim: CombatSim, a: int, b: int) -> bool:
 	var first := sim.fighters[a]
 	var second := sim.fighters[b]
+	if apart(first, second):
+		return false
 	var one := first.pushbox()
 	var two := second.pushbox()
 	var points := CombatSim._closest_points(one.start, one.end, two.start, two.end)
@@ -187,6 +202,7 @@ static func _shift(sim: CombatSim, fighter: FighterState, offset: Vector3) -> fl
 
 
 static func _mass(fighter: FighterState) -> float:
-	if fighter.state == FighterState.State.GRABBED or fighter.state == FighterState.State.THROWING:
+	if fighter.state == FighterState.State.GRABBED or fighter.state == FighterState.State.THROWING \
+			or fighter.pinned:
 		return IMMOVABLE
 	return maxf(fighter.stats.mass, 0.01)

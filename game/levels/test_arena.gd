@@ -10,6 +10,8 @@ var sim := CombatSim.new()
 ## Optional scripted control for benchmarks and bot playtests:
 ## func(fighter_index: int, tick: int) -> FighterInput. Replaces keyboard and idle input.
 var input_override: Callable
+## Optional AI fighters (T-D23): AIDriver.for_sim(sim, fighters) makes P2 a computer opponent.
+var ai_driver: AIDriver
 
 ## Compiles VFX at load behind a loading cover; scripts can await
 ## vfx_prewarm.finished (or check is_finished) before capturing frames.
@@ -95,7 +97,7 @@ func step_tick() -> void:
 			inputs.append(input_override.call(i, sim.current_tick))
 	else:
 		inputs.append(_player_input.read_tick(camera.view_yaw(), camera.orbit))
-		inputs.append(FighterInput.new())
+		inputs.append(ai_driver.input_for(sim, 1) if ai_driver else FighterInput.new())
 	sim.tick(inputs)
 	# sim.events holds only this tick's events, so read them every tick.
 	combat_feedback.react(sim.events)

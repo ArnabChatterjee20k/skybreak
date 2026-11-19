@@ -282,3 +282,83 @@ func test_strafing_point_blank_circles_no_faster_than_the_orbit_cap() -> void:
 		fastest = maxf(fastest, absf(Vector2(before.x, before.z).angle_to(Vector2(after.x, after.z))))
 	assert_gt(fastest, cap * 0.9, "it did circle")
 	assert_lte(fastest, cap + 0.0001, "%.1f deg in a tick" % rad_to_deg(fastest))
+
+
+# T-D26 interplay: rollback, pins, tethers, haste, decoys.
+
+func test_a_rollback_over_8_ticks_of_body_contact_replays_to_the_same_hash() -> void:
+	_start([Vector3.ZERO, Vector3(0, 0, -1.2)], [BRANN, LYRA])
+	_tick([[0, Vector2(0, 1), 0], [0, Vector2(0, 1), 0]])
+	var saved := _sim.snapshot()
+	var saved_previous := _previous.duplicate()
+	var plans := [[0, Vector2(0, 1), 0], [LIGHT, Vector2(0.4, 1), 0]]
+	var touched := 0
+	for _i in 8:
+		_tick(plans)
+		if _worst_gap() < 0.02:
+			touched += 1
+	assert_gt(touched, 0, "the bodies were in contact")
+	var first := _sim.state_hash()
+	_sim.restore(saved)
+	_previous.assign(saved_previous)
+	for _i in 8:
+		_tick(plans)
+	assert_eq(_sim.state_hash(), first)
+
+
+func test_a_fighter_pinned_by_an_arrow_is_not_shoved_along_the_wall() -> void:
+	var tuning := (CombatSim.DEFAULT_TUNING as MovementTuning).duplicate() as MovementTuning
+	tuning.arena_half_size = 5.0
+	_start([Vector3(-1.5, 0, -3.5), Vector3(0, 0, -5)], [BRANN, LYRA], tuning)
+	var lyra := _sim.fighters[1]
+	lyra.enter_state(State.HITSTUN)
+	lyra.stun_ticks = 600
+	lyra.pin_ticks = Weapon.PIN_WINDOW_TICKS
+	_tick()
+	assert_true(lyra.pinned, "Lyra is pinned to the wall")
+	var pinned_at := lyra.position
+	# Within the pin's hold, walking into her at an angle.
+	for _i in Weapon.PIN_HOLD_TICKS - 5:
+		_tick([[0, Vector2(0, 1), 0]])
+	assert_true(lyra.pinned)
+	assert_almost_eq(lyra.position.distance_to(pinned_at), 0.0, 0.001, "the pin holds her in place")
+	assert_gte(_worst_gap(), -TOLERANCE, "Brann stops at her body")
+
+
+func test_a_tether_yank_stops_at_the_yanker_s_body() -> void:
+	_start([Vector3.ZERO, Vector3(0, 0, -8)])
+	WeaponEffects.tie(_sim, 0, 1)
+	_tick([[HEAVY, Vector2.ZERO, 0]])
+	assert_true(_sim.events.any(func(e: Dictionary) -> bool: return e.type == Event.TETHER_YANK), "yanked")
+	var worst := INF
+	for _i in 30:
+		_tick()
+		worst = minf(worst, _worst_gap())
+	assert_gte(worst, -TOLERANCE, "overlap %.3f m" % -worst)
+	assert_lt(_sim.fighters[1].position.z, _sim.fighters[0].position.z, "the target stayed in front")
+
+
+func test_a_hasted_rush_still_stops_at_contact() -> void:
+	var tuning := (CombatSim.DEFAULT_TUNING as MovementTuning).duplicate() as MovementTuning
+	tuning.rush_stop_distance = 0.0
+	tuning.rush_brake_ticks = 0
+	tuning.rush_speed = 150.0
+	_start([Vector3(0, 0, 20), Vector3.ZERO], [], tuning)
+	_sim.fighters[0].powers.haste_ticks = 600
+	var worst := INF
+	for _i in 90:
+		_tick([[DASH, Vector2(0, 1), 0]])
+		worst = minf(worst, _worst_gap())
+	assert_gt(PowerRules.speed_percent(_sim.fighters[0]), 100, "still hasted")
+	assert_gte(worst, -TOLERANCE, "overlap %.3f m" % -worst)
+	assert_gt(_sim.fighters[0].position.z, _sim.fighters[1].position.z, "no tunnelling")
+
+
+func test_the_aegis_and_mirror_decoys_have_no_body() -> void:
+	_start([Vector3.ZERO, Vector3(0, 0, -1.0)])
+	_sim.fighters[1].powers.aegis = true
+	for _i in 30:
+		_tick([[0, Vector2(0, 1), 0]])
+	var distance := _sim.fighters[0].position.distance_to(_sim.fighters[1].position)
+	assert_almost_eq(distance, 1.0, 0.02, "an Aegis is no bigger body")
+	assert_eq(_sim.fighters.size(), 2, "decoys are gadgets, not fighters with pushboxes")

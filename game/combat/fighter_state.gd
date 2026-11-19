@@ -159,6 +159,25 @@ var smitten_by: int = -1
 var ticks_since_smitten: int = 1 << 20
 ## Height of the origin when standing at the current (x, z); the sim sets it each tick.
 var stand_height: float = 1.0
+## Slot in hand before the last switch (-1 unarmed), for the C quick-swap.
+var last_slot: int = -1
+## Storm Repeater heat: rises while firing, cools otherwise; overheated locks firing until cool.
+var heat: int = 0
+var overheated: bool = false
+## Ticks the bow is held at full draw past the shot's startup; sets the draw level.
+var draw_ticks: int = 0
+## Ki Bow level-3 pin: ticks a wall can still catch this fighter, and whether one has.
+var pin_ticks: int = 0
+var pinned: bool = false
+## Heartstring Tether: the fighter on the other end (-1 none), ticks left, string length.
+var tether_partner: int = -1
+var tether_ticks: int = 0
+var tether_length: float = 0.0
+## Damage percent of the combo being taken: 80 when a ranged hit started it.
+var combo_starter_percent: int = 100
+
+# Powers and gadgets (T-D26).
+var powers := FighterPowers.new()
 
 # Pushback (T-D29): a hit or block slides the target apart from its attacker.
 ## Slide per second still owed, zero when none.
@@ -188,6 +207,7 @@ func enter_state(new_state: State) -> void:
 		spike_bounced = false
 		combo_hits = 0
 		combo_damage = 0
+		combo_starter_percent = 100
 	if new_state != State.KO_FALL and new_state != State.KO_DOWN:
 		ko_bounced = false
 	clear_pushback()
@@ -361,12 +381,27 @@ func state_values() -> Array:
 		smitten_ticks, smitten_by, ticks_since_smitten,
 		team, ko_bounced,
 		pushback_velocity, pushback_ticks, pushback_from,
-	]
+		last_slot, heat, overheated, draw_ticks, pin_ticks, pinned,
+		tether_partner, tether_ticks, tether_length, combo_starter_percent,
+	] + powers.state_values()
 
 
 ## Weapon in hand (Weapon.Kind), NONE when unarmed.
 func held_weapon() -> Weapon.Kind:
 	return weapons[active_slot] as Weapon.Kind if active_slot >= 0 else Weapon.Kind.NONE
+
+
+## Ammo of the weapon in hand for the HUD, or -1 when unarmed or melee.
+func held_ammo() -> int:
+	var kind := held_weapon()
+	return ammo[active_slot] if Weapon.is_ranged(kind) else -1
+
+
+## Draw level of a bow shot being held (1-3), 0 when not drawing.
+func draw_level() -> int:
+	if move == null or not WeaponMoves.is_shot(move) or move_tick < move.startup_ticks - 1:
+		return 0
+	return WeaponMoves.draw_level(draw_ticks)
 
 
 ## Number of filled weapon slots.

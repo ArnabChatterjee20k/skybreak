@@ -13,6 +13,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D13 fix [desktop] Flat floor bit-identical to pre-terrain: floor epsilon and
+  ledge drop only apply with an injected `ground_height`; golden per-tick
+  fingerprints from f1d2dba (`tests/combat/test_flat_floor_equivalence.gd`).
+  Open: goldens recorded on Linux; confirm they also match on the Windows PC.
 - T-D18 [desktop] Vexa built natively in Godot code as a rigid action figure
   (FigureKit mesh kit, humanoid-profile rig, procedural layer), stacked on
   T-D10.
@@ -134,6 +138,25 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 ## Done
 
 - T-D29 [desktop] Pushboxes: per-fighter capsule bodies from `FighterStats` (radius, height, mass; Brann 2.5, Lyra 0.8) resolved in index order after movement, mass-weighted, planar on the floor, wall-aware, swept so rushes and flight never tunnel; closing speed stops at contact; vanish, KO on the floor, a grab pair and Lyra's Star-Step pass through; hit/block pushback that moves the attacker when the defender is pinned; strafe orbit capped at 180 deg/s (matches the camera turn cap) so point-blank never outruns the camera; `FighterView` fades a body pressed against the camera. Follow-ups: strike/guard clips lean heads together at contact (CharacterView could ease the lean when an opponent is touching); both fighters circling opposite ways still hides the opponent in up to ~5% of frames (owner: lower `max_orbit_turn_speed`?).
+- T-D15 [desktop] Rollback core + Duo online prototype: `CombatSim.snapshot()`/
+  `restore()` (reflection deep copy, `SimSnapshot`), compact `InputCodec` (8-18 B),
+  transport-agnostic `RollbackSession` (2-tick delay, prediction, 8-tick rollback,
+  hash desync check, frame-advantage sync), loopback + WebRTC transports, Appwrite
+  lobby/signalling, `duo_lobby.tscn`. Open: provision the `skybreak_` resources
+  (game/net/README.md), vendor webrtc-native in `addons/` [developer], draw the
+  session in the arena, Presence-based signalling, team rules (stocks, friendly fire).
+- T-128 [desktop] Front end: splash, main menu over the world flythrough, character
+  select (roster read dynamically, SubViewport turntable portraits, name/title/stat
+  bars, human/AI, AI level 1-5 and team per seat; Vs AI 1-3 AIs, FFA 2-4), zone
+  select (7 zones, Heartbloom hearts), settings (bus volumes, graphics, camera
+  sensitivity, key rebinding), pause menu, results screen; `MatchConfig` autoload
+  launches `zone_match.tscn` or falls back to the test arena.
+
+- T-D26 [desktop] Powers and gadgets (Overdrive Orb, Burst Shard, Aegis, Haste, Spike Bomb, Gravity Mine, Mirror Decoy) as sky drops alternating with weapons, plus T-D14's gaps: bow draw levels and level-3 pin, Heartstring Tether and yank, chakram out-and-back disc, repeater heat/slowed fire/dash absorb, swap-cancel, C quick-swap, 80% ranged combo starters, counter-hit heavy drops, nocked arrow, `held_ammo()` for the HUD.
+- T-129 [developer, built by cloud] Training room (dummy modes, record/playback, frame-data overlay, input display, refills, reset, weapon spawner, move list) and a 9-lesson tutorial with sim-driven goal checks; entry scenes `game/modes/training/training.tscn` and `game/modes/tutorial/tutorial.tscn`. Open: combo breaker, ki blasts, chase/tech and knockdown wakeup lessons once the sim has them.
+- T-D23 [desktop] Real AI opponents (`game/ai/`): `FighterAI` levels 1–5 with reaction delay, utility neutral, guard/perfect block/push-block, whiff punishes, grab techs, combo routes up to launcher → vanish → air string → spike, weapons, FFA targets; `AIDriver` from the menus' fighter list; optional P2 hookup in the test arena. Open: burst escape (no burst in the sim yet), habit adaptation (§10), rubber-banding.
+- T-D27 [desktop] VFX polish: pooled `MatchVfx` layer (game/view/vfx): heavy/counter anime burst + two-tone impact frame, guard-break shatter, KO dome + colour pop, Stormfall lightning, Heartbloom petals, weapon smears, afterimages, speed lines, sonic ring, zone landing dust, aura flare, ki blast/beam components; GLES3-safe (no instance uniforms).
+
 - T-D24 [desktop] Brann playable: FigureKit stone smith (merged mesh, ember cracks, apron, braided beard, boulder shoulders, stowed hammer and cannon), P1/P2 palettes, heavy armoured MoveSet and stats, posed move clips, roster entry, renders. Open: per-fighter flight speed needs a FighterStats field.
 - T-106 + T-D13 + T-D19 [desktop] Zone match (`zone_match.tscn`, `configure()`) in all 7 zones: only the chosen zone's props, far terrain at its lowest LOD, per-zone arena box; sim floor from a quantised `ZoneGround` (`CombatSim.ground_height`), landing on islands and falling off their rims; atmosphere, weather and ambience pinned to the zone (no Stormfall rain in Heartbloom). Open: `CharacterView.is_airborne` and `WeaponLayer` pillar still use the flat floor (read `FighterState.stand_height` / the sim ground), sim lock-on and hits ignore teams, `rounds` is stored but MatchFlow is best of 3, no AIDriver yet (WeaponBot drives AI slots); Skyhold Ruins' floating stones are props only, so fighters hover there over the terrain.
 - T-D25 [desktop] Lyra playable: star-cartographer zoner built with FigureKit (merged mesh, star-map

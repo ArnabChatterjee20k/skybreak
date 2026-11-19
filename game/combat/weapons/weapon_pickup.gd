@@ -12,6 +12,8 @@ enum Phase {
 ## Unique within a match, for the view and events.
 var id: int = 0
 var kind: Weapon.Kind = Weapon.Kind.NONE
+## A power or gadget drop instead of a weapon (T-D26); kind is NONE then.
+var power: Power.Kind = Power.Kind.NONE
 var position: Vector3 = Vector3.ZERO
 ## Downward speed while falling, m/s (negative is down).
 var fall_speed: float = 0.0
@@ -25,9 +27,13 @@ var ammo: int = 0
 var dropped: bool = false
 
 
+func is_power() -> bool:
+	return power != Power.Kind.NONE
+
+
 func can_be_picked_up() -> bool:
 	return phase != Phase.TELEGRAPH
 
 
 func state_values() -> Array:
-	return [id, kind, position, fall_speed, phase, phase_ticks, ticks_left, ammo, dropped]
+	return [id, kind, position, fall_speed, phase, phase_ticks, ticks_left, ammo, dropped, power]
