@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="MovementTuning" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/movement_tuning.gd" id="1_tuning"]
+
+[resource]
+script = ExtResource("1_tuning")
+ground_height = 1.0
+ground_speed = 12.0
+ground_acceleration = 90.0
+ground_deceleration = 120.0
+takeoff_speed = 14.0
+fly_speed = 30.0
+fly_acceleration = 70.0
+fly_deceleration = 60.0
+ascend_speed = 18.0
+descend_speed = 22.0
+gravity = 30.0
+max_fall_speed = 50.0
+dash_step_distance = 8.0
+dash_step_ticks = 10
+sustained_dash_speed = 55.0
+rush_speed = 80.0
+rush_alignment = 0.7
+rush_stop_distance = 2.5
+rush_max_ticks = 90
+vanish_step_distance = 6.0
+vanish_step_ticks = 12
+arena_half_size = 300.0
+arena_ceiling = 250.0
