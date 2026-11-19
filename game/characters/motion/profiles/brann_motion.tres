@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="MotionProfile" format=3]
+
+[ext_resource type="Script" path="res://game/characters/motion/motion_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+resource_name = "brann: heavy"
+lean_scale = 0.7
+lean_frequency = 5.5
+secondary_frequency = 8.0
+secondary_scale = 1.3
+blend_frequency = 10.0
+flinch_frequency = 10.0
+flinch_scale = 0.6
+landing_scale = 1.8
+crouch = 0.04
+stride_scale = 1.3
+timing_scale = 0.85
+hover_bob = 0.015
+hover_bob_hz = 0.35
+flight_arm_scale = 0.9
+dive_pitch = 88.0
+impact_weight = 0.9
