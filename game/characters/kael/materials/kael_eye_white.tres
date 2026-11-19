@@ -1,0 +1,13 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=3]
+
+[ext_resource type="Shader" path="res://game/view/shaders/toon.gdshader" id="1_toon"]
+[ext_resource type="Texture2D" path="res://game/characters/kael/textures/M00_000_00_EyeWhite_00_EYE.png" id="2_albedo"]
+
+[resource]
+resource_name = "kael_eye_white"
+
+shader = ExtResource("1_toon")
+shader_parameter/albedo_color = Color(1, 1, 1, 1)
+shader_parameter/albedo_texture = ExtResource("2_albedo")
+shader_parameter/specular_enabled = false
+shader_parameter/band_count = 2

@@ -28,6 +28,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   damage scaling, hitstun decay, knockback, hit events, PR #26.
 - T-D05 [desktop] Defense: block, perfect block + lockout, grab and tech,
   push-block, PR #35.
+- T-D10 [desktop] First real character: Kael (CC0 VRoid body, toon look) on a
+  retargeted humanoid clip library (Quaternius UAL, CC0), `CharacterView`
+  driven by sim state, preview scene, PR #34. Swap into FighterView is T-122.
 - T-D01b [desktop] Movement fixes from playtest #1: locked strafe orbits at
   constant radius, dash-away goes straight back, rush brakes over 0.15 s,
   vanish keeps distance and height to the target, climb eases out, held
