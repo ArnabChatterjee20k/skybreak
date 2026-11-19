@@ -248,6 +248,23 @@ Inspired by platform fighters like Brawlhalla, adapted to 3D flight: items **dro
 | **Orbit Chakram** | Thrown and returning disc | Hits from mid range twice (out and back) | Weak up close |
 | **Ember Scythe** | Wide sweeping arcs | Pulls opponents in, hits sidesteppers | Long startup |
 
+**Ranged weapons** (same pickup rules; each has an ammo count and is auto-thrown when empty):
+
+| Weapon | Fire | Ammo | Strength | Counterplay |
+|---|---|---|---|---|
+| **Ki Bow** | Hold LMB to draw (3 levels), release to fire; level 3 arrow pierces and pins the target to walls | 12 arrows | Long-range punish and wall pins | Slow draw is loud and visible; sidestep or rush during the draw |
+| **Arc Revolver** | LMB single shots (hard hitstun); RMB "fan" fires 3 fast shots | 6 per cylinder, 18 total, 1.2 s reload | Precise mid-range pressure and combo starters | The reload is a big punish window; perfect block **reflects** shots |
+| **Storm Repeater** | Hold LMB for sustained fire, low damage per bullet, lots of guard chip | 120 rounds; overheats after 2 s of fire (1.5 s cool-down) | Area denial, guard pressure | You move at 60% speed while firing; **dash absorbs** its bullets (like tap blasts, +2 ki each) |
+| **Scatter Cannon** | LMB short-range spread blast with strong knockback | 8 shells | Close-range burst; knocks fighters into walls | Useless past ~12 m; long recovery |
+
+Rules that keep ranged weapons fair in a melee-first game:
+- **Projectiles, not hitscan.** Every shot travels (fast, but dodgeable) and is a deterministic sim projectile, which also keeps rollback simple.
+- **Aim:** along the lock-on line with a small, seeded spread. When unlocked, aim follows the camera.
+- **Defense works:** all shots can be blocked (guard damage). A perfect block reflects arrows and revolver shots and deflects repeater bullets. Sidestepping beats aimed single shots.
+- **Combo scaling:** ranged hits start combos at 80% damage, so the strongest punishes stay melee.
+- **Melee while holding a gun:** RMB heavies become a weak weapon-bash, so a ranged fighter who gets rushed should throw (`G`) or vanish out.
+- **Readability:** tracers and projectiles use the gold item colour family, never fighter energy colours.
+
 - **Throwing:** `G` while holding a weapon throws it at the target as a fast projectile (damage plus a short stun). It's the classic "throw it before you lose it" play.
 - **Losing a weapon:** you drop it on guard break, knockdown, or when hit by a counter-hit heavy. Dropped weapons stay on the map for 10 s and anyone can grab them.
 - Each weapon is a `MoveSet` (the same data as unarmed), so balance is pure data tuning.
