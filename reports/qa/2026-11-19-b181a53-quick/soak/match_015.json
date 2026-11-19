@@ -1,0 +1,73 @@
+{
+	"hitstops": {
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"7": 9,
+			"9": 1
+		},
+		"light_1": {
+			"3": 12,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 7
+		},
+		"light_2": {
+			"3": 12,
+			"5": 1
+		},
+		"light_3": {
+			"3": 11,
+			"8": 1
+		},
+		"light_4": {
+			"4": 1,
+			"20": 1
+		}
+	},
+	"id": "115:skyhold_ruins:1v1:vexa,brann:45",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 115,
+	"sim_ms_per_tick": 0.59949625,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0113096460700035,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.996845425867508,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.591035416666667,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 12,
+			"detail": "fighters 0 and 1 overlap 0.13 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 1917,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1920,
+			"worst_value": 0.133125174045563
+		}
+	],
+	"wall_seconds": 18.521,
+	"zone": "skyhold_ruins"
+}

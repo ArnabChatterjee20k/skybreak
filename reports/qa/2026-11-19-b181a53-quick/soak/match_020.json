@@ -1,0 +1,145 @@
+{
+	"hitstops": {
+		"breaker+counter": {
+			"14": 1
+		},
+		"hammer/breaker+counter": {
+			"16": 1
+		},
+		"hammer/launcher": {
+			"12": 2
+		},
+		"hammer/light_1": {
+			"7": 6
+		},
+		"hammer/light_1+counter": {
+			"11": 2
+		},
+		"hammer/light_2": {
+			"10": 5,
+			"20": 1
+		},
+		"launcher": {
+			"7": 6
+		},
+		"light_1": {
+			"3": 9,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 7,
+			"9": 2,
+			"20": 1
+		},
+		"light_2": {
+			"3": 11,
+			"5": 1
+		},
+		"light_3": {
+			"3": 8,
+			"5": 3,
+			"8": 1
+		},
+		"spike": {
+			"7": 1
+		},
+		"weapon/thrown": {
+			"6": 3
+		}
+	},
+	"id": "120:heartbloom_gardens:2v2:brann,lyra,kael,vexa:5245",
+	"kos": 2,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		2,
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 120,
+	"sim_ms_per_tick": 0.996112916666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.012122854590416,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 7.07297078310489,
+		"foot_slide_cm_per_frame": 0.0815672659951928,
+		"locked_on_screen_share": 0.996436525612472,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.742473333333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 3,
+			"detail": "lowest sole +14.5 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 212,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1597,
+			"worst_value": 0.145259705979527
+		},
+		{
+			"check": "foot_ground",
+			"count": 16,
+			"detail": "lowest sole +15.9 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 215,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 341,
+			"worst_value": 0.158580200366373
+		},
+		{
+			"check": "foot_ground",
+			"count": 27,
+			"detail": "lowest sole -5.1 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 3,
+			"first_tick": 405,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1669,
+			"worst_value": -0.0508394445919862
+		},
+		{
+			"check": "foot_ground",
+			"count": 14,
+			"detail": "lowest sole +11.3 cm off the visible ground (IDLE, clip land)",
+			"fighter": 1,
+			"first_tick": 598,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 679,
+			"worst_value": 0.112583531183418
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 115,
+			"detail": "fighters 0 and 3 overlap 0.28 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 1066,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1102,
+			"worst_value": 0.280045735836029
+		}
+	],
+	"wall_seconds": 17.994,
+	"zone": "heartbloom_gardens"
+}

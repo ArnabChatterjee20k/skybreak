@@ -1,0 +1,87 @@
+{
+	"hitstops": {
+		"breaker": {
+			"8": 3
+		},
+		"breaker+counter": {
+			"12": 1
+		},
+		"light_1": {
+			"3": 2,
+			"4": 1
+		},
+		"light_1+counter": {
+			"7": 5,
+			"8": 4
+		},
+		"light_2": {
+			"3": 7,
+			"4": 5
+		},
+		"light_3": {
+			"4": 4,
+			"5": 6
+		},
+		"scatter/projectile": {
+			"3": 32
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "109:stormfall_city:1v1:lyra,kael:43",
+	"kos": 0,
+	"legends": [
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 109,
+	"sim_ms_per_tick": 0.8226975,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0116124218329787,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 10.2410938102249,
+		"foot_slide_cm_per_frame": 0.0505404491021814,
+		"locked_on_screen_share": 0.995433789954338,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.604270416666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 24,
+			"detail": "lowest sole +16.6 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 365,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1341,
+			"worst_value": 0.166325871089803
+		},
+		{
+			"check": "foot_ground",
+			"count": 7,
+			"detail": "lowest sole -6.2 cm off the visible ground (MOVING, clip run)",
+			"fighter": 0,
+			"first_tick": 480,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1102,
+			"worst_value": -0.0624058445849229
+		}
+	],
+	"wall_seconds": 18.777,
+	"zone": "stormfall_city"
+}

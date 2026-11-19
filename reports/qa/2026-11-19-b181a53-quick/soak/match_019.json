@@ -1,0 +1,130 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 7,
+			"8": 5
+		},
+		"breaker+counter": {
+			"11": 2
+		},
+		"chakram/launcher": {
+			"8": 1
+		},
+		"chakram/light_1": {
+			"4": 6
+		},
+		"chakram/light_1+counter": {
+			"8": 2
+		},
+		"chakram/light_2": {
+			"4": 7
+		},
+		"chakram/light_3": {
+			"6": 7
+		},
+		"light_1": {
+			"3": 5,
+			"4": 3,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 5,
+			"8": 5
+		},
+		"light_2": {
+			"3": 10,
+			"4": 6,
+			"5": 2,
+			"20": 1
+		},
+		"light_3": {
+			"3": 8,
+			"4": 5,
+			"5": 1,
+			"8": 2
+		}
+	},
+	"id": "119:ember_rift:ffa4:brann,lyra,kael,vexa:4433",
+	"kos": 1,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		4,
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 119,
+	"sim_ms_per_tick": 1.03105833333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0110818902030587,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 6.633486187188,
+		"foot_slide_cm_per_frame": 0.0222228984112247,
+		"locked_on_screen_share": 0.989578991246353,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.786869166666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 40,
+			"detail": "lowest sole -9.5 cm off the visible ground (MOVING, clip run)",
+			"fighter": 0,
+			"first_tick": 24,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1504,
+			"worst_value": -0.0951740681536037
+		},
+		{
+			"check": "foot_ground",
+			"count": 14,
+			"detail": "lowest sole +12.5 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 1,
+			"first_tick": 150,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2272,
+			"worst_value": 0.124718616417127
+		},
+		{
+			"check": "foot_ground",
+			"count": 6,
+			"detail": "lowest sole +15.1 cm off the visible ground (IDLE, clip land)",
+			"fighter": 2,
+			"first_tick": 174,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 361,
+			"worst_value": 0.151152750422199
+		},
+		{
+			"check": "foot_ground",
+			"count": 16,
+			"detail": "lowest sole +9.7 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 3,
+			"first_tick": 389,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 389,
+			"worst_value": 0.0971331731647922
+		}
+	],
+	"wall_seconds": 18.812,
+	"zone": "ember_rift"
+}

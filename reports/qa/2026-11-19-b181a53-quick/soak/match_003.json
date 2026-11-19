@@ -1,0 +1,112 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 3,
+			"10": 1
+		},
+		"launcher": {
+			"7": 6
+		},
+		"launcher+counter": {
+			"11": 1
+		},
+		"light_1": {
+			"3": 10,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 6
+		},
+		"light_2": {
+			"3": 7
+		},
+		"light_3": {
+			"3": 7
+		},
+		"light_4": {
+			"4": 1
+		},
+		"revolver/projectile+counter": {
+			"8": 1
+		}
+	},
+	"id": "103:frozen_peaks:1v1:vexa,brann:44",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 103,
+	"sim_ms_per_tick": 0.88336375,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0112443920224905,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 6.45931483770141,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.792497083333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 28,
+			"detail": "lowest sole -13.1 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 0,
+			"first_tick": 15,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1724,
+			"worst_value": -0.130539196287714
+		},
+		{
+			"check": "foot_ground",
+			"count": 6,
+			"detail": "lowest sole -10.2 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 21,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1516,
+			"worst_value": -0.102247519747337
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 9,
+			"detail": "fighters 0 and 1 overlap 0.12 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 948,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 949,
+			"worst_value": 0.115900564193726
+		},
+		{
+			"check": "arena_bounds",
+			"count": 1,
+			"detail": "outside the arena at (-631.15, 73.24, -523.03) (stand 73.34, GRABBED)",
+			"fighter": 0,
+			"first_tick": 1687,
+			"legend": "vexa",
+			"limit": 300.05,
+			"weapon": "",
+			"worst_tick": 1687,
+			"worst_value": 36.9742431640625
+		}
+	],
+	"wall_seconds": 20.7,
+	"zone": "frozen_peaks"
+}
