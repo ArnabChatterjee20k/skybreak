@@ -20,6 +20,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D03 [desktop] `MoveData` Resource + light string + cancels, PR #15.
 - T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
   damage scaling, hitstun decay, knockback, hit events, PR #26.
+- T-D05 [desktop] Defense: block, perfect block + lockout, grab and tech,
+  push-block, PR #35.
 
 ## Backlog
 
@@ -72,8 +74,6 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   0.15 s (`MovementTuning`) instead of 80 → 0 in one tick; vanish steps keep
   distance and height relative to the target (no 12 → 17 m drift). Regression
   test for each.
-- T-D05 [desktop] Defense: block, perfect block + lockout, grab and tech,
-  push-block.
 - T-D06 [desktop] Vanish rules: direction guess, Sense, max 2, then Clash.
 - T-D07 [desktop] Chase/tech and wall-splat.
 - T-D09b [desktop] VFX fixes from the PR #12 Windows check: shockwave clipped by

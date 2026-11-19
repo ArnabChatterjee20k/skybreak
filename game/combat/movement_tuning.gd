@@ -15,6 +15,9 @@ extends Resource
 ## Upward speed when jumping off the ground into flight (Space on the ground).
 @export var takeoff_speed: float = 14.0
 
+## Slow drift speed while blocking, on the ground and in the air.
+@export var guard_drift_speed: float = 2.5
+
 @export_group("Flight")
 ## Top horizontal speed in free flight.
 @export var fly_speed: float = 30.0
