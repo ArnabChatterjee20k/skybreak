@@ -272,6 +272,7 @@ func _canonicalize_zeros() -> void:
 		fighter.dash_direction = DetMath.canon(fighter.dash_direction)
 		fighter.vanish_offset = DetMath.canon(fighter.vanish_offset)
 		fighter.pushback_velocity = DetMath.canon(fighter.pushback_velocity)
+		fighter.ko_origin = DetMath.canon(fighter.ko_origin)
 		fighter.facing_yaw += 0.0
 		fighter.aim_pitch += 0.0
 		fighter.tether_length += 0.0
