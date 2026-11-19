@@ -10,6 +10,7 @@ const _UNIT := FighterState.METER_UNIT
 const _UNPULLABLE: Array[FighterState.State] = [
 	FighterState.State.GRABBED, FighterState.State.THROWING,
 	FighterState.State.VANISHING, FighterState.State.KNOCKDOWN,
+	FighterState.State.KO_FALL, FighterState.State.KO_DOWN,
 ]
 
 
@@ -172,7 +173,7 @@ static func _step_bomb(sim: CombatSim, bomb: Gadget) -> bool:
 static func _touches_opponent(sim: CombatSim, bomb: Gadget, from: Vector3) -> bool:
 	for index in sim.fighters.size():
 		var target := sim.fighters[index]
-		if index == bomb.owner or not target.can_be_hit():
+		if index == bomb.owner or not target.can_be_hit() or _same_team(sim, bomb.owner, index):
 			continue
 		var body := target.hurtbox()
 		var points := CombatSim._closest_points(from, bomb.position, body.start, body.end)
@@ -189,7 +190,8 @@ static func _explode(sim: CombatSim, bomb: Gadget) -> void:
 		return
 	for index in sim.fighters.size():
 		var target := sim.fighters[index]
-		if index == bomb.owner or not target.can_be_hit() or sim.round_over:
+		if index == bomb.owner or not target.can_be_hit() or sim.round_over \
+				or _same_team(sim, bomb.owner, index):
 			continue
 		var body := target.hurtbox()
 		var points := CombatSim._closest_points(bomb.position, bomb.position, body.start, body.end)
@@ -225,7 +227,7 @@ static func _step_mine(sim: CombatSim, mine: Gadget) -> bool:
 				mine.phase_ticks = 0
 		Gadget.Phase.ARMED:
 			for index in sim.fighters.size():
-				if index != mine.owner and sim.fighters[index].can_be_hit() \
+				if index != mine.owner and sim.fighters[index].can_be_hit() and not _same_team(sim, mine.owner, index) \
 						and sim.fighters[index].position.distance_to(mine.position) <= Power.MINE_TRIGGER_RADIUS:
 					mine.phase = Gadget.Phase.PULLING
 					mine.phase_ticks = 0
@@ -247,7 +249,7 @@ static func _step_mine(sim: CombatSim, mine: Gadget) -> bool:
 static func _pull(sim: CombatSim, mine: Gadget) -> void:
 	for index in sim.fighters.size():
 		var fighter := sim.fighters[index]
-		if index == mine.owner or fighter.state in _UNPULLABLE:
+		if index == mine.owner or fighter.state in _UNPULLABLE or _same_team(sim, mine.owner, index):
 			continue
 		var to_mine := mine.position - fighter.position
 		var distance := to_mine.length()
@@ -299,6 +301,11 @@ static func _decoy_struck(sim: CombatSim, decoy: Gadget) -> bool:
 				sim._drop_pickup(projectile.weapon, projectile.ammo, projectile.position)
 			return true
 	return false
+
+
+## Teammates are spared by their own gadgets (friendly fire is off).
+static func _same_team(sim: CombatSim, owner: int, index: int) -> bool:
+	return sim.fighters[owner].team == sim.fighters[index].team
 
 
 ## An item event: {type, fighter, position, weapon (NONE), power (Power.Kind), id}.

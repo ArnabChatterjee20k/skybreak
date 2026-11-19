@@ -99,6 +99,8 @@ func step_tick() -> void:
 	sim.tick(inputs)
 	# sim.events holds only this tick's events, so read them every tick.
 	combat_feedback.react(sim.events)
+	for i in _fighter_views.size():
+		_fighter_views[i].react_to_tick(sim, i)
 	match_flow.step(sim)
 	match_audio.after_tick()
 

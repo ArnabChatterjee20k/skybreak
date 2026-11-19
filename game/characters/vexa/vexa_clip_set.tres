@@ -1,5 +1,6 @@
 [gd_resource type="Resource" script_class="ClipSet" format=3]
 
+[ext_resource type="Resource" path="res://game/characters/motion/motion_library.res" id="9_motion"]
 [ext_resource type="Script" path="res://game/characters/clip_set.gd" id="1_clips"]
 [ext_resource type="AnimationLibrary" path="res://game/characters/animations/humanoid_clips.res" id="1_gebhv"]
 
@@ -18,6 +19,8 @@ state_clips = Dictionary[StringName, StringName]({
 &"HITSTUN": &"hit",
 &"IDLE": &"idle",
 &"KNOCKDOWN": &"knockdown",
+&"KO_DOWN": &"knockdown",
+&"KO_FALL": &"knockdown",
 &"MOVING": &"run",
 &"THROWING": &"overhead",
 &"VANISHING": &"dash"
@@ -48,4 +51,13 @@ impact_windows = Dictionary[StringName, Vector2]({
 &"swing_back": Vector2(0.2, 0.28),
 &"swing_low": Vector2(0.18333334, 0.26333332),
 &"swing_rising": Vector2(0.6166667, 0.69666666)
+})
+motion = ExtResource("9_motion")
+motion_moves = Dictionary[StringName, StringName]({
+&"breaker": &"-",
+&"grab": &"-",
+&"launcher": &"-",
+&"light_5": &"-",
+&"push_block": &"-",
+&"rising": &"-"
 })
