@@ -1,6 +1,7 @@
 extends GutTest
 
-const LIGHT := FighterInput.Action.LIGHT
+## An action no sim system consumes yet, so the buffer itself is under test.
+const PRESS := FighterInput.Action.TRANSFORM
 const DASH := FighterInput.Action.DASH
 const BLOCK := FighterInput.Action.BLOCK
 
@@ -28,44 +29,44 @@ func _state() -> FighterState.State:
 
 
 func test_a_press_is_buffered_on_the_tick_it_happens() -> void:
-	_hold(LIGHT)
-	assert_true(_sim.is_buffered(0, LIGHT))
+	_hold(PRESS)
+	assert_true(_sim.is_buffered(0, PRESS))
 
 
 func test_a_press_can_still_be_consumed_on_the_last_of_its_six_ticks() -> void:
-	_hold(LIGHT)
+	_hold(PRESS)
 	_hold(0, CombatSim.INPUT_BUFFER_TICKS - 1)
-	assert_true(_sim.consume_buffered(0, LIGHT))
+	assert_true(_sim.consume_buffered(0, PRESS))
 
 
 func test_a_press_expires_after_six_ticks() -> void:
-	_hold(LIGHT)
+	_hold(PRESS)
 	_hold(0, CombatSim.INPUT_BUFFER_TICKS)
-	assert_false(_sim.is_buffered(0, LIGHT))
-	assert_false(_sim.consume_buffered(0, LIGHT))
+	assert_false(_sim.is_buffered(0, PRESS))
+	assert_false(_sim.consume_buffered(0, PRESS))
 
 
 func test_a_buffered_press_is_consumed_only_once() -> void:
-	_hold(LIGHT)
-	assert_true(_sim.consume_buffered(0, LIGHT))
-	assert_false(_sim.consume_buffered(0, LIGHT))
+	_hold(PRESS)
+	assert_true(_sim.consume_buffered(0, PRESS))
+	assert_false(_sim.consume_buffered(0, PRESS))
 
 
 func test_holding_a_button_does_not_keep_it_buffered() -> void:
-	_hold(LIGHT, CombatSim.INPUT_BUFFER_TICKS + 1)
-	assert_false(_sim.is_buffered(0, LIGHT))
+	_hold(PRESS, CombatSim.INPUT_BUFFER_TICKS + 1)
+	assert_false(_sim.is_buffered(0, PRESS))
 
 
 func test_pressing_again_after_consuming_buffers_a_new_press() -> void:
-	_hold(LIGHT)
-	_sim.consume_buffered(0, LIGHT)
+	_hold(PRESS)
+	_sim.consume_buffered(0, PRESS)
 	_hold(0)
-	_hold(LIGHT)
-	assert_true(_sim.consume_buffered(0, LIGHT))
+	_hold(PRESS)
+	assert_true(_sim.consume_buffered(0, PRESS))
 
 
 func test_buffering_one_action_leaves_the_others_alone() -> void:
-	_hold(LIGHT)
+	_hold(PRESS)
 	assert_false(_sim.is_buffered(0, FighterInput.Action.HEAVY))
 
 

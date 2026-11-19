@@ -1,7 +1,7 @@
 extends GutTest
 
 ## Held-action sets the scripted match picks from, so dashes can be held long
-## enough to sustain and vanishes, lock-ons, charging and other buttons all happen.
+## enough to sustain and vanishes, lock-ons, charging, attacks and charged smashes all happen.
 const SCRIPTED_HOLDS: Array[int] = [
 	0,
 	FighterInput.Action.DASH,
@@ -12,15 +12,21 @@ const SCRIPTED_HOLDS: Array[int] = [
 	FighterInput.Action.LIGHT | FighterInput.Action.HEAVY,
 	FighterInput.Action.CHARGE,
 	FighterInput.Action.CHARGE,
+	FighterInput.Action.HEAVY,
+	FighterInput.Action.HEAVY,
+	FighterInput.Action.LIGHT,
 ]
+## Chance per tick that light is tapped on top of the intent, so strings chain and drop.
+const LIGHT_TAP_CHANCE := 0.15
 const SCRIPTED_MOVES: Array[Vector2] = [
 	Vector2.ZERO, Vector2(0, 1), Vector2(0, -1), Vector2(1, 0), Vector2(-0.6, 0.8),
 ]
 
 
 ## Plays a scripted 2-fighter match: each fighter keeps a random intent for a
-## random stretch of ticks and now and then takes damage, guard damage or
-## blocks. A KO starts the next round. Records states, dash kinds and KOs seen.
+## random stretch of ticks, taps light now and then, and now and then takes
+## damage, guard damage or blocks; active attacks sometimes make contact. A KO
+## starts the next round. Records states, dash kinds, moves, cancels and KOs seen.
 func _run_match(seed_value: int, ticks: int, visited: Dictionary) -> int:
 	var sim := CombatSim.new(seed_value)
 	sim.add_fighter(Vector3(0, 1, 6))
@@ -36,28 +42,54 @@ func _run_match(seed_value: int, ticks: int, visited: Dictionary) -> int:
 			if ticks_left[i] == 0:
 				intents[i] = _random_intent(scripted)
 				ticks_left[i] = scripted.randi_range(1, 40)
+				if intents[i].held_actions == FighterInput.Action.HEAVY:
+					# Long enough now and then to reach every charge level.
+					ticks_left[i] = scripted.randi_range(1, 80)
 			ticks_left[i] -= 1
-			var input := FighterInput.from_held(intents[i].held_actions, previous[i])
+			var held := intents[i].held_actions
+			if scripted.randf() < LIGHT_TAP_CHANCE:
+				held ^= FighterInput.Action.LIGHT
+			var input := FighterInput.from_held(held, previous[i])
 			input.move = intents[i].move
 			input.vertical = intents[i].vertical
 			input.view_yaw = intents[i].view_yaw
 			input.target_switch = scripted.randi_range(-1, 1) if scripted.randf() < 0.01 else 0
 			inputs.append(input)
 		_script_meter_events(sim, scripted)
+		var before: Array = sim.fighters.map(func(f: FighterState) -> Array: return [f.move, f.move_tick])
 		sim.tick(inputs)
 		previous = inputs
 		if sim.round_over:
 			visited["ko"] = true
 			sim.start_round()
-		for fighter in sim.fighters:
+		for i in sim.fighters.size():
+			var fighter := sim.fighters[i]
 			visited["state %d" % fighter.state] = true
 			visited["dash %d" % fighter.dash_kind] = true
+			visited["move %s" % fighter.move_id()] = true
+			visited["string %d" % fighter.string_index] = true
+			visited["charge %d" % fighter.charge_level] = true
+			_record_cancel(before[i], fighter, visited)
 	return sim.state_hash()
 
 
-## Stand-ins for the hits and blocks T-D04/T-D05 will produce.
+## Marks a cancel: the previous move was cut short by a heavy or a vanish step.
+func _record_cancel(before: Array, fighter: FighterState, visited: Dictionary) -> void:
+	var old_move: MoveData = before[0]
+	if old_move == null or before[1] + 1 >= old_move.total_ticks() or old_move.can_charge():
+		return
+	if fighter.state == FighterState.State.VANISHING:
+		visited["cancel vanish"] = true
+	elif old_move.cancel_level == MoveData.CancelLevel.LIGHT and fighter.move != null \
+			and fighter.move.cancel_level == MoveData.CancelLevel.HEAVY:
+		visited["cancel heavy"] = true
+
+
+## Stand-ins for the hits, blocks and contacts T-D04/T-D05 will produce.
 func _script_meter_events(sim: CombatSim, scripted: RandomNumberGenerator) -> void:
 	for i in 2:
+		if sim.fighters[i].attack_phase() == FighterState.AttackPhase.ACTIVE and scripted.randf() < 0.5:
+			sim.register_contact(i, scripted.randf() < 0.5)
 		var roll := scripted.randf()
 		if roll < 0.02:
 			sim.apply_damage(i, 1 - i, scripted.randi_range(100, 900))
@@ -85,6 +117,26 @@ func test_same_seed_and_inputs_give_identical_state_after_10k_ticks() -> void:
 	assert_eq(_run_match(42, 10_000, {}), _run_match(42, 10_000, {}))
 
 
+func test_the_scripted_10k_tick_match_covers_every_kael_move_strings_charge_and_cancels() -> void:
+	var visited := {}
+	_run_match(42, 10_000, visited)
+	var moves: MoveSet = (CombatSim.DEFAULT_FIGHTER_STATS as FighterStats).move_set
+	var ids: Array[StringName] = []
+	for move in moves.light_string:
+		ids.append(move.id)
+	for move: MoveData in [moves.smash, moves.breaker, moves.launcher, moves.rising, moves.spike,
+			moves.sweep, moves.push_block]:
+		ids.append(move.id)
+	for move in moves.charged_smash:
+		ids.append(move.id)
+	for id in ids:
+		assert_true(visited.has("move %s" % id), "performed %s" % id)
+	assert_true(visited.has("string 4"), "a full light string")
+	assert_true(visited.has("charge 3"), "a level 3 charged smash")
+	assert_true(visited.has("cancel heavy"), "a light cancelled into a heavy")
+	assert_true(visited.has("cancel vanish"), "an attack cancelled into a vanish step")
+
+
 func test_the_scripted_10k_tick_match_covers_every_movement_mode_and_a_knockout() -> void:
 	var visited := {}
 	_run_match(42, 10_000, visited)
@@ -92,7 +144,7 @@ func test_the_scripted_10k_tick_match_covers_every_movement_mode_and_a_knockout(
 	for state in [
 		FighterState.State.IDLE, FighterState.State.MOVING, FighterState.State.FLYING,
 		FighterState.State.DASHING, FighterState.State.VANISHING,
-		FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN,
+		FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN, FighterState.State.ATTACKING,
 	]:
 		assert_true(visited.has("state %d" % state), "reached %s" % FighterState.State.keys()[state])
 	for kind in [FighterState.DashKind.STEP, FighterState.DashKind.SUSTAINED, FighterState.DashKind.RUSH]:
@@ -127,9 +179,9 @@ func test_state_hash_changes_when_a_fighter_changes_state() -> void:
 func test_state_hash_covers_the_input_buffer() -> void:
 	var sim := CombatSim.new()
 	sim.add_fighter(Vector3.ZERO)
-	var input := FighterInput.from_held(FighterInput.Action.LIGHT, FighterInput.new())
+	var input := FighterInput.from_held(FighterInput.Action.TRANSFORM, FighterInput.new())
 	var inputs: Array[FighterInput] = [input]
 	sim.tick(inputs)
 	var before := sim.state_hash()
-	sim.consume_buffered(0, FighterInput.Action.LIGHT)
+	sim.consume_buffered(0, FighterInput.Action.TRANSFORM)
 	assert_ne(sim.state_hash(), before)
