@@ -24,6 +24,9 @@ uniform float pace : hint_range(0.25, 8.0) = 1.0;
 uniform float ray_count : hint_range(3.0, 48.0) = 12.0;
 uniform float scroll_speed : hint_range(-20.0, 20.0) = 3.0;
 uniform float edge_width : hint_range(0.0, 1.0) = 0.15;
+// Fresnel shells: rim falloff, and drawing only the far half so the shell stays behind what it surrounds.
+uniform float rim_power : hint_range(1.0, 8.0) = 2.0;
+uniform bool back_faces_only = false;
 // Ignores the tint and uses this colour instead (sky-tinted pops, sparkles).
 uniform bool fixed_color = false;
 uniform vec4 own_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
@@ -61,6 +64,9 @@ void vertex() {
 }
 
 void fragment() {
+	if (back_faces_only && FRONT_FACING) {
+		discard;
+	}
 	vec2 p = UV * 2.0 - 1.0;
 	float r = length(p);
 	float fade = pow(1.0 - age, fade_power);
@@ -104,7 +110,7 @@ void fragment() {
 		fade = 1.0 - smoothstep(0.45, 1.0, age);
 	} else if (shape == 5) {
 		float facing = abs(dot(NORMAL, VIEW));
-		float rim = pow(1.0 - facing, 2.0);
+		float rim = pow(1.0 - facing, rim_power);
 		alpha = mix(rim, 1.0, edge_width) * (0.85 + 0.15 * vfx_noise1(UV.y * 20.0 + TIME * 12.0 + seed * 40.0));
 		core = rim * rim;
 	} else if (shape == 6) {

@@ -32,13 +32,13 @@ func test_blocks_are_tinted_and_smaller_than_hits() -> void:
 	assert_lt(block.scale, 1.0)
 
 
-func test_ko_and_guard_break_get_impact_frames_and_the_biggest_shakes() -> void:
+func test_ko_and_guard_break_get_the_biggest_shakes_but_leave_impact_frames_to_the_gate() -> void:
 	var ko := CombatFeedback.plan_for(_event(E.KO, 20))
 	var guard_break := CombatFeedback.plan_for(_event(E.GUARD_BREAK, 14))
-	assert_gt(ko.impact_frames, 0)
-	assert_gt(guard_break.impact_frames, 0)
-	assert_eq(CombatFeedback.plan_for(_event(E.HIT, 8)).impact_frames, 0, "plain hits never invert the screen")
+	for type in E.values():
+		assert_eq(CombatFeedback.plan_for(_event(type, 20)).impact_frames, 0, "%s: MatchVfx rations those" % E.find_key(type))
 	assert_gt(ko.shake, CombatFeedback.plan_for(_event(E.HIT, 8)).shake)
+	assert_gt(guard_break.shake, CombatFeedback.plan_for(_event(E.HIT, 8)).shake)
 
 
 func test_react_spawns_effects_at_the_contact_point_and_shakes_the_camera() -> void:
