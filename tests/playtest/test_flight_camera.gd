@@ -5,6 +5,8 @@ extends GutTest
 ## Frames at the start of a scenario the camera gets to settle in.
 const SETTLE_FRAMES := 30
 const MIN_CAMERA_DISTANCE := 5.5
+## The near band (T-117) uses a shorter boom.
+const MIN_NEAR_CAMERA_DISTANCE := 4.4
 const MAX_CAMERA_DISTANCE := 10.0
 const MIN_PLAYER_SCREEN_HEIGHT := 0.15
 ## Fastest the camera-to-player distance may change (anti-pumping), m/s.
@@ -27,7 +29,8 @@ func _settled(scenario_name: String) -> Array:
 
 func test_player_is_always_on_screen() -> void:
 	for scenario_name in _results:
-		var misses := _settled(scenario_name).filter(func(f): return not f.player_on_screen)
+		# While vanished the player is invisible, so the camera may still be gliding to them.
+		var misses := _settled(scenario_name).filter(func(f): return f.player_visible and not f.player_on_screen)
 		assert_eq(misses.size(), 0, "%s: player off screen in %d frames" % [scenario_name, misses.size()])
 
 
@@ -43,10 +46,23 @@ func test_camera_stays_6_to_10_metres_from_the_player() -> void:
 	for scenario_name in _results:
 		var near := INF
 		var far := 0.0
-		for frame in _settled(scenario_name):
-			near = minf(near, frame.camera_distance)
+		var near_band := INF
+		var frames := _settled(scenario_name)
+		var frames_since_teleport := 1000
+		for i in frames.size():
+			var frame: Dictionary = frames[i]
+			# Skip the ~0.2 s glide after a teleport: the camera is catching up on purpose.
+			var jump: float = frame.player.distance_to(frames[i - 1].player) if i > 0 else 0.0
+			frames_since_teleport = 0 if jump > 3.0 else frames_since_teleport + 1
+			if frames_since_teleport < 20:
+				continue
+			if frame.band == LockOnFraming.Band.NEAR:
+				near_band = minf(near_band, frame.camera_distance)
+			else:
+				near = minf(near, frame.camera_distance)
 			far = maxf(far, frame.camera_distance)
 		assert_gte(near, MIN_CAMERA_DISTANCE, "%s: closest %.2f m" % [scenario_name, near])
+		assert_gte(near_band, MIN_NEAR_CAMERA_DISTANCE, "%s: closest in near band %.2f m" % [scenario_name, near_band])
 		assert_lte(far, MAX_CAMERA_DISTANCE, "%s: farthest %.2f m" % [scenario_name, far])
 
 
@@ -170,3 +186,46 @@ func test_camera_glides_instead_of_cutting_on_teleports() -> void:
 		for i in range(1, frames.size()):
 			biggest = maxf(biggest, frames[i].camera.origin.distance_to(frames[i - 1].camera.origin))
 		assert_lte(biggest, 2.5, "%s: camera moved %.2f m in one frame" % [scenario_name, biggest])
+
+
+## Locked frames at least `settle` frames after the gap entered [low, high) metres.
+func _frames_in_range(scenario_name: String, low: float, high: float, settle: int) -> Array:
+	var picked := []
+	var inside := 0
+	for frame in _settled(scenario_name):
+		var gap: float = frame.player.distance_to(frame.opponent)
+		inside = inside + 1 if frame.locked and gap >= low and gap < high else 0
+		if inside > settle:
+			picked.append(frame)
+	return picked
+
+
+func test_far_opponent_stays_at_least_40_pixels_tall_until_the_zoom_floor() -> void:
+	# T-117: beyond 30 m the FOV narrows (40° floor) so the opponent stays >= ~40 px.
+	for scenario_name in _results:
+		for frame in _frames_in_range(scenario_name, 32.0, 70.0, 60):
+			var gap: Vector3 = frame.opponent - frame.player
+			var height_angle := atan2(absf(gap.y), Vector2(gap.x, gap.z).length())
+			# Big height gaps widen the view instead of zooming (the marker covers it).
+			if not frame.opponent_on_screen or height_angle > LockOnFraming.MAX_VIEW_PITCH_UP:
+				continue
+			assert_gte(frame.opponent_pixels, 38.0,
+				"%s tick %d: opponent %.0f px at %.0f m" % [scenario_name, frame.tick,
+				frame.opponent_pixels, frame.player.distance_to(frame.opponent)])
+
+
+func test_fov_never_narrows_below_40_degrees() -> void:
+	for scenario_name in _results:
+		for frame in _settled(scenario_name):
+			assert_gte(frame.fov, 39.9, "%s tick %d" % [scenario_name, frame.tick])
+
+
+func test_near_fighters_keep_a_10_percent_screen_gap() -> void:
+	# T-117: under 10 m the camera swings ~25° aside so the silhouettes stay apart.
+	var checked := 0
+	for scenario_name in _results:
+		# One second after entering the near band, once the band blend has settled.
+		for frame in _frames_in_range(scenario_name, 0.0, 9.0, 60):
+			checked += 1
+			assert_gte(frame.silhouette_gap, 0.1, "%s tick %d: gap %.2f" % [scenario_name, frame.tick, frame.silhouette_gap])
+	assert_gt(checked, 0, "some scenario reaches the near band")

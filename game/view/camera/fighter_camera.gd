@@ -48,6 +48,10 @@ var _offset := Vector3.ZERO
 var _anchor := Vector3.ZERO
 var _gliding := false
 var _was_locked := false
+var _band := LockOnFraming.Band.MID
+## True from a re-lock until the view has turned onto the new framing; the
+## shoulder side stays fixed meanwhile so it can't flip mid-swing.
+var _relock_turning := false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -69,6 +73,16 @@ func add_mouse_motion(relative: Vector2) -> void:
 	_seconds_since_mouse_moved = 0.0
 
 
+## Which shoulder the camera is heading for: -1 left, +1 right.
+func shoulder_side() -> float:
+	return _shoulder_goal
+
+
+## The camera's current range band (LockOnFraming.Band).
+func range_band() -> LockOnFraming.Band:
+	return _band
+
+
 ## Camera heading in radians, for FighterInput.view_yaw.
 func view_yaw() -> float:
 	return global_rotation.y
@@ -78,18 +92,30 @@ func view_yaw() -> float:
 func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> void:
 	_seconds_since_mouse_moved += delta
 	var goal: Transform3D
-	var fov_goal := LockOnFraming.locked_fov(base_fov, player, target) if locked else base_fov
+	var fov_goal := base_fov
 	if locked:
 		if _seconds_since_mouse_moved > orbit_return_delay:
 			orbit = orbit.lerp(Vector2.ZERO, _blend(orbit_return_sharpness, delta))
-		_shoulder_goal = LockOnFraming.shoulder_side_for(global_transform, player, target, _shoulder_goal)
+		if not _was_locked and _has_pose:
+			_relock_turning = true
+		if not _relock_turning:
+			_shoulder_goal = LockOnFraming.shoulder_side_for(global_transform, player, target, _shoulder_goal)
 		_shoulder = move_toward(_shoulder, _shoulder_goal, shoulder_switch_speed * delta)
-		var range_goal := LockOnFraming.range_blend(player.distance_to(target))
+		_band = LockOnFraming.band_for(player.distance_to(target), _band)
+		var range_goal: float = LockOnFraming.BAND_BLEND[_band]
 		if _far_blend < 0.0:
 			_far_blend = range_goal
 		else:
 			_far_blend = lerpf(_far_blend, range_goal, _blend(range_blend_sharpness, delta))
-		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, base_fov)
+		var widened := LockOnFraming.locked_fov(base_fov, player, target)
+		var zoomed := LockOnFraming.far_zoom_fov(widened, global_position.distance_to(target))
+		# The zoom follows the band directly; fov_sharpness eases it over ~0.5 s.
+		# A big height gap widens the view instead; zooming then would lose the opponent.
+		var height_gap_widening := widened > base_fov + 0.01
+		fov_goal = zoomed if _band == LockOnFraming.Band.FAR and not height_gap_widening else widened
+		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, fov_goal)
+		if _relock_turning and (-global_basis.z).angle_to(-goal.basis.z) < deg_to_rad(10.0):
+			_relock_turning = false
 	else:
 		if _was_locked and _has_pose:
 			_continue_free_orbit_from_here(player)

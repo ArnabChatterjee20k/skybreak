@@ -143,3 +143,32 @@ func test_fov_widens_only_for_big_height_gaps_and_at_most_ten_degrees() -> void:
 	var steep := LockOnFraming.locked_fov(75.0, PLAYER, PLAYER + Vector3(0, 60, -2))
 	assert_gt(steep, 75.0)
 	assert_lte(steep, 75.0 + LockOnFraming.MAX_FOV_BOOST)
+
+
+func test_range_bands_use_hysteresis_at_their_edges() -> void:
+	var NEAR := LockOnFraming.Band.NEAR
+	var MID := LockOnFraming.Band.MID
+	var FAR := LockOnFraming.Band.FAR
+	assert_eq(LockOnFraming.band_for(8.9, MID), NEAR, "enter near below 9 m")
+	assert_eq(LockOnFraming.band_for(10.0, MID), MID, "stay mid at 10 m")
+	assert_eq(LockOnFraming.band_for(10.0, NEAR), NEAR, "stay near until 11 m")
+	assert_eq(LockOnFraming.band_for(11.1, NEAR), MID, "leave near above 11 m")
+	assert_eq(LockOnFraming.band_for(30.0, MID), MID, "stay mid at 30 m")
+	assert_eq(LockOnFraming.band_for(32.1, MID), FAR, "enter far above 32 m")
+	assert_eq(LockOnFraming.band_for(30.0, FAR), FAR, "stay far until 28 m")
+	assert_eq(LockOnFraming.band_for(27.9, FAR), MID, "leave far below 28 m")
+
+
+func test_far_zoom_keeps_a_fighter_40_pixels_tall_down_to_the_floor() -> void:
+	var fov := LockOnFraming.far_zoom_fov(75.0, 50.0)
+	var pixels := LockOnFraming.FIGHTER_HEIGHT / (2.0 * 50.0 * tan(deg_to_rad(fov) / 2.0)) * 1080.0
+	assert_almost_eq(pixels, LockOnFraming.FAR_OPPONENT_PIXELS, 0.5, "40 px at 50 m")
+	assert_eq(LockOnFraming.far_zoom_fov(75.0, 300.0), LockOnFraming.MIN_ZOOM_FOV, "40° floor")
+	assert_eq(LockOnFraming.far_zoom_fov(75.0, 10.0), 75.0, "never wider than the base")
+
+
+func test_near_framing_keeps_the_fighters_apart_on_screen() -> void:
+	var target := PLAYER + Vector3(0, 0, -2.5)
+	for shoulder in [-1.0, 1.0]:
+		var pose := LockOnFraming.locked_pose(PLAYER, target, shoulder, Vector2.ZERO, 0.0)
+		assert_gte(LockOnFraming.screen_gap(pose, 75.0, PLAYER, target), 0.1, "shoulder %s" % shoulder)
