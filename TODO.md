@@ -23,6 +23,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D10 [desktop] First real character: Kael (CC0 VRoid body, toon look) on a
   retargeted humanoid clip library (Quaternius UAL, CC0), `CharacterView`
   driven by sim state, preview scene, PR #34. Swap into FighterView is T-122.
+- T-D10b [desktop] Original fighting clips authored as keyframes in code
+  (stance, power-up, superhero flight, air dash, kicks, uppercut); Kael
+  remapped to them. Stacked on PR #34.
 
 ## Backlog
 
