@@ -1,0 +1,116 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Material" path="res://game/view/shaders/materials/toon_character.tres" id="1_character"]
+[ext_resource type="Material" path="res://game/view/shaders/materials/toon_prop.tres" id="2_prop"]
+[ext_resource type="Shader" path="res://game/view/shaders/toon.gdshader" id="3_toon"]
+[ext_resource type="Shader" path="res://game/view/shaders/outline.gdshader" id="4_outline"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.25, 0.45, 0.85, 1)
+sky_horizon_color = Color(0.7, 0.8, 0.95, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.6, 0.75, 1)
+ambient_light_energy = 0.35
+tonemap_mode = 0
+
+[sub_resource type="ShaderMaterial" id="ground_material"]
+shader = ExtResource("3_toon")
+shader_parameter/albedo_color = Color(0.55, 0.62, 0.5, 1)
+shader_parameter/band_count = 2
+shader_parameter/specular_enabled = false
+shader_parameter/rim_strength = 0.0
+
+[sub_resource type="ShaderMaterial" id="energy_outline"]
+shader = ExtResource("4_outline")
+
+[sub_resource type="ShaderMaterial" id="energy_character"]
+next_pass = SubResource("energy_outline")
+shader = ExtResource("3_toon")
+shader_parameter/albedo_color = Color(0.95, 0.55, 0.3, 1)
+shader_parameter/rim_strength = 0.9
+shader_parameter/rim_energy_mix = 1.0
+
+[sub_resource type="ShaderMaterial" id="hair_material"]
+next_pass = SubResource("energy_outline")
+shader = ExtResource("3_toon")
+shader_parameter/albedo_color = Color(0.2, 0.25, 0.55, 1)
+shader_parameter/specular_strength = 1.2
+
+[sub_resource type="PlaneMesh" id="ground_mesh"]
+size = Vector2(120, 120)
+
+[sub_resource type="CapsuleMesh" id="fighter_mesh"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="SphereMesh" id="sphere_mesh"]
+radius = 0.6
+height = 1.2
+
+[sub_resource type="BoxMesh" id="box_mesh"]
+
+[sub_resource type="TorusMesh" id="torus_mesh"]
+inner_radius = 0.35
+outer_radius = 0.7
+
+[node name="ShaderPreview" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.819152, 0.439385, -0.368688, 0, 0.642788, 0.766044, 0.573576, -0.627507, 0.526541, 0, 10, 0)
+shadow_enabled = true
+
+[node name="FillOmni" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 2.5, 2)
+visible = false
+light_color = Color(1, 0.6, 0.4, 1)
+light_energy = 2.0
+omni_range = 6.0
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground_mesh")
+surface_material_override/0 = SubResource("ground_material")
+
+[node name="Fighter" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 0.9, 0)
+mesh = SubResource("fighter_mesh")
+surface_material_override/0 = ExtResource("1_character")
+
+[node name="HairSphere" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7, 0.6, 0)
+mesh = SubResource("sphere_mesh")
+surface_material_override/0 = SubResource("hair_material")
+
+[node name="Box" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.819152, 0, 0.573576, 0, 1, 0, -0.573576, 0, 0.819152, 0.8, 0.5, 0)
+mesh = SubResource("box_mesh")
+surface_material_override/0 = ExtResource("2_prop")
+
+[node name="Torus" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.34202, -0.939693, 0, 0.939693, 0.34202, 2.3, 0.75, 0)
+mesh = SubResource("torus_mesh")
+surface_material_override/0 = ExtResource("2_prop")
+
+[node name="EnergyRimFighter" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.9, -5)
+mesh = SubResource("fighter_mesh")
+surface_material_override/0 = SubResource("energy_character")
+
+[node name="FarFighter" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.9, -40)
+mesh = SubResource("fighter_mesh")
+surface_material_override/0 = ExtResource("1_character")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.978148, 0.207912, 0, -0.207912, 0.978148, 0, 2.2, 6)
+current = true

@@ -13,22 +13,19 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-102 [developer] Lock-on camera: both fighters on screen, over the shoulder
+  with smooth shoulder switch, distance by range band, mouse orbit ±35° yaw /
+  ±20° pitch that springs back, fast position lerp, slower rotation.
+- T-003 [developer] Export preset for a Windows .exe build: `export_presets.cfg`,
+  single exe with embedded pck, tests and GUT left out.
+- T-D08 [desktop] Toon + outline + rim shaders. PR #3.
+
 ## Backlog
-
-### Milestone 0: setup
-
-- T-002 [developer] Graphics settings: low/med/high presets + resolution scale,
-  saved to user settings.
-- T-003 [developer] Export preset for a Windows .exe build (export templates in
-  `D:\Tools\Godot\editor_data`).
 
 ### Milestone 1: flight and camera (goal: flying feels great)
 
 - T-101 [developer] Free flight and ground movement in the view/controller on
   top of sim movement: ascend/descend, camera-relative move.
-- T-102 [developer] Lock-on camera: both fighters on screen, over the shoulder
-  with smooth shoulder switch, distance by range band, mouse orbit ±35° yaw /
-  ±20° pitch that springs back, fast position lerp, slower rotation.
 - T-103 [developer] Target switching (mouse wheel) and lock-on toggle (MMB/Tab).
 - T-104 [developer] Dash (tap = step, hold = sustained, toward target = rush)
   and vanish step (Shift+E) feel, tuned through `MovementTuning`.
@@ -38,6 +35,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   energy-dome boundary.
 - T-107 [developer] Performance check on the GTX 1650 with two fighters flying;
   record fps and frame time.
+- T-109 [developer] Debug overlay text is clipped at the left edge in a
+  1280x720 movie-writer capture; check anchoring at other window sizes.
+- T-108 [developer] Graphics presets follow-up (from PR #2): try
+  `SCALING_3D_MODE_FSR` instead of bilinear when resolution scale < 1.0, and
+  lower the high preset (4096 shadows, MSAA 4x) if it misses 60 fps in T-107.
 
 ### Combat sim (desktop)
 
@@ -52,7 +54,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   push-block.
 - T-D06 [desktop] Vanish rules: direction guess, Sense, max 2, then Clash.
 - T-D07 [desktop] Chase/tech and wall-splat.
-- T-D08 [desktop] Toon + outline + rim shaders.
 - T-D09 [desktop] Aura and impact VFX shaders.
 
 ### Milestone 2–3 (developer side)
@@ -62,3 +63,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+
+- T-D00 [desktop] Game design document (`docs/GAME_DESIGN.md`), PR #1.
+- T-002 [developer] Graphics presets + resolution scale + vsync, F10 menu, PR #2.
