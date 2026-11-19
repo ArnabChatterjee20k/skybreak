@@ -43,6 +43,8 @@ const BOWS: Array[Weapon.Kind] = [Weapon.Kind.KI_BOW, Weapon.Kind.HEARTSTRING_BO
 ## stands fighters at MovementTuning.ground_height.
 const AIRBORNE_MARGIN := 0.05
 static var _ground_height := MovementTuning.new().ground_height
+## Knocked-out states: they play the knockdown fall unless the clip set maps them.
+const KO_STATES: Array[int] = [FighterState.State.KO_FALL, FighterState.State.KO_DOWN]
 
 @export var clips: ClipSet
 ## The model's root (holds the retargeted %GeneralSkeleton).
@@ -102,6 +104,9 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 		delta = 0.0
 	var state_name := StringName(FighterState.State.find_key(fighter.state))
 	var restarted := fighter.state != _state or fighter.state_ticks < _state_ticks
+	# KO_FALL into KO_DOWN carries on with the same fall clip, which ends lying down.
+	if fighter.is_ko_state() and _state in KO_STATES and fighter.state != _state:
+		restarted = false
 	_state = fighter.state
 	_state_ticks = fighter.state_ticks
 	if layers != null:
@@ -194,6 +199,8 @@ func _clip_for(fighter: FighterState, state_name: StringName) -> StringName:
 		return clips.fly_fast_clip
 	if fighter.state == FighterState.State.KNOCKDOWN and fighter.state_ticks >= _knockdown_split(fighter):
 		return clips.get_up_clip
+	if fighter.is_ko_state() and not clips.state_clips.has(state_name):
+		return clips.clip_for_state(&"KNOCKDOWN")
 	var clip := clips.clip_for_state(state_name, is_airborne(fighter))
 	var intro: StringName = clips.intro_clips.get(clip, &"")
 	if intro != &"" and fighter.state_ticks * TICK_SECONDS < clips.library.get_animation(intro).length:
