@@ -21,6 +21,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   bigger height gaps pull the camera back and widen the FOV (up to +10°).
 - T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst,
   PR #9.
+- T-D03 [desktop] `MoveData` Resource + light string + cancels, PR #15.
 
 ## Backlog
 
@@ -45,7 +46,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ### Combat sim (desktop)
 
-- T-D03 [desktop] `MoveData` Resource + light string + cancels.
 - T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
   damage scaling, hitstun decay.
 - T-D05 [desktop] Defense: block, perfect block + lockout, grab and tech,
