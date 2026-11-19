@@ -53,6 +53,10 @@ var facing_yaw: float = 0.0
 var dash_kind: DashKind = DashKind.NONE
 ## Unit direction of the current dash, zero when not dashing.
 var dash_direction: Vector3 = Vector3.ZERO
+## Index of the fighter a vanish step is anchored to, or -1; the step keeps vanish_offset from it.
+var vanish_anchor: int = -1
+## Where a vanished fighter sits relative to its anchor until it reappears.
+var vanish_offset: Vector3 = Vector3.ZERO
 ## Ticks since each action was last pressed, indexed by Action bit; capped at the buffer length.
 var press_ages: Array[int] = []
 ## Action bits whose latest press was already consumed from the input buffer.
@@ -133,11 +137,13 @@ var combo_damage: int = 0
 
 
 ## Switches to new_state and restarts the tick counter, even if it is the same state.
-## Leaving ATTACKING clears the attack; leaving HITSTUN ends the combo.
+## Leaving ATTACKING clears the attack; leaving HITSTUN ends the combo. Any change drops the vanish anchor.
 func enter_state(new_state: State) -> void:
 	state = new_state
 	state_ticks = 0
 	stun_ticks = 0
+	vanish_anchor = -1
+	vanish_offset = Vector3.ZERO
 	if new_state != State.ATTACKING:
 		_clear_attack()
 		aim_pitch = 0.0
@@ -276,7 +282,7 @@ func burst_display() -> float:
 func state_values() -> Array:
 	return [
 		position, velocity, lock_on_target, state, state_ticks, facing_yaw,
-		dash_kind, dash_direction, press_ages, consumed_presses,
+		dash_kind, dash_direction, vanish_anchor, vanish_offset, press_ages, consumed_presses,
 		health, grey_health, ki, guard, burst, ticks_since_hit, ticks_since_block,
 		blocking, last_stand_used,
 		move_id(), move_tick, holding_charge, charge_ticks, charge_level,
