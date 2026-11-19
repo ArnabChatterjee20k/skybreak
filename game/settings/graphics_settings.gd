@@ -9,6 +9,8 @@ const SAVE_PATH := "user://settings.cfg"
 const SECTION := "graphics"
 const MIN_RESOLUTION_SCALE := 0.5
 const MAX_RESOLUTION_SCALE := 1.0
+## Windowed mode size, shrunk (keeping 16:9) to fit the usable screen area.
+const WINDOWED_SIZE := Vector2i(1600, 900)
 
 ## Per-quality values. Shadow sizes are in pixels.
 const QUALITY_VALUES := {
@@ -38,6 +40,8 @@ var resolution_scale: float = 1.0:
 	set(value):
 		resolution_scale = clampf(value, MIN_RESOLUTION_SCALE, MAX_RESOLUTION_SCALE)
 var vsync_enabled: bool = true
+## Borderless fullscreen at the desktop resolution; false = centred window.
+var fullscreen: bool = true
 
 
 func apply_to(viewport: Viewport) -> void:
@@ -51,6 +55,15 @@ func apply_to(viewport: Viewport) -> void:
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_vsync_mode(
 			DisplayServer.VSYNC_ENABLED if vsync_enabled else DisplayServer.VSYNC_DISABLED)
+		_apply_window_mode()
+
+
+## Centred windowed rect that fits inside the usable screen area (taskbar excluded).
+static func windowed_rect(usable: Rect2i) -> Rect2i:
+	var fit := minf(1.0, minf(
+		float(usable.size.x) / WINDOWED_SIZE.x, float(usable.size.y) / WINDOWED_SIZE.y))
+	var size := Vector2i((Vector2(WINDOWED_SIZE) * fit).floor())
+	return Rect2i(usable.position + (usable.size - size) / 2, size)
 
 
 func save(path: String = SAVE_PATH) -> Error:
@@ -59,6 +72,7 @@ func save(path: String = SAVE_PATH) -> Error:
 	config.set_value(SECTION, "quality", quality)
 	config.set_value(SECTION, "resolution_scale", resolution_scale)
 	config.set_value(SECTION, "vsync_enabled", vsync_enabled)
+	config.set_value(SECTION, "fullscreen", fullscreen)
 	return config.save(path)
 
 
@@ -73,4 +87,21 @@ static func load_saved(path: String = SAVE_PATH) -> GraphicsSettings:
 		settings.quality = saved_quality as Quality
 	settings.resolution_scale = config.get_value(SECTION, "resolution_scale", settings.resolution_scale)
 	settings.vsync_enabled = config.get_value(SECTION, "vsync_enabled", settings.vsync_enabled)
+	settings.fullscreen = config.get_value(SECTION, "fullscreen", settings.fullscreen)
 	return settings
+
+
+## Switches window mode only when it differs, so repeated applies don't flicker.
+func _apply_window_mode() -> void:
+	var mode := DisplayServer.window_get_mode()
+	if fullscreen:
+		if mode != DisplayServer.WINDOW_MODE_FULLSCREEN:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		return
+	if mode == DisplayServer.WINDOW_MODE_WINDOWED:
+		return
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	var screen := DisplayServer.window_get_current_screen()
+	var rect := windowed_rect(DisplayServer.screen_get_usable_rect(screen))
+	DisplayServer.window_set_size(rect.size)
+	DisplayServer.window_set_position(rect.position)
