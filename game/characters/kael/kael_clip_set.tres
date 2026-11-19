@@ -7,16 +7,19 @@
 script = ExtResource("1_clips")
 library = ExtResource("1_gebhv")
 state_clips = Dictionary[StringName, StringName]({
+&"BLOCKING": &"block",
 &"BLOCKSTUN": &"block_hit",
 &"CHARGING": &"power_up",
 &"DASHING": &"dash",
 &"FALLING": &"fall",
 &"FLYING": &"fly_hover",
+&"GRABBED": &"guard_broken",
 &"GUARD_BROKEN": &"guard_broken",
 &"HITSTUN": &"hit",
 &"IDLE": &"fight_stance",
 &"KNOCKDOWN": &"knockdown",
 &"MOVING": &"run",
+&"THROWING": &"overhead",
 &"VANISHING": &"dash"
 })
 air_state_clips = Dictionary[StringName, StringName]({

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"grab"
+display_name = "Grab"
+kind = 1
+startup_ticks = 7
+active_ticks = 2
+recovery_ticks = 25
+step_distance = 0.2
+hitbox_offsets = PackedVector3Array(0, 0, -1.25)
+hitbox_radii = PackedFloat32Array(0.75)
+damage = 1100
+hitstun_ticks = 36
+blockstun_ticks = 0
+hitstop_ticks = 8
+knockback_type = 1
+knockback = Vector3(0, 2, -22)
+guard_damage = 0
+cancel_level = 2
+cancel_start_tick = 0
+cancel_end_tick = 0

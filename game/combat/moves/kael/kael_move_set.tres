@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="MoveSet" load_steps=17 format=3]
+[gd_resource type="Resource" script_class="MoveSet" load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://game/combat/move_set.gd" id="1_set"]
 [ext_resource type="Script" path="res://game/combat/move_data.gd" id="2_move"]
@@ -16,6 +16,7 @@
 [ext_resource type="Resource" path="res://game/combat/moves/kael/charged_smash_1.tres" id="14_charged_smash_1"]
 [ext_resource type="Resource" path="res://game/combat/moves/kael/charged_smash_2.tres" id="15_charged_smash_2"]
 [ext_resource type="Resource" path="res://game/combat/moves/kael/charged_smash_3.tres" id="16_charged_smash_3"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/grab.tres" id="17_grab"]
 
 [resource]
 script = ExtResource("1_set")
@@ -28,3 +29,4 @@ rising = ExtResource("10_rising")
 spike = ExtResource("11_spike")
 sweep = ExtResource("12_sweep")
 push_block = ExtResource("13_push_block")
+grab = ExtResource("17_grab")
