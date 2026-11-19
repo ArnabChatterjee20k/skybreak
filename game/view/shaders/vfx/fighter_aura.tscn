@@ -1,0 +1,92 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/view/shaders/vfx/fighter_aura.gd" id="1_script"]
+[ext_resource type="Shader" path="res://game/view/shaders/aura.gdshader" id="2_aura"]
+[ext_resource type="Shader" path="res://game/view/shaders/aura_spark.gdshader" id="3_spark"]
+
+[sub_resource type="ShaderMaterial" id="aura_material"]
+render_priority = 1
+shader = ExtResource("2_aura")
+
+[sub_resource type="CapsuleMesh" id="shell_mesh"]
+material = SubResource("aura_material")
+radius = 0.42
+height = 1.85
+radial_segments = 32
+rings = 12
+
+[sub_resource type="ParticleProcessMaterial" id="mote_process"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 1.6
+emission_ring_radius = 0.55
+emission_ring_inner_radius = 0.3
+direction = Vector3(0, 1, 0)
+spread = 15.0
+initial_velocity_min = 0.6
+initial_velocity_max = 1.4
+gravity = Vector3(0, 1.2, 0)
+scale_min = 0.5
+scale_max = 1.0
+
+[sub_resource type="ShaderMaterial" id="mote_material"]
+render_priority = 1
+shader = ExtResource("3_spark")
+shader_parameter/spark_shape = 0
+
+[sub_resource type="QuadMesh" id="mote_quad"]
+material = SubResource("mote_material")
+size = Vector2(0.12, 0.12)
+
+[sub_resource type="ParticleProcessMaterial" id="streak_process"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 1.6
+emission_ring_radius = 0.5
+emission_ring_inner_radius = 0.35
+direction = Vector3(0, 1, 0)
+spread = 35.0
+initial_velocity_min = 2.0
+initial_velocity_max = 5.0
+gravity = Vector3(0, 0, 0)
+particle_flag_align_y = true
+
+[sub_resource type="ShaderMaterial" id="streak_material"]
+render_priority = 1
+shader = ExtResource("3_spark")
+shader_parameter/spark_shape = 1
+shader_parameter/intensity = 2.0
+shader_parameter/core_whiteness = 0.8
+
+[sub_resource type="QuadMesh" id="streak_quad"]
+material = SubResource("streak_material")
+size = Vector2(0.3, 0.9)
+
+[node name="FighterAura" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Shell" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("shell_mesh")
+
+[node name="Motes" type="GPUParticles3D" parent="."]
+cast_shadow = 0
+emitting = false
+amount = 48
+lifetime = 1.0
+randomness = 0.3
+local_coords = true
+visibility_aabb = AABB(-1.5, -1.5, -1.5, 3, 4.5, 3)
+process_material = SubResource("mote_process")
+draw_pass_1 = SubResource("mote_quad")
+
+[node name="Streaks" type="GPUParticles3D" parent="."]
+cast_shadow = 0
+emitting = false
+amount = 16
+lifetime = 0.8
+randomness = 0.6
+local_coords = true
+visibility_aabb = AABB(-1.5, -1.5, -1.5, 3, 5, 3)
+process_material = SubResource("streak_process")
+draw_pass_1 = SubResource("streak_quad")

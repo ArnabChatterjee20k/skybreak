@@ -31,10 +31,10 @@ uniform vec4 rim_color : source_color = vec4(1.0, 0.96, 0.9, 1.0);
 uniform float rim_width : hint_range(0.0, 1.0) = 0.3;
 uniform float rim_softness : hint_range(0.0, 0.5) = 0.05;
 uniform float rim_strength : hint_range(0.0, 4.0) = 0.35;
-// Driven by VFX (T-D09): blends the rim toward an energy colour.
-uniform vec4 rim_energy_color : source_color = vec4(0.3, 0.85, 1.0, 1.0);
-uniform float rim_energy_mix : hint_range(0.0, 1.0) = 0.0;
 group_uniforms;
+// Per fighter (set on the MeshInstance3D): blends the rim toward its energy colour.
+instance uniform vec4 rim_energy_color : source_color = vec4(0.3, 0.85, 1.0, 1.0);
+instance uniform float rim_energy_mix : hint_range(0.0, 1.0) = 0.0;
 
 float band_ramp(float x) {
 	if (use_ramp_texture) {

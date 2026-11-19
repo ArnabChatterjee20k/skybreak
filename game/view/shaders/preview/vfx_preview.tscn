@@ -1,0 +1,83 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/view/shaders/preview/vfx_preview.gd" id="1_script"]
+[ext_resource type="Material" path="res://game/view/shaders/materials/toon_character.tres" id="2_character"]
+[ext_resource type="Shader" path="res://game/view/shaders/toon.gdshader" id="3_toon"]
+[ext_resource type="PackedScene" path="res://game/view/shaders/vfx/fighter_aura.tscn" id="4_aura"]
+[ext_resource type="PackedScene" path="res://game/view/shaders/screen/impact_frame.tscn" id="5_impact_frame"]
+[ext_resource type="PackedScene" path="res://game/view/shaders/screen/speed_lines.tscn" id="6_speed_lines"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.12, 0.16, 0.32, 1)
+sky_horizon_color = Color(0.4, 0.45, 0.6, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.6, 0.75, 1)
+ambient_light_energy = 0.35
+tonemap_mode = 0
+
+[sub_resource type="ShaderMaterial" id="ground_material"]
+shader = ExtResource("3_toon")
+shader_parameter/albedo_color = Color(0.45, 0.5, 0.42, 1)
+shader_parameter/band_count = 2
+shader_parameter/specular_enabled = false
+shader_parameter/rim_strength = 0.0
+
+[sub_resource type="PlaneMesh" id="ground_mesh"]
+size = Vector2(60, 60)
+
+[sub_resource type="CapsuleMesh" id="fighter_mesh"]
+radius = 0.4
+height = 1.8
+
+[node name="VfxPreview" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.819152, 0.439385, -0.368688, 0, 0.642788, 0.766044, 0.573576, -0.627507, 0.526541, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground_mesh")
+surface_material_override/0 = SubResource("ground_material")
+
+[node name="Fighter" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0.9, 0)
+instance_shader_parameters/rim_energy_color = Color(1, 0.62, 0.22, 1)
+instance_shader_parameters/rim_energy_mix = 1.0
+mesh = SubResource("fighter_mesh")
+surface_material_override/0 = ExtResource("2_character")
+
+[node name="FighterAura" parent="Fighter" instance=ExtResource("4_aura")]
+power_level = 1.0
+
+[node name="ImpactPoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 1.2, 0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.978148, 0.207912, 0, -0.207912, 0.978148, 0, 2.0, 5.5)
+current = true
+
+[node name="Screen" type="CanvasLayer" parent="."]
+
+[node name="SpeedLines" parent="Screen" instance=ExtResource("6_speed_lines")]
+
+[node name="ImpactFrame" parent="Screen" instance=ExtResource("5_impact_frame")]
+
+[node name="Help" type="Label" parent="Screen"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 520.0
+offset_bottom = 140.0
+text = "0-3 aura power level   O toggle opponent colours
+Z light   X heavy   C counter   V perfect block   B guard break
+N shockwave   M impact frame   S speed lines"

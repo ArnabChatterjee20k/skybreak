@@ -27,6 +27,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   bigger height gaps pull the camera back and widen the FOV (up to +10°).
 - T-D02 [desktop] Meters: health with grey recoverable damage, ki, guard, burst,
   PR #9.
+- T-D09 [desktop] Aura and impact VFX shaders, per-fighter `rim_energy_*`
+  instance uniforms, PR #12.
 
 ## Backlog
 
@@ -84,8 +86,6 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-D08b [desktop] Outline on hard-edged props: bake smoothed normals into
   vertex colour/UV2, or use bevelled prop meshes (box outline nearly invisible
   in the PR #3 check).
-- T-D09 [desktop] Aura and impact VFX shaders. Make `rim_energy_*` per fighter
-  (instance uniforms or a duplicated material).
 
 ### Milestone 2–3 (developer side)
 
