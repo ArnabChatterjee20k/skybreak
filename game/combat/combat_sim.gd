@@ -94,10 +94,10 @@ var tuning: MovementTuning
 var meter_tuning: MeterTuning
 ## Hit constants (scaling, stun, hitstop, knockback). Configuration, like tuning.
 var hit_tuning: HitTuning
-## What happened this tick, for the view: hits, blocks, grabs, throws and the
-## rest of EventType, in the order they were resolved. Each entry: {type: EventType, attacker, target,
-## position (contact point), move_id, damage (display units), hitstop,
-## knockback_type, counter}. Replaced by a new array at the start of every tick.
+## What happened this tick, for the view (every EventType), in the order it was
+## resolved. Each entry: {type: EventType, attacker, target, position (contact
+## point), move_id, damage (display units), hitstop, knockback_type, counter}.
+## Replaced by a new array at the start of every tick.
 var events: Array[Dictionary] = []
 
 
@@ -1082,8 +1082,9 @@ func _apply_grab(contact: Dictionary, contacts: Array[Dictionary], struck: int) 
 			or target.state in _UNGRABBABLE_STATES:
 		return
 	for other in contacts:
-		if other.type == EventType.GRAB and other.attacker == target_index and other.target == attacker_index \
-				and target.state == FighterState.State.ATTACKING and target.move == other.move:
+		var mutual: bool = other.type == EventType.GRAB and other.attacker == target_index \
+			and other.target == attacker_index
+		if mutual and target.state == FighterState.State.ATTACKING and target.move == other.move:
 			_push_apart(attacker_index, target_index)
 			events.append(_event(EventType.GRAB_TECH, contact, 0, 0, MoveData.KnockbackType.NONE))
 			return
