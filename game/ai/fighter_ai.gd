@@ -198,7 +198,7 @@ static func move_reach(move: MoveData, hurtbox_radius: float = 0.5) -> float:
 func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 	var target := sim.fighters[_target]
 	var to_target := target.position - me.position
-	plan.view_yaw = atan2(-to_target.x, -to_target.z)
+	plan.view_yaw = DetMath.atan2(-to_target.x, -to_target.z)
 	var picking := _plan == Plan.PICKUP and _is_free(me)
 	if not picking:
 		if me.lock_on_target < 0:
@@ -286,7 +286,7 @@ func _threat_ticks(sim: CombatSim, me: FighterState) -> int:
 		var reach := move_reach(move, me.stats.hurtbox_radius)
 		if to_me.length() > reach + 3.0:
 			continue
-		var facing := Basis(Vector3.UP, attacker.facing_yaw) * Vector3.FORWARD
+		var facing := DetMath.forward(attacker.facing_yaw)
 		if Vector2(to_me.x, to_me.z).normalized().dot(Vector2(facing.x, facing.z)) < 0.2:
 			continue
 		var key := j * 1048576 + (_ticks - delay - perception.move_tick(j))
@@ -726,7 +726,7 @@ func _go_for_pickup(sim: CombatSim, me: FighterState, distance: float, plan: Fig
 		_tap(plan, _A.LOCK_TOGGLE)
 	var pickup := sim.pickups[goal]
 	var to_pickup := pickup.position - me.position
-	plan.view_yaw = atan2(-to_pickup.x, -to_pickup.z)
+	plan.view_yaw = DetMath.atan2(-to_pickup.x, -to_pickup.z)
 	plan.move = Vector2(0, 1) if Vector2(to_pickup.x, to_pickup.z).length() > 0.6 else Vector2.ZERO
 	if to_pickup.y > 0.8:
 		plan.vertical = 1

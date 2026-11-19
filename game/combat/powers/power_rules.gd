@@ -70,7 +70,7 @@ static func use_gadget(sim: CombatSim, index: int) -> void:
 			gadget.phase = Gadget.Phase.ARMING
 			gadget.ticks_left = Power.MINE_LIFETIME_TICKS
 		Power.Kind.MIRROR_DECOY:
-			var right := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.RIGHT
+			var right := DetMath.rotate_y(Vector3.RIGHT, fighter.facing_yaw)
 			gadget.position = fighter.position + right * Power.DECOY_SIDE_OFFSET
 			gadget.phase = Gadget.Phase.MIRRORING
 			gadget.ticks_left = Power.DECOY_TICKS
@@ -222,7 +222,7 @@ static func _explode(sim: CombatSim, bomb: Gadget) -> void:
 			away = Vector3.FORWARD
 		var contact := {
 			"type": _E.HIT, "attacker": bomb.owner, "target": index, "move": Power.bomb_move(),
-			"yaw": atan2(-away.x, -away.z), "pitch": 0.0, "side": 1, "position": points[1],
+			"yaw": DetMath.atan2(-away.x, -away.z), "pitch": 0.0, "side": 1, "position": points[1],
 		}
 		if target.is_invincible_to(true):
 			continue

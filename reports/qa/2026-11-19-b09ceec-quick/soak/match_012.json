@@ -1,0 +1,127 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 1,
+			"8": 4
+		},
+		"light_1": {
+			"3": 1,
+			"4": 5
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 2
+		},
+		"light_2": {
+			"3": 2,
+			"4": 6
+		},
+		"light_3": {
+			"3": 2,
+			"4": 5
+		},
+		"light_4": {
+			"6": 1
+		},
+		"repeater/projectile": {
+			"1": 74
+		},
+		"repeater/projectile+counter": {
+			"5": 3
+		},
+		"spike": {
+			"7": 1
+		}
+	},
+	"id": "112:ember_rift:1v1:kael,vexa:45",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 112,
+	"sim_ms_per_tick": 1.24606875,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0100747831165791,
+		"finger_pops_per_fighter_minute": 83.2847019591496,
+		"foot_error_p95_cm": 4.84813319100539,
+		"foot_slide_cm_per_frame": 1.27867786261729,
+		"locked_on_screen_share": 0.982620948802255,
+		"pops_per_fighter_minute": 214.589412255106
+	},
+	"view_ms_per_frame": 0.81337,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 265,
+			"detail": "RightHand turned 2.79 rad in one frame (IDLE, move , clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 67,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 67,
+			"worst_value": 2.78846287727356
+		},
+		{
+			"check": "pop",
+			"count": 21,
+			"detail": "RightLowerLeg turned 2.80 rad in one frame (ATTACKING, move light_4, clip light_4)",
+			"fighter": 0,
+			"first_tick": 76,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1196,
+			"worst_value": 2.79983186721802
+		},
+		{
+			"check": "foot_ground",
+			"count": 10,
+			"detail": "lowest sole +5.6 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 104,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 110,
+			"worst_value": 0.0564528335982288
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 200,
+			"detail": "fighters 0 and 1 overlap 0.17 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 379,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 788,
+			"worst_value": 0.174994897842407
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "286 pops in 1.3 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 2.66555555555556,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 286
+		}
+	],
+	"wall_seconds": 19.595,
+	"zone": "ember_rift"
+}

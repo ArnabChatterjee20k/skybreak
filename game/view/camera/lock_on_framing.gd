@@ -112,6 +112,15 @@ static func locked_pose(player: Vector3, target: Vector3, shoulder: float, orbit
 	return pose
 
 
+## True when point is in front of the camera and inside the frame.
+static func is_in_view(camera: Transform3D, vertical_fov: float, point: Vector3) -> bool:
+	var local := camera.affine_inverse() * point
+	if local.z >= -0.01:
+		return false
+	var tan_half_v := tan(deg_to_rad(vertical_fov) / 2.0)
+	return absf(local.x / -local.z) <= tan_half_v * ASPECT and absf(local.y / -local.z) <= tan_half_v
+
+
 ## 0-1: how much to widen and pull back for a view lagging its framing by
 ## angle (radians): none under 15°, full at 60°.
 static func lag_widen(angle: float) -> float:
