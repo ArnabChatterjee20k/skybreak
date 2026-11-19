@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ZoneData" format=3]
+
+[ext_resource type="Script" path="res://game/world/zones/zone_data.gd" id="1_3rfvd"]
+
+[resource]
+script = ExtResource("1_3rfvd")
+id = &"skyhold_ruins"
+display_name = "Skyhold Ruins"
+centre = Vector2(40, -600)
+extent = Vector2(330, 420)
+ground_low = Color(0.42, 0.5, 0.36, 1)
+ground_high = Color(0.7, 0.64, 0.5, 1)
+rock = Color(0.6, 0.55, 0.5, 1)
+ramp_heights = Vector2(-10, 120)
+fog_colors = PackedColorArray(0.9, 0.8, 0.62, 1, 0.95, 0.68, 0.45, 1, 0.16, 0.16, 0.3, 1)
+fog_density = 0.1
+sun_directions = PackedVector3Array(-0.61078393, -0.55988526, 0.55988526, -0.9033941, -0.15056568, 0.4015085, 0.20385887, -0.76447076, 0.6115766)
+sun_colors = PackedColorArray(1, 0.86, 0.62, 1, 1, 0.62, 0.3, 1, 0.65, 0.7, 1, 1)
+sun_energies = PackedFloat32Array(1, 0.84, 0.32)
+ambient_colors = PackedColorArray(0.66, 0.6, 0.55, 1, 0.65, 0.48, 0.42, 1, 0.18, 0.18, 0.3, 1)
+sky_top_colors = PackedColorArray(0.3, 0.5, 0.85, 1, 0.42, 0.32, 0.6, 1, 0.03, 0.04, 0.12, 1)
+sky_horizon_colors = PackedColorArray(0.92, 0.76, 0.52, 1, 0.95, 0.6, 0.38, 1, 0.15, 0.14, 0.26, 1)
+spawn_points = PackedVector3Array(20, 150, -560, 60, 150, -560)
+landmark_names = PackedStringArray("Crown Island", "Watch Island", "Fang Rocks")
+landmark_positions = PackedVector3Array(60, 190, -780, -130, 150, -460, -120, 120, -640)

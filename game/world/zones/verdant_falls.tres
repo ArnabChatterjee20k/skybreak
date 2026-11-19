@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ZoneData" format=3]
+
+[ext_resource type="Script" path="res://game/world/zones/zone_data.gd" id="1_kdw02"]
+
+[resource]
+script = ExtResource("1_kdw02")
+id = &"verdant_falls"
+display_name = "Verdant Falls"
+centre = Vector2(-640, 470)
+extent = Vector2(330, 460)
+ground_low = Color(0.28, 0.58, 0.22, 1)
+ground_high = Color(0.48, 0.66, 0.28, 1)
+rock = Color(0.42, 0.4, 0.32, 1)
+ramp_heights = Vector2(0, 120)
+strata = 0.35
+fog_colors = PackedColorArray(0.7, 0.85, 0.8, 1, 0.9, 0.7, 0.55, 1, 0.08, 0.14, 0.16, 1)
+fog_density = 0.3
+sun_directions = PackedVector3Array(0.3562906, -0.81437856, -0.45808792, 0.8922686, -0.26243195, -0.3674047, -0.3292928, -0.7683498, -0.54882133)
+sun_colors = PackedColorArray(1, 0.97, 0.85, 1, 1, 0.68, 0.4, 1, 0.55, 0.7, 0.95, 1)
+sun_energies = PackedFloat32Array(1, 0.76, 0.28)
+ambient_colors = PackedColorArray(0.52, 0.62, 0.55, 1, 0.58, 0.46, 0.42, 1, 0.12, 0.18, 0.22, 1)
+sky_top_colors = PackedColorArray(0.25, 0.5, 0.85, 1, 0.36, 0.3, 0.55, 1, 0.02, 0.04, 0.1, 1)
+sky_horizon_colors = PackedColorArray(0.68, 0.82, 0.86, 1, 0.98, 0.68, 0.45, 1, 0.08, 0.14, 0.18, 1)
+spawn_points = PackedVector3Array(-660, 0, 620, -620, 0, 620)
+landmark_names = PackedStringArray("Great Falls", "Mirror Lake", "Giant Grove")
+landmark_positions = PackedVector3Array(-660, 118, 290, -640, 0, 450, -520, 40, 650)
