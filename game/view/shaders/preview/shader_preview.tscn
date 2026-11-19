@@ -35,7 +35,6 @@ next_pass = SubResource("energy_outline")
 shader = ExtResource("3_toon")
 shader_parameter/albedo_color = Color(0.95, 0.55, 0.3, 1)
 shader_parameter/rim_strength = 0.9
-shader_parameter/rim_energy_mix = 1.0
 
 [sub_resource type="ShaderMaterial" id="hair_material"]
 next_pass = SubResource("energy_outline")
@@ -103,6 +102,7 @@ surface_material_override/0 = ExtResource("2_prop")
 
 [node name="EnergyRimFighter" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.9, -5)
+instance_shader_parameters/rim_energy_mix = 1.0
 mesh = SubResource("fighter_mesh")
 surface_material_override/0 = SubResource("energy_character")
 
