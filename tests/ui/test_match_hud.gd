@@ -26,10 +26,17 @@ func test_intro_says_round_then_fight_and_holds_input() -> void:
 	assert_eq(flow.banner([]).title, "ROUND 1")
 	assert_false(flow.accepts_input())
 	_run(flow, sim, MatchFlow.INTRO_ROUND_TICKS)
-	assert_eq(flow.banner([]).title, "FIGHT!")
-	_run(flow, sim, MatchFlow.INTRO_TICKS - MatchFlow.INTRO_ROUND_TICKS)
+	assert_eq(flow.banner([]).title, "3")
+	_run(flow, sim, MatchFlow.COUNT_TICKS)
+	assert_eq(flow.banner([]).title, "2")
+	_run(flow, sim, MatchFlow.COUNT_TICKS)
+	assert_eq(flow.banner([]).title, "1")
+	assert_false(flow.accepts_input(), "held through the count")
+	_run(flow, sim, MatchFlow.COUNT_TICKS)
 	assert_eq(flow.phase, MatchFlow.Phase.FIGHT)
 	assert_true(flow.accepts_input())
+	assert_eq(flow.banner([]).title, "FIGHT!", "FIGHT! as input goes live")
+	_run(flow, sim, MatchFlow.FIGHT_BANNER_TICKS)
 	assert_eq(flow.banner([]).title, "")
 
 
@@ -120,6 +127,16 @@ func test_hud_is_pinned_to_the_top_on_tall_canvases() -> void:
 	assert_almost_eq(MatchHud.design_offset(Vector2(2560, 1080)).x, 320.0, 0.001, "centred on ultrawide")
 
 
+func test_banners_sit_in_the_upper_third_clear_of_plates() -> void:
+	for screen in [Vector2(1920, 1080), Vector2(1280, 720), Vector2(1280, 1080)]:
+		var at := MatchHud.banner_position(screen)
+		var on_screen_y := at.y * MatchHud.design_scale(screen) + MatchHud.design_offset(screen).y
+		assert_almost_eq(on_screen_y / screen.y, MatchHud.BANNER_HEIGHT_FRACTION, 0.001, "%s" % screen)
+		# Below the second row of plates (132 + 14 + 132 + margin, minus the
+		# banner's cap height of ~100 px at 132 pt).
+		assert_gt(at.y - 100.0, MatchHud.plate_rect(0, 2).end.y, "clear of the plates on %s" % screen)
+
+
 func test_plates_for_four_fighters_never_overlap_and_stay_on_screen() -> void:
 	var screen := Rect2(Vector2.ZERO, MatchHud.DESIGN)
 	var clock := Rect2(MatchHud.DESIGN.x / 2 - 60, MatchHud.MARGIN, 120, 84)
@@ -156,8 +173,26 @@ func test_chip_trail_holds_then_drains_to_the_new_health() -> void:
 
 
 func test_weapon_shows_unarmed_until_fighters_carry_one() -> void:
-	assert_eq(MatchHud.weapon_label(FighterState.new()), "UNARMED")
-	assert_eq(MatchHud.inventory_labels(FighterState.new()), [])
+	var fighter := FighterState.new()
+	assert_eq(MatchHud.weapon_label(fighter), "UNARMED")
+	for slot in MatchHud.inventory_slots(fighter):
+		assert_false(slot.filled)
+
+
+func test_weapon_box_names_the_held_weapon_with_ammo_and_reload() -> void:
+	var fighter := FighterState.new()
+	fighter.weapons = PackedInt32Array([Weapon.Kind.STORM_BLADE, Weapon.Kind.ARC_REVOLVER, 0])
+	fighter.ammo = PackedInt32Array([0, 12, 0])
+	fighter.active_slot = 0
+	assert_eq(MatchHud.weapon_label(fighter), "STORM BLADE", "melee: no ammo")
+	fighter.active_slot = 1
+	assert_eq(MatchHud.weapon_label(fighter), "ARC REVOLVER 12")
+	fighter.reload_ticks = 20
+	assert_eq(MatchHud.weapon_label(fighter), "ARC REVOLVER RELOAD")
+	var slots := MatchHud.inventory_slots(fighter)
+	assert_eq(slots.size(), 3)
+	assert_true(slots[0].filled and slots[1].filled and not slots[2].filled)
+	assert_true(slots[1].active and not slots[0].active)
 
 
 func test_hud_draws_in_the_arena_without_errors() -> void:

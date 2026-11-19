@@ -111,3 +111,10 @@ func test_every_mode_spawns_fighters_at_least_2_m_apart_between_their_bodies() -
 						- sim.fighters[i].stats.pushbox_radius - sim.fighters[j].stats.pushbox_radius
 					assert_gte(gap, 2.0, "%s %s: fighters %d and %d" % [zone_id, mode, i, j])
 			zone_match.free()
+
+
+func test_rounds_get_cues_music_zone_and_spawn_points() -> void:
+	var zone_match := _match({})
+	assert_true(zone_match.match_cues.is_inside_tree(), "round cues wired")
+	assert_eq(zone_match.match_cues.zone, zone_match.zone_id, "the zone's battle theme")
+	assert_eq(zone_match.match_flow.spawn_points, zone_match.spawn_positions(), "rounds restart on the zone spawns")

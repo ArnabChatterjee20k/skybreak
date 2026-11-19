@@ -18,6 +18,15 @@ const BOB_HEIGHT := 0.18
 const BOB_SPEED := 2.6
 const SPIN_SPEED := 1.4
 const TRACER_LENGTH := 2.2
+## Pickup pillars, streaks and glows vanish closer than NEAR_FADE_START to the camera
+## and are whole from NEAR_FADE_END (m), and never cover more than MAX_COVERAGE of the screen.
+const NEAR_FADE_START := 1.0
+const NEAR_FADE_END := 3.0
+const MAX_COVERAGE := 0.12
+const PILLAR_RADIUS := 0.6
+const STREAK_RADIUS := 0.3
+const STREAK_LENGTH := 6.0
+const GLOW_RADIUS := 0.95
 
 ## States in which the held weapon is let go (the sim drops it on a KO).
 const DOWN_STATES: Array[int] = [FighterState.State.KNOCKDOWN, FighterState.State.KO_FALL,
@@ -104,10 +113,50 @@ func _present_pickups(blend: float) -> void:
 			pillar.scale = Vector3(1, height, 1)
 			pillar.position = Vector3(0, -height * 0.5, 0)
 		glow.scale = Vector3.ONE * (1.0 + 0.12 * sin(_time * 5.0))
+		_fade_near_camera(node, at)
 	for id: int in _pickup_nodes.keys():
 		if not alive.has(id):
 			(_pickup_nodes[id] as Node3D).queue_free()
 			_pickup_nodes.erase(id)
+
+
+## Fades a pickup's pillar, streak and glow by camera distance and screen coverage.
+func _fade_near_camera(node: Node3D, at: Vector3) -> void:
+	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
+	if camera == null:
+		return
+	var eye := camera.global_position
+	var tan_half := tan(deg_to_rad(camera.fov) * 0.5)
+	var size := get_viewport().get_visible_rect().size
+	var aspect := size.x / maxf(size.y, 1.0)
+	var parts := [
+		["Pillar", at - Vector3.UP * maxf(at.y - sim.floor_height(), 0.0), at, PILLAR_RADIUS],
+		["Streak", at + Vector3.UP * 0.4, at + Vector3.UP * (0.4 + STREAK_LENGTH), STREAK_RADIUS],
+		["Glow", at, at, GLOW_RADIUS],
+	]
+	for part: Array in parts:
+		var piece: GeometryInstance3D = node.get_node(part[0] as String)
+		var low: Vector3 = part[1]
+		var high: Vector3 = part[2]
+		var radius: float = part[3]
+		var distance := maxf(eye.distance_to(Geometry3D.get_closest_point_to_segment(eye, low, high)) - radius, 0.0)
+		var coverage := beam_coverage(radius, low.distance_to(high), distance, tan_half, aspect)
+		piece.transparency = 1.0 - beam_fade(distance, coverage)
+
+
+## Opacity share of a beam distance (m) from the camera that would cover coverage of the screen.
+static func beam_fade(distance: float, coverage: float) -> float:
+	var near := smoothstep(NEAR_FADE_START, NEAR_FADE_END, distance)
+	return near * minf(1.0, MAX_COVERAGE / maxf(coverage, 0.000001))
+
+
+## Upper bound of the screen share a beam (radius, length) covers seen broadside from distance.
+static func beam_coverage(radius: float, length: float, distance: float, tan_half_fov: float,
+		aspect: float) -> float:
+	var depth := maxf(distance + radius, 0.05)
+	var wide := minf(1.0, 2.0 * radius / depth / (2.0 * tan_half_fov * aspect))
+	var tall := minf(1.0, maxf(length, 2.0 * radius) / depth / (2.0 * tan_half_fov))
+	return wide * tall
 
 
 func _make_pickup(kind: Weapon.Kind, power := Power.Kind.NONE) -> Node3D:
@@ -122,8 +171,8 @@ func _make_pickup(kind: Weapon.Kind, power := Power.Kind.NONE) -> Node3D:
 	var pillar := MeshInstance3D.new()
 	pillar.name = "Pillar"
 	var pillar_mesh := CylinderMesh.new()
-	pillar_mesh.top_radius = 0.6
-	pillar_mesh.bottom_radius = 0.6
+	pillar_mesh.top_radius = PILLAR_RADIUS
+	pillar_mesh.bottom_radius = PILLAR_RADIUS
 	pillar_mesh.height = 1.0
 	pillar.mesh = pillar_mesh
 	pillar.material_override = _glow_material(Color(glow_color, 0.35))
@@ -134,9 +183,9 @@ func _make_pickup(kind: Weapon.Kind, power := Power.Kind.NONE) -> Node3D:
 	var streak_mesh := CylinderMesh.new()
 	streak_mesh.top_radius = 0.05
 	streak_mesh.bottom_radius = 0.3
-	streak_mesh.height = 6.0
+	streak_mesh.height = STREAK_LENGTH
 	streak.mesh = streak_mesh
-	streak.position = Vector3(0, 3.4, 0)
+	streak.position = Vector3(0, 0.4 + STREAK_LENGTH * 0.5, 0)
 	streak.material_override = _glow_material(Color(glow_color, 0.55))
 	streak.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.add_child(streak)
@@ -144,7 +193,7 @@ func _make_pickup(kind: Weapon.Kind, power := Power.Kind.NONE) -> Node3D:
 	glow.name = "Glow"
 	var ring := TorusMesh.new()
 	ring.inner_radius = 0.75
-	ring.outer_radius = 0.95
+	ring.outer_radius = GLOW_RADIUS
 	glow.mesh = ring
 	glow.position = Vector3(0, -sim.pickup_tuning.rest_height + 0.03, 0)
 	glow.material_override = _glow_material(Color(glow_color, 0.8))

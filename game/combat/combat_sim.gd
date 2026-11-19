@@ -229,6 +229,7 @@ func tick(inputs: Array[FighterInput]) -> void:
 	PowerRules.step(self)
 	_knock_out_fallen()
 	_step_pickups()
+	_canonicalize_zeros()
 	current_tick += 1
 
 
@@ -259,7 +260,33 @@ func start_round(round_spawn_points: Array[Vector3] = []) -> void:
 		if nearest >= 0:
 			var look := fighters[nearest].position - fighter.position
 			if Vector2(look.x, look.z).length_squared() > 0.0001:
-				fighter.facing_yaw = atan2(-look.x, -look.z)
+				fighter.facing_yaw = DetMath.atan2(-look.x, -look.z)
+	_canonicalize_zeros()
+
+
+## Turns -0.0 into +0.0 in every stored float, so equal states hash and serialise equally on every platform.
+func _canonicalize_zeros() -> void:
+	for fighter in fighters:
+		fighter.position = DetMath.canon(fighter.position)
+		fighter.velocity = DetMath.canon(fighter.velocity)
+		fighter.dash_direction = DetMath.canon(fighter.dash_direction)
+		fighter.vanish_offset = DetMath.canon(fighter.vanish_offset)
+		fighter.pushback_velocity = DetMath.canon(fighter.pushback_velocity)
+		fighter.ko_origin = DetMath.canon(fighter.ko_origin)
+		fighter.facing_yaw += 0.0
+		fighter.aim_pitch += 0.0
+		fighter.tether_length += 0.0
+	for projectile in projectiles:
+		projectile.position = DetMath.canon(projectile.position)
+		projectile.velocity = DetMath.canon(projectile.velocity)
+		projectile.gravity += 0.0
+	for gadget in gadgets:
+		gadget.position = DetMath.canon(gadget.position)
+		gadget.velocity = DetMath.canon(gadget.velocity)
+		gadget.facing_yaw += 0.0
+	for pickup in pickups:
+		pickup.position = DetMath.canon(pickup.position)
+		pickup.fall_speed += 0.0
 
 
 ## Hash of everything that defines the sim state; equal hashes mean equal states.
@@ -507,6 +534,8 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		_bounce_or_knock_down(fighter)
 	elif fighter.state == FighterState.State.KO_FALL:
 		_bounce_or_rest(index)
+	if fighter.is_ko_state():
+		_bounce_off_arena_walls(fighter)
 	_clamp_to_arena(fighter)
 	_land_if_on_floor(fighter)
 	fighter.stand_height = _stand_height(fighter)
@@ -806,7 +835,7 @@ func _attack_forward(index: int) -> Vector3:
 		to_target.y = 0.0
 		if to_target.length_squared() > 0.0001:
 			return to_target.normalized()
-	return Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+	return DetMath.forward(fighter.facing_yaw)
 
 
 ## Pitches the coming attack's hitboxes toward the locked target, clamped; level when unlocked.
@@ -818,7 +847,7 @@ func _aim_at_target(index: int) -> void:
 	var to_target := fighters[fighter.lock_on_target].position - fighter.position
 	var planar := Vector2(to_target.x, to_target.z).length()
 	if planar > 0.0001 or absf(to_target.y) > 0.0001:
-		fighter.aim_pitch = clampf(atan2(to_target.y, planar), -_MAX_AIM_PITCH, _MAX_AIM_PITCH)
+		fighter.aim_pitch = clampf(DetMath.atan2(to_target.y, planar), -_MAX_AIM_PITCH, _MAX_AIM_PITCH)
 
 
 ## Moves the attack on by one tick: charge, string, end of the move.
@@ -908,7 +937,7 @@ func _start_vanish(index: int, input: FighterInput, wish: Vector3) -> void:
 	var direction := _steer_direction(fighter, input, wish)
 	var target := fighter.lock_on_target
 	if target < 0 and direction == Vector3.ZERO:
-		direction = -(Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD)
+		direction = -DetMath.forward(fighter.facing_yaw)
 	var step := direction * tuning.vanish_step_distance
 	if not _move_around_target(index, step):
 		fighter.position += step
@@ -1049,7 +1078,7 @@ func _move_attacking(fighter: FighterState) -> void:
 	fighter.velocity = Vector3.ZERO
 	if fighter.holding_charge or fighter.move_tick >= move.startup_ticks:
 		return
-	var forward := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+	var forward := DetMath.forward(fighter.facing_yaw)
 	fighter.velocity = forward * (move.step_distance / (move.startup_ticks * TICK_SECONDS))
 
 
@@ -1118,6 +1147,9 @@ func _knock_out(index: int) -> void:
 	fighter.smitten_ticks = 0
 	fighter.smitten_by = -1
 	fighter.enter_state(FighterState.State.KO_FALL)
+	fighter.ko_origin = fighter.position
+	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z).limit_length(hit_tuning.ko_max_launch_speed)
+	fighter.velocity = planar + Vector3.UP * minf(fighter.velocity.y, hit_tuning.ko_max_rise_speed)
 
 
 ## Gravity without flight, light air drag on the planar part.
@@ -1125,13 +1157,40 @@ func _move_ko_falling(fighter: FighterState) -> void:
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z) \
 		.move_toward(Vector3.ZERO, hit_tuning.ko_air_drag * TICK_SECONDS)
 	var vertical := maxf(fighter.velocity.y - hit_tuning.ko_gravity * TICK_SECONDS, -tuning.max_fall_speed)
-	fighter.velocity = planar + Vector3.UP * vertical
+	var apex := maxf(_stand_height(fighter) + hit_tuning.ko_max_apex, fighter.ko_origin.y)
+	if vertical > 0.0 and fighter.position.y + vertical * TICK_SECONDS > apex:
+		vertical = maxf(apex - fighter.position.y, 0.0) / TICK_SECONDS
+	fighter.velocity = _ko_travel_capped(fighter, planar) + Vector3.UP * vertical
+
+
+## Drops the outward part of a KO slide that would carry it past ko_max_travel.
+func _ko_travel_capped(fighter: FighterState, planar: Vector3) -> Vector3:
+	var from_origin := fighter.position + planar * TICK_SECONDS - fighter.ko_origin
+	from_origin.y = 0.0
+	var limit := hit_tuning.ko_max_travel
+	if from_origin.length_squared() <= limit * limit:
+		return planar
+	var outward := from_origin.normalized()
+	var along := planar.dot(outward)
+	return planar - outward * maxf(along, 0.0) if along > 0.0 else planar
+
+
+## A knocked-out fighter flung into an arena wall bounces back off it instead of sticking.
+func _bounce_off_arena_walls(fighter: FighterState) -> void:
+	var half := tuning.arena_half_size
+	var centre := Vector3(arena_centre.x, 0.0, arena_centre.y)
+	for axis: int in [0, 2]:
+		var offset := fighter.position[axis] - centre[axis]
+		if absf(offset) >= half and fighter.velocity[axis] * offset > 0.0:
+			fighter.position[axis] = centre[axis] + signf(offset) * half
+			fighter.velocity[axis] *= -hit_tuning.ko_wall_restitution
 
 
 ## Lying on the floor: the slide slows to a stop.
 func _move_ko_down(fighter: FighterState) -> void:
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
-	fighter.velocity = planar.move_toward(Vector3.ZERO, hit_tuning.ko_slide_deceleration * TICK_SECONDS)
+	planar = planar.move_toward(Vector3.ZERO, hit_tuning.ko_slide_deceleration * TICK_SECONDS)
+	fighter.velocity = _ko_travel_capped(fighter, planar)
 	fighter.position.y = tuning.ground_height
 
 
@@ -1314,7 +1373,7 @@ func _perfect_blocks(target: FighterState, from: Vector3) -> bool:
 func _faces(fighter: FighterState, from: Vector3) -> bool:
 	var to_other := from - fighter.position
 	to_other.y = 0.0
-	var forward := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+	var forward := DetMath.forward(fighter.facing_yaw)
 	return to_other.dot(forward) >= 0.0
 
 
@@ -1352,7 +1411,7 @@ func _apply_hit(contact: Dictionary, from_projectile: bool = false) -> void:
 		_enter_stun(target, FighterState.State.HITSTUN, decayed_hitstun(move, combo_hit))
 		target.knockback_type = knockback
 		target.spike_bounced = false
-		target.velocity = _knockback_velocity(contact)
+		target.velocity = _air_knockback_guarded(attacker, target, move, _knockback_velocity(contact))
 		if not from_projectile:
 			_start_pushback(target_index, attacker_index, hit_tuning.hit_pushback_distance)
 		target.combo_hits = combo_hit
@@ -1439,7 +1498,7 @@ func _apply_grab(contact: Dictionary, contacts: Array[Dictionary], struck: int) 
 	target.position = _hold_position(attacker)
 	var to_holder := attacker.position - target.position
 	if Vector2(to_holder.x, to_holder.z).length_squared() > 0.0001:
-		target.facing_yaw = atan2(-to_holder.x, -to_holder.z)
+		target.facing_yaw = DetMath.atan2(-to_holder.x, -to_holder.z)
 	events.append(_event(EventType.GRAB, contact, 0, 0, MoveData.KnockbackType.NONE))
 
 
@@ -1495,7 +1554,7 @@ func _push_apart(first_index: int, second_index: int) -> void:
 	var centre := (first.position + second.position) * 0.5
 	var apart := second.position - first.position
 	if apart.length_squared() < 0.0001:
-		apart = Basis(Vector3.UP, first.facing_yaw) * Vector3.BACK
+		apart = -DetMath.forward(first.facing_yaw)
 	var half := apart.normalized() * (hit_tuning.grab_tech_distance * 0.5)
 	_slide_to(first, centre - half, hit_tuning.grab_tech_push_ticks)
 	_slide_to(second, centre + half, hit_tuning.grab_tech_push_ticks)
@@ -1507,7 +1566,7 @@ func _apply_push_block(contact: Dictionary) -> void:
 	var target := fighters[contact.target as int]
 	var away := target.position - pusher.position
 	if away.length_squared() < 0.0001:
-		away = Basis(Vector3.UP, pusher.facing_yaw) * Vector3.FORWARD
+		away = DetMath.forward(pusher.facing_yaw)
 	var reach := maxf(away.length(), hit_tuning.push_block_distance)
 	_slide_to(target, pusher.position + away.normalized() * reach, hit_tuning.push_block_stun_ticks)
 	events.append(_event(EventType.PUSH_BLOCK, contact, 0, 0, MoveData.KnockbackType.NONE))
@@ -1523,7 +1582,7 @@ func _start_pushback(target_index: int, attacker_index: int, distance: float) ->
 	var away := target.position - attacker.position
 	away.y = 0.0
 	if away.length_squared() < 0.0001:
-		away = Basis(Vector3.UP, attacker.facing_yaw) * Vector3.FORWARD
+		away = DetMath.forward(attacker.facing_yaw)
 	target.pushback_velocity = away.normalized() * (distance / (hit_tuning.pushback_ticks * TICK_SECONDS))
 	target.pushback_ticks = hit_tuning.pushback_ticks
 	target.pushback_from = attacker_index
@@ -1556,15 +1615,49 @@ func _enter_stun(fighter: FighterState, stun: FighterState.State, ticks: int) ->
 func _knockback_velocity(contact: Dictionary) -> Vector3:
 	var move: MoveData = contact.move
 	var knockback := move.knockback
-	var yaw := Basis(Vector3.UP, contact.yaw)
+	var yaw: float = contact.yaw
 	match move.knockback_type:
 		MoveData.KnockbackType.LAUNCH, MoveData.KnockbackType.SPIKE:
-			return yaw * knockback
+			return DetMath.rotate_y(knockback, yaw)
 		MoveData.KnockbackType.SWEEP:
 			var side: int = contact.side
-			return yaw * Vector3.RIGHT * (side * Vector2(knockback.x, knockback.z).length()) \
+			return DetMath.rotate_y(Vector3.RIGHT, yaw) * (side * Vector2(knockback.x, knockback.z).length()) \
 				+ Vector3.UP * knockback.y
-	return yaw * Basis(Vector3.RIGHT, contact.pitch) * knockback
+	return DetMath.rotate_y(DetMath.rotate_x(knockback, contact.pitch), yaw)
+
+
+## With either fighter off the floor and the pair closer than air_knockback_separation, drives
+## the target away from the attacker and, for blowback-like hits, level or up to 45 degrees:
+## never under or over it. Lights push less, so air strings still connect.
+func _air_knockback_guarded(attacker: FighterState, target: FighterState, move: MoveData,
+		velocity: Vector3) -> Vector3:
+	var target_airborne := not _is_on_floor(target)
+	if not target_airborne and _is_on_floor(attacker):
+		return velocity
+	var out := target.position - attacker.position
+	out.y = 0.0
+	var separation := hit_tuning.air_knockback_separation
+	if out.length_squared() >= separation * separation:
+		return velocity
+	if out.length_squared() < 0.0001:
+		out = DetMath.forward(attacker.facing_yaw)
+	out = out.normalized()
+	var min_out := hit_tuning.air_knockback_min_out
+	if move.cancel_level == MoveData.CancelLevel.LIGHT:
+		min_out = hit_tuning.air_light_knockback_min_out
+	if move.air_knockback_min_out >= 0.0:
+		min_out = move.air_knockback_min_out
+	var along := velocity.dot(out)
+	if along < min_out:
+		velocity += out * (min_out - along)
+		along = min_out
+	# Spikes still drive down and launches still go up; the outward push above separates them.
+	if not target_airborne or move.knockback_type in [MoveData.KnockbackType.SPIKE, MoveData.KnockbackType.LAUNCH]:
+		return velocity
+	var rise := move.air_knockback_rise if move.air_knockback_rise >= 0.0 \
+		else hit_tuning.air_knockback_rise
+	velocity.y = clampf(velocity.y, 0.0, along * rise)
+	return velocity
 
 
 ## Freezes both fighters of an exchange for at least ticks.
@@ -1659,7 +1752,7 @@ func _update_facing(index: int) -> void:
 		look = fighters[fighter.lock_on_target].position - fighter.position
 	look.y = 0.0
 	if look.length_squared() > 0.0001:
-		fighter.facing_yaw = atan2(-look.x, -look.z)
+		fighter.facing_yaw = DetMath.atan2(-look.x, -look.z)
 
 
 ## Planar direction from the move input, length up to 1: relative to the line
@@ -1669,8 +1762,8 @@ func _wish_direction(index: int, input: FighterInput) -> Vector3:
 	var yaw := input.view_yaw
 	var to_target := _planar_to_target(index)
 	if to_target != Vector3.ZERO:
-		yaw = atan2(-to_target.x, -to_target.z)
-	return Basis(Vector3.UP, yaw) * planar
+		yaw = DetMath.atan2(-to_target.x, -to_target.z)
+	return DetMath.rotate_y(planar, yaw)
 
 
 ## Planar offset from the fighter to its lock-on target; zero when unlocked or right above/below it.
@@ -1728,7 +1821,7 @@ func _move_around_target(index: int, step: Vector3) -> bool:
 	if new_radius < _MIN_ORBIT_RADIUS:
 		return false
 	var max_turn := deg_to_rad(tuning.max_orbit_turn_speed) * TICK_SECONDS
-	var turn := Basis(Vector3.UP, clampf(step.dot(Vector3.UP.cross(out)) / radius, -max_turn, max_turn))
+	var turn := DetMath.axis_angle(Vector3.UP, clampf(step.dot(Vector3.UP.cross(out)) / radius, -max_turn, max_turn))
 	var centre := fighters[fighter.lock_on_target].position
 	var planar := turn * out * new_radius
 	fighter.position = Vector3(centre.x + planar.x, fighter.position.y + step.y, centre.z + planar.z)
@@ -1760,7 +1853,7 @@ func _neutral_dash_direction(index: int, input: FighterInput) -> Vector3:
 		var to_target := fighters[fighter.lock_on_target].position - fighter.position
 		if to_target != Vector3.ZERO:
 			return to_target.normalized()
-	return Basis(Vector3.UP, input.view_yaw) * Vector3.FORWARD
+	return DetMath.forward(input.view_yaw)
 
 
 func _points_at_target(index: int, direction: Vector3) -> bool:
@@ -2231,7 +2324,7 @@ func _fire(index: int) -> void:
 ## Unit aim from the muzzle: at the locked target's centre, else straight along the facing.
 func _aim_direction(index: int) -> Vector3:
 	var fighter := fighters[index]
-	var forward := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+	var forward := DetMath.forward(fighter.facing_yaw)
 	if fighter.lock_on_target >= 0:
 		var to_target := fighters[fighter.lock_on_target].position - _muzzle(fighter)
 		if to_target.length_squared() > 0.0001:
@@ -2240,7 +2333,7 @@ func _aim_direction(index: int) -> Vector3:
 
 
 func _muzzle(fighter: FighterState) -> Vector3:
-	var forward := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+	var forward := DetMath.forward(fighter.facing_yaw)
 	return fighter.position + forward * _MUZZLE_FORWARD + Vector3.UP * _MUZZLE_UP
 
 
@@ -2252,7 +2345,7 @@ func _spread(direction: Vector3, spread: float) -> Vector3:
 	var pitch := rng.randf_range(-spread, spread) * 0.5
 	var right := direction.cross(Vector3.UP)
 	right = right.normalized() if right.length_squared() > 0.0001 else Vector3.RIGHT
-	return (Basis(Vector3.UP, yaw) * Basis(right, pitch) * direction).normalized()
+	return (DetMath.axis_angle(Vector3.UP, yaw) * DetMath.axis_angle(right, pitch) * direction).normalized()
 
 
 func _spawn_projectile(owner: int, weapon: Weapon.Kind, velocity: Vector3, gravity: float,
@@ -2321,7 +2414,7 @@ func _projectile_contact(projectile: Projectile, from: Vector3) -> bool:
 		var travel := projectile.velocity
 		var contact := {
 			"type": EventType.HIT, "attacker": projectile.owner, "target": target_index,
-			"move": projectile.move, "yaw": atan2(-travel.x, -travel.z), "pitch": 0.0, "side": 1,
+			"move": projectile.move, "yaw": DetMath.atan2(-travel.x, -travel.z), "pitch": 0.0, "side": 1,
 			"position": points[1] + (points[0] - points[1]).limit_length(body.radius),
 		}
 		var event := _weapon_event(EventType.PROJECTILE_HIT, target_index, contact.position,
@@ -2450,7 +2543,7 @@ func _spawn_pickup() -> void:
 		pickup.kind = _pick_kind(pickup_tuning.table_for(zone))
 		pickup.ammo = Weapon.full_ammo(pickup.kind)
 	spawn_count += 1
-	pickup.position = _inside_arena(middle + Vector3(sin(angle), 0.0, cos(angle)) * distance)
+	pickup.position = _inside_arena(middle + Vector3(DetMath.sin(angle), 0.0, DetMath.cos(angle)) * distance)
 	pickup.position.y = _ground_at(Vector3(pickup.position.x, middle.y, pickup.position.z)) \
 		+ pickup_tuning.drop_height
 	pickup.phase = WeaponPickup.Phase.TELEGRAPH

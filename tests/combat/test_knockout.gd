@@ -304,3 +304,55 @@ func test_match_flow_passes_its_spawn_points_and_credits_the_whole_team() -> voi
 		flow.step(_sim)
 	assert_eq(flow.wins, [1, 0, 1] as Array[int])
 	assert_eq(_fighter(2).position, Vector3(3, 1, 3))
+
+
+## Fighter 0 knocked out where it stands with velocity, then left to settle.
+func _knock_out_with(velocity: Vector3, at := Vector3.ZERO) -> Dictionary:
+	_start([Vector3(0, 0, -40)], at)
+	_fighter(0).velocity = velocity
+	_sim.apply_damage(0, 1, 20_000)
+	var highest := -INF
+	var farthest := 0.0
+	for _i in REST_WITHIN_TICKS:
+		_tick()
+		var offset := _fighter(0).position - at
+		highest = maxf(highest, _fighter(0).position.y)
+		farthest = maxf(farthest, Vector2(offset.x, offset.z).length())
+	return {"highest": highest, "farthest": farthest}
+
+
+func test_a_huge_knockout_launch_travels_at_most_the_capped_distance() -> void:
+	var seen := _knock_out_with(Vector3(80, 0, 60), Vector3(0, 6, 0))
+	assert_eq(_fighter(0).state, State.KO_DOWN)
+	assert_lte(seen.farthest, _sim.hit_tuning.ko_max_travel + 0.01, "no flight into the next biome")
+	assert_gt(seen.farthest, 6.0, "still reads big")
+
+
+func test_a_huge_upward_knockout_peaks_at_most_the_capped_height() -> void:
+	var seen := _knock_out_with(Vector3(0, 60, 5), Vector3(0, 1, 0))
+	var cap := _sim.tuning.ground_height + _sim.hit_tuning.ko_max_apex
+	assert_lte(seen.highest, cap + 0.01, "apex within %.1f m of the stand height" % _sim.hit_tuning.ko_max_apex)
+	assert_gt(seen.highest, _sim.tuning.ground_height + 3.0, "still a big pop")
+	assert_eq(_fighter(0).state, State.KO_DOWN)
+
+
+func test_a_knockout_into_the_arena_wall_bounces_back_off_it() -> void:
+	_start([Vector3(0, 0, -40)])
+	var half := _sim.tuning.arena_half_size
+	_fighter(0).position = Vector3(half - 1.0, 5, 0)
+	_fighter(0).velocity = Vector3(14, 0, 0)
+	_sim.apply_damage(0, 1, 20_000)
+	var bounced := false
+	for _i in REST_WITHIN_TICKS:
+		_tick()
+		bounced = bounced or _fighter(0).velocity.x < 0.0
+		assert_lte(_fighter(0).position.x, half, "never past the wall")
+	assert_true(bounced, "rebounds off the wall instead of sticking to it")
+	assert_lt(_fighter(0).position.x, half, "comes to rest off the wall")
+
+
+func test_state_hash_covers_the_knockout_origin() -> void:
+	_start([Vector3(0, 0, -40)])
+	var base := _sim.state_hash()
+	_fighter(0).ko_origin = Vector3(1, 0, 0)
+	assert_ne(_sim.state_hash(), base)

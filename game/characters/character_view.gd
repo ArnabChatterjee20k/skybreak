@@ -39,14 +39,17 @@ const FLINCH_BLOCK := 0.5
 const FLINCH_HIT := 1.0
 const FLINCH_KNOCKBACK := 1.8
 const FLINCH_KO := 2.4
-## Height (capsule centre) above which a fighter counts as airborne; the sim
-## stands fighters at MovementTuning.ground_height.
+## Height above its standing height (capsule centre over the floor under it, which zones raise
+## and slope) at which a fighter counts as airborne.
 const AIRBORNE_MARGIN := 0.05
 static var _ground_height := MovementTuning.new().ground_height
 ## How much of a one-hand attack follows the swing arc rather than the clip.
 const SWING_WEIGHT := 0.85
 ## How much of the hold a weapon keeps during hit reactions.
 const REACTION_HOLD_WEIGHT := 0.85
+## Standing states whose planted feet lock to the ground.
+const FOOT_LOCK_STATES: Array[int] = [FighterState.State.IDLE, FighterState.State.BLOCKING,
+	FighterState.State.CHARGING]
 ## Knocked-out states: they play the knockdown fall unless the clip set maps them.
 const KO_STATES: Array[int] = [FighterState.State.KO_FALL, FighterState.State.KO_DOWN]
 
@@ -86,6 +89,8 @@ var _move_overrides: Dictionary = {}
 var _turn_yaw := 0.0
 var _turning := false
 var _impact_move := &""
+## Other skeleton modifiers stepped by the frame time (e.g. Kael's ScarfLag).
+var _frame_modifiers: Array[SkeletonModifier3D] = []
 
 
 func _ready() -> void:
@@ -132,6 +137,9 @@ func _setup_layers(body_layers: bool) -> void:
 	skeleton.move_child(layers, 0)
 	body = BodyCapsules.measure(skeleton, _meshes)
 	layers.body = body
+	for child in skeleton.get_children():
+		if child != layers and child is SkeletonModifier3D and child.has_method(&"advance_frame"):
+			_frame_modifiers.append(child)
 
 
 ## Moves whose strike is fitted onto a mocap take (MotionClips.fit_specs); characters with their
@@ -263,9 +271,9 @@ func _clip_for(fighter: FighterState, state_name: StringName) -> StringName:
 	return clip
 
 
-## Off the floor: flying, falling or dashing in the air.
+## Off the floor: flying, falling or dashing in the air. On a zone's terrain the floor is the sim's
+## stand_height, not the flat ground height.
 static func is_airborne(fighter: FighterState) -> bool:
-	# Against the fighter's own floor (zone terrain, islands), not the flat arena's.
 	return fighter.position.y > fighter.stand_height + AIRBORNE_MARGIN
 
 
@@ -493,8 +501,12 @@ func _update_layers(fighter: FighterState, delta: float) -> void:
 	layers.flying = airborne and fighter.state in [FighterState.State.FLYING, FighterState.State.DASHING,
 		FighterState.State.VANISHING]
 	layers.foot_ik = not airborne and fighter.state != FighterState.State.KNOCKDOWN
+	layers.foot_lock = layers.foot_ik and fighter.state in FOOT_LOCK_STATES
 	layers.ground = Vector2.ZERO
 	layers.ground_probe = _probe_ground if _zone_ground().is_valid() else Callable()
+	layers.advance_frame(delta)
+	for modifier in _frame_modifiers:
+		modifier.advance_frame(delta)
 	var to_target := to_model(_look_world - fighter.position, fighter.facing_yaw)
 	layers.look_target = to_target + Vector3(0, 1.0, 0)
 	layers.look_weight = _look_weight if fighter.state in [FighterState.State.IDLE, FighterState.State.MOVING,

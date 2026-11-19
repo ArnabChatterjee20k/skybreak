@@ -52,6 +52,8 @@ var combo_counter := ComboCounter.new()
 var match_flow: MatchFlow
 var match_hud := MatchHud.new()
 var match_audio := MatchAudio.new()
+## Round cues and music from the match flow (T-127).
+var match_cues := MatchCues.new()
 var weapon_layer := WeaponLayer.new()
 var fighter_views: Array[FighterView] = []
 
@@ -90,6 +92,7 @@ func _ready() -> void:
 	combat_feedback.impact_frame = impact_frame
 	$Hud.add_child(combo_counter)
 	match_flow = MatchFlow.new(fighter_views.size())
+	match_flow.spawn_points = spawn_positions()
 	match_hud.sim = sim
 	match_hud.flow = match_flow
 	for view in fighter_views:
@@ -101,6 +104,9 @@ func _ready() -> void:
 	# No world on the audio: the ambience stays on this zone (T-D19).
 	match_audio.default_zone = zone_id
 	add_child(match_audio)
+	match_cues.zone = zone_id
+	match_cues.player_index = player
+	add_child(match_cues)
 	_start_prewarm.call_deferred()
 
 
@@ -259,6 +265,7 @@ func step_tick() -> void:
 	sim.tick(inputs)
 	combat_feedback.react(sim.events)
 	match_flow.step(sim)
+	match_cues.after_tick(match_flow, sim)
 	match_audio.after_tick()
 
 

@@ -112,10 +112,15 @@ func _rig_of(view: FighterView) -> Dictionary:
 	rig.head = skeleton.find_bone(&"Head")
 	rig.torso = TORSO_BONES.map(func(n: StringName) -> int: return skeleton.find_bone(n))
 	rig.rotations = []
+	# Skeleton modifiers (MotionLayers) are undone after each skeleton update, so get_bone_global_pose
+	# between frames is the unmodified pose; keep the rendered one from skeleton_updated instead.
+	rig.poses = [] as Array[Transform3D]
+	skeleton.skeleton_updated.connect(_remember_pose.bind(skeleton, rig.poses))
 	# Sole below the ankle: rest foot height over the bind-pose mesh bottom, in skeleton space.
+	# Skinned body meshes only: props hung on bones (Brann's stowed cannon) are not the sole.
 	var bottom := INF
 	for mesh: MeshInstance3D in view._character.model.find_children("*", "MeshInstance3D", true, false):
-		if mesh.mesh == null:
+		if mesh.mesh == null or mesh.skin == null:
 			continue
 		var box := skeleton.global_transform.affine_inverse() * mesh.global_transform * mesh.get_aabb()
 		bottom = minf(bottom, box.position.y)
@@ -125,6 +130,18 @@ func _rig_of(view: FighterView) -> Dictionary:
 			ankle = minf(ankle, skeleton.get_bone_global_rest(bone).origin.y)
 	rig.sole = (ankle - bottom) * skeleton.global_basis.get_scale().y if is_finite(ankle - bottom) else 0.0
 	return rig
+
+
+static func _remember_pose(skeleton: Skeleton3D, poses: Array[Transform3D]) -> void:
+	poses.resize(skeleton.get_bone_count())
+	for bone in poses.size():
+		poses[bone] = skeleton.get_bone_global_pose(bone)
+
+
+## A bone's global pose as last rendered (modifiers applied), or the current pose before the first update.
+static func _pose(rig: Dictionary, skeleton: Skeleton3D, bone: int) -> Transform3D:
+	var poses: Array[Transform3D] = rig.poses
+	return poses[bone] if bone < poses.size() else skeleton.get_bone_global_pose(bone)
 
 
 func _check_rig(i: int, out: Array[Dictionary]) -> void:
@@ -142,7 +159,7 @@ func _check_rig(i: int, out: Array[Dictionary]) -> void:
 	var worst_bone := -1
 	var worst_finger := 0.0
 	for bone in count:
-		var pose := skeleton.get_bone_global_pose(bone)
+		var pose := _pose(rig, skeleton, bone)
 		if not pose.is_finite():
 			out.append({"check": "bone_nan", "fighter": i, "value": bone, "limit": 0,
 				"detail": "bone %s is not finite" % skeleton.get_bone_name(bone)})
@@ -182,15 +199,17 @@ func _check_feet(i: int, rig: Dictionary, skeleton: Skeleton3D, fighter: Fighter
 	grounded_frames += 1
 	var lowest := INF
 	var lowest_at := Vector3.ZERO
+	var lowest_bone := -1
 	for bone: int in rig.feet:
 		if bone < 0:
 			continue
-		var at := skeleton.global_transform * skeleton.get_bone_global_pose(bone).origin
+		var at := skeleton.global_transform * _pose(rig, skeleton, bone).origin
 		var sole: float = at.y - float(rig.sole)
 		var ground := level.world.ground_height_at(at.x, at.z, fighter.position.y)
 		if sole - ground < lowest:
 			lowest = sole - ground
 			lowest_at = at
+			lowest_bone = bone
 	if not is_finite(lowest):
 		return
 	if standing:
@@ -201,11 +220,13 @@ func _check_feet(i: int, rig: Dictionary, skeleton: Skeleton3D, fighter: Fighter
 			"detail": "lowest sole %+.1f cm off the visible ground (%s, clip %s)" % [lowest * 100.0,
 			FighterState.State.find_key(fighter.state), _clip_of(i)]})
 	if fighter.state == FighterState.State.IDLE and absf(lowest) < 0.03:
-		if _planted_previous.has(i):
-			var previous: Vector3 = _planted_previous[i]
-			foot_slide_sum += Vector2(lowest_at.x - previous.x, lowest_at.z - previous.z).length()
+		# The same foot as last frame; when the other foot becomes the lowest, that is no slide.
+		var previous: Dictionary = _planted_previous.get(i, {})
+		if previous.get(&"bone", -1) == lowest_bone:
+			var at: Vector3 = previous.at
+			foot_slide_sum += Vector2(lowest_at.x - at.x, lowest_at.z - at.z).length()
 			foot_slide_frames += 1
-		_planted_previous[i] = lowest_at
+		_planted_previous[i] = {&"bone": lowest_bone, &"at": lowest_at}
 	else:
 		_planted_previous.erase(i)
 
@@ -218,8 +239,8 @@ func _check_weapon(i: int, rig: Dictionary, skeleton: Skeleton3D, fighter: Fight
 	var chest: int = rig.torso[1]
 	if hips < 0 or chest < 0:
 		return
-	var a := skeleton.global_transform * skeleton.get_bone_global_pose(hips).origin
-	var b := skeleton.global_transform * skeleton.get_bone_global_pose(chest).origin
+	var a := skeleton.global_transform * _pose(rig, skeleton, hips).origin
+	var b := skeleton.global_transform * _pose(rig, skeleton, chest).origin
 	var inside := 0
 	var total := 0
 	for node: Node in held.nodes:
@@ -235,7 +256,7 @@ func _check_weapon(i: int, rig: Dictionary, skeleton: Skeleton3D, fighter: Fight
 			Weapon.weapon_name(held.kind), roundi(100.0 * inside / total),
 			FighterState.State.find_key(fighter.state), fighter.move_id()]})
 	if Weapon.is_bow(held.kind) and rig.head >= 0:
-		var head := skeleton.global_transform * skeleton.get_bone_global_pose(rig.head)
+		var head := skeleton.global_transform * _pose(rig, skeleton, rig.head)
 		var centre := head.origin + head.basis.y.normalized() * HEAD_LIFT
 		for node: Node in held.nodes:
 			var string := _bow_string(node)

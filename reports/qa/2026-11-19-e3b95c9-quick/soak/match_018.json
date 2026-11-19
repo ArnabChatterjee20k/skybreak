@@ -1,0 +1,93 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1
+		},
+		"breaker+counter": {
+			"14": 2
+		},
+		"lance/light_1": {
+			"4": 2
+		},
+		"lance/light_1+counter": {
+			"8": 1
+		},
+		"lance/light_2": {
+			"4": 3
+		},
+		"lance/light_3": {
+			"7": 3
+		},
+		"light_1": {
+			"3": 3,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 3,
+			"9": 1
+		},
+		"light_2": {
+			"3": 6,
+			"5": 2
+		},
+		"light_3": {
+			"5": 5,
+			"8": 2
+		}
+	},
+	"id": "118:verdant_falls:1v1:brann,lyra:24",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 118,
+	"sim_ms_per_tick": 0.59507,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0128671023994684,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.06839425405525,
+		"foot_slide_cm_per_frame": 0.000431112394969697,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.549792083333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 9,
+			"detail": "lowest sole +54.8 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 920,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1155,
+			"worst_value": 0.547505645960257
+		},
+		{
+			"check": "foot_ground",
+			"count": 4,
+			"detail": "lowest sole -17.5 cm off the visible ground (MOVING, clip run)",
+			"fighter": 0,
+			"first_tick": 921,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1172,
+			"worst_value": -0.174832993940419
+		}
+	],
+	"wall_seconds": 17.239,
+	"zone": "verdant_falls"
+}

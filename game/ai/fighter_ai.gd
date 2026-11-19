@@ -198,7 +198,7 @@ static func move_reach(move: MoveData, hurtbox_radius: float = 0.5) -> float:
 func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 	var target := sim.fighters[_target]
 	var to_target := target.position - me.position
-	plan.view_yaw = atan2(-to_target.x, -to_target.z)
+	plan.view_yaw = DetMath.atan2(-to_target.x, -to_target.z)
 	var picking := _plan == Plan.PICKUP and _is_free(me)
 	if not picking:
 		if me.lock_on_target < 0:
@@ -286,7 +286,7 @@ func _threat_ticks(sim: CombatSim, me: FighterState) -> int:
 		var reach := move_reach(move, me.stats.hurtbox_radius)
 		if to_me.length() > reach + 3.0:
 			continue
-		var facing := Basis(Vector3.UP, attacker.facing_yaw) * Vector3.FORWARD
+		var facing := DetMath.forward(attacker.facing_yaw)
 		if Vector2(to_me.x, to_me.z).normalized().dot(Vector2(facing.x, facing.z)) < 0.2:
 			continue
 		var key := j * 1048576 + (_ticks - delay - perception.move_tick(j))
@@ -726,7 +726,7 @@ func _go_for_pickup(sim: CombatSim, me: FighterState, distance: float, plan: Fig
 		_tap(plan, _A.LOCK_TOGGLE)
 	var pickup := sim.pickups[goal]
 	var to_pickup := pickup.position - me.position
-	plan.view_yaw = atan2(-to_pickup.x, -to_pickup.z)
+	plan.view_yaw = DetMath.atan2(-to_pickup.x, -to_pickup.z)
 	plan.move = Vector2(0, 1) if Vector2(to_pickup.x, to_pickup.z).length() > 0.6 else Vector2.ZERO
 	if to_pickup.y > 0.8:
 		plan.vertical = 1
@@ -803,7 +803,7 @@ func _choose_target(sim: CombatSim) -> int:
 		var offset := other.position - me.position
 		var score := -offset.length() / 12.0 + (1.0 - health) * 1.2
 		# Readable FFA: prefer someone in front, and not someone already crowded.
-		var facing := Basis(Vector3.UP, me.facing_yaw) * Vector3.FORWARD
+		var facing := DetMath.forward(me.facing_yaw)
 		var planar := Vector3(offset.x, 0.0, offset.z)
 		if planar.length() > 0.1:
 			score += 0.1 * planar.normalized().dot(facing)
@@ -882,7 +882,7 @@ func _keep_apart(sim: CombatSim, me: FighterState, target: FighterState, plan: F
 			continue
 		if gap < 0.05:
 			# Right on top: slide out sideways along the strafe.
-			planar = Basis(Vector3.UP, me.facing_yaw) * Vector3(_strafe, 0.0, 0.0)
+			planar = DetMath.rotate_y(Vector3(_strafe, 0.0, 0.0), me.facing_yaw)
 		away += planar.normalized() * (2.0 if stacked else 1.0)
 	if away == Vector3.ZERO:
 		return
@@ -892,8 +892,8 @@ func _keep_apart(sim: CombatSim, me: FighterState, target: FighterState, plan: F
 ## A planar world direction as a move input in the lock-on frame (W toward the target).
 func _world_to_move(direction: Vector3, to_target: Vector3) -> Vector2:
 	var planar := Vector3(to_target.x, 0.0, to_target.z)
-	var yaw := atan2(-planar.x, -planar.z) if planar.length() >= 0.5 else 0.0
-	var local := Basis(Vector3.UP, -yaw) * direction
+	var yaw := DetMath.yaw_of(planar) if planar.length() >= 0.5 else 0.0
+	var local := DetMath.rotate_y(direction, -yaw)
 	return Vector2(local.x, -local.z)
 
 

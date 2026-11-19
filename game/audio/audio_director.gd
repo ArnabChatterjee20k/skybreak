@@ -19,7 +19,7 @@ const POOL_2D := 12
 const DUCK_BUSES: Array[StringName] = [AudioBuses.MUSIC, AudioBuses.AMBIENCE]
 ## dB per second the duck moves down (attack) and back up (release).
 const DUCK_ATTACK_DB_PER_SECOND := 300.0
-const DUCK_RELEASE_DB_PER_SECOND := 30.0
+const DUCK_RELEASE_DB_PER_SECOND := 15.0
 ## Loop volume (dB below the cue volume) at intensity 0.
 const LOOP_FLOOR_DB := -18.0
 ## Loops fade in and out at this rate (dB per second); silent below LOOP_SILENT_DB.

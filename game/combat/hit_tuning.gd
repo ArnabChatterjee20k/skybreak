@@ -39,6 +39,16 @@ extends Resource
 @export var juggle_gravity: float = 30.0
 ## Upward speed of the one floor bounce after a spike.
 @export var spike_bounce_speed: float = 8.0
+## The air guard acts only when the pair is closer than this (planar, m): a juggle beside
+## the attacker keeps its knockback, one about to stack is driven apart.
+@export var air_knockback_separation: float = 1.5
+## Off the floor a hit drives the target at least this fast away from the attacker (planar, m/s).
+@export var air_knockback_min_out: float = 9.0
+## The same for light-string hits, small enough that the next air light still reaches.
+@export var air_light_knockback_min_out: float = 3.0
+## Off the floor a blowback-like hit never drives the target down and lifts it by at most
+## this much per m/s of outward speed (1 = 45 degrees): never straight over the attacker.
+@export var air_knockback_rise: float = 1.0
 
 @export_group("Knockout")
 ## Pulls a knocked-out fighter down; it has no flight.
@@ -54,6 +64,16 @@ extends Resource
 @export var ko_bounce_slide: float = 0.5
 ## Floor friction on a lying fighter's slide.
 @export var ko_slide_deceleration: float = 20.0
+## The KO launch keeps at most this planar speed (m/s); it still reads big.
+@export var ko_max_launch_speed: float = 14.0
+## The KO launch keeps at most this upward speed (m/s): 18 m/s under ko_gravity peaks 5.4 m up.
+@export var ko_max_rise_speed: float = 18.0
+## A knocked-out fighter travels at most this far (planar, m) from where the KO started.
+@export var ko_max_travel: float = 12.0
+## A knocked-out fighter rises at most this far above its stand height (m), or its KO height.
+@export var ko_max_apex: float = 6.0
+## Share of the speed into an arena wall a knocked-out fighter bounces back with.
+@export var ko_wall_restitution: float = 0.5
 
 @export_group("Perfect block")
 ## A hit landing up to this many ticks after a block press is perfect-blocked.

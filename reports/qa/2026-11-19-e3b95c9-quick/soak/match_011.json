@@ -1,0 +1,150 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 8
+		},
+		"breaker+counter": {
+			"11": 2,
+			"14": 1
+		},
+		"launcher": {
+			"8": 3
+		},
+		"light_1": {
+			"3": 3,
+			"4": 6,
+			"5": 1,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 9,
+			"8": 1
+		},
+		"light_2": {
+			"3": 8,
+			"4": 3,
+			"5": 1
+		},
+		"light_3": {
+			"3": 7,
+			"4": 3,
+			"8": 1
+		},
+		"repeater/projectile": {
+			"1": 114
+		},
+		"repeater/projectile+counter": {
+			"5": 2
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "111:verdant_falls:2v2:lyra,kael,vexa,brann:4432",
+	"kos": 1,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4,
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 111,
+	"sim_ms_per_tick": 1.15253625,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0116740427911282,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 4.55133264302683,
+		"foot_slide_cm_per_frame": 0.000194958816364803,
+		"locked_on_screen_share": 0.992869875222816,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.714107916666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 24,
+			"detail": "lowest sole +19.2 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 0,
+			"first_tick": 186,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2316,
+			"worst_value": 0.192017097595914
+		},
+		{
+			"check": "foot_ground",
+			"count": 9,
+			"detail": "lowest sole +31.2 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 3,
+			"first_tick": 188,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 188,
+			"worst_value": 0.311771711582651
+		},
+		{
+			"check": "foot_ground",
+			"count": 6,
+			"detail": "lowest sole +79.1 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 2,
+			"first_tick": 241,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1005,
+			"worst_value": 0.791393238469539
+		},
+		{
+			"check": "foot_ground",
+			"count": 4,
+			"detail": "lowest sole +35.4 cm off the visible ground (IDLE, clip heavy_land)",
+			"fighter": 1,
+			"first_tick": 880,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1334,
+			"worst_value": 0.353522623991363
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 6,
+			"detail": "fighters 1 and 2 overlap 0.16 m (ATTACKING vs FLYING)",
+			"fighter": 1,
+			"first_tick": 1341,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1343,
+			"worst_value": 0.158547174930572
+		},
+		{
+			"check": "arena_bounds",
+			"count": 2,
+			"detail": "outside the arena at (-651.96, 5.85, 609.33) (stand 5.91, GRABBED)",
+			"fighter": 1,
+			"first_tick": 1547,
+			"legend": "kael",
+			"limit": 300.05,
+			"weapon": "",
+			"worst_tick": 1621,
+			"worst_value": 139.326232910156
+		}
+	],
+	"wall_seconds": 17.555,
+	"zone": "verdant_falls"
+}

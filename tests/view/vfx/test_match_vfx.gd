@@ -264,7 +264,15 @@ func test_beam_charges_fires_and_lights_the_scene() -> void:
 	assert_false(beam.is_playing())
 
 
-func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_new() -> void:
+func _pooled_nodes(vfx: MatchVfx) -> int:
+	var count := 0
+	for pool in vfx.pools():
+		for effect in pool.effects():
+			count += 1 + effect.find_children("*", "", true, false).size()
+	return count
+
+
+func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_outside_them() -> void:
 	var vfx := _vfx_with_sim(&"heartbloom_gardens")
 	var sim := CombatSim.new(11)
 	sim.zone = &"heartbloom_gardens"
@@ -276,6 +284,7 @@ func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_new() -> 
 	var bots: Array[WeaponBot] = [WeaponBot.new(0, 34), WeaponBot.new(1, 35)]
 	var plays := {}
 	var nodes_after_warmup := 0
+	var pooled_after_warmup := 0
 	# Pools may grow lazily up to capacity; fill them so only real leaks count.
 	for pool in vfx.pools():
 		pool.fill(pool.capacity)
@@ -292,11 +301,14 @@ func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_new() -> 
 				plays[pool.kind] = true
 		if tick == 1800:
 			nodes_after_warmup = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+			pooled_after_warmup = _pooled_nodes(vfx)
 	gut.p("effects seen: %s" % [plays.keys()])
 	assert_true(plays.has(&"smear_fist") or plays.has(&"smear_chakram"), "swings smeared")
 	assert_true(plays.size() >= 5, "a real fight shows a spread of effects")
-	assert_lte(int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), nodes_after_warmup + 8,
-		"no node growth in the second half")
+	# Pools fill lazily up to capacity (bounded above), so only pooled effects may add nodes.
+	var pooled_growth := _pooled_nodes(vfx) - pooled_after_warmup
+	assert_eq(int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)) - nodes_after_warmup, pooled_growth,
+		"every node added in the second half is a pooled effect")
 	for i in 180:
 		vfx.advance(TICK)
 	for pool in vfx.pools():
@@ -385,3 +397,40 @@ func test_ffa_shrinks_effects_and_the_feedback_caps_live_sparks() -> void:
 	var hit: Array[Dictionary] = [_event(E.HIT, 9)]
 	feedback.react(hit)
 	assert_eq(feedback.live_sparks(), CombatFeedback.MAX_LIVE_SPARKS + 1, "a real hit always shows")
+
+
+func test_speed_lines_skip_tapped_dashes_and_keep_long_dashes_boost_and_top_speed() -> void:
+	var tuning := MovementTuning.new()
+	var fighter := FighterState.new()
+	fighter.state = S.DASHING
+	fighter.dash_kind = FighterState.DashKind.STEP
+	fighter.state_ticks = 3
+	fighter.velocity = Vector3(48, 0, 0)
+	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "a tapped dash")
+	fighter.dash_kind = FighterState.DashKind.SUSTAINED
+	assert_true(MatchVfx.wants_speed_lines(fighter, tuning), "a flight boost")
+	fighter.dash_kind = FighterState.DashKind.RUSH
+	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "a short rush")
+	fighter.state_ticks = tuning.dash_step_ticks
+	assert_true(MatchVfx.wants_speed_lines(fighter, tuning), "a long rush")
+	fighter.state = S.FLYING
+	fighter.velocity = Vector3(tuning.fly_speed * 0.8, 0, 0)
+	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "cruising flight")
+	fighter.velocity = Vector3(tuning.fly_speed, 0, 0)
+	assert_true(MatchVfx.wants_speed_lines(fighter, tuning), "top speed")
+
+
+func test_speed_lines_are_rate_limited_fainter_and_short_lived() -> void:
+	var trail := FlightTrail.new()
+	add_child_autofree(trail)
+	var fast := Vector3(50, 0, 0)
+	var frame := 1.0 / 60.0
+	# Dash on and off every 6 frames for two seconds.
+	for i in 120:
+		trail.follow(Vector3.ZERO, fast if (i / 6) % 2 == 0 else Vector3.ZERO, Color.WHITE, frame)
+	assert_lte(trail.starts, ceili(2.0 / FlightTrail.RESTART_SECONDS) + 1, "at most one stream per restart window")
+	assert_gt(trail.starts, 0)
+	assert_lt(trail.lifetime, 0.28, "shorter than the old 0.28 s")
+	var tint: Color = (trail.material_override as ShaderMaterial).get_shader_parameter(&"tint")
+	assert_almost_eq(tint.a, FlightTrail.OPACITY, 0.001, "lower opacity")
+	assert_lt(FlightTrail.OPACITY, 1.0)
