@@ -1,0 +1,50 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://game/world/world_map.gd" id="1_world"]
+[ext_resource type="Script" path="res://game/world/terrain/world_terrain.gd" id="2_terrain"]
+[ext_resource type="Script" path="res://game/world/boundary/world_boundary.gd" id="3_boundary"]
+[ext_resource type="Script" path="res://game/world/atmosphere/world_atmosphere.gd" id="4_atmosphere"]
+
+[sub_resource type="Sky" id="sky"]
+radiance_size = 0
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.5, 0.55, 0.65, 1)
+ambient_light_energy = 0.55
+reflected_light_source = 1
+tonemap_mode = 2
+fog_enabled = true
+fog_mode = 1
+fog_light_color = Color(0.7, 0.8, 0.9, 1)
+fog_density = 1.0
+fog_sky_affect = 0.2
+fog_depth_curve = 1.6
+fog_depth_begin = 200.0
+fog_depth_end = 1200.0
+
+[node name="WorldMap" type="Node3D"]
+script = ExtResource("1_world")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 100, 0)
+shadow_enabled = true
+directional_shadow_mode = 1
+directional_shadow_max_distance = 160.0
+directional_shadow_fade_start = 0.8
+
+[node name="Terrain" type="Node3D" parent="."]
+script = ExtResource("2_terrain")
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="Boundary" type="Node3D" parent="."]
+script = ExtResource("3_boundary")
+
+[node name="Atmosphere" type="Node" parent="."]
+script = ExtResource("4_atmosphere")

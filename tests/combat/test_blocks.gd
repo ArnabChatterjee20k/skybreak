@@ -1,6 +1,7 @@
 extends GutTest
 
 const LIGHT := FighterInput.Action.LIGHT
+const BLOCK := FighterInput.Action.BLOCK
 const State := FighterState.State
 const Event := CombatSim.EventType
 const UNIT := FighterState.METER_UNIT
@@ -8,23 +9,27 @@ const UNIT := FighterState.METER_UNIT
 var _sim: CombatSim
 var _light: MoveData
 var _previous: Array[FighterInput] = []
+## What fighter 1 holds.
+var _blocker_held := BLOCK
 
 
-## Fighter 0 at the origin, fighter 1 two metres ahead with blocking set; both locked on.
+## Fighter 0 at the origin, fighter 1 two metres ahead holding block (long past
+## its perfect-block window); both locked on.
 func _start(stats: FighterStats = null) -> void:
 	_sim = CombatSim.new()
 	_sim.add_fighter(Vector3.ZERO, stats)
 	_sim.add_fighter(Vector3(0, 0, -2))
 	_sim.lock_everyone_onto_nearest()
-	_sim.fighters[1].blocking = true
 	_light = _sim.fighters[0].stats.move_set.light_string[0]
 	_previous = [FighterInput.new(), FighterInput.new()]
+	_blocker_held = BLOCK
+	_tick(30)
 
 
 func _tick(ticks := 1, held := 0) -> void:
 	for _i in ticks:
 		var inputs: Array[FighterInput] = [
-			FighterInput.from_held(held, _previous[0]), FighterInput.from_held(0, _previous[1]),
+			FighterInput.from_held(held, _previous[0]), FighterInput.from_held(_blocker_held, _previous[1]),
 		]
 		_sim.tick(inputs)
 		_previous = inputs
@@ -63,6 +68,8 @@ func test_a_hit_from_behind_goes_through_the_block() -> void:
 	# Unlocked and facing away (-Z), so the attacker at +Z is behind.
 	_blocker().lock_on_target = -1
 	_blocker().facing_yaw = 0.0
+	_tick()
+	assert_true(_blocker().blocking, "an unlocked guard keeps its facing")
 	var events := _attack()
 	assert_eq(events[0].type, Event.HIT)
 	assert_eq(_blocker().state, State.HITSTUN)
@@ -84,9 +91,19 @@ func test_blockstun_lasts_exactly_the_move_blockstun_after_hitstop() -> void:
 	_attack()
 	_tick(_light.hitstop_ticks / 2 + _light.blockstun_ticks)
 	assert_eq(_blocker().state, State.BLOCKSTUN, "still in blockstun on its last tick")
+	assert_true(_blocker().blocking, "blockstun keeps the guard up")
 	_tick()
+	assert_eq(_blocker().state, State.BLOCKING, "still holding block")
+	assert_true(_blocker().blocking)
+
+
+func test_blockstun_ends_in_the_movement_state_when_block_was_let_go() -> void:
+	_start()
+	_attack()
+	_blocker_held = 0
+	_tick(_light.hitstop_ticks / 2 + _light.blockstun_ticks + 1)
 	assert_eq(_blocker().state, State.IDLE)
-	assert_true(_blocker().blocking, "blocking stays set for T-D05")
+	assert_false(_blocker().blocking)
 
 
 func test_blocks_wear_the_guard_down_until_it_breaks() -> void:
@@ -127,9 +144,11 @@ func test_a_guard_crushing_move_breaks_a_guard_below_its_threshold_in_one_block(
 	assert_eq(_blocker().guard, 39 * UNIT)
 
 
-func test_a_guard_broken_fighter_is_hit_even_with_blocking_set() -> void:
+func test_a_guard_broken_fighter_is_hit_even_while_holding_block() -> void:
 	_start()
-	_blocker().enter_state(State.GUARD_BROKEN)
+	_sim.apply_guard_damage(1, 100)
+	assert_eq(_blocker().state, State.GUARD_BROKEN)
 	var events := _attack()
+	assert_false(_blocker().blocking, "cannot raise the guard while broken")
 	assert_eq(events[0].type, Event.HIT)
 	assert_eq(_blocker().state, State.HITSTUN)

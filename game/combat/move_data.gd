@@ -10,9 +10,17 @@ enum KnockbackType { NONE, BLOWBACK, LAUNCH, SPIKE, WALL_SPLAT, SWEEP }
 ## Cancel hierarchy: a move can be cancelled only into a higher level.
 enum CancelLevel { LIGHT = 1, HEAVY, SPECIAL, VANISH, ULTIMATE }
 
+## What the move's hitbox does on contact.
+enum Kind {
+	STRIKE, ## Damage, or blocked by a guard.
+	GRAB, ## Ignores blocking; holds the target, then throws it.
+	PUSH_BLOCK, ## No damage; shoves the target out to mid range.
+}
+
 ## Stable name used in the state hash, replays and the view.
 @export var id: StringName = &""
 @export var display_name: String = ""
+@export var kind: Kind = Kind.STRIKE
 
 @export_group("Timing")
 @export var startup_ticks: int = 1

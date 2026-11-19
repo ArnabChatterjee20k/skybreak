@@ -15,8 +15,11 @@ enum State {
 	GUARD_BROKEN, ## Stunned after the guard meter ran out.
 	ATTACKING, ## Performing a move; attack_phase() says which part.
 	HITSTUN, ## Hit: unable to act for stun_ticks, flying with the knockback (a juggle when airborne).
-	BLOCKSTUN, ## Blocked a hit: unable to act for stun_ticks.
+	BLOCKSTUN, ## Blocked a hit, or pushed (push-block, grab tech): unable to act for stun_ticks, sliding with velocity.
 	KNOCKDOWN, ## On the floor after a spike bounce, for stun_ticks; cannot be hit.
+	BLOCKING, ## Holding block: guard up, slow drift only, no attacks except push-block.
+	GRABBED, ## Held by grab_partner until the throw or a tech.
+	THROWING, ## Holding grab_partner before throwing it.
 }
 
 ## Part of the current move, derived from move_tick.
@@ -50,6 +53,10 @@ var facing_yaw: float = 0.0
 var dash_kind: DashKind = DashKind.NONE
 ## Unit direction of the current dash, zero when not dashing.
 var dash_direction: Vector3 = Vector3.ZERO
+## Index of the fighter a vanish step is anchored to, or -1; the step keeps vanish_offset from it.
+var vanish_anchor: int = -1
+## Where a vanished fighter sits relative to its anchor until it reappears.
+var vanish_offset: Vector3 = Vector3.ZERO
 ## Ticks since each action was last pressed, indexed by Action bit; capped at the buffer length.
 var press_ages: Array[int] = []
 ## Action bits whose latest press was already consumed from the input buffer.
@@ -68,10 +75,23 @@ var burst: int = 0
 var ticks_since_hit: int = 0
 ## Ticks since the last block or guard damage, counted up to the guard regen delay.
 var ticks_since_block: int = 0
-## True while blocking; T-D05 sets it. Blocking pauses guard regeneration.
+## True while the guard is up: BLOCKING, blockstun from a block, and push-block.
+## Blocking pauses guard regeneration.
 var blocking: bool = false
 ## Last Stand gives its free burst once per match.
 var last_stand_used: bool = false
+
+# Perfect block.
+## A block press is live: a strike landing now is perfect-blocked.
+var perfect_block_armed: bool = false
+## Ticks since the live block press, 0 on the press tick.
+var perfect_block_ticks: int = 0
+## Ticks left in which a block press cannot perfect-block (anti-mash).
+var perfect_block_lockout: int = 0
+
+# Grab.
+## The fighter held (THROWING) or holding this one (GRABBED), or -1.
+var grab_partner: int = -1
 
 # Attack, all reset when the fighter leaves ATTACKING.
 ## The move being performed, or null.
@@ -99,6 +119,8 @@ var hit_targets: int = 0
 var aim_pitch: float = 0.0
 ## Side a SWEEP pushes the target to: 1 right, -1 left, from the move input at attack start.
 var aim_side: int = 1
+## Recovery added to the current move (a perfect block against it).
+var extra_recovery_ticks: int = 0
 
 # Being hit.
 ## Length of the current HITSTUN, BLOCKSTUN or KNOCKDOWN in ticks.
@@ -115,11 +137,13 @@ var combo_damage: int = 0
 
 
 ## Switches to new_state and restarts the tick counter, even if it is the same state.
-## Leaving ATTACKING clears the attack; leaving HITSTUN ends the combo.
+## Leaving ATTACKING clears the attack; leaving HITSTUN ends the combo. Any change drops the vanish anchor.
 func enter_state(new_state: State) -> void:
 	state = new_state
 	state_ticks = 0
 	stun_ticks = 0
+	vanish_anchor = -1
+	vanish_offset = Vector3.ZERO
 	if new_state != State.ATTACKING:
 		_clear_attack()
 		aim_pitch = 0.0
@@ -153,6 +177,11 @@ func attack_phase() -> AttackPhase:
 	if move_tick < move.recovery_start_tick():
 		return AttackPhase.ACTIVE
 	return AttackPhase.RECOVERY
+
+
+## Ticks the current move lasts, extra recovery included; 0 when not attacking.
+func move_total_ticks() -> int:
+	return move.total_ticks() + extra_recovery_ticks if move else 0
 
 
 ## Ticks into the current attack phase, 0 on its first tick. HOLD counts from the button press.
@@ -253,13 +282,15 @@ func burst_display() -> float:
 func state_values() -> Array:
 	return [
 		position, velocity, lock_on_target, state, state_ticks, facing_yaw,
-		dash_kind, dash_direction, press_ages, consumed_presses,
+		dash_kind, dash_direction, vanish_anchor, vanish_offset, press_ages, consumed_presses,
 		health, grey_health, ki, guard, burst, ticks_since_hit, ticks_since_block,
 		blocking, last_stand_used,
 		move_id(), move_tick, holding_charge, charge_ticks, charge_level,
 		string_index, string_dropped, string_queued, contact_hit, contact_blocked,
 		hit_targets, aim_pitch, aim_side, stun_ticks, hitstop_ticks, knockback_type, spike_bounced,
 		combo_hits, combo_damage,
+		perfect_block_armed, perfect_block_ticks, perfect_block_lockout, grab_partner,
+		extra_recovery_ticks,
 	]
 
 
@@ -275,3 +306,4 @@ func _clear_attack() -> void:
 	contact_hit = false
 	contact_blocked = false
 	hit_targets = 0
+	extra_recovery_ticks = 0

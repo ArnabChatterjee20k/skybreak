@@ -283,11 +283,12 @@ func test_guard_regenerates_only_after_60_ticks_without_blocking() -> void:
 func test_blocking_holds_guard_regeneration_back() -> void:
 	_start()
 	_sim.apply_guard_damage(0, 30)
-	_fighter().blocking = true
-	_drive(200)
+	_drive(200, BLOCK)
+	assert_true(_fighter().blocking)
 	assert_eq(_fighter().guard, 70 * UNIT)
-	_fighter().blocking = false
-	_drive(_meters.guard_regen_delay_ticks)
+	_drive(1)
+	assert_false(_fighter().blocking)
+	_drive(_meters.guard_regen_delay_ticks - 1)
 	assert_eq(_fighter().guard, 70 * UNIT)
 	_drive(1)
 	assert_gt(_fighter().guard, 70 * UNIT)
