@@ -17,6 +17,12 @@ var vfx_prewarm := VfxPrewarm.new()
 ## Hit sparks, shake and impact frames from sim.events (T-121).
 var combat_feedback := CombatFeedback.new()
 var combo_counter := ComboCounter.new()
+## Rounds, clock, intro and KO (T-126). Scripted playtests turn it off
+## (match_flow.enabled = false) so input is never held for an intro.
+var match_flow := MatchFlow.new(FIGHTER_STARTS.size())
+var match_hud := MatchHud.new()
+## Sound for sim events and fighter states (T-D20).
+var match_audio := MatchAudio.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -26,7 +32,7 @@ var combo_counter := ComboCounter.new()
 
 func _ready() -> void:
 	for i in FIGHTER_STARTS.size():
-		_fighter_views[i].fighter = sim.add_fighter(FIGHTER_STARTS[i])
+		_fighter_views[i].fighter = sim.add_fighter(FIGHTER_STARTS[i], _fighter_views[i].fighter_stats())
 		_fighter_views[i].remember_previous_tick()
 	sim.lock_everyone_onto_nearest()
 	$DebugOverlay.sim = sim
@@ -37,13 +43,32 @@ func _ready() -> void:
 	$Hud.add_child(impact_frame)
 	combat_feedback.impact_frame = impact_frame
 	$Hud.add_child(combo_counter)
+	match_hud.sim = sim
+	match_hud.flow = match_flow
+	for view in _fighter_views:
+		match_hud.names.append(view.display_name)
+		match_hud.team_colors.append(Color(view.energy_color, 1.0))
+	$Hud.add_child(match_hud)
 	add_child(vfx_prewarm)
-	# After the first frame so the camera has its starting pose.
-	(func(): vfx_prewarm.start(camera)).call_deferred()
+	match_audio.sim = sim
+	add_child(match_audio)
+	# After the first frame so the camera has its starting pose. A method,
+	# not a lambda: deferred calls on a freed arena are then simply dropped.
+	_start_prewarm.call_deferred()
+
+
+func _start_prewarm() -> void:
+	vfx_prewarm.start(camera)
 
 
 func _physics_process(_delta: float) -> void:
 	step_tick()
+	# Slow motion after a KO; only when the arena runs in real time.
+	Engine.time_scale = match_flow.time_scale()
+
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
 
 
 func _process(delta: float) -> void:
@@ -55,7 +80,11 @@ func step_tick() -> void:
 	for view in _fighter_views:
 		view.remember_previous_tick()
 	var inputs: Array[FighterInput] = []
-	if input_override.is_valid():
+	if not match_flow.accepts_input():
+		# Intro and KO: everyone holds still.
+		for i in sim.fighters.size():
+			inputs.append(FighterInput.new())
+	elif input_override.is_valid():
 		for i in sim.fighters.size():
 			inputs.append(input_override.call(i, sim.current_tick))
 	else:
@@ -64,6 +93,8 @@ func step_tick() -> void:
 	sim.tick(inputs)
 	# sim.events holds only this tick's events, so read them every tick.
 	combat_feedback.react(sim.events)
+	match_flow.step(sim)
+	match_audio.after_tick()
 
 
 ## Draws one frame: fighters at blend between the last two ticks, then the camera.

@@ -1,0 +1,273 @@
+[gd_resource type="Resource" script_class="SoundBank" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_bank.gd" id="bank"]
+[ext_resource type="Script" path="res://game/audio/sound_cue.gd" id="cue"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/dash_1.ogg" id="s1"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/dash_2.ogg" id="s2"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/dash_3.ogg" id="s3"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/air_dash_1.ogg" id="s4"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/air_dash_2.ogg" id="s5"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/air_dash_3.ogg" id="s6"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/rush_whoosh_1.ogg" id="s7"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/rush_whoosh_2.ogg" id="s8"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/vanish_out_1.ogg" id="s9"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/vanish_out_2.ogg" id="s10"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/vanish_in_1.ogg" id="s11"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/vanish_in_2.ogg" id="s12"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/lock_on.ogg" id="s13"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/lock_switch.ogg" id="s14"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/land_light_1.ogg" id="s15"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/land_light_2.ogg" id="s16"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/land_light_3.ogg" id="s17"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/land_heavy_1.ogg" id="s18"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/land_heavy_2.ogg" id="s19"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/flight_start_1.ogg" id="s20"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/flight_start_2.ogg" id="s21"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/flight_stop_1.ogg" id="s22"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/flight_stop_2.ogg" id="s23"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/flight_wind_loop.ogg" id="s24"]
+
+[sub_resource type="Resource" id="dash"]
+script = ExtResource("cue")
+id = &"dash"
+streams = Array[AudioStream]([ExtResource("s1"), ExtResource("s2"), ExtResource("s3")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 45
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="air_dash"]
+script = ExtResource("cue")
+id = &"air_dash"
+streams = Array[AudioStream]([ExtResource("s4"), ExtResource("s5"), ExtResource("s6")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 45
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="rush_whoosh"]
+script = ExtResource("cue")
+id = &"rush_whoosh"
+streams = Array[AudioStream]([ExtResource("s7"), ExtResource("s8")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 45
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="vanish_out"]
+script = ExtResource("cue")
+id = &"vanish_out"
+streams = Array[AudioStream]([ExtResource("s9"), ExtResource("s10")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 70
+cooldown = 0.05
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="vanish_in"]
+script = ExtResource("cue")
+id = &"vanish_in"
+streams = Array[AudioStream]([ExtResource("s11"), ExtResource("s12")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 70
+cooldown = 0.05
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="lock_on"]
+script = ExtResource("cue")
+id = &"lock_on"
+streams = Array[AudioStream]([ExtResource("s13")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 1
+priority = 60
+cooldown = 0.1
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="lock_switch"]
+script = ExtResource("cue")
+id = &"lock_switch"
+streams = Array[AudioStream]([ExtResource("s14")])
+bus = &"UI"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 0.0
+max_voices = 1
+priority = 60
+cooldown = 0.08
+positional = false
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="land_light"]
+script = ExtResource("cue")
+id = &"land_light"
+streams = Array[AudioStream]([ExtResource("s15"), ExtResource("s16"), ExtResource("s17")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 35
+cooldown = 0.1
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="land_heavy"]
+script = ExtResource("cue")
+id = &"land_heavy"
+streams = Array[AudioStream]([ExtResource("s18"), ExtResource("s19")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 55
+cooldown = 0.1
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="flight_start"]
+script = ExtResource("cue")
+id = &"flight_start"
+streams = Array[AudioStream]([ExtResource("s20"), ExtResource("s21")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 40
+cooldown = 0.2
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="flight_stop"]
+script = ExtResource("cue")
+id = &"flight_stop"
+streams = Array[AudioStream]([ExtResource("s22"), ExtResource("s23")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 35
+cooldown = 0.2
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="flight_wind_loop"]
+script = ExtResource("cue")
+id = &"flight_wind_loop"
+streams = Array[AudioStream]([ExtResource("s24")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.7
+pitch_max = 1.35
+volume_jitter_db = 0.0
+max_voices = 8
+priority = 20
+cooldown = 0.0
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[resource]
+script = ExtResource("bank")
+category = &"movement"
+cues = Array[ExtResource("cue")]([SubResource("dash"), SubResource("air_dash"), SubResource("rush_whoosh"), SubResource("vanish_out"), SubResource("vanish_in"), SubResource("lock_on"), SubResource("lock_switch"), SubResource("land_light"), SubResource("land_heavy"), SubResource("flight_start"), SubResource("flight_stop"), SubResource("flight_wind_loop")])

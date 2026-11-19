@@ -1,0 +1,365 @@
+[gd_resource type="Resource" script_class="SoundBank" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_bank.gd" id="bank"]
+[ext_resource type="Script" path="res://game/audio/sound_cue.gd" id="cue"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/gauntlets_swing_1.ogg" id="s1"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/gauntlets_swing_2.ogg" id="s2"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/gauntlets_swing_3.ogg" id="s3"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/blade_swing_1.ogg" id="s4"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/blade_swing_2.ogg" id="s5"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/blade_swing_3.ogg" id="s6"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/lance_thrust_1.ogg" id="s7"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/lance_thrust_2.ogg" id="s8"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/lance_thrust_3.ogg" id="s9"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/hammer_swing_1.ogg" id="s10"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/hammer_swing_2.ogg" id="s11"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/chakram_throw_1.ogg" id="s12"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/chakram_throw_2.ogg" id="s13"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/scythe_swing_1.ogg" id="s14"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/scythe_swing_2.ogg" id="s15"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/scythe_swing_3.ogg" id="s16"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/bow_draw.ogg" id="s17"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/bow_release_1.ogg" id="s18"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/bow_release_2.ogg" id="s19"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/bow_release_3.ogg" id="s20"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/revolver_fire_1.ogg" id="s21"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/revolver_fire_2.ogg" id="s22"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/revolver_fire_3.ogg" id="s23"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/revolver_reload.ogg" id="s24"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/repeater_fire_1.ogg" id="s25"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/repeater_fire_2.ogg" id="s26"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/repeater_fire_3.ogg" id="s27"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/repeater_fire_4.ogg" id="s28"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/repeater_overheat.ogg" id="s29"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/scatter_fire_1.ogg" id="s30"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/scatter_fire_2.ogg" id="s31"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/heartstring_draw.ogg" id="s32"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/heartstring_release_1.ogg" id="s33"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/heartstring_release_2.ogg" id="s34"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/heartstring_release_3.ogg" id="s35"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/weapons/heartstring_tether.ogg" id="s36"]
+
+[sub_resource type="Resource" id="gauntlets_swing"]
+script = ExtResource("cue")
+id = &"gauntlets_swing"
+streams = Array[AudioStream]([ExtResource("s1"), ExtResource("s2"), ExtResource("s3")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 4
+priority = 40
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="blade_swing"]
+script = ExtResource("cue")
+id = &"blade_swing"
+streams = Array[AudioStream]([ExtResource("s4"), ExtResource("s5"), ExtResource("s6")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 40
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="lance_thrust"]
+script = ExtResource("cue")
+id = &"lance_thrust"
+streams = Array[AudioStream]([ExtResource("s7"), ExtResource("s8"), ExtResource("s9")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 40
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="hammer_swing"]
+script = ExtResource("cue")
+id = &"hammer_swing"
+streams = Array[AudioStream]([ExtResource("s10"), ExtResource("s11")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 45
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="chakram_throw"]
+script = ExtResource("cue")
+id = &"chakram_throw"
+streams = Array[AudioStream]([ExtResource("s12"), ExtResource("s13")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 40
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="scythe_swing"]
+script = ExtResource("cue")
+id = &"scythe_swing"
+streams = Array[AudioStream]([ExtResource("s14"), ExtResource("s15"), ExtResource("s16")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 40
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="bow_draw"]
+script = ExtResource("cue")
+id = &"bow_draw"
+streams = Array[AudioStream]([ExtResource("s17")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 45
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="bow_release"]
+script = ExtResource("cue")
+id = &"bow_release"
+streams = Array[AudioStream]([ExtResource("s18"), ExtResource("s19"), ExtResource("s20")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 50
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="revolver_fire"]
+script = ExtResource("cue")
+id = &"revolver_fire"
+streams = Array[AudioStream]([ExtResource("s21"), ExtResource("s22"), ExtResource("s23")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 4
+priority = 55
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="revolver_reload"]
+script = ExtResource("cue")
+id = &"revolver_reload"
+streams = Array[AudioStream]([ExtResource("s24")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 45
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="repeater_fire"]
+script = ExtResource("cue")
+id = &"repeater_fire"
+streams = Array[AudioStream]([ExtResource("s25"), ExtResource("s26"), ExtResource("s27"), ExtResource("s28")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 6
+priority = 45
+cooldown = 0.04
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="repeater_overheat"]
+script = ExtResource("cue")
+id = &"repeater_overheat"
+streams = Array[AudioStream]([ExtResource("s29")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 55
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="scatter_fire"]
+script = ExtResource("cue")
+id = &"scatter_fire"
+streams = Array[AudioStream]([ExtResource("s30"), ExtResource("s31")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 60
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="heartstring_draw"]
+script = ExtResource("cue")
+id = &"heartstring_draw"
+streams = Array[AudioStream]([ExtResource("s32")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 50
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="heartstring_release"]
+script = ExtResource("cue")
+id = &"heartstring_release"
+streams = Array[AudioStream]([ExtResource("s33"), ExtResource("s34"), ExtResource("s35")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 55
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="heartstring_tether"]
+script = ExtResource("cue")
+id = &"heartstring_tether"
+streams = Array[AudioStream]([ExtResource("s36")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 1.0
+pitch_max = 1.0
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 60
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[resource]
+script = ExtResource("bank")
+category = &"weapons"
+cues = Array[ExtResource("cue")]([SubResource("gauntlets_swing"), SubResource("blade_swing"), SubResource("lance_thrust"), SubResource("hammer_swing"), SubResource("chakram_throw"), SubResource("scythe_swing"), SubResource("bow_draw"), SubResource("bow_release"), SubResource("revolver_fire"), SubResource("revolver_reload"), SubResource("repeater_fire"), SubResource("repeater_overheat"), SubResource("scatter_fire"), SubResource("heartstring_draw"), SubResource("heartstring_release"), SubResource("heartstring_tether")])

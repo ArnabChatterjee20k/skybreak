@@ -44,16 +44,34 @@ func test_palette_never_edits_the_shared_material() -> void:
 	assert_eq(_albedo_of(_view({}), "coat"), before, "a later plain Kael keeps its coat")
 
 
-func test_arena_p2_wears_a_different_coat_and_scarf_than_p1() -> void:
+func test_arena_p2_vexa_wears_her_alt_palette() -> void:
 	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
 	add_child_autofree(arena)
-	var p1: Node = arena.get_node("Fighter1")
 	var p2: Node = arena.get_node("Fighter2")
-	for part in ["coat", "scarf"]:
-		var a := _albedo_of(p1, part)
-		var b := _albedo_of(p2, part)
-		var hue_gap := absf(a.h - b.h)
-		assert_gt(minf(hue_gap, 1.0 - hue_gap), 0.2, "%s hue differs clearly" % part)
+	var plain := FighterView.new()
+	plain.character_id = &"vexa"
+	plain.fighter = FighterState.new()
+	add_child_autofree(plain)
+	var a := _albedo_of(plain, "violet")
+	var b := _albedo_of(p2, "violet")
+	assert_ne(a, Color(0, 0, 0, 0), "vexa has a violet material")
+	var hue_gap := absf(a.h - b.h)
+	assert_gt(minf(hue_gap, 1.0 - hue_gap), 0.2, "P2's main colour differs clearly from her P1 look")
+
+
+func test_arena_fighters_keep_their_team_rims() -> void:
+	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
+	add_child_autofree(arena)
+	var p1: FighterView = arena.get_node("Fighter1")
+	var p2: FighterView = arena.get_node("Fighter2")
+	assert_gt(p1.energy_color.r, p1.energy_color.b, "P1 rim is warm")
+	assert_gt(p2.energy_color.b, p2.energy_color.r, "P2 rim is cool")
+	for view: FighterView in [p1, p2]:
+		for mesh: MeshInstance3D in view.find_children("*", "MeshInstance3D", true, false):
+			if mesh.get_instance_shader_parameter(&"rim_energy_color") == null:
+				continue
+			assert_eq(mesh.get_instance_shader_parameter(&"rim_energy_color"), Color(view.energy_color, 1.0),
+				"%s rim tinted" % view.name)
 
 
 func test_height_marker_shows_only_when_airborne() -> void:

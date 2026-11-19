@@ -1,0 +1,203 @@
+[gd_resource type="Resource" script_class="SoundBank" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_bank.gd" id="bank"]
+[ext_resource type="Script" path="res://game/audio/sound_cue.gd" id="cue"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/ki_charge_loop.ogg" id="s1"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/aura_loop.ogg" id="s2"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/power_up_burst_1.ogg" id="s3"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/power_up_burst_2.ogg" id="s4"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/ki_blast_fire_1.ogg" id="s5"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/ki_blast_fire_2.ogg" id="s6"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/ki_blast_fire_3.ogg" id="s7"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/ki_blast_impact_1.ogg" id="s8"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/ki_blast_impact_2.ogg" id="s9"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/ki_blast_impact_3.ogg" id="s10"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/beam_charge_loop.ogg" id="s11"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/beam_fire.ogg" id="s12"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/beam_loop.ogg" id="s13"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/ki/beam_clash.ogg" id="s14"]
+
+[sub_resource type="Resource" id="ki_charge_loop"]
+script = ExtResource("cue")
+id = &"ki_charge_loop"
+streams = Array[AudioStream]([ExtResource("s1")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.8
+pitch_max = 1.6
+volume_jitter_db = 0.0
+max_voices = 8
+priority = 60
+cooldown = 0.0
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="aura_loop"]
+script = ExtResource("cue")
+id = &"aura_loop"
+streams = Array[AudioStream]([ExtResource("s2")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.1
+volume_jitter_db = 0.0
+max_voices = 8
+priority = 40
+cooldown = 0.0
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="power_up_burst"]
+script = ExtResource("cue")
+id = &"power_up_burst"
+streams = Array[AudioStream]([ExtResource("s3"), ExtResource("s4")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 75
+cooldown = 0.3
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = -4.0
+duck_seconds = 0.5
+
+[sub_resource type="Resource" id="ki_blast_fire"]
+script = ExtResource("cue")
+id = &"ki_blast_fire"
+streams = Array[AudioStream]([ExtResource("s5"), ExtResource("s6"), ExtResource("s7")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 6
+priority = 50
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="ki_blast_impact"]
+script = ExtResource("cue")
+id = &"ki_blast_impact"
+streams = Array[AudioStream]([ExtResource("s8"), ExtResource("s9"), ExtResource("s10")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 6
+priority = 55
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="beam_charge_loop"]
+script = ExtResource("cue")
+id = &"beam_charge_loop"
+streams = Array[AudioStream]([ExtResource("s11")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.8
+pitch_max = 1.6
+volume_jitter_db = 0.0
+max_voices = 8
+priority = 70
+cooldown = 0.0
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="beam_fire"]
+script = ExtResource("cue")
+id = &"beam_fire"
+streams = Array[AudioStream]([ExtResource("s12")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 85
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = -6.0
+duck_seconds = 0.6
+
+[sub_resource type="Resource" id="beam_loop"]
+script = ExtResource("cue")
+id = &"beam_loop"
+streams = Array[AudioStream]([ExtResource("s13")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 0.0
+max_voices = 8
+priority = 80
+cooldown = 0.0
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = true
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="beam_clash"]
+script = ExtResource("cue")
+id = &"beam_clash"
+streams = Array[AudioStream]([ExtResource("s14")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 1
+priority = 90
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = -8.0
+duck_seconds = 1.5
+
+[resource]
+script = ExtResource("bank")
+category = &"ki"
+cues = Array[ExtResource("cue")]([SubResource("ki_charge_loop"), SubResource("aura_loop"), SubResource("power_up_burst"), SubResource("ki_blast_fire"), SubResource("ki_blast_impact"), SubResource("beam_charge_loop"), SubResource("beam_fire"), SubResource("beam_loop"), SubResource("beam_clash")])

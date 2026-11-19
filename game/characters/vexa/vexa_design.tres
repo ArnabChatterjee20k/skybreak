@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="VexaDesign" format=3]
+
+[ext_resource type="Script" path="res://game/characters/vexa/vexa_design.gd" id="1_design"]
+
+[resource]
+script = ExtResource("1_design")
