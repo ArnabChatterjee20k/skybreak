@@ -15,13 +15,13 @@ shader_parameter/core_whiteness = 0.9
 
 [sub_resource type="QuadMesh" id="star_quad"]
 material = SubResource("star_material")
-size = Vector2(0.8, 0.8)
+size = Vector2(0.4, 0.4)
 
 [sub_resource type="ParticleProcessMaterial" id="sparks_process"]
 direction = Vector3(0, 1, 0)
 spread = 180.0
-initial_velocity_min = 4.0
-initial_velocity_max = 8.0
+initial_velocity_min = 3.0
+initial_velocity_max = 6.0
 gravity = Vector3(0, -6, 0)
 damping_min = 10.0
 damping_max = 15.0
@@ -42,11 +42,11 @@ shader_parameter/core_whiteness = 0.9
 
 [sub_resource type="QuadMesh" id="sparks_quad"]
 material = SubResource("sparks_material")
-size = Vector2(0.06, 0.4)
+size = Vector2(0.04, 0.25)
 
 [node name="HitSparkLight" type="Node3D"]
 script = ExtResource("1_script")
-lifetime = 0.22
+lifetime = 0.1
 default_color = Color(1, 1, 1, 1)
 
 [node name="Star" type="MeshInstance3D" parent="."]
@@ -57,7 +57,7 @@ mesh = SubResource("star_quad")
 cast_shadow = 0
 emitting = false
 amount = 6
-lifetime = 0.2
+lifetime = 0.1
 one_shot = true
 explosiveness = 1.0
 local_coords = true

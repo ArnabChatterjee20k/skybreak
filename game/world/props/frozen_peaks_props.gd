@@ -7,8 +7,8 @@ extends RefCounted
 static func build(parent: Node3D, kit: PropKit, zone: ZoneData, layout: ZoneLayout) -> void:
 	var zi := layout.index_of(zone.id)
 	var c := zone.centre
-	var ice := kit.material("ice", Color(0.72, 0.88, 1.0), {"rim_strength": 0.5, "rim_color": Color(0.8, 0.95, 1.0)})
-	var slab := kit.material("ice_slab", Color(0.86, 0.94, 1.0), {"strata": 0.5, "strata_spacing": 1.5})
+	var ice := kit.material("ice", Color(0.5, 0.66, 0.84), {"rim_strength": 0.25, "rim_color": Color(0.75, 0.9, 1.0)})
+	var slab := kit.material("ice_slab", Color(0.62, 0.72, 0.84), {"strata": 0.5, "strata_spacing": 1.5})
 	var spires: Array[Transform3D] = []
 	var shelves: Array[Transform3D] = []
 	var boulders: Array[Transform3D] = []

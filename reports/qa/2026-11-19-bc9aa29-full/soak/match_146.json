@@ -1,0 +1,108 @@
+{
+	"hitstops": {
+		"light_1": {
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 1,
+			"9": 3
+		},
+		"light_2": {
+			"5": 4
+		},
+		"light_3": {
+			"8": 4
+		},
+		"scatter/projectile": {
+			"3": 33
+		},
+		"scatter/projectile+counter": {
+			"7": 1
+		},
+		"sweep": {
+			"7": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "2502:ember_rift:1v1:brann,lyra:45",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2502,
+	"sim_ms_per_tick": 1.76487555555556,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0150925470516086,
+		"finger_pops_per_fighter_minute": 15.0083379655364,
+		"foot_error_p95_cm": 12.7566605557739,
+		"foot_slide_cm_per_frame": 0.0209402281648686,
+		"locked_on_screen_share": 0.979089790897909,
+		"pops_per_fighter_minute": 1.00055586436909
+	},
+	"view_ms_per_frame": 1.72628333333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 156,
+			"detail": "lowest sole +44.8 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 462,
+			"worst_value": 0.448491651259687
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 71,
+			"detail": "fighters 0 and 1 overlap 0.80 m (BLOCKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 286,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "scatter",
+			"worst_tick": 809,
+			"worst_value": 0.804851277470589
+		},
+		{
+			"check": "foot_ground",
+			"count": 7,
+			"detail": "lowest sole +45.1 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 427,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 427,
+			"worst_value": 0.45087246802985
+		},
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "RightUpperArm turned 2.34 rad in one frame (ATTACKING, move weapon/throw)",
+			"fighter": 0,
+			"first_tick": 1012,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1012,
+			"worst_value": 2.34069633483887
+		}
+	],
+	"wall_seconds": 19.641,
+	"zone": "ember_rift"
+}

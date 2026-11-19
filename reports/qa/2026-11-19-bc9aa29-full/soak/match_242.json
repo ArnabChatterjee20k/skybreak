@@ -1,0 +1,126 @@
+{
+	"hitstops": {
+		"breaker": {
+			"10": 1
+		},
+		"hammer/light_1": {
+			"7": 1
+		},
+		"hammer/light_1+counter": {
+			"11": 2
+		},
+		"hammer/light_2": {
+			"10": 2
+		},
+		"light_1": {
+			"3": 1,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 2,
+			"9": 2
+		},
+		"light_2": {
+			"3": 3,
+			"5": 3
+		},
+		"light_3": {
+			"5": 3,
+			"8": 3
+		},
+		"sweep+counter": {
+			"11": 1
+		}
+	},
+	"id": "3602:heartbloom_gardens:1v1:brann,lyra:23",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		3
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3602,
+	"sim_ms_per_tick": 0.748575555555556,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0122447125613689,
+		"finger_pops_per_fighter_minute": 34.0188993885492,
+		"foot_error_p95_cm": 10.190168086541,
+		"foot_slide_cm_per_frame": 0.0202238270671727,
+		"locked_on_screen_share": 0.954419121734297,
+		"pops_per_fighter_minute": 16.0088938299055
+	},
+	"view_ms_per_frame": 0.829241666666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 143,
+			"detail": "lowest sole +39.9 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1069,
+			"worst_value": 0.399170358015851
+		},
+		{
+			"check": "foot_ground",
+			"count": 15,
+			"detail": "lowest sole +45.6 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 275,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 993,
+			"worst_value": 0.456491206293038
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 257,
+			"detail": "fighters 0 and 1 overlap 1.02 m (ATTACKING vs BLOCKING)",
+			"fighter": 0,
+			"first_tick": 301,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1466,
+			"worst_value": 1.0242252994515
+		},
+		{
+			"check": "pop",
+			"count": 16,
+			"detail": "RightLowerArm turned 1.24 rad in one frame (ATTACKING, move breaker)",
+			"fighter": 0,
+			"first_tick": 1013,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1386,
+			"worst_value": 1.23697757720947
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "16 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 16
+		}
+	],
+	"wall_seconds": 14.734,
+	"zone": "heartbloom_gardens"
+}

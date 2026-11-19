@@ -1,0 +1,115 @@
+{
+	"hitstops": {
+		"launcher": {
+			"8": 3
+		},
+		"light_1": {
+			"3": 2,
+			"4": 9
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 2,
+			"20": 1
+		},
+		"light_2": {
+			"3": 2,
+			"4": 10
+		},
+		"light_3": {
+			"3": 2,
+			"4": 3
+		}
+	},
+	"id": "3400:verdant_falls:1v1:kael,vexa:52",
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		2
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 3400,
+	"sim_ms_per_tick": 2.194335,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.00821563880890608,
+		"finger_pops_per_fighter_minute": 24.0133407448583,
+		"foot_error_p95_cm": 8.22112852667454,
+		"foot_slide_cm_per_frame": 3.74801202020574,
+		"locked_on_screen_share": 0.996294008647313,
+		"pops_per_fighter_minute": 29.0161200667037
+	},
+	"view_ms_per_frame": 2.06767555555556,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 151,
+			"detail": "lowest sole +8.8 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 8,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 98,
+			"worst_value": 0.0876551821484988
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "SashLower turned 2.60 rad in one frame (KO_FALL, move )",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1255,
+			"worst_value": 2.6049497127533
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 868,
+			"detail": "fighters 0 and 1 overlap 0.95 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 195,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 812,
+			"worst_value": 0.949748345609987
+		},
+		{
+			"check": "pop",
+			"count": 18,
+			"detail": "LeftHand turned 1.94 rad in one frame (ATTACKING, move breaker)",
+			"fighter": 0,
+			"first_tick": 364,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1622,
+			"worst_value": 1.93788182735443
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "29 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 29
+		}
+	],
+	"wall_seconds": 27.115,
+	"zone": "verdant_falls"
+}

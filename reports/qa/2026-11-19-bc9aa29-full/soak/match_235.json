@@ -1,0 +1,166 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 10
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"8": 5,
+			"20": 1
+		},
+		"light_1": {
+			"3": 7,
+			"4": 6,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 8,
+			"9": 2
+		},
+		"light_2": {
+			"3": 5,
+			"4": 12,
+			"5": 3
+		},
+		"light_3": {
+			"3": 3,
+			"4": 7,
+			"5": 1,
+			"8": 3
+		}
+	},
+	"id": "3513:ember_rift:ffa4:lyra,kael,vexa,brann:4422",
+	"kos": 1,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4,
+		2,
+		2
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3513,
+	"sim_ms_per_tick": 2.16920777777778,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0303555298596621,
+		"finger_pops_per_fighter_minute": 25.0138966092273,
+		"foot_error_p95_cm": 11.5178565450442,
+		"foot_slide_cm_per_frame": 0.655886386401548,
+		"locked_on_screen_share": 0.987435750999429,
+		"pops_per_fighter_minute": 25.5141745414119
+	},
+	"view_ms_per_frame": 1.93215166666667,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 723,
+			"detail": "fighters 0 and 2 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 1215,
+			"detail": "fighters 1 and 3 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "foot_ground",
+			"count": 121,
+			"detail": "lowest sole -11.6 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 74,
+			"worst_value": -0.116144833599193
+		},
+		{
+			"check": "foot_ground",
+			"count": 44,
+			"detail": "lowest sole +5.5 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 18,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 50,
+			"worst_value": 0.0552374197312275
+		},
+		{
+			"check": "pop",
+			"count": 31,
+			"detail": "RightLowerLeg turned 2.80 rad in one frame (ATTACKING, move light_4)",
+			"fighter": 1,
+			"first_tick": 132,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 337,
+			"worst_value": 2.79983186721802
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "LeftHoodPoint turned 1.55 rad in one frame (FLYING, move )",
+			"fighter": 2,
+			"first_tick": 152,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 891,
+			"worst_value": 1.54981291294098
+		},
+		{
+			"check": "pop",
+			"count": 9,
+			"detail": "LeftHand turned 1.27 rad in one frame (FLYING, move )",
+			"fighter": 3,
+			"first_tick": 937,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1148,
+			"worst_value": 1.27479493618011
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "51 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 51
+		}
+	],
+	"wall_seconds": 19.58,
+	"zone": "ember_rift"
+}

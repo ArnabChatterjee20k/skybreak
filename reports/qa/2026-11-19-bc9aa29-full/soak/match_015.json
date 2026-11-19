@@ -1,0 +1,112 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"8": 3,
+			"20": 1
+		},
+		"light_1": {
+			"3": 4,
+			"4": 7
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 5
+		},
+		"light_2": {
+			"3": 4,
+			"4": 7
+		},
+		"light_3": {
+			"4": 4,
+			"5": 3
+		},
+		"sweep": {
+			"8": 1
+		}
+	},
+	"id": "1103:skyhold_ruins:1v1:lyra,kael:44",
+	"kos": 1,
+	"legends": [
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "KO",
+	"rounds_started": 1,
+	"seed": 1103,
+	"sim_ms_per_tick": 1.84816166666667,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0117961075156927,
+		"finger_pops_per_fighter_minute": 26.0144524735964,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"locked_on_screen_share": 0.999436936936937,
+		"pops_per_fighter_minute": 22.0122290161201
+	},
+	"view_ms_per_frame": 1.68152388888889,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 545,
+			"detail": "fighters 0 and 1 overlap 0.93 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 174,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1632,
+			"worst_value": 0.927724840883166
+		},
+		{
+			"check": "pop",
+			"count": 19,
+			"detail": "RightLowerLeg turned 2.09 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 1,
+			"first_tick": 231,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 352,
+			"worst_value": 2.09060168266296
+		},
+		{
+			"check": "pop",
+			"count": 3,
+			"detail": "CapeLeftLower turned 2.44 rad in one frame (FLYING, move )",
+			"fighter": 0,
+			"first_tick": 306,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 306,
+			"worst_value": 2.44481706619263
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "22 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 22
+		}
+	],
+	"wall_seconds": 21.307,
+	"zone": "skyhold_ruins"
+}

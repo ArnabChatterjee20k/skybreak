@@ -6,6 +6,9 @@ extends RefCounted
 
 ## One FighterAI per slot, null for human slots.
 var ais: Array[FighterAI] = []
+## Single-slot use (ZoneMatch's driver contract: setup(), then next_input() each tick).
+var _slot: int = -1
+var _level: int = 3
 
 
 ## fighters: [{character, team, is_ai, ai_level}] in slot order; sim_seed: the match's CombatSim seed.
@@ -26,6 +29,23 @@ func _init(fighters: Array = [], sim_seed: int = 0) -> void:
 ## A driver for sim, seeded from its rng seed.
 static func for_sim(sim: CombatSim, fighters: Array) -> AIDriver:
 	return AIDriver.new(fighters, sim.rng.seed)
+
+
+## Makes this driver play only slot at level; its AI is built on the first next_input().
+func setup(slot: int, level: int) -> void:
+	_slot = slot
+	_level = level
+
+
+## The set-up slot's input this tick, seeded from the sim and teamed by the sim's teams.
+func next_input(sim: CombatSim) -> FighterInput:
+	if ais.is_empty():
+		var teams := PackedInt32Array()
+		for slot in sim.fighters.size():
+			teams.append(sim.fighters[slot].team)
+			ais.append(FighterAI.new(slot, _level, FighterAI.seed_for(sim.rng.seed, slot)) if slot == _slot else null)
+		ais[_slot].teams = teams
+	return input_for(sim, _slot)
 
 
 func is_ai(slot: int) -> bool:

@@ -25,6 +25,21 @@ const TARGET_TICKS := 30
 ## Hits on this AI within this many ticks make the hitter "who attacks it".
 const GRUDGE_TICKS := 240
 ## Ki a vanish needs (MeterTuning.vanish_step_ki_cost), kept here so the AI never asks the sim.
+## Fight shape: "near the ground" is under this height above the floor (m).
+const NEAR_GROUND := 3.0
+## Ticks per level a target must fly by choice before the AI goes up to meet it.
+const AIR_FOLLOW_TICKS: Array[int] = [70, 55, 45, 36, 30]
+## Within this planar distance, more height than planar gap is a stack: step out sideways.
+const STACK_RADIUS := 3.0
+## Keeps this much room (m) to fighters it is not fighting (FFA dog-piles).
+const CROWD_RADIUS := 3.0
+## Other fighters already on a target that make it a poor pick (FFA).
+const CROWD_LIMIT := 2
+## Fastest the AI circles its target (rad/s), slow enough for the camera to follow.
+const MAX_ORBIT_RATE := 1.6
+## Strafe speeds (MovementTuning ground_speed, fly_speed), for the orbit cap.
+const _GROUND_SPEED := 12.0
+const _FLY_SPEED := 30.0
 const _VANISH_KI := 20
 const _RUSH_KI := 15
 ## Preferred distance band for ranged weapons: [near, far].
@@ -42,6 +57,8 @@ var rng := RandomNumberGenerator.new()
 var perception := AIPerception.new()
 ## Team of each fighter slot; same team = never a target. Empty: everyone is an opponent.
 var teams := PackedInt32Array()
+## Legend this AI plays (from its fighter's stats on the first tick); sets its spacing band.
+var legend: StringName = &""
 
 # Decision state (all covered by snapshot()).
 var _previous := FighterInput.new()
@@ -76,6 +93,10 @@ var _step_out: bool = false
 var _edge_gap: float = INF
 ## Perfect blocks in a row; Normal and below stop at 2 (fun limiter, GAME_DESIGN §10).
 var _perfect_streak: int = 0
+## Ticks the target has been flying by choice (high up, not launched).
+var _target_air_ticks: int = 0
+## This AI's ki this tick (read from the sim each tick, so no snapshot needed).
+var _ki: int = 0
 
 
 ## seed_value should come from seed_for(sim seed, slot).
@@ -96,11 +117,20 @@ func next_input(sim: CombatSim) -> FighterInput:
 	_ticks += 1
 	var plan := FighterInput.new()
 	var me := sim.fighters[fighter_index]
+	if legend == &"":
+		_take_legend(EngagementBand.legend_of(me.stats))
+	_ki = me.ki
 	_note_hits(sim)
 	if not sim.round_over and not me.is_knocked_out() and sim.fighters.size() > 1:
-		_target = _choose_target(sim)
+		var chosen := _choose_target(sim)
+		if chosen != _target:
+			_target_air_ticks = 0
+		_target = chosen
 		if _target >= 0:
+			_track_target_air(sim)
 			_decide(sim, me, plan)
+			if _is_free(me):
+				_cap_orbit(sim, me, plan)
 	_last_state = me.state
 	var input := FighterInput.from_held(plan.held_actions, _previous)
 	input.move = plan.move.limit_length(1.0)
@@ -118,7 +148,8 @@ func snapshot() -> Dictionary:
 		"values": [_ticks, _plan, _plan_left, _plan_phase, _strafe, _target, _route, _string_goal,
 			_air_combo, _guard_key, _guard_roll, _punish_key, _punish_until, _link_key, _link_ok,
 			_defend_left, _escape_left, _tech_tick, _hold_left, _hold_move, _hold_vertical,
-			_last_state, _grudge, _grudge_tick, _push_rolled, _step_out, _edge_gap, _perfect_streak],
+			_last_state, _grudge, _grudge_tick, _push_rolled, _step_out, _edge_gap, _perfect_streak, _target_air_ticks, legend,
+			profile.spacing],
 	}
 
 
@@ -141,7 +172,8 @@ func restore(saved: Dictionary) -> void:
 	_link_ok = v[14]; _defend_left = v[15]; _escape_left = v[16]; _tech_tick = v[17]
 	_hold_left = v[18]; _hold_move = v[19]; _hold_vertical = v[20]; _last_state = v[21]
 	_grudge = v[22]; _grudge_tick = v[23]; _push_rolled = v[24]; _step_out = v[25]
-	_edge_gap = v[26]; _perfect_streak = v[27]
+	_edge_gap = v[26]; _perfect_streak = v[27]; _target_air_ticks = v[28]; legend = v[29]
+	profile.spacing = v[30]
 
 
 ## How far a move's hitboxes reach from the attacker's centre to a target's centre (planar).
@@ -337,6 +369,8 @@ func _continue_attack(sim: CombatSim, me: FighterState, target: FighterState,
 		if in_window and confirmed and not me.string_queued and key != _link_key:
 			_link_key = key
 			_link_ok = me.string_index < _string_goal and rng.randf() >= profile.drop_chance
+			# Never keep a string going on someone straight over or under: realign first.
+			_link_ok = _link_ok and not _stacked_on(me, target)
 			if profile.hit_confirm and not me.contact_hit:
 				# Blocked: stop after two and look for a grab or a reset; whiffed: stop.
 				_link_ok = _link_ok and me.contact_blocked and me.string_index < 2
@@ -348,6 +382,8 @@ func _continue_attack(sim: CombatSim, me: FighterState, target: FighterState,
 	if not me.contact_hit:
 		return
 	# Ender: heavy cancel at the end of the string.
+	if _stacked_on(me, target):
+		return
 	if me.string_index >= mini(_string_goal, moves.light_string.size()) \
 			and sim.can_cancel_into(fighter_index, MoveData.CancelLevel.HEAVY) and _hold_left == 0:
 		var ender_move := Vector2.ZERO
@@ -390,10 +426,19 @@ func _continue_attack(sim: CombatSim, me: FighterState, target: FighterState,
 ## Starts a light string toward the route (and a fresh goal), aimed at the target.
 func _start_string(plan: FighterInput, goal: int) -> void:
 	_string_goal = goal
-	_route = mini(profile.route_skill, Route.SPIKE) as Route
+	_route = _ender_route()
 	if _route == Route.LIGHTS:
 		_string_goal = 4
 	_tap(plan, _A.LIGHT)
+
+
+## The best route the AI knows; a launcher only when it can vanish up after it (a lone
+## launcher leaves the target hanging straight overhead: the breaker sends it sideways).
+func _ender_route() -> Route:
+	var route := mini(profile.route_skill, Route.SPIKE) as Route
+	if route == Route.LAUNCHER or (route >= Route.AIR and _ki < _VANISH_KI * FighterState.METER_UNIT):
+		route = Route.BREAKER
+	return route
 
 
 func _start_heavy(plan: FighterInput, direction: Vector2, vertical: int = 0) -> void:
@@ -420,8 +465,10 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 		if target.state != _S.HITSTUN or distance > 6.0:
 			_air_combo = false
 		else:
-			_match_height(me, target, plan)
-			if distance <= light_reach - 0.1 and _may_attack(me):
+			_match_height(me, target, plan, 0.4)
+			if _stacked_on(me, target):
+				plan.move = Vector2(_strafe * 0.5, -1)
+			elif distance <= light_reach - 0.1 and _may_attack(me):
 				_start_string(plan, 3)
 				_route = Route.SPIKE if profile.route_skill >= Route.SPIKE else Route.LIGHTS
 				_string_goal = 3 if _route == Route.SPIKE else 4
@@ -445,8 +492,9 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 	if threat < 99 and _guard(me, threat, plan):
 		return
 	if _step_out:
-		_match_height(me, target, plan)
+		_fight_height(sim, me, target, plan, false)
 		plan.move = Vector2(0, -1) if _edge_gap < 0.8 else Vector2.ZERO
+		_keep_apart(sim, me, target, plan)
 		return
 	var shot := _projectile_ticks(sim, me)
 	if shot <= 14:
@@ -484,16 +532,16 @@ func _punish(sim: CombatSim, me: FighterState, target: FighterState, distance: f
 		_punish_until = -1
 		return false
 	var moves := _moves(me)
-	_match_height(me, target, plan)
+	_fight_height(sim, me, target, plan, true)
 	if not _may_attack(me):
 		plan.move = Vector2(0, 1)
 		return true
 	var left_ticks := _punish_until - _ticks
 	var launcher_reach := move_reach(moves.launcher, target.stats.hurtbox_radius)
 	var breaker_reach := move_reach(moves.breaker, target.stats.hurtbox_radius)
-	if profile.route_skill >= Route.LAUNCHER and distance <= launcher_reach - 0.15 \
+	if _ender_route() >= Route.AIR and distance <= launcher_reach - 0.15 \
 			and moves.launcher and left_ticks > moves.launcher.startup_ticks + 1 and me.is_grounded() == target.is_grounded():
-		_route = mini(profile.route_skill, Route.SPIKE) as Route
+		_route = _ender_route()
 		_string_goal = 1
 		_start_heavy(plan, Vector2(0, -1))
 	elif distance <= light_reach - 0.1:
@@ -533,7 +581,7 @@ func _neutral(sim: CombatSim, me: FighterState, target: FighterState, distance: 
 	if plan.held_actions != 0:
 		return
 	if _plan != Plan.PICKUP:
-		_match_height(me, target, plan)
+		_fight_height(sim, me, target, plan, _plan == Plan.CHASE)
 	var wall := _wall_strafe(sim, me, target)
 	if wall != 0.0:
 		_strafe = wall
@@ -558,9 +606,10 @@ func _neutral(sim: CombatSim, me: FighterState, target: FighterState, distance: 
 			elif distance <= profile.spacing + 1.0:
 				_plan_left = 0
 		Plan.SPACE:
-			if distance > profile.spacing + 0.6:
+			var band := EngagementBand.for_legend(legend)
+			if distance > maxf(profile.spacing + 0.6, band.y):
 				plan.move = Vector2(_strafe * 0.4, 1)
-			elif distance < profile.spacing - 0.6:
+			elif distance < minf(profile.spacing - 0.6, band.x):
 				plan.move = Vector2(_strafe * 0.4, -1)
 			else:
 				plan.move = Vector2(_strafe, 0)
@@ -606,6 +655,8 @@ func _neutral(sim: CombatSim, me: FighterState, target: FighterState, distance: 
 			_go_for_pickup(sim, me, distance, plan)
 		Plan.ZONE:
 			_zone(me, distance, plan)
+	if _plan != Plan.PICKUP and (plan.held_actions & (_A.DASH | _A.GRAB)) == 0:
+		_keep_apart(sim, me, target, plan)
 
 
 ## Utility scores for every neutral plan, plus a little level-scaled noise.
@@ -749,7 +800,17 @@ func _choose_target(sim: CombatSim) -> int:
 		if j == fighter_index or _same_team(j) or other.is_knocked_out():
 			continue
 		var health := float(other.health) / float(other.stats.max_health * FighterState.METER_UNIT)
-		var score := -me.position.distance_to(other.position) / 12.0 + (1.0 - health) * 1.2
+		var offset := other.position - me.position
+		var score := -offset.length() / 12.0 + (1.0 - health) * 1.2
+		# Readable FFA: prefer someone in front, and not someone already crowded.
+		var facing := Basis(Vector3.UP, me.facing_yaw) * Vector3.FORWARD
+		var planar := Vector3(offset.x, 0.0, offset.z)
+		if planar.length() > 0.1:
+			score += 0.1 * planar.normalized().dot(facing)
+		score -= absf(offset.y) / 20.0
+		var crowd := _attackers_on(sim, j)
+		if crowd >= CROWD_LIMIT:
+			score -= 0.9 * (crowd - CROWD_LIMIT + 1)
 		if j == _grudge and _ticks - _grudge_tick < GRUDGE_TICKS:
 			score += 1.5
 		if j == current:
@@ -775,22 +836,116 @@ func _note_hits(sim: CombatSim) -> void:
 			_grudge_tick = _ticks
 
 
-func _match_height(me: FighterState, target: FighterState, plan: FighterInput) -> void:
+func _match_height(me: FighterState, target: FighterState, plan: FighterInput, slack := 0.8) -> void:
 	var dy := target.position.y - me.position.y
-	if dy > 0.8:
+	if dy > slack:
 		plan.vertical = 1
-	elif dy < -0.8:
+	elif dy < -slack:
 		plan.vertical = -1
+
+
+## True when target is more over or under this AI than beside it, up close.
+func _stacked_on(me: FighterState, target: FighterState) -> bool:
+	var offset := target.position - me.position
+	var gap := Vector2(offset.x, offset.z).length()
+	return gap < 1.8 and absf(offset.y) > maxf(gap * 0.8, 0.6)
+
+
+## Fight height: down to the ground unless the target has taken to the air by choice or
+## follow (a chase, a punish) says go after it; then match its height.
+func _fight_height(sim: CombatSim, me: FighterState, target: FighterState, plan: FighterInput,
+		follow: bool) -> void:
+	var target_high := _altitude(sim, target) >= NEAR_GROUND
+	var level_index := clampi(profile.level, AIProfile.MIN_LEVEL, AIProfile.MAX_LEVEL) - 1
+	if target_high and (_target_air_ticks >= AIR_FOLLOW_TICKS[level_index]
+			or (follow and target.state != _S.HITSTUN and target.state != _S.KNOCKDOWN)):
+		_match_height(me, target, plan)
+	elif not me.is_grounded() and _altitude(sim, me) > 0.2:
+		plan.vertical = -1
+
+
+## Never hover over or under anyone up close, and give room to fighters it is not fighting:
+## blends a planar step away into the move.
+func _keep_apart(sim: CombatSim, me: FighterState, target: FighterState, plan: FighterInput) -> void:
+	var to_target := target.position - me.position
+	var away := Vector3.ZERO
+	for j in sim.fighters.size():
+		var other := sim.fighters[j]
+		if j == fighter_index or other.is_knocked_out():
+			continue
+		var offset := me.position - other.position
+		var planar := Vector3(offset.x, 0.0, offset.z)
+		var gap := planar.length()
+		var stacked := gap < STACK_RADIUS and absf(offset.y) > gap * 0.8 and absf(offset.y) > 0.8
+		var crowding := j != _target and offset.length() < CROWD_RADIUS
+		if not stacked and not crowding:
+			continue
+		if gap < 0.05:
+			# Right on top: slide out sideways along the strafe.
+			planar = Basis(Vector3.UP, me.facing_yaw) * Vector3(_strafe, 0.0, 0.0)
+		away += planar.normalized() * (2.0 if stacked else 1.0)
+	if away == Vector3.ZERO:
+		return
+	plan.move = (plan.move * 0.3 + _world_to_move(away.normalized(), to_target)).limit_length(1.0)
+
+
+## A planar world direction as a move input in the lock-on frame (W toward the target).
+func _world_to_move(direction: Vector3, to_target: Vector3) -> Vector2:
+	var planar := Vector3(to_target.x, 0.0, to_target.z)
+	var yaw := atan2(-planar.x, -planar.z) if planar.length() >= 0.5 else 0.0
+	var local := Basis(Vector3.UP, -yaw) * direction
+	return Vector2(local.x, -local.z)
+
+
+## Caps sideways input so the AI never circles its target faster than MAX_ORBIT_RATE.
+func _cap_orbit(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
+	var to_target := sim.fighters[_target].position - me.position
+	var radius := Vector2(to_target.x, to_target.z).length()
+	var speed := _GROUND_SPEED if me.is_grounded() else _FLY_SPEED
+	var limit := clampf(MAX_ORBIT_RATE * radius / speed, 0.2, 1.0)
+	plan.move.x = clampf(plan.move.x, -limit, limit)
+
+
+func _track_target_air(sim: CombatSim) -> void:
+	var target := sim.fighters[_target]
+	if _altitude(sim, target) < NEAR_GROUND:
+		_target_air_ticks = 0
+	elif target.state in [_S.FLYING, _S.DASHING, _S.ATTACKING, _S.BLOCKING, _S.CHARGING]:
+		_target_air_ticks += 1
+
+
+## Other fighters locked onto fighter index and within 8 m of it.
+func _attackers_on(sim: CombatSim, index: int) -> int:
+	var count := 0
+	for j in sim.fighters.size():
+		var other := sim.fighters[j]
+		if j != fighter_index and j != index and other.lock_on_target == index and not other.is_knocked_out() \
+				and other.position.distance_to(sim.fighters[index].position) < 8.0:
+			count += 1
+	return count
+
+
+static func _altitude(sim: CombatSim, fighter: FighterState) -> float:
+	return fighter.position.y - sim._stand_height(fighter)
+
+
+## Plays legend: spacing moves into its band (same personality, no extra rng draws).
+func _take_legend(id: StringName) -> void:
+	legend = id
+	var band := EngagementBand.for_legend(id)
+	var personality := clampf((profile.spacing - 3.6) / 1.4, 0.0, 1.0)
+	profile.spacing = lerpf(band.x, band.y, personality)
 
 
 ## Strafe side that turns this AI back toward the arena centre when near a wall; 0 when clear.
 func _wall_strafe(sim: CombatSim, me: FighterState, target: FighterState) -> float:
 	var half := sim.tuning.arena_half_size - WALL_MARGIN
-	if absf(me.position.x) < half and absf(me.position.z) < half:
+	var from_centre := me.position - Vector3(sim.arena_centre.x, 0.0, sim.arena_centre.y)
+	if absf(from_centre.x) < half and absf(from_centre.z) < half:
 		return 0.0
 	var to_target := target.position - me.position
 	var right := Vector3(-to_target.z, 0.0, to_target.x)
-	return 1.0 if right.dot(-me.position) <= 0.0 else -1.0
+	return 1.0 if right.dot(-from_centre) <= 0.0 else -1.0
 
 
 func _moves(me: FighterState) -> MoveSet:

@@ -22,6 +22,8 @@ extends Resource
 @export var ramp_heights := Vector2(0.0, 100.0)
 ## 0..1: horizontal rock strata on slopes.
 @export var strata := 0.5
+## Ground pattern drawn by the terrain shader.
+@export_enum("none", "streets", "sastrugi") var ground_pattern := 0
 
 @export_group("Atmosphere")
 @export var fog_colors: PackedColorArray = [Color(0.7, 0.8, 0.9), Color(0.9, 0.6, 0.5), Color(0.1, 0.12, 0.2)]
@@ -34,6 +36,14 @@ extends Resource
 @export var sky_top_colors: PackedColorArray = [Color(0.25, 0.45, 0.85), Color(0.3, 0.25, 0.5), Color(0.02, 0.03, 0.08)]
 @export var sky_horizon_colors: PackedColorArray = [Color(0.7, 0.8, 0.95), Color(0.95, 0.55, 0.35), Color(0.08, 0.1, 0.2)]
 @export_enum("clear", "rain", "snow", "embers", "petals") var weather := 0
+## Tonemap exposure per time of day; below 1 keeps bright zones (snow) off white.
+@export var exposures: PackedFloat32Array = [1.0, 1.0, 1.0]
+## Rim light on the fighters only (not the world), per time of day.
+@export var rim_colors: PackedColorArray = [Color(1.0, 0.9, 0.75), Color(1.0, 0.7, 0.5), Color(0.6, 0.75, 1.0)]
+@export var rim_energies: PackedFloat32Array = [0.6, 0.6, 0.5]
+## Rim light direction relative to the camera: degrees around from straight behind the
+## fighters (x) and degrees down from level (y).
+@export var rim_angles := Vector2(35.0, 30.0)
 
 @export_group("Gameplay")
 ## Two spawn points about 40 m apart; y is a minimum, raised above the ground if needed.

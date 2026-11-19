@@ -1,0 +1,143 @@
+{
+	"hitstops": {
+		"breaker": {
+			"10": 1
+		},
+		"lance/light_1": {
+			"4": 1
+		},
+		"lance/light_1+counter": {
+			"8": 2
+		},
+		"lance/light_2": {
+			"4": 3
+		},
+		"lance/light_3": {
+			"7": 3
+		},
+		"launcher": {
+			"7": 2
+		},
+		"light_1": {
+			"3": 3,
+			"5": 2
+		},
+		"light_1+counter": {
+			"9": 1
+		},
+		"light_2": {
+			"3": 2,
+			"5": 3
+		},
+		"light_3": {
+			"3": 2,
+			"8": 3
+		},
+		"light_3+counter": {
+			"12": 1
+		}
+	},
+	"id": "3601:heartbloom_gardens:1v1:vexa,brann:32",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3601,
+	"sim_ms_per_tick": 0.640547222222222,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0116777513176203,
+		"finger_pops_per_fighter_minute": 34.0188993885492,
+		"foot_error_p95_cm": 10.0117976064382,
+		"foot_slide_cm_per_frame": 1.33295806234094,
+		"locked_on_screen_share": 0.993337371290127,
+		"pops_per_fighter_minute": 30.0166759310728
+	},
+	"view_ms_per_frame": 0.645633888888889,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 170,
+			"detail": "lowest sole +40.0 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1164,
+			"worst_value": 0.399733420824134
+		},
+		{
+			"check": "pop",
+			"count": 11,
+			"detail": "RightLowerArm turned 2.00 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 2.00014185905457
+		},
+		{
+			"check": "pop",
+			"count": 19,
+			"detail": "RightHand turned 1.99 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 309,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 714,
+			"worst_value": 1.9935188293457
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 383,
+			"detail": "fighters 0 and 1 overlap 1.05 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 379,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "lance",
+			"worst_tick": 1384,
+			"worst_value": 1.04602646939456
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -7.1 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 662,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 662,
+			"worst_value": -0.071287481147067
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "30 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 30
+		}
+	],
+	"wall_seconds": 15.0,
+	"zone": "heartbloom_gardens"
+}

@@ -1,0 +1,129 @@
+{
+	"hitstops": {
+		"launcher": {
+			"8": 2
+		},
+		"light_1": {
+			"3": 2,
+			"4": 4
+		},
+		"light_1+counter": {
+			"7": 1,
+			"8": 1
+		},
+		"light_2": {
+			"3": 1,
+			"4": 2
+		},
+		"light_3": {
+			"4": 1,
+			"5": 1
+		},
+		"repeater/projectile": {
+			"1": 57
+		}
+	},
+	"id": "2603:heartbloom_gardens:1v1:lyra,kael:54",
+	"kos": 0,
+	"legends": [
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		5,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2603,
+	"sim_ms_per_tick": 2.96015277777778,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.011239243671298,
+		"finger_pops_per_fighter_minute": 40.0222345747638,
+		"foot_error_p95_cm": 3.68285120239307,
+		"foot_slide_cm_per_frame": 0.488433821481201,
+		"locked_on_screen_share": 0.970879440885265,
+		"pops_per_fighter_minute": 28.0155642023346
+	},
+	"view_ms_per_frame": 2.59310611111111,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 21,
+			"detail": "LeftFoot turned 2.42 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1268,
+			"worst_value": 2.4234881401062
+		},
+		{
+			"check": "foot_ground",
+			"count": 13,
+			"detail": "lowest sole +46.9 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 179,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 757,
+			"worst_value": 0.468796911684024
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 153,
+			"detail": "fighters 0 and 1 overlap 0.82 m (ATTACKING vs FLYING)",
+			"fighter": 0,
+			"first_tick": 271,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 644,
+			"worst_value": 0.82086303114891
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -6.0 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 881,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 881,
+			"worst_value": -0.0598039022391958
+		},
+		{
+			"check": "pop",
+			"count": 7,
+			"detail": "RightLowerArm turned 1.92 rad in one frame (ATTACKING, move push_block)",
+			"fighter": 0,
+			"first_tick": 998,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "repeater",
+			"worst_tick": 1384,
+			"worst_value": 1.91700577735901
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "28 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 28
+		}
+	],
+	"wall_seconds": 29.394,
+	"zone": "heartbloom_gardens"
+}
