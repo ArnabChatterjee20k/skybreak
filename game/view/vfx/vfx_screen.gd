@@ -6,7 +6,11 @@ extends CanvasLayer
 enum Mode { LINES, IMPACT, POP, FLASH }
 
 const SKY_POP := Color(0.55, 0.8, 1.0)
-const _TIMED: Array[int] = [Mode.LINES, Mode.POP, Mode.FLASH]
+## Longest white flash, in rendered frames: slow-mo must not stretch it into a whiteout.
+const MAX_FLASH_FRAMES := 4
+## Strongest KO colour pop: a grade, not a wash.
+const MAX_POP := 0.35
+const _TIMED: Array[int] = [Mode.LINES, Mode.POP]
 
 var _rects: Array[ColorRect] = []
 var _left := PackedFloat32Array([0, 0, 0, 0])
@@ -14,6 +18,8 @@ var _length := PackedFloat32Array([1, 1, 1, 1])
 var _peak := PackedFloat32Array([1, 1, 1, 1])
 ## Impact frames hold for whole rendered frames, not seconds.
 var _impact_frames := 0
+var _flash_frames := 0
+var _flash_length := 1
 
 
 func _init() -> void:
@@ -38,25 +44,30 @@ func burst_lines(center: Vector2, color: Color, seconds: float = 0.3) -> void:
 	_start(Mode.LINES, seconds, 1.0)
 
 
-## A two-tone manga frame for `frames` rendered frames.
+## A two-tone manga frame for `frames` rendered frames, kept off the screen centre.
 func impact(color: Color, center: Vector2, frames: int = 2) -> void:
 	_param(Mode.IMPACT, "color", color)
 	_param(Mode.IMPACT, "center", center)
 	_impact_frames = maxi(frames, 1)
-	_peak[Mode.IMPACT] = 0.92
+	_peak[Mode.IMPACT] = 0.85
 	_rects[Mode.IMPACT].visible = true
-	_param(Mode.IMPACT, &"amount", 0.92)
+	_param(Mode.IMPACT, &"amount", 0.85)
 
 
-## The KO colour pop toward a sky tint, fading over `seconds`.
-func color_pop(tint: Color = SKY_POP, seconds: float = 1.1) -> void:
+## The KO colour pop toward a sky tint, fading over `seconds`; capped at MAX_POP.
+func color_pop(tint: Color = SKY_POP, seconds: float = 0.6, strength: float = 0.25) -> void:
 	_param(Mode.POP, "color", tint)
-	_start(Mode.POP, seconds, 0.85)
+	_start(Mode.POP, seconds, minf(strength, MAX_POP))
 
 
-func flash(seconds: float = 0.12, strength: float = 0.8) -> void:
+## An edge-weighted white flash fading over `frames` rendered frames (at most MAX_FLASH_FRAMES).
+func flash(frames: int = MAX_FLASH_FRAMES, strength: float = 0.45) -> void:
 	_param(Mode.FLASH, "color", Color.WHITE)
-	_start(Mode.FLASH, seconds, strength)
+	_flash_length = clampi(frames, 1, MAX_FLASH_FRAMES)
+	_flash_frames = _flash_length
+	_peak[Mode.FLASH] = strength
+	_param(Mode.FLASH, &"amount", strength)
+	_rects[Mode.FLASH].visible = true
 
 
 func is_active(mode: Mode) -> bool:
@@ -80,6 +91,10 @@ func advance(delta: float) -> void:
 		_impact_frames -= 1
 		if _impact_frames == 0:
 			_rects[Mode.IMPACT].visible = false
+	if _flash_frames > 0:
+		_flash_frames -= 1
+		_rects[Mode.FLASH].visible = _flash_frames > 0
+		_param(Mode.FLASH, &"amount", _peak[Mode.FLASH] * float(_flash_frames) / _flash_length)
 	for mode in _TIMED:
 		if _left[mode] <= 0.0:
 			continue
