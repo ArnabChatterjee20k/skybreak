@@ -4,10 +4,20 @@ extends GutTest
 const LOBBY_PATH := "res://game/net/duo_lobby.tscn"
 
 
-func test_the_lobby_scene_opens_with_host_and_join() -> void:
-	var lobby: DuoLobby = add_child_autofree((load(LOBBY_PATH) as PackedScene).instantiate())
+## A lobby that never reads the player's real remembered session.
+func _new_lobby() -> DuoLobby:
+	var lobby: DuoLobby = (load(LOBBY_PATH) as PackedScene).instantiate()
+	lobby.session_store = SessionStore.new("user://test_duo_lobby_none.cfg",
+		"user://test_duo_lobby_none.key")
+	return add_child_autofree(lobby)
+
+
+func test_the_lobby_scene_opens_with_sign_in_host_and_join() -> void:
+	var lobby := _new_lobby()
 	assert_not_null(lobby.get_node("%HostButton"))
 	assert_not_null(lobby.get_node("%JoinButton"))
+	assert_true(lobby.get_node("%PasswordField").secret, "password is masked")
+	assert_true(lobby.get_node("%SignInBox").visible)
 	assert_not_null(lobby.signalling)
 	assert_null(lobby.session)
 
@@ -16,7 +26,7 @@ func test_without_webrtc_the_lobby_says_so_instead_of_signing_in() -> void:
 	if WebRtcTransport.is_available():
 		pass_test("WebRTC is available in this build")
 		return
-	var lobby: DuoLobby = add_child_autofree((load(LOBBY_PATH) as PackedScene).instantiate())
+	var lobby := _new_lobby()
 	lobby.get_node("%HostButton").pressed.emit()
 	assert_string_contains(lobby.get_node("%Status").text, "webrtc-native")
 	assert_eq(lobby.signalling.client.user_id, "", "never signed in")
@@ -24,7 +34,7 @@ func test_without_webrtc_the_lobby_says_so_instead_of_signing_in() -> void:
 
 
 func test_a_short_code_is_refused() -> void:
-	var lobby: DuoLobby = add_child_autofree((load(LOBBY_PATH) as PackedScene).instantiate())
+	var lobby := _new_lobby()
 	lobby.get_node("%CodeField").text = "AB"
 	lobby.get_node("%JoinButton").pressed.emit()
 	assert_string_contains(lobby.get_node("%Status").text, "5-letter")

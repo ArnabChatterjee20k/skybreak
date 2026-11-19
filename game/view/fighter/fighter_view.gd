@@ -4,7 +4,9 @@ extends Node3D
 ## shows its facing. It leans into its movement and hides while vanished.
 ## Interpolates between the last two sim ticks so it is smooth at any fps.
 
-## Lean at full speed, in radians. Dashes lean harder.
+## Lean at full speed, in radians. Dashes lean harder. Only for the capsule and characters
+## without MotionLayers: a character with layers leans its own body (one lean source, see
+## game/characters/motion/README.md), so the body node stays upright.
 const MAX_LEAN := deg_to_rad(18.0)
 const MAX_DASH_LEAN := deg_to_rad(32.0)
 ## Speed (m/s) that gives full lean when not dashing.
@@ -109,7 +111,7 @@ func present(blend: float, delta: float) -> void:
 	position = _previous_position.lerp(fighter.position, blend)
 	var yaw := lerp_angle(_previous_yaw, fighter.facing_yaw, blend)
 	var dashing := fighter.state == FighterState.State.DASHING
-	var goal := lean_for(fighter.velocity, fighter.facing_yaw,
+	var goal := Vector2.ZERO if leans_itself() else lean_for(fighter.velocity, fighter.facing_yaw,
 		MAX_DASH_LEAN if dashing else MAX_LEAN)
 	_lean = _lean.lerp(goal, 1.0 - exp(-LEAN_SHARPNESS * delta))
 	_body.basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, _lean.x) * Basis(Vector3.BACK, _lean.y)
@@ -140,6 +142,11 @@ func fade_for_camera(camera_position: Vector3) -> void:
 
 func camera_fade() -> float:
 	return _camera_fade
+
+
+## True when the character model leans its own body (MotionLayers), so the body node doesn't.
+func leans_itself() -> bool:
+	return _character != null and _character.layers != null
 
 
 ## Lean angles for a velocity: x = pitch (negative leans forward),
