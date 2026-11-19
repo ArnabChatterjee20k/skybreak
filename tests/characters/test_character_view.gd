@@ -126,12 +126,12 @@ func test_apply_state_handles_every_attack_phase() -> void:
 
 func test_states_pick_their_clips() -> void:
 	var expected := {
-		FighterState.State.IDLE: &"idle",
+		FighterState.State.IDLE: &"fight_stance",
 		FighterState.State.MOVING: &"run",
-		FighterState.State.FLYING: &"hover",
+		FighterState.State.FLYING: &"fly_hover",
 		FighterState.State.FALLING: &"fall",
 		FighterState.State.DASHING: &"dash",
-		FighterState.State.CHARGING: &"charge",
+		FighterState.State.CHARGING: &"power_up_start",
 		FighterState.State.GUARD_BROKEN: &"guard_broken",
 	}
 	for state_value: int in expected:
@@ -152,7 +152,7 @@ func test_fast_flight_and_blocking_pick_their_clips() -> void:
 
 
 func test_states_added_later_fall_back_or_map_by_name() -> void:
-	assert_eq(_view.clips.clip_for_state(&"NOT_A_STATE"), &"idle")
+	assert_eq(_view.clips.clip_for_state(&"NOT_A_STATE"), &"fight_stance")
 	assert_eq(_view.clips.clip_for_state(&"HITSTUN"), &"hit")
 	assert_eq(_view.clips.clip_for_state(&"KNOCKDOWN"), &"knockdown")
 
