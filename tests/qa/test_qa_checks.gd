@@ -81,10 +81,29 @@ func test_leaving_the_arena_box_is_caught() -> void:
 
 func test_overlapping_bodies_are_caught_but_touching_ones_are_not() -> void:
 	var sim := _sim()
-	sim.fighters[1].position = sim.fighters[0].position + Vector3(0, 0, 1.0)
-	assert_eq(QaSimChecks.check_overlap(sim).size(), 0, "1 m apart: capsules of 0.5 m just touch")
-	sim.fighters[1].position = sim.fighters[0].position + Vector3(0, 0, 0.5)
+	var touch := sim.fighters[0].stats.pushbox_radius + sim.fighters[1].stats.pushbox_radius
+	sim.fighters[1].position = sim.fighters[0].position + Vector3(0, 0, touch)
+	assert_eq(QaSimChecks.check_overlap(sim).size(), 0, "pushboxes just touching")
+	sim.fighters[1].position = sim.fighters[0].position + Vector3(0, 0, touch * 0.5)
 	assert_eq(_checks(QaSimChecks.check_overlap(sim)), ["fighter_overlap"])
+
+
+func test_overlap_measures_pushboxes_not_the_wider_hurtboxes() -> void:
+	var sim := _sim()
+	for f in sim.fighters:
+		f.stats = f.stats.duplicate()
+		f.stats.hurtbox_radius = 0.8
+		f.stats.pushbox_radius = 0.4
+	# 0.8 m apart: hurtboxes overlap by 0.8 m, pushboxes just touch.
+	sim.fighters[1].position = sim.fighters[0].position + Vector3(0, 0, 0.8)
+	assert_eq(QaSimChecks.check_overlap(sim).size(), 0)
+
+
+func test_a_grab_pair_may_overlap() -> void:
+	var sim := _sim()
+	sim.fighters[1].position = sim.fighters[0].position + Vector3(0, 0, 0.2)
+	sim.fighters[0].grab_partner = 1
+	assert_eq(QaSimChecks.check_overlap(sim).size(), 0)
 
 
 func test_a_new_round_away_from_the_spawns_is_caught() -> void:
