@@ -179,6 +179,16 @@ var combo_starter_percent: int = 100
 # Powers and gadgets (T-D26).
 var powers := FighterPowers.new()
 
+# Pushback (T-D29): a hit or block slides the target apart from its attacker.
+## Slide per second still owed, zero when none.
+var pushback_velocity: Vector3 = Vector3.ZERO
+var pushback_ticks: int = 0
+## Attacker that takes whatever part of the slide a wall stops, or -1.
+var pushback_from: int = -1
+
+## States whose body other fighters pass through: vanished, or lying knocked out.
+const PUSHBOX_FREE_STATES: Array[State] = [State.VANISHING, State.KO_DOWN]
+
 
 ## Switches to new_state and restarts the tick counter, even if it is the same state.
 ## Leaving ATTACKING clears the attack; leaving HITSTUN ends the combo. Any change drops the vanish anchor.
@@ -200,6 +210,13 @@ func enter_state(new_state: State) -> void:
 		combo_starter_percent = 100
 	if new_state != State.KO_FALL and new_state != State.KO_DOWN:
 		ko_bounced = false
+	clear_pushback()
+
+
+func clear_pushback() -> void:
+	pushback_velocity = Vector3.ZERO
+	pushback_ticks = 0
+	pushback_from = -1
 
 
 ## Starts performing new_move from its first startup tick.
@@ -269,6 +286,23 @@ func aim_basis() -> Basis:
 func hurtbox() -> Dictionary:
 	var half := Vector3.UP * maxf(stats.hurtbox_height * 0.5 - stats.hurtbox_radius, 0.0)
 	return {"start": position - half, "end": position + half, "radius": stats.hurtbox_radius}
+
+
+## The solid body as a vertical capsule centred on position, as {start, end, radius}.
+func pushbox() -> Dictionary:
+	return pushbox_at(position)
+
+
+func pushbox_at(at: Vector3) -> Dictionary:
+	var half := Vector3.UP * maxf(stats.pushbox_height * 0.5 - stats.pushbox_radius, 0.0)
+	return {"start": at - half, "end": at + half, "radius": stats.pushbox_radius}
+
+
+## True while other fighters pass through this one: vanish, KO on the floor, or a move's pass-through step.
+func ignores_pushbox() -> bool:
+	if state in PUSHBOX_FREE_STATES:
+		return true
+	return move != null and move.ignores_pushbox and attack_phase() == AttackPhase.STARTUP
 
 
 ## True if a hitbox centred at point hits the upper body (above mid-height).
@@ -346,6 +380,7 @@ func state_values() -> Array:
 		weapons, ammo, active_slot, switch_lockout, reload_ticks,
 		smitten_ticks, smitten_by, ticks_since_smitten,
 		team, ko_bounced,
+		pushback_velocity, pushback_ticks, pushback_from,
 		last_slot, heat, overheated, draw_ticks, pin_ticks, pinned,
 		tether_partner, tether_ticks, tether_length, combo_starter_percent,
 	] + powers.state_values()

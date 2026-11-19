@@ -137,6 +137,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D29 [desktop] Pushboxes: per-fighter capsule bodies from `FighterStats` (radius, height, mass; Brann 2.5, Lyra 0.8) resolved in index order after movement, mass-weighted, planar on the floor, wall-aware, swept so rushes and flight never tunnel; closing speed stops at contact; vanish, KO on the floor, a grab pair and Lyra's Star-Step pass through; hit/block pushback that moves the attacker when the defender is pinned; strafe orbit capped at 180 deg/s (matches the camera turn cap) so point-blank never outruns the camera; `FighterView` fades a body pressed against the camera. Follow-ups: strike/guard clips lean heads together at contact (CharacterView could ease the lean when an opponent is touching); both fighters circling opposite ways still hides the opponent in up to ~5% of frames (owner: lower `max_orbit_turn_speed`?).
 - T-D15 [desktop] Rollback core + Duo online prototype: `CombatSim.snapshot()`/
   `restore()` (reflection deep copy, `SimSnapshot`), compact `InputCodec` (8-18 B),
   transport-agnostic `RollbackSession` (2-tick delay, prediction, 8-tick rollback,

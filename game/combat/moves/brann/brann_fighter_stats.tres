@@ -11,4 +11,7 @@ vanish_counter_ki_cost = 35
 second_vanish_counter_ki_cost = 55
 hurtbox_radius = 0.6
 hurtbox_height = 2.15
+pushbox_radius = 0.62
+pushbox_height = 2.05
+mass = 2.5
 move_set = ExtResource("2_moves")
