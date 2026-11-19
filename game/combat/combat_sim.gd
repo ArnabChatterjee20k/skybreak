@@ -524,9 +524,13 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 			_move_ko_down(fighter)
 	# Haste stretches this tick's travel without changing the stored velocity.
 	var speed := PowerRules.speed_percent(fighter) / 100.0
+	var from := fighter.position
+	var on_floor := ground_height.is_valid() and _is_on_floor(fighter)
 	fighter.velocity *= speed
 	_integrate(index)
 	fighter.velocity /= speed
+	if on_floor:
+		_stop_at_cliff(fighter, from)
 	_drift_if_smitten(fighter)
 	if fighter.state == FighterState.State.HITSTUN:
 		_bounce_or_knock_down(fighter)
@@ -1727,6 +1731,24 @@ func _clamp_to_arena(fighter: FighterState) -> void:
 	fighter.position = clamped
 
 
+## A fighter on the floor walks up slopes up to _MAX_CLIMB_SLOPE; a steeper face
+## (a cliff, which the 2 m ground grid bakes as a ramp) stops it like a wall
+## instead of lifting it up the face (QA-12c).
+func _stop_at_cliff(fighter: FighterState, from: Vector3) -> void:
+	var stand := _stand_height(fighter)
+	var climb := stand - from.y
+	if climb <= _STEP_UP or fighter.position.y >= stand:
+		return
+	var planar_sq := (fighter.position.x - from.x) * (fighter.position.x - from.x) \
+		+ (fighter.position.z - from.z) * (fighter.position.z - from.z)
+	if climb * climb <= planar_sq * _MAX_CLIMB_SLOPE * _MAX_CLIMB_SLOPE:
+		return
+	fighter.position.x = from.x
+	fighter.position.z = from.z
+	fighter.velocity.x = 0.0
+	fighter.velocity.z = 0.0
+
+
 ## Puts a fighter moved from outside its own step (a pushbox) back inside the
 ## arena and above the floor, and refreshes its stand height.
 func settle(fighter: FighterState) -> void:
@@ -2000,6 +2022,10 @@ static func _action_index(action: int) -> int:
 const _FIGHTER_HALF_HEIGHT := 1.0
 ## A grounded fighter whose floor drops by more than this in a tick falls instead.
 const _LEDGE_DROP := 0.75
+## Rise per tick a grounded fighter always takes (small steps, quantised ground).
+const _STEP_UP := 0.05
+## Steepest ground a fighter walks up, as rise over run (tan 60 degrees).
+const _MAX_CLIMB_SLOPE := 1.7320508
 ## Positions are 32-bit; a floor this close counts as touching.
 const _FLOOR_EPSILON := 0.001
 ## States a smitten fighter drifts in.

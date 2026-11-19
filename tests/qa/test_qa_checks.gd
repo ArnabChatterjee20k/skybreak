@@ -103,3 +103,55 @@ func test_every_visual_shot_names_a_valid_match() -> void:
 		names[shot.name] = true
 	assert_eq(names.size(), QaShots.all().size())
 	assert_between(names.size(), 12, 16)
+
+
+func _idle_at(x: float) -> FighterState:
+	var fighter := FighterState.new()
+	fighter.position = Vector3(x, 1.0, 0.0)
+	fighter.state = FighterState.State.IDLE
+	return fighter
+
+
+## Feeds one presented frame of fighter 0's planted foot at foot_x to the slide metric.
+func _slide_frame(checks: QaViewChecks, frame: int, body_x: float, foot_x: float, lowest := 0.0) -> void:
+	checks.frames = frame
+	checks._measure_slide(0, _idle_at(body_x), lowest, 7, Vector3(foot_x, 0.0, 0.0))
+
+
+func test_a_planted_foot_moving_between_two_frames_counts_as_slide() -> void:
+	var checks := QaViewChecks.new(null)
+	_slide_frame(checks, 20, 0.0, 0.0)
+	_slide_frame(checks, 21, 0.0, 0.02)
+	assert_eq(checks.foot_slide_frames, 1)
+	assert_almost_eq(checks.foot_slide_sum, 0.02, 0.0001)
+
+
+func test_a_vanish_teleport_is_not_a_slide() -> void:
+	var checks := QaViewChecks.new(null)
+	_slide_frame(checks, 20, 0.0, 0.0)
+	_slide_frame(checks, 21, 5.28, 5.28)
+	assert_eq(checks.foot_slide_frames, 0)
+	assert_eq(checks.foot_slide_sum, 0.0)
+
+
+func test_frames_hidden_in_between_break_the_slide_chain() -> void:
+	var checks := QaViewChecks.new(null)
+	_slide_frame(checks, 20, 0.0, 0.0)
+	_slide_frame(checks, 26, 0.3, 0.3)
+	assert_eq(checks.foot_slide_frames, 0)
+
+
+func test_the_first_frames_of_a_match_are_not_measured() -> void:
+	var checks := QaViewChecks.new(null)
+	_slide_frame(checks, 1, 0.0, 0.0)
+	_slide_frame(checks, 2, 0.0, 0.4)
+	assert_eq(checks.foot_slide_frames, 0)
+
+
+func test_a_floating_foot_is_left_out_of_the_slide_and_counted_as_skipped() -> void:
+	var checks := QaViewChecks.new(null)
+	_slide_frame(checks, 20, 0.0, 0.0)
+	_slide_frame(checks, 21, 0.0, 0.1, QaViewChecks.FOOT_TOLERANCE + 0.03)
+	_slide_frame(checks, 22, 0.0, 0.1)
+	assert_eq(checks.foot_slide_frames, 0)
+	assert_eq(checks.foot_slide_skipped, 1)

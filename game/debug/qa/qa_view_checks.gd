@@ -26,6 +26,12 @@ const SCREEN := Vector2(1920, 1080)
 ## States in which a planted foot must touch the ground; MOVING only may not sink.
 const STANDING_STATES: Array[FighterState.State] = [FighterState.State.IDLE,
 	FighterState.State.BLOCKING, FighterState.State.CHARGING]
+# Foot slide: a foot within FOOT_TOLERANCE of the ground in two consecutive presented
+# frames of IDLE counts; floating, sinking or hidden frames break the chain.
+## Frames after a match or round start in which slide is not measured (spawn settle).
+const SLIDE_SETTLE_FRAMES := 10
+## A sim move this large between two frames is a teleport (vanish, reset), not a slide (m).
+const TELEPORT_DISTANCE := 0.5
 const FOOT_BONES: Array[StringName] = [&"LeftFoot", &"RightFoot"]
 const TORSO_BONES: Array[StringName] = [&"Hips", &"UpperChest"]
 
@@ -46,13 +52,20 @@ var grounded_frames := 0
 var foot_errors: Array[float] = []
 var foot_slide_sum := 0.0
 var foot_slide_frames := 0
+## IDLE frames whose lowest foot was off the ground, so left out of the slide.
+var foot_slide_skipped := 0
 var camera_jerk: Array[float] = []
 var _camera_forward: Array[Vector3] = []
+## Per fighter: {bone, at, frame, body} of the planted foot last frame.
 var _planted_previous := {}
+var _settle_until := SLIDE_SETTLE_FRAMES
+var _phase := -1
 
 
 func _init(match_level: ZoneMatch) -> void:
 	level = match_level
+	if level == null:
+		return
 	for view in level.fighter_views:
 		_rigs.append(_rig_of(view))
 
@@ -61,6 +74,12 @@ func _init(match_level: ZoneMatch) -> void:
 func check_frame() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	frames += 1
+	var phase: int = level.match_flow.phase
+	if phase != _phase and phase == MatchFlow.Phase.INTRO:
+		# New round: everyone is put back on a spawn.
+		_planted_previous.clear()
+		_settle_until = frames + SLIDE_SETTLE_FRAMES
+	_phase = phase
 	for i in _rigs.size():
 		_check_rig(i, out)
 	_check_camera(out)
@@ -95,6 +114,8 @@ func metrics() -> Dictionary:
 		"finger_pops_per_fighter_minute": finger_pops / maxf(minutes, 0.0001),
 		"foot_error_p95_cm": _p95(foot_errors) * 100.0,
 		"foot_slide_cm_per_frame": foot_slide_sum / maxf(foot_slide_frames, 1) * 100.0,
+		"foot_slide_frames": foot_slide_frames,
+		"foot_slide_skipped_frames": foot_slide_skipped,
 		"camera_jerk_p95": _p95(camera_jerk),
 		"locked_on_screen_share": float(locked_on_screen_frames) / maxf(locked_frames, 1),
 	}
@@ -183,7 +204,8 @@ func _check_rig(i: int, out: Array[Dictionary]) -> void:
 		out.append({"check": "pop", "fighter": i, "value": worst, "limit": POP_ANGLE,
 			"detail": "%s turned %.2f rad in one frame (%s, move %s, clip %s)" % [skeleton.get_bone_name(worst_bone),
 			worst, FighterState.State.find_key(fighter.state), fighter.move_id(), _clip_of(i)]})
-	if not view.visible:
+	if not view.visible or fighter.state == FighterState.State.VANISHING:
+		_planted_previous.erase(i)
 		return
 	_check_feet(i, rig, skeleton, fighter, out)
 	_check_weapon(i, rig, skeleton, fighter, out)
@@ -219,16 +241,28 @@ func _check_feet(i: int, rig: Dictionary, skeleton: Skeleton3D, fighter: Fighter
 		out.append({"check": "foot_ground", "fighter": i, "value": lowest, "limit": FOOT_TOLERANCE,
 			"detail": "lowest sole %+.1f cm off the visible ground (%s, clip %s)" % [lowest * 100.0,
 			FighterState.State.find_key(fighter.state), _clip_of(i)]})
-	if fighter.state == FighterState.State.IDLE and absf(lowest) < 0.03:
-		# The same foot as last frame; when the other foot becomes the lowest, that is no slide.
-		var previous: Dictionary = _planted_previous.get(i, {})
-		if previous.get(&"bone", -1) == lowest_bone:
-			var at: Vector3 = previous.at
-			foot_slide_sum += Vector2(lowest_at.x - at.x, lowest_at.z - at.z).length()
-			foot_slide_frames += 1
-		_planted_previous[i] = {&"bone": lowest_bone, &"at": lowest_at}
-	else:
+	_measure_slide(i, fighter, lowest, lowest_bone, lowest_at)
+
+
+## Planar travel of the planted foot since the previous frame, when the same foot was
+## planted then too, that frame was the one just before, and the fighter did not teleport.
+func _measure_slide(i: int, fighter: FighterState, lowest: float, bone: int, at: Vector3) -> void:
+	if fighter.state != FighterState.State.IDLE:
 		_planted_previous.erase(i)
+		return
+	if absf(lowest) > FOOT_TOLERANCE:
+		foot_slide_skipped += 1
+		_planted_previous.erase(i)
+		return
+	var body := Vector2(fighter.position.x, fighter.position.z)
+	var previous: Dictionary = _planted_previous.get(i, {})
+	# When the other foot becomes the lowest, that is no slide.
+	if previous.get(&"bone", -1) == bone and previous.frame == frames - 1 and frames > _settle_until \
+			and body.distance_to(previous.body) < TELEPORT_DISTANCE:
+		var was: Vector3 = previous.at
+		foot_slide_sum += Vector2(at.x - was.x, at.z - was.z).length()
+		foot_slide_frames += 1
+	_planted_previous[i] = {&"bone": bone, &"at": at, &"frame": frames, &"body": body}
 
 
 func _check_weapon(i: int, rig: Dictionary, skeleton: Skeleton3D, fighter: FighterState, out: Array[Dictionary]) -> void:
