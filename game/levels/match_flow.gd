@@ -29,6 +29,8 @@ var timer_ticks := ROUND_SECONDS * TICKS_PER_SECOND
 var last_winner := -1
 ## True when the last round ended on time instead of a KO.
 var timed_out := false
+## Where fighters start each new round; empty means the sim's own (the arena's starts).
+var spawn_points: Array[Vector3] = []
 
 
 func _init(fighter_count: int = 2) -> void:
@@ -52,9 +54,9 @@ func step(sim: CombatSim) -> void:
 		Phase.FIGHT:
 			timer_ticks = maxi(timer_ticks - 1, 0)
 			if sim.round_over:
-				_finish_round(sim.round_winner, false)
+				_finish_round(sim, sim.round_winner, false)
 			elif timer_ticks == 0:
-				_finish_round(_leader(sim), true)
+				_finish_round(sim, _leader(sim), true)
 		Phase.KO:
 			if phase_ticks >= KO_TICKS:
 				if wins.max() >= WINS_NEEDED:
@@ -62,7 +64,7 @@ func step(sim: CombatSim) -> void:
 				else:
 					round_number += 1
 					timer_ticks = ROUND_SECONDS * TICKS_PER_SECOND
-					sim.start_round()
+					sim.start_round(spawn_points)
 					_enter(Phase.INTRO)
 
 
@@ -93,11 +95,14 @@ func seconds_left() -> int:
 	return ceili(float(timer_ticks) / TICKS_PER_SECOND)
 
 
-func _finish_round(winner: int, on_time: bool) -> void:
+## The winner and its teammates each score the round.
+func _finish_round(sim: CombatSim, winner: int, on_time: bool) -> void:
 	last_winner = winner
 	timed_out = on_time
 	if winner >= 0:
-		wins[winner] += 1
+		for i in mini(wins.size(), sim.fighters.size()):
+			if sim.fighters[i].team == sim.fighters[winner].team:
+				wins[i] += 1
 	_enter(Phase.KO)
 
 
