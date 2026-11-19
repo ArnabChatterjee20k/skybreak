@@ -132,6 +132,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D24 [desktop] Brann playable: FigureKit stone smith (merged mesh, ember cracks, apron, braided beard, boulder shoulders, stowed hammer and cannon), P1/P2 palettes, heavy armoured MoveSet and stats, posed move clips, roster entry, renders. Open: per-fighter flight speed needs a FighterStats field.
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
