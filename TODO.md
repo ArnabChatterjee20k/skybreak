@@ -38,6 +38,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D10b [desktop] Original fighting clips authored as keyframes in code
   (stance, power-up, superhero flight, air dash, kicks, uppercut); Kael
   remapped to them. Stacked on PR #34.
+- T-D11b [desktop] Kael in the chunky Brawlhalla-style look (GAME_DESIGN §6),
+  built procedurally: humanoid-profile rig + scarf chain with procedural lag,
+  shared clips plus snappy own clips, stacked on T-D10.
 
 ## Backlog
 
