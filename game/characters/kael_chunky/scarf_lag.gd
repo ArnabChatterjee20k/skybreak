@@ -16,6 +16,9 @@ const MAX_STEPS := 4
 @export_range(0.0, 1.0) var damping := 0.86
 ## Downward pull, m/s^2, on top of the spring.
 @export var gravity := 3.0
+## How far the rest shape droops toward straight down (0 = rigid with the chest, 1 = plumb), so
+## the scarf hangs instead of sticking out when he leans.
+@export_range(0.0, 1.0) var hang := 0.65
 
 var _bone_ids: PackedInt32Array = []
 ## Each bone's tail in its own rest frame.
@@ -96,12 +99,25 @@ func _ensure_chain(skeleton: Skeleton3D) -> bool:
 
 ## Joint positions of the animated chain (world space): every bone's head, then the last tail.
 func _targets(skeleton: Skeleton3D, to_world: Transform3D) -> PackedVector3Array:
-	var targets := PackedVector3Array()
+	var animated := PackedVector3Array()
 	for i in _bone_ids.size():
-		targets.append(to_world * skeleton.get_bone_global_pose(_bone_ids[i]).origin)
+		animated.append(to_world * skeleton.get_bone_global_pose(_bone_ids[i]).origin)
 	var last := skeleton.get_bone_global_pose(_bone_ids[-1])
-	targets.append(to_world * (last * _tails[-1]))
-	return targets
+	animated.append(to_world * (last * _tails[-1]))
+	return droop(animated, hang)
+
+
+## The chain re-laid from its root with each segment turned toward straight down by amount.
+static func droop(chain: PackedVector3Array, amount: float) -> PackedVector3Array:
+	var out := PackedVector3Array([chain[0]])
+	for i in range(1, chain.size()):
+		var segment := chain[i] - chain[i - 1]
+		var length := segment.length()
+		var direction := segment.normalized().lerp(Vector3.DOWN, amount)
+		if direction.length() < 0.0001:
+			direction = Vector3.DOWN
+		out.append(out[i - 1] + direction.normalized() * length)
+	return out
 
 
 ## Turns each chain bone so its tail points at the next simulated joint.

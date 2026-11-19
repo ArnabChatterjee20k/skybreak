@@ -320,6 +320,13 @@ func test_the_scarf_lag_is_deterministic() -> void:
 	second.free()
 
 
+func test_the_scarf_hangs_down_when_he_leans() -> void:
+	var leaning := PackedVector3Array([Vector3.ZERO, Vector3(0, 0, 0.2), Vector3(0, 0, 0.4)])
+	var hanging := ScarfLag.droop(leaning, 0.65)
+	assert_lt(hanging[-1].y, -0.2, "a scarf pointing straight back droops")
+	assert_almost_eq(hanging[0].distance_to(hanging[1]), 0.2, 0.0001, "segment lengths are kept")
+
+
 func test_the_scarf_moves_in_the_scene() -> void:
 	_fighter.enter_state(FighterState.State.IDLE)
 	for _frame in 5:
