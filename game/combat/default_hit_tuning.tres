@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HitTuning" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/hit_tuning.gd" id="1_tuning"]
+
+[resource]
+script = ExtResource("1_tuning")
+scaling_step_percent = 8
+scaling_floor_percent = 30
+ultimate_scaling_floor_percent = 50
+hitstun_decay_after_hit = 8
+hitstun_decay_per_hit = 2
+min_hitstun_ticks = 4
+knockdown_ticks = 40
+counter_hit_extra_hitstop_ticks = 4
+blocked_hitstop_percent = 50
+guard_break_hitstop_ticks = 14
+knockout_hitstop_ticks = 20
+knockback_drag = 30.0
+juggle_gravity = 30.0
+spike_bounce_speed = 8.0

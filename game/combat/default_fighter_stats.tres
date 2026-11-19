@@ -9,4 +9,6 @@ max_health = 10000
 guard_max = 100
 vanish_counter_ki_cost = 25
 second_vanish_counter_ki_cost = 40
+hurtbox_radius = 0.5
+hurtbox_height = 2.0
 move_set = ExtResource("2_moves")

@@ -10,5 +10,9 @@ extends Resource
 @export var vanish_counter_ki_cost: int = 25
 ## Ki cost of the second vanish counter in the same exchange (used from T-D06).
 @export var second_vanish_counter_ki_cost: int = 40
+## Hurtbox: a vertical capsule centred on the fighter's position, in metres.
+@export var hurtbox_radius: float = 0.5
+## Full capsule height, end caps included.
+@export var hurtbox_height: float = 2.0
 ## Which move each attack input performs.
 @export var move_set: MoveSet
