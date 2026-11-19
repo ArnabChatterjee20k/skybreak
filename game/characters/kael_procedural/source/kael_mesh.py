@@ -79,8 +79,8 @@ def _finger_bones(sign):
 def _torso_profile(scale=1.0, extra=0.0):
 	# (z, rx, ry, forward offset, squareness)
 	rows = [
-		(0.93, 0.150, 0.100, 0.000, 2.2),
-		(1.03, 0.138, 0.096, 0.000, 2.2),
+		(1.02, 0.128, 0.092, 0.000, 2.2),
+		(1.06, 0.124, 0.091, 0.000, 2.2),
 		(1.11, 0.118, 0.090, -0.003, 2.3),
 		(1.22, 0.150, 0.104, -0.010, 2.5),
 		(1.32, 0.182, 0.112, -0.016, 2.7),
@@ -114,11 +114,10 @@ def build_undershirt():
 
 def build_gi_top():
 	"""Sleeveless gi top: a shell over the torso with a V neck and armholes; the hem flares below the belt."""
-	part = Part("gi_top", "gi_orange", TORSO + ["LeftUpperLeg", "RightUpperLeg", "LeftUpperArm", "RightUpperArm"])
+	part = Part("gi_top", "gi_orange", TORSO + ["LeftUpperArm", "RightUpperArm"])
+	part.keep_winding = True
 	rows = [
-		(0.905, 0.192, 0.142, 0.0, 2.3),
-		(0.965, 0.170, 0.124, 0.0, 2.3),
-		(1.03, 0.150, 0.110, 0.0, 2.3),
+		(1.045, 0.138, 0.102, 0.0, 2.3),
 		(1.11, 0.132, 0.101, -0.003, 2.3),
 		(1.22, 0.163, 0.116, -0.010, 2.6),
 		(1.32, 0.196, 0.124, -0.016, 2.8),
@@ -133,18 +132,18 @@ def build_gi_top():
 	offs = [(0.0, r[3]) for r in rows]
 
 	def folds(t, a, p):
-		# Soft vertical folds on the skirt below the belt.
-		if p.z > 1.0:
+		# Soft blousing folds where the top tucks under the belt.
+		if p.z > 1.2:
 			return 1.0
-		k = (1.0 - p.z) / 0.1
-		return 1.0 + 0.04 * k * math.sin(a * 7 + 0.6)
+		k = (1.2 - p.z) / 0.16
+		return 1.0 + 0.03 * k * max(0.0, math.sin(a * 6 + 0.6))
 
 	loft(part, path, radii, sides=32, samples=4, side_ref=(1, 0, 0), squareness=sq, offsets=offs,
 		cap_start=False, cap_end=False, radial=folds)
 	_cut(part, _gi_opening)
 	for loop in boundary_loops(part):
 		for i in loop:
-			if part.verts[i].z > 1.0:
+			if part.verts[i].z > 1.15:
 				part.verts[i] = _gi_snap(part.verts[i])
 	return part
 
@@ -243,9 +242,9 @@ def build_trim(gi):
 		step = max(1, len(pts) // 48)
 		pts = pts[::step]
 		centre = sum(pts, Vector()) / len(pts)
-		is_hem = centre.z < 1.0
-		r = (0.016, 0.009) if not is_hem else (0.018, 0.009)
-		loft(part, pts, [r], sides=6, samples=2, side_ref=(0, 0, 1), closed=True)
+		if centre.z < 1.08:
+			continue  # The hem is tucked under the belt.
+		loft(part, pts, [(0.016, 0.009)], sides=6, samples=2, side_ref=(0, 0, 1), closed=True)
 	return part
 
 
@@ -271,15 +270,15 @@ def build_belt():
 def build_pants():
 	"""Loose orange pants, tucked into the boots; a few cloth folds."""
 	part = Part("pants", "pants_orange", LEGS + ["Spine"])
-	loft(part, [Vector((0, 0, 1.06)), Vector((0, 0, 0.98)), Vector((0, 0.005, 0.88))],
-		[(0.135, 0.1), (0.155, 0.112), (0.168, 0.118)], sides=24, samples=2, side_ref=(1, 0, 0),
+	loft(part, [Vector((0, 0, 1.075)), Vector((0, 0, 1.0)), Vector((0, 0.005, 0.9)), Vector((0, 0.01, 0.83))],
+		[(0.136, 0.1), (0.156, 0.114), (0.165, 0.118), (0.12, 0.09)], sides=24, samples=2, side_ref=(1, 0, 0),
 		cap_start=False, cap_end=True)
 	rnd = random.Random(P.SEED)
 	for sign in (1, -1):
 		x = sign * J["leg_x"]
 		path = [Vector((x * 0.85, 0.0, 1.0)), Vector((x, 0.0, 0.82)), Vector((x * 1.05, 0.0, J["knee_z"] + 0.04)),
-			Vector((x * 1.08, 0.005, 0.40)), Vector((x * 1.02, 0.005, 0.32)), Vector((x, 0.0, 0.27))]
-		radii = [(0.1, 0.1), (0.108, 0.112), (0.098, 0.102), (0.108, 0.11), (0.092, 0.094), (0.066, 0.07)]
+			Vector((x * 1.08, 0.005, 0.40)), Vector((x * 1.02, 0.005, 0.315)), Vector((x, 0.0, 0.25))]
+		radii = [(0.1, 0.1), (0.106, 0.11), (0.096, 0.1), (0.102, 0.104), (0.09, 0.092), (0.058, 0.062)]
 		phase = rnd.uniform(0, 6.28)
 
 		def folds(t, a, p, phase=phase):
@@ -297,13 +296,13 @@ def build_boots():
 	part = Part("boots", "boots", FEET)
 	for sign in (1, -1):
 		x = sign * J["leg_x"]
-		shaft = [Vector((x, 0.004, 0.36)), Vector((x, 0.004, 0.25)), Vector((x, 0.006, 0.14)), Vector((x, 0.01, 0.075))]
+		shaft = [Vector((x, 0.004, 0.335)), Vector((x, 0.004, 0.25)), Vector((x, 0.006, 0.14)), Vector((x, 0.01, 0.075))]
 
 		def wraps(t, a, p):
 			# Diagonal wrap bands.
-			return 1.0 + 0.045 * max(0.0, math.sin((p.z * 58.0) + a * 0.5))
+			return 1.0 + 0.035 * max(0.0, math.sin((p.z * 58.0) + a * 0.5)) * min(1.0, (0.31 - p.z) / 0.04)
 
-		loft(part, shaft, [(0.085, 0.088), (0.068, 0.072), (0.056, 0.062), (0.06, 0.07)], sides=16, samples=4,
+		loft(part, shaft, [(0.074, 0.077), (0.066, 0.07), (0.056, 0.062), (0.06, 0.07)], sides=16, samples=4,
 			side_ref=(1, 0, 0), radial=wraps, cap_start=True, cap_end=False)
 		foot = [Vector((x, 0.06, 0.055)), Vector((x, 0.0, 0.06)), Vector((x * 1.04, -0.09, 0.045)),
 			Vector((x * 1.06, -0.17, 0.036)), Vector((x * 1.06, -0.215, 0.032))]

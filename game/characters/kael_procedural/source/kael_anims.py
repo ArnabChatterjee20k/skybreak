@@ -7,14 +7,14 @@ follow-through. Every clip keeps the Root bone still: no root motion.
 
 import math
 import random
+import zlib
 
 import bpy
 from mathutils import Quaternion, Vector
 
 import kael_moves
 import kael_rig
-from kael_pose import (ID, Pose, Rig, arm, ease, elbow, fist, foot, knee, leg, open_hand, reach, spine,
-	wrist)
+from kael_pose import Pose, Rig, arm, ease, elbow, fist, foot, knee, leg, open_hand, reach, spine, wrist
 
 G = 0.085  # Ankle height with the foot flat on the ground.
 FPS = 60
@@ -36,10 +36,6 @@ STRIKE_BONES = {
 	"charged_smash_3": "RightMiddleProximal",
 	"push_block": "LeftMiddleProximal",
 }
-
-
-def _fists(k=1.0):
-	return fist(k)
 
 
 def _feet(lf=(0.13, -0.17), rf=(-0.15, 0.2), lyaw=12, ryaw=-30, lz=G, rz=G, lpitch=0.0, rpitch=0.0):
@@ -66,17 +62,13 @@ def stance():
 		"Head": spine(fwd=-6, turn=3),
 		"LeftHand": wrist(up=-5),
 	}
-	rot.update(_fists())
+	rot.update(fist())
 	ik = _feet()
 	ik.update(_guard())
 	return Pose(rot, ik, hips=(0, 0.02, -0.07))
 
 
 STANCE = stance()
-
-
-def _hand(p, target, pole):
-	return p.but(ik={p_name: (target, pole) for p_name in []})
 
 
 def with_hands(p, lh=None, rh=None, lpole=(0.6, 0.4, -1), rpole=(-0.6, 0.5, -1)):
@@ -144,7 +136,7 @@ def clip_run():
 		"Neck": spine(fwd=-8),
 		"Head": spine(fwd=-4),
 	}
-	base_rot.update(_fists(0.9))
+	base_rot.update(fist(0.9))
 
 	def foot_at(phase):
 		# phase 0 = front contact; ground contact until 0.42, then a high swing back to the front.
@@ -195,7 +187,7 @@ def _air_base():
 		"RightUpperArm": arm(down=62, fwd=8),
 		"RightLowerArm": elbow(30),
 	}
-	rot.update(_fists(0.75))
+	rot.update(fist(0.75))
 	return Pose(rot)
 
 
@@ -230,7 +222,7 @@ def clip_fly_forward():
 		"RightLowerLeg": knee(38),
 		"RightFoot": foot(-40),
 	}
-	rot.update(_fists(1.0))
+	rot.update(fist(1.0))
 	a = Pose(rot)
 	b = a.but(hips=(0, 0, 0.015), rot={"RightLowerLeg": knee(30), "LeftLowerLeg": knee(18),
 		"Hips": spine(fwd=60), "LeftUpperArm": arm(down=76, back=22)})
@@ -257,7 +249,7 @@ def clip_dash():
 		"RightLowerLeg": knee(45),
 		"RightFoot": foot(-40),
 	}
-	rot.update(_fists(1.0))
+	rot.update(fist(1.0))
 	a = Pose(rot)
 	b = a.but(rot={"Hips": spine(fwd=38), "RightLowerLeg": knee(52), "LeftUpperLeg": leg(fwd=30)})
 	c.key(0, a).key(12, b).key(24, a)
@@ -276,7 +268,7 @@ def clip_charge_ki():
 		"LeftShoulder": spine(side=-8),
 		"LeftHand": wrist(up=10),
 	}
-	rot.update(_fists(1.0))
+	rot.update(fist(1.0))
 	ik = {
 		"LeftFoot": ((0.27, -0.04, G), (0.6, -1, 0), 25, 0),
 		"RightFoot": ((-0.27, 0.04, G), (-0.6, -1, 0), -25, 0),
@@ -461,8 +453,11 @@ def clip_defeat():
 
 # --- Attacks -----------------------------------------------------------------------------------
 
-def _smear(**bones):
-	return {"Left" + k[1:] if k.startswith("L") else "Right" + k[1:]: v for k, v in bones.items()}
+def hands(left, right):
+	"""Finger poses with a different shape per hand, e.g. hands(open_hand(5), fist())."""
+	out = dict(left)
+	out.update({"Right" + k[4:]: v for k, v in right.items()})
+	return out
 
 
 def clip_light_1(moves):
@@ -547,7 +542,7 @@ def clip_light_4(moves):
 			"RightFoot": foot(-25),
 		}
 		rot.update(_airborne_legs(0.9))
-		rot.update(_fists())
+		rot.update(fist())
 		# Head keeps facing the front while the body turns.
 		rot["Neck"] = spine(turn=-yaw * 0.25)
 		rot["Head"] = spine(turn=-yaw * 0.25)
@@ -571,8 +566,7 @@ def _big_windup():
 	p = torso(STANCE, hips_turn=-55, fwd=-8, head_turn=40).but(hips=(0, 0.06, -0.12))
 	p = with_hands(p, lh=(0.16, -0.45, 1.42), rh=(-0.24, 0.16, 1.16), lpole=(0.8, 0.2, -1),
 		rpole=(-0.5, 1, -0.3))
-	return p.but(rot={"LeftHand": wrist(up=20)}).but(rot=dict(open_hand(5), **{
-		k: v for k, v in fist().items() if k.startswith("Left") and False}))
+	return p.but(rot=dict(hands(open_hand(5), fist()), LeftHand=wrist(up=20)))
 
 
 def _lunge(extra=0.0, turn=30):
@@ -581,7 +575,8 @@ def _lunge(extra=0.0, turn=30):
 	return p
 
 
-def _straight(moves, mid, windup, extra, lunge_turn=30):
+def _straight(moves, mid, extra, lunge_turn=30):
+	"""Shared straight-punch poses: first active tick, peak, held reach, retract and settle."""
 	s, a, r = _attack(moves, mid)
 	c = Clip(mid, s + a + r - 1)
 	lunge = _lunge(extra, lunge_turn)
@@ -594,12 +589,12 @@ def _straight(moves, mid, windup, extra, lunge_turn=30):
 	back = with_hands(lunge, lh=(0.12, -0.18, 1.37), rh=(-0.03, -0.7, 1.37), rpole=(-1, 0.4, -0.6))
 	settle = with_hands(torso(STANCE, hips_turn=0, fwd=8).but(hips=(0, -0.04, -0.1)), lh=(0.08, -0.3, 1.38),
 		rh=(-0.06, -0.48, 1.36))
-	return c, (s, a, r), windup, ext, peak, hold, back, settle
+	return c, (s, a, r), ext, peak, hold, back, settle
 
 
 def clip_smash(moves):
 	windup = _big_windup()
-	c, (s, a, r), windup, ext, peak, hold, back, settle = _straight(moves, "smash", windup, 0.0)
+	c, (s, a, r), ext, peak, hold, back, settle = _straight(moves, "smash", 0.0)
 	c.key(0, STANCE).key(5, windup, "out").key(s - 2, windup.shifted(dz=-0.012), "io")
 	c.key(s, ext, "in3").key(s + a // 2, peak, "out").key(s + a - 1, hold, "lin").key(s + a, back, "io")
 	c.key(s + a + 9, settle, "out").key(s + a + r - 1, STANCE, "io")
@@ -611,8 +606,7 @@ def _hold_pose(level=0.0):
 		hips=(0, 0.08, -0.13 - level * 0.03))
 	p = with_hands(p, lh=(0.18, -0.42, 1.38), rh=(-0.26, 0.24, 1.2), lpole=(0.8, 0.2, -1),
 		rpole=(-0.4, 1, -0.2))
-	return p.but(rot={"LeftHand": wrist(up=25)}).but(rot={
-		k: v for k, v in open_hand(8).items()})
+	return p.but(rot=dict(hands(open_hand(8), fist()), LeftHand=wrist(up=25)))
 
 
 def clip_charged_smash_hold():
@@ -627,12 +621,13 @@ def clip_charged_smash(moves, level):
 	mid = "charged_smash_%d" % level
 	windup = _hold_pose(level / 3.0)
 	extra = 0.3 + level * 0.25
-	c, (s, a, r), windup, ext, peak, hold, back, settle = _straight(moves, mid, windup, extra, 30 + level * 4)
+	c, (s, a, r), ext, peak, hold, back, settle = _straight(moves, mid, extra, 30 + level * 4)
 	if level == 3:
 		# Level 3 adds the left palm, a two-handed burst.
 		ext = ext.but(ik={"LeftHand": ((0.1, -0.56, 1.3), (1, 0.3, -0.6))})
-		peak = peak.but(ik={"LeftHand": ((0.08, -0.7, 1.28), (1, 0.3, -0.6))}, rot=open_hand(10))
-		hold = hold.but(ik={"LeftHand": ((0.09, -0.66, 1.28), (1, 0.3, -0.6))}, rot=open_hand(10))
+		palm = hands(open_hand(10), fist())
+		peak = peak.but(ik={"LeftHand": ((0.08, -0.7, 1.28), (1, 0.3, -0.6))}, rot=palm)
+		hold = hold.but(ik={"LeftHand": ((0.09, -0.66, 1.28), (1, 0.3, -0.6))}, rot=palm)
 	c.key(0, windup).key(s - 3, windup.shifted(dy=0.03, dz=-0.02), "io")
 	c.key(s, ext, "in3").key(s + a // 2, peak, "out").key(s + a - 1, hold, "lin").key(s + a, back, "io")
 	c.key(s + a + 10, settle, "out").key(s + a + r - 1, STANCE, "io")
@@ -713,7 +708,7 @@ def clip_rising(moves):
 			"LeftLowerLeg": knee(95 + tuck * 30),
 			"LeftFoot": foot(-30),
 		}
-		rot.update(_fists())
+		rot.update(fist())
 		return Pose(rot, hips=(0, 0.0, hips_z))
 
 	land = torso(STANCE, hips_turn=-22, fwd=22).but(hips=(0, 0.04, -0.22))
@@ -765,7 +760,7 @@ def clip_sweep(moves):
 	s, a, r = _attack(moves, "sweep")
 	c = Clip("sweep", s + a + r - 1)
 
-	def low(yaw, ext, hips_z=-0.45):
+	def low(yaw, ext, hips_z=-0.6):
 		rot = {
 			"Hips": spine(turn=yaw, fwd=10),
 			"Spine": spine(fwd=22),
@@ -787,10 +782,10 @@ def clip_sweep(moves):
 		return Pose(rot, hips=(0, 0, hips_z))
 
 	land = torso(STANCE, hips_turn=-22 + 360, fwd=14).but(hips=(0, 0.02, -0.18))
-	c.key(0, STANCE).key(4, low(-55, 0.2, -0.3), "out").key(8, low(-15, 0.75), "io")
+	c.key(0, STANCE).key(4, low(-55, 0.2, -0.4), "out").key(8, low(-15, 0.75), "io")
 	c.key(s, low(42, 1.0).but(scale={"RightLowerLeg": 1.1}), "in").key(s + 1, low(66, 1.0), "lin")
 	c.key(s + 2, low(90, 1.0), "lin").key(s + 3, low(114, 1.0), "lin").key(s + 4, low(138, 1.0), "lin")
-	c.key(s + a + 3, low(200, 0.7), "out").key(s + a + 9, low(270, 0.3, -0.38), "io")
+	c.key(s + a + 3, low(200, 0.7), "out").key(s + a + 9, low(270, 0.3, -0.45), "io")
 	c.key(s + a + r - 1, Pose(land.rot, STANCE.ik, land.hips), "io")
 	return c
 
@@ -844,7 +839,7 @@ def sample_clip(rig, clip):
 		solved.append(rig.solve(pose))
 	# Keep each key's quaternions on the same hemisphere as the previous key, so spins go the long way.
 	frames = []
-	rnd = random.Random(hash(clip.name) & 0xFFFF)
+	rnd = random.Random(zlib.crc32(clip.name.encode()))
 	for f in range(clip.length + 1):
 		i = 0
 		while i < len(keys) - 1 and keys[i + 1][0] < f:
@@ -864,10 +859,10 @@ def sample_clip(rig, clip):
 		local = {name: _slerp(la[name], lb[name], t) for name in la}
 		hips = pa.hips.lerp(pb.hips, t)
 		scale = {}
-		for name in set(pa.scale) | set(pb.scale):
+		for name in sorted(set(pa.scale) | set(pb.scale)):
 			scale[name] = pa.scale.get(name, 1.0) * (1 - t) + pb.scale.get(name, 1.0) * t
 		ik = {}
-		for end in set(pa.ik) & set(pb.ik):
+		for end in sorted(set(pa.ik) & set(pb.ik)):
 			ga, gb = pa.ik[end], pb.ik[end]
 			goal = [Vector(ga[0]).lerp(Vector(gb[0]), t), Vector(ga[1]).lerp(Vector(gb[1]), t)]
 			if len(ga) > 2 or len(gb) > 2:
@@ -956,7 +951,7 @@ def write_action(arm_obj, rig, clip, frames):
 		loc = rest["Hips"].inverted() @ hips
 		for i in range(3):
 			channels.setdefault(('pose.bones["Hips"].location', i, "Hips"), []).append((f, loc[i]))
-		for name in scaled:
+		for name in sorted(scaled):
 			s = scale.get(name, 1.0)
 			side = 1.0 / math.sqrt(s)
 			for i, v in enumerate((side, s, side)):

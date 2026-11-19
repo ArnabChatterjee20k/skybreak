@@ -8,4 +8,4 @@ resource_name = "kael_hair"
 next_pass = ExtResource("2_outline")
 shader = ExtResource("1_toon")
 shader_parameter/albedo_color = Color(0.080, 0.100, 0.230, 1)
-shader_parameter/specular_enabled = true
+shader_parameter/specular_enabled = false

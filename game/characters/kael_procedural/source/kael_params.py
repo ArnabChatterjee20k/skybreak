@@ -58,7 +58,7 @@ COLORS = {
 }
 
 # Slots that get the toon specular band (the rest stay matte).
-SPECULAR_SLOTS = ("hair", "boots")
+SPECULAR_SLOTS = ("boots",)
 
 # Hair: list of spikes as (azimuth deg, elevation deg, length, base radius, sweep up, sweep back, curl).
 # Azimuth 0 = front, 90 = his left, 180 = back. Elevation 90 = straight up from the crown.

@@ -19,6 +19,7 @@ class Part:
 		self.faces = []
 		self.uvs = {}  # Face-corner UVs: face index -> list of (u, v).
 		self.fixed_weights = None  # Optional per-vertex dict {bone: weight}.
+		self.keep_winding = False  # Open shells keep the loft's outward winding instead of a recalculation.
 
 	def add_vert(self, co):
 		self.verts.append(Vector(co))

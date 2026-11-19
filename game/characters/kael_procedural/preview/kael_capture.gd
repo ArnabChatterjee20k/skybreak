@@ -1,7 +1,7 @@
 extends SceneTree
 ## Renders the procedural Kael for review: a 4-view turnaround in his stance and contact sheets of
 ## each attack at its key ticks (0, anticipation, first active, mid active, follow-through, end).
-##   godot --path . --resolution 960x1080 -s res://game/characters/kael_procedural/preview/kael_capture.gd -- <out dir> [turnaround|attacks|all]
+##   godot --path . --resolution 960x1080 -s res://game/characters/kael_procedural/preview/kael_capture.gd -- <out dir> [turnaround|attacks|clips|all]
 
 const PREVIEW := "res://game/characters/kael_procedural/preview/kael_preview.tscn"
 const TURN_SIZE := Vector2i(420, 560)
@@ -53,6 +53,21 @@ func _run(scene: Node, what: String) -> void:
 				image.convert(Image.FORMAT_RGB8)
 				sheet.blit_rect(image, Rect2i(Vector2i.ZERO, CELL), Vector2i(CELL.x * i, 0))
 			sheet.save_png(_out.path_join("kael_%s.png" % clip))
+	if what in ["clips", "all"]:
+		var clips := ProceduralKaelView.CLIPS.filter(func(c: StringName) -> bool:
+			return not ProceduralKaelView.STRIKE_BONES.has(c))
+		var columns := 4
+		var sheet := Image.create(CELL.x * columns, CELL.y * clips.size(), false, Image.FORMAT_RGB8)
+		for row in clips.size():
+			var last := _view.clip_ticks(clips[row])
+			for i in columns:
+				_view.pose_at(clips[row], roundi(last * i / float(columns - 1)))
+				var image := await _shot(35.0, 5.2, 0.9)
+				image = _crop(image, 0.75)
+				image.resize(CELL.x, CELL.y, Image.INTERPOLATE_LANCZOS)
+				image.convert(Image.FORMAT_RGB8)
+				sheet.blit_rect(image, Rect2i(Vector2i.ZERO, CELL), Vector2i(CELL.x * i, CELL.y * row))
+		sheet.save_png(_out.path_join("kael_clips.png"))
 	quit()
 
 

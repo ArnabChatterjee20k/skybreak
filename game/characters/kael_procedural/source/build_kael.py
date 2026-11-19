@@ -111,7 +111,8 @@ def part_to_object(part, mats, layout):
 	obj = bpy.data.objects.new(part.name, mesh)
 	bpy.context.scene.collection.objects.link(obj)
 	mesh.materials.append(mats[part.material])
-	_fix_normals(mesh)
+	if not part.keep_winding:
+		_fix_normals(mesh)
 	for poly in mesh.polygons:
 		poly.use_smooth = True
 	uv = mesh.uv_layers.new(name="UVMap")
