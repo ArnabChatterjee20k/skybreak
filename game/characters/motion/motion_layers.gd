@@ -18,13 +18,26 @@ const ARMS := [[&"LeftUpperArm", &"LeftLowerArm", &"LeftHand"], [&"RightUpperArm
 ## Flight: speed (m/s) for the full flight body, and the flutter of the trailing legs.
 const FLIGHT_FULL_SPEED := 22.0
 const FLUTTER_HZ := 2.4
-## Arm poses for held weapons; each hand target is in chest space (+Y up, +Z forward, +X left).
-enum ArmPose { NONE, TWO_HANDED, BOW_DRAW, PISTOL_AIM }
+## Arm poses for held weapons (T-D30), solved by two-bone IK on top of the clip.
+enum ArmPose { NONE, TWO_HANDED, BOW_DRAW, PISTOL_AIM, GUARD, BRACED }
+## Main-hand grip point per pose, from its shoulder in chest space (+Y up, +Z forward, +X to the
+## holder's left), in arm lengths, then the weapon's +Y and its forward (-Z) in the same space.
 const ARM_POSES := {
-	# Two-handed: the left hand grips the haft just below the right hand (offset from the right hand).
-	ArmPose.TWO_HANDED: {&"LeftHand": Vector3(0.03, -0.16, -0.02)},
-	ArmPose.BOW_DRAW: {&"LeftHand": Vector3(0.12, 0.22, 0.62), &"RightHand": Vector3(-0.06, 0.26, 0.12)},
-	ArmPose.PISTOL_AIM: {&"RightHand": Vector3(-0.08, 0.22, 0.62)},
+	ArmPose.GUARD: [Vector3(-0.15, -0.62, 0.62), Vector3(-0.15, 0.8, 0.58), Vector3(0, -0.4, 1)],
+	ArmPose.TWO_HANDED: [Vector3(0.2, -0.78, 0.55), Vector3(0.62, 0.62, 0.48), Vector3(0, 0, 1)],
+	ArmPose.PISTOL_AIM: [Vector3(0.12, 0.02, 0.96), Vector3(0, 1, 0), Vector3(0, 0, 1)],
+	ArmPose.BRACED: [Vector3(-0.3, -0.62, 0.62), Vector3(0, 1, 0), Vector3(0, 0, 1)],
+}
+## Bow draw: the string hand anchors this far beside the head capsule's surface (m), at jaw height.
+const BOW_ANCHOR_GAP := 0.07
+const BOW_ANCHOR_DROP := 0.04
+## Clearance solver: passes, and the margin it leaves (m).
+const CLEARANCE_PASSES := 10
+const CLEARANCE_MARGIN := 0.03
+## Capsules a held weapon must stay out of, per main hand (its own forearm and hand grip it).
+const CLEAR_OF := {
+	&"RightHand": [&"pelvis", &"chest", &"head", &"upper_arm_l", &"lower_arm_l", &"upper_arm_r"],
+	&"LeftHand": [&"pelvis", &"chest", &"head", &"upper_arm_l", &"upper_arm_r", &"lower_arm_r"],
 }
 
 ## Fighter velocity in skeleton space (m/s).
@@ -47,6 +60,20 @@ const ARM_POSES := {
 ## Held-weapon arm pose and how much of it to apply (0..1, sprung).
 @export var arm_pose := ArmPose.NONE
 @export_range(0.0, 1.0) var arm_weight := 0.0
+## Lean, flight, look, secondary, flinch and landing layers; off keeps only the IK stages.
+@export var body_layers := true
+## Held weapon: the hand bone it sits on (empty = none), its transform in that bone's space,
+## its part boxes in its own space and the off-hand grip point (INF = one-handed).
+var weapon_hand := &""
+var weapon_grip := Transform3D.IDENTITY
+var weapon_boxes: Array[Transform3D] = []
+var weapon_off_hand := Vector3.INF
+## The off hand's palm socket in its bone's space (see WeaponGrip.hand_socket).
+var off_hand_socket := Transform3D.IDENTITY
+## The holder's body capsules; the clearance solver keeps the weapon out of them.
+var body: BodyCapsules
+## Deepest weapon-into-body overlap left after the last solve (m), for tests and QA.
+var weapon_overlap := 0.0
 
 var lean := Vector3.ZERO  # Current lean as a rotation vector (x pitch, z roll).
 var _lean_velocity := Vector3.ZERO
@@ -213,15 +240,17 @@ func _process_modification_with_delta(delta: float) -> void:
 func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> Vector3:
 	if delta <= 0.0:
 		delta = 0.0
-	_inertialize(rotations, delta)
-	hips = _inertialize_hips(hips, delta)
-	_lean_layer(rotations, delta)
-	_flight_layer(rotations, delta)
-	_look_layer(rotations, delta)
-	_secondary_layer(rotations, delta)
-	_flinch_layer(rotations, delta)
-	hips = _landing_layer(rotations, hips, delta)
+	if body_layers:
+		_inertialize(rotations, delta)
+		hips = _inertialize_hips(hips, delta)
+		_lean_layer(rotations, delta)
+		_flight_layer(rotations, delta)
+		_look_layer(rotations, delta)
+		_secondary_layer(rotations, delta)
+		_flinch_layer(rotations, delta)
+		hips = _landing_layer(rotations, hips, delta)
 	_arm_layer(rotations, hips, delta)
+	_clearance(rotations, hips)
 	if foot_ik:
 		hips = _foot_ik(rotations, hips)
 	_prev_out = _last_out.duplicate()
@@ -380,42 +409,157 @@ func _flight_layer(rotations: Array[Quaternion], delta: float) -> void:
 	_offset(rotations, &"Head", Vector3(-0.3 * f, 0, 0))
 
 
-## Held-weapon arm pose: two-bone IK of the hands to chest-space targets, blended by weight.
+## Held-weapon arm pose: the main hand to its grip point with the weapon turned to the pose,
+## the off hand onto the weapon's off-hand grip; bows draw the string to beside the face.
 func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> void:
 	if arm_pose != ArmPose.NONE:
 		_arm_pose_now = arm_pose
 	var s := spring(_arm, _arm_velocity, arm_weight if arm_pose != ArmPose.NONE else 0.0, 14.0, delta)
 	_arm = clampf(s[0], 0.0, 1.0)
 	_arm_velocity = s[1]
-	if _arm < 0.01 or not ARM_POSES.has(_arm_pose_now):
+	if _arm < 0.01 or _arm_pose_now == ArmPose.NONE or weapon_hand == &"":
 		return
 	var chest: int = _index.get(&"UpperChest", _index.get(&"Chest", -1))
-	if chest < 0:
+	var main: int = _index.get(weapon_hand, -1)
+	if chest < 0 or main < 0:
 		return
-	var targets: Dictionary = ARM_POSES[_arm_pose_now]
 	_world_cache.clear()
-	var chest_world := _world_at(rotations, hips, chest)
+	var frame := _world_at(rotations, hips, chest).basis.orthonormalized()
+	var main_chain := _arm_chain(weapon_hand)
+	if main_chain.is_empty():
+		return
+	var shoulder := _world_at(rotations, hips, main_chain[0]).origin
+	var reach := _arm_length(main_chain)
+	var grip := weapon_grip.orthonormalized()
+	var goal_point: Vector3
+	var goal_basis: Basis
+	if _arm_pose_now == ArmPose.BOW_DRAW:
+		var anchor := _bow_anchor(rotations, hips, frame)
+		# Bow arm straight out toward the target, in line with the anchor beside the face.
+		var aim := frame * Vector3(0, 0, 1)
+		var toward := anchor + aim * reach * 1.3 - shoulder
+		goal_point = shoulder + toward.normalized() * reach * 0.96
+		var forward := (goal_point - anchor).normalized()
+		var up := (frame * Vector3(0.12, 1, 0)).normalized()
+		goal_basis = _weapon_basis(up, forward)
+	elif ARM_POSES.has(_arm_pose_now):
+		var pose: Array = ARM_POSES[_arm_pose_now]
+		# Poses are authored for the right hand; a left main hand mirrors them.
+		var mirror := Vector3(-1, 1, 1) if weapon_hand == &"LeftHand" else Vector3.ONE
+		goal_point = shoulder + frame * ((pose[0] as Vector3) * mirror * reach)
+		goal_basis = _weapon_basis(frame * ((pose[1] as Vector3) * mirror).normalized(), frame * (pose[2] as Vector3).normalized())
+	else:
+		return
+	var hand_basis := goal_basis * grip.basis.inverse()
+	var hand_point := goal_point - hand_basis * grip.origin
+	_reach_hand(rotations, hips, main_chain, hand_point, hand_basis.get_rotation_quaternion(), _arm)
+	if _arm_pose_now == ArmPose.BOW_DRAW:
+		var anchor := _bow_anchor(rotations, hips, frame)
+		var string_chain := _arm_chain(&"RightHand" if weapon_hand == &"LeftHand" else &"LeftHand")
+		if not string_chain.is_empty():
+			var bow := _world_at(rotations, hips, main_chain[2]) * weapon_grip
+			var pull := (anchor - bow.origin).normalized()
+			var palm := _weapon_basis(frame * Vector3.UP, -pull)
+			_reach_hand(rotations, hips, string_chain, anchor - pull * 0.03, palm.get_rotation_quaternion(), _arm)
+	else:
+		_grip_off_hand(rotations, hips, _arm)
+
+
+## Where the bow string hand anchors: beside the head capsule on the string-hand side, at the jaw.
+func _bow_anchor(rotations: Array[Quaternion], hips: Vector3, frame: Basis) -> Vector3:
+	var head: int = _index.get(&"Head", -1)
+	var radius := 0.12
+	if body != null and body.radii.has(&"head"):
+		radius = body.radii[&"head"]
+	var at := _world_at(rotations, hips, head).origin if head >= 0 else Vector3(0, 1.4, 0)
+	var side := -1.0 if weapon_hand == &"LeftHand" else 1.0
+	return at + frame * Vector3(side * (radius + BOW_ANCHOR_GAP), -BOW_ANCHOR_DROP, 0.04)
+
+
+## A weapon basis whose +Y is up and whose -Z points along forward (made orthogonal).
+static func _weapon_basis(up: Vector3, forward: Vector3) -> Basis:
+	var y := up.normalized()
+	var z := -(forward - y * forward.dot(y))
+	z = z.normalized() if z.length() > 1e-4 else y.cross(Vector3.RIGHT).normalized()
+	return Basis(y.cross(z), y, z).orthonormalized()
+
+
+## [upper arm, lower arm, hand] bone indices of a hand, or empty.
+func _arm_chain(hand: StringName) -> Array:
 	for chain: Array in ARMS:
-		if not targets.has(chain[2]):
-			continue
-		var up: int = _index.get(chain[0], -1)
-		var lo: int = _index.get(chain[1], -1)
-		var hand: int = _index.get(chain[2], -1)
-		if up < 0 or lo < 0 or hand < 0:
-			continue
-		var before := [rotations[up], rotations[lo], rotations[hand]]
-		var world := _chain_world(rotations, hips, [up, lo, hand])
-		var target: Vector3 = chest_world * (targets[chain[2]] as Vector3)
-		if _arm_pose_now == ArmPose.TWO_HANDED:
-			var right: int = _index.get(&"RightHand", -1)
-			if right < 0:
-				continue
-			target = _world_at(rotations, hips, right).origin + chest_world.basis.orthonormalized() * (targets[chain[2]] as Vector3)
-		_two_bone(rotations, world, up, lo, hand, target)
-		rotations[up] = (before[0] as Quaternion).slerp(rotations[up], _arm)
-		rotations[lo] = (before[1] as Quaternion).slerp(rotations[lo], _arm)
-		rotations[hand] = before[2]
+		if chain[2] == hand:
+			var ids := [_index.get(chain[0], -1), _index.get(chain[1], -1), _index.get(chain[2], -1)]
+			return [] if ids.has(-1) else ids
+	return []
+
+
+func _arm_length(chain: Array) -> float:
+	return (_origins[chain[1]] as Vector3).length() + (_origins[chain[2]] as Vector3).length()
+
+
+## Two-bone IK of one arm to a hand position and world rotation, blended by weight.
+func _reach_hand(rotations: Array[Quaternion], hips: Vector3, chain: Array, point: Vector3,
+		hand_rotation: Quaternion, weight: float) -> void:
+	var up: int = chain[0]
+	var lo: int = chain[1]
+	var hand: int = chain[2]
+	var before := [rotations[up], rotations[lo], rotations[hand]]
+	_world_cache.clear()
+	_two_bone(rotations, _chain_world(rotations, hips, chain), up, lo, hand, point)
+	_world_cache.clear()
+	var lower := _world_at(rotations, hips, lo).basis.get_rotation_quaternion()
+	rotations[hand] = lower.inverse() * hand_rotation
+	rotations[up] = (before[0] as Quaternion).slerp(rotations[up], weight)
+	rotations[lo] = (before[1] as Quaternion).slerp(rotations[lo], weight)
+	rotations[hand] = (before[2] as Quaternion).slerp(rotations[hand], weight)
+	_world_cache.clear()
+
+
+## The off hand onto the weapon's off-hand grip (two-handed weapons).
+func _grip_off_hand(rotations: Array[Quaternion], hips: Vector3, weight: float) -> void:
+	if weapon_off_hand == Vector3.INF:
+		return
+	var main: Array = _arm_chain(weapon_hand)
+	var off: Array = _arm_chain(&"RightHand" if weapon_hand == &"LeftHand" else &"LeftHand")
+	if main.is_empty() or off.is_empty():
+		return
+	_world_cache.clear()
+	var weapon := (_world_at(rotations, hips, main[2]) * weapon_grip).orthonormalized()
+	# The off hand's palm socket closes around the off-hand grip, along the haft.
+	var hand_basis := weapon.basis * off_hand_socket.basis.orthonormalized().inverse()
+	var point := weapon * (weapon_off_hand * weapon_grip.basis.get_scale()) - hand_basis * off_hand_socket.origin
+	_reach_hand(rotations, hips, off, point, hand_basis.get_rotation_quaternion(), weight)
+
+
+## Body clearance: while the held weapon's boxes reach into the holder's torso, head or arms,
+## move the main hand (and the weapon with it) out along the push and solve the arm again.
+func _clearance(rotations: Array[Quaternion], hips: Vector3) -> void:
+	weapon_overlap = 0.0
+	if weapon_hand == &"" or body == null or weapon_boxes.is_empty():
+		return
+	var main := _arm_chain(weapon_hand)
+	if main.is_empty():
+		return
+	var names: Array = CLEAR_OF.get(weapon_hand, [])
+	if weapon_off_hand != Vector3.INF:
+		names = names.filter(func(n: StringName) -> bool: return not n.begins_with("lower_arm"))
+	for pass_index in CLEARANCE_PASSES + 1:
 		_world_cache.clear()
+		var hand := _world_at(rotations, hips, main[2])
+		var weapon := hand * weapon_grip
+		var boxes: Array[Transform3D] = []
+		for box in weapon_boxes:
+			boxes.append(weapon * box)
+		var capsules := body.capsules(func(bone: int) -> Transform3D: return _world_at(rotations, hips, bone),
+			Transform3D.IDENTITY, names)
+		var hit := BodyCapsules.deepest_box(capsules, boxes)
+		weapon_overlap = maxf(float(hit[0]), 0.0)
+		if float(hit[0]) <= 0.0 or pass_index == CLEARANCE_PASSES:
+			return
+		var push: Vector3 = hit[1]
+		var target := hand.origin + push * (float(hit[0]) + CLEARANCE_MARGIN)
+		_reach_hand(rotations, hips, main, target, hand.basis.get_rotation_quaternion(), 1.0)
+		_grip_off_hand(rotations, hips, 1.0)
 
 
 ## World transforms of one chain (plus its parent), as a sparse array _two_bone can read.

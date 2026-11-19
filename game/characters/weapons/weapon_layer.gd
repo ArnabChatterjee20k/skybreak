@@ -20,13 +20,6 @@ const TRACER_LENGTH := 2.2
 var sim: CombatSim
 var fighter_views: Array[FighterView] = []
 
-## Grip in the hand bone's frame (degrees, then metres), tuned on the chunky Kael rig.
-const GRIP_ROTATION := Vector3(0, 0, -90)
-const GRIP_ROTATION_RANGED := Vector3(0, 0, -90)
-const GRIP_OFFSET := Vector3(0, 0.08, 0)
-## Held weapons are drawn this much bigger than the pickups, Brawlhalla-chunky.
-const HELD_SCALE := 1.5
-
 var _pickup_nodes: Dictionary = {}
 var _projectile_nodes: Dictionary = {}
 var _previous: Dictionary = {}
@@ -58,6 +51,7 @@ func present(blend: float, delta: float) -> void:
 	_present_projectiles(blend)
 	for i in fighter_views.size():
 		_present_held(i)
+		_draw_bow(i)
 
 
 func _present_pickups(blend: float) -> void:
@@ -275,37 +269,51 @@ func _present_held(index: int) -> void:
 		held.nodes = attach(skeleton, kind)
 
 
-## Puts kind's model on the skeleton's hand bone(s): bows in the left hand,
-## gauntlets on both, the rest in the right. Returns the attachments.
+## Puts kind's model on the skeleton's hand bone(s) at its grip (WeaponGrip): bows in the left
+## hand with a drawable string, gauntlets on both, the rest in the right. Returns the attachments.
 static func attach(skeleton: Skeleton3D, kind: Weapon.Kind) -> Array[Node]:
 	var nodes: Array[Node] = []
-	var bow := kind == Weapon.Kind.KI_BOW or kind == Weapon.Kind.HEARTSTRING_BOW
-	var hands: Array[StringName] = []
-	if kind == Weapon.Kind.KI_GAUNTLETS:
-		hands.append_array([RIGHT_HAND, LEFT_HAND])
-	else:
-		hands.append(LEFT_HAND if bow else RIGHT_HAND)
-	for hand in hands:
+	for hand in WeaponGrip.hands_of(kind):
 		var attachment := BoneAttachment3D.new()
+		attachment.name = "Held%s" % hand
 		attachment.bone_name = hand
 		skeleton.add_child(attachment)
 		var model := WeaponModels.build(kind)
-		model.transform = grip_transform(kind, hand == LEFT_HAND)
+		model.transform = WeaponGrip.grip_transform(skeleton, kind, hand)
 		attachment.add_child(model)
+		if WeaponGrip.hold_of(kind) == WeaponGrip.Hold.BOW:
+			var heart := kind == Weapon.Kind.HEARTSTRING_BOW
+			BowString.new().setup(model, skeleton, RIGHT_HAND,
+				Color(1.0, 0.85, 0.95) if heart else WeaponModels.KI_CYAN,
+				WeaponModels.PINK if heart else WeaponModels.WOOD)
 		nodes.append(attachment)
 	return nodes
 
 
-## Where a weapon sits relative to its hand bone, scaled up to read at the
-## chunky characters' proportions. Hand bones point +Y along the fingers.
-static func grip_transform(kind: Weapon.Kind, left: bool) -> Transform3D:
-	var side := -1.0 if left else 1.0
-	if kind == Weapon.Kind.KI_GAUNTLETS:
-		return Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * 1.15), Vector3(0, 0.05, 0))
-	var euler := GRIP_ROTATION_RANGED if Weapon.is_ranged(kind) else GRIP_ROTATION
-	var basis := Basis.from_euler(Vector3(deg_to_rad(euler.x), deg_to_rad(euler.y * side),
-		deg_to_rad(euler.z * side)))
-	return Transform3D(basis.scaled(Vector3.ONE * HELD_SCALE), GRIP_OFFSET)
+## Draws a held bow's string to the hand while its holder shoots.
+func _draw_bow(index: int) -> void:
+	for node: Node in _held[index].nodes:
+		var string := node.find_child("BowString", true, false) as BowString
+		if string != null:
+			string.drawn = sim.fighters[index].state == FighterState.State.ATTACKING
+
+
+## The bow string of fighter index's held bow, or null.
+func bow_string_of(index: int) -> BowString:
+	for node: Node in _held[index].nodes:
+		var string := node.find_child("BowString", true, false) as BowString
+		if string != null:
+			return string
+	return null
+
+
+## The held weapon models of fighter index (one per hand).
+func held_models(index: int) -> Array[Node3D]:
+	var models: Array[Node3D] = []
+	for node: Node in _held[index].nodes:
+		if is_instance_valid(node) and node.get_child_count() > 0:
+			models.append(node.get_child(0) as Node3D)
+	return models
 
 
 static func _skeleton_of(view: Node) -> Skeleton3D:
