@@ -250,6 +250,7 @@ func _islands(parent: Node3D) -> void:
 			var s := rock_rng.randf_range(1.2, 1.8)
 			PropKit.append_mesh(rock, PropKit.sphere(6, 3), Transform3D(Basis.from_scale(Vector3(s * 1.4, s, s * 1.2)),
 				p + Vector3(cos(a) * 3.2, 0.1, sin(a) * 3.2)), Color(0.86, 0.74, 0.78))
+	_add_rim(grass)
 	grass.generate_normals()
 	rock.generate_normals()
 	var mesh := grass.commit()
@@ -259,6 +260,25 @@ func _islands(parent: Node3D) -> void:
 		"shadow_tint": Color(0.6, 0.44, 0.64), "rim_strength": 0.2}))
 	var node := kit.single(parent, "Islands", mesh, null, Transform3D.IDENTITY)
 	node.set_meta("islands", field.names)
+
+
+## Grass squares at the island rims, built from the sim's ground grid (ZoneGround) so the drawn
+## rim is where fighters stand.
+func _add_rim(grass: SurfaceTool) -> void:
+	var reach := 0.0
+	for i in field.size():
+		reach = maxf(reach, (field.centres[i] - zone.centre).length() + field.radii[i] * 1.2)
+	var ground := ZoneGround.bake(kit.map, field, zone.centre, reach)
+	var half := ZoneGround.CELL * 0.25
+	grass.set_smooth_group(-1)
+	grass.set_color(Color(0.3, 0.52, 0.3))
+	for c in ground.island_rim_squares():
+		var a := c + Vector3(-half, 0, -half)
+		var b := c + Vector3(half, 0, -half)
+		var d := c + Vector3(half, 0, half)
+		var e := c + Vector3(-half, 0, half)
+		_tri(grass, a, b, d, Vector3.UP)
+		_tri(grass, a, d, e, Vector3.UP)
 
 
 func _grass_color(i: int, k: int, j: int) -> Color:

@@ -484,6 +484,11 @@ func _update_layers(fighter: FighterState, delta: float) -> void:
 		layers.burst(1.0)
 	_airborne = airborne
 	layers.velocity = local
+	# Vanishing fighters and grab pairs may share space; everyone else keeps their cores apart.
+	layers.separate = visible and fighter.state not in [FighterState.State.VANISHING,
+		FighterState.State.GRABBED, FighterState.State.THROWING]
+	layers.striking = fighter.state == FighterState.State.ATTACKING and fighter.attack_phase() in [
+		FighterState.AttackPhase.STARTUP, FighterState.AttackPhase.ACTIVE, FighterState.AttackPhase.RECOVERY]
 	layers.crouch = 0.0 if airborne or fighter.state == FighterState.State.KNOCKDOWN else profile.crouch
 	layers.flying = airborne and fighter.state in [FighterState.State.FLYING, FighterState.State.DASHING,
 		FighterState.State.VANISHING]
@@ -544,9 +549,13 @@ func _update_arms(fighter: FighterState) -> void:
 			WeaponGrip.Hold.ONE_HAND:
 				layers.arm_pose = MotionLayers.ArmPose.GUARD
 			WeaponGrip.Hold.HEAVY:
-				layers.arm_pose = MotionLayers.ArmPose.TWO_HANDED
+				layers.arm_pose = MotionLayers.ArmPose.SIDE if profile.heavy_at_side else MotionLayers.ArmPose.TWO_HANDED
 			WeaponGrip.Hold.BRACED:
 				layers.arm_pose = MotionLayers.ArmPose.BRACED
+			WeaponGrip.Hold.BOW:
+				layers.arm_pose = MotionLayers.ArmPose.BOW_LOW
+			WeaponGrip.Hold.PISTOL:
+				layers.arm_pose = MotionLayers.ArmPose.PISTOL_LOW
 		layers.arm_weight = REACTION_HOLD_WEIGHT if layers.arm_pose != MotionLayers.ArmPose.NONE else 0.0
 		return
 	match WeaponGrip.hold_of(kind):
@@ -561,11 +570,12 @@ func _update_arms(fighter: FighterState) -> void:
 				layers.arm_pose = MotionLayers.ArmPose.GUARD
 				layers.arm_weight = 0.8
 		WeaponGrip.Hold.HEAVY:
-			layers.arm_pose = MotionLayers.ArmPose.TWO_HANDED
+			layers.arm_pose = MotionLayers.ArmPose.SIDE if profile.heavy_at_side and not attacking \
+				else MotionLayers.ArmPose.TWO_HANDED
 			layers.arm_weight = 0.5 if attacking else 0.9
 		WeaponGrip.Hold.PISTOL:
-			layers.arm_pose = MotionLayers.ArmPose.PISTOL_AIM
-			layers.arm_weight = 1.0 if attacking else 0.0
+			layers.arm_pose = MotionLayers.ArmPose.PISTOL_AIM if attacking else MotionLayers.ArmPose.PISTOL_LOW
+			layers.arm_weight = 1.0 if attacking else 0.8
 		WeaponGrip.Hold.BRACED:
 			layers.arm_pose = MotionLayers.ArmPose.BRACED
 			layers.arm_weight = 1.0
@@ -573,6 +583,9 @@ func _update_arms(fighter: FighterState) -> void:
 			if attacking:
 				layers.arm_pose = MotionLayers.ArmPose.BOW_DRAW
 				layers.arm_weight = 1.0
+			else:
+				layers.arm_pose = MotionLayers.ArmPose.BOW_LOW
+				layers.arm_weight = 0.9
 
 
 ## Tells the layers which weapon is in hand: its grip, part boxes and off-hand point.

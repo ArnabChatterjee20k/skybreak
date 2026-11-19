@@ -114,6 +114,29 @@ func _island_top(k: int, tx: int, tz: int) -> int:
 	return nearest
 
 
+## Where island cells meet open air the floor is the nearest island sample (see _island_top):
+## one flat square per such quarter cell, as (centre x, height, centre z), CELL / 2 wide.
+## The drawn island rim is built from these, so drawn and sim ground agree there.
+func island_rim_squares() -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for row in rows - 1:
+		for column in columns - 1:
+			var k := row * columns + column
+			var corners := [k, k + 1, k + columns, k + columns + 1]
+			var open := 0
+			for c: int in corners:
+				open += 1 if island_tops[c] == NONE else 0
+			if open == 0 or open == 4:
+				continue
+			for q in 4:
+				var top := island_tops[corners[q]]
+				if top == NONE:
+					continue
+				var at := origin + Vector2(column + 0.25 + 0.5 * (q & 1), row + 0.25 + 0.5 * (q >> 1)) * CELL
+				out.append(Vector3(at.x, float(top) / 100.0, at.y))
+	return out
+
+
 ## Hash of the baked grids, for determinism checks.
 func checksum() -> int:
 	return hash([origin, columns, rows, terrain, island_tops])

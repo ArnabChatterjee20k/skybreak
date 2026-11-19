@@ -104,3 +104,33 @@ func test_a_drawn_bow_shows_exactly_one_arrow_on_its_string() -> void:
 	assert_eq(held[0].find_children("NockedArrow", "", true, false).size(), 1, "one nocked arrow")
 	assert_eq(string.arrow, held[0].find_child("NockedArrow", true, false), "the string carries it")
 	assert_eq(string.find_children("*", "MeshInstance3D", true, false).size(), 2, "the string draws only its two halves")
+
+
+func test_every_legends_pushbox_matches_its_drawn_core_body_in_the_idle_stance() -> void:
+	for id: StringName in Roster.ids():
+		var view := _view(id)
+		var skeleton: Skeleton3D = view.model.get_node("%GeneralSkeleton")
+		var poses: Array[Transform3D] = []
+		skeleton.skeleton_updated.connect(func() -> void:
+			poses.resize(skeleton.get_bone_count())
+			for b in poses.size():
+				poses[b] = skeleton.get_bone_global_pose(b))
+		var fighter := FighterState.new()
+		fighter.stats = Roster.character(id).stats
+		fighter.health = fighter.stats.max_health
+		var reach := 0.0
+		var extent := 0.0
+		for frame in 240:
+			view.apply_state(fighter, 1.0 / 60.0)
+			await get_tree().process_frame
+			if frame < 30 or poses.is_empty():
+				continue
+			var pose := func(b: int) -> Transform3D: return poses[b]
+			for c: Array in view.body.capsules(pose, skeleton.global_transform, MotionLayers.CORE).values():
+				for end: Vector3 in [c[0], c[1]]:
+					var local := end - view.global_position
+					reach = maxf(reach, Vector2(local.x, local.z).length() + float(c[2]))
+					extent = maxf(extent, absf(local.y) + float(c[2]))
+		var stats := fighter.stats
+		assert_almost_eq(stats.pushbox_radius, reach + 0.05, 0.015, "%s pushbox radius" % id)
+		assert_almost_eq(stats.pushbox_height, extent * 2.0, 0.02, "%s pushbox height" % id)

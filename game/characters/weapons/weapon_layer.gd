@@ -19,6 +19,10 @@ const BOB_SPEED := 2.6
 const SPIN_SPEED := 1.4
 const TRACER_LENGTH := 2.2
 
+## States in which the held weapon is let go (the sim drops it on a KO).
+const DOWN_STATES: Array[int] = [FighterState.State.KNOCKDOWN, FighterState.State.KO_FALL,
+	FighterState.State.KO_DOWN]
+
 var sim: CombatSim
 var fighter_views: Array[FighterView] = []
 
@@ -66,6 +70,7 @@ func present(blend: float, delta: float) -> void:
 	_present_tethers()
 	for i in fighter_views.size():
 		_present_held(i)
+		_drop_when_down(i)
 		_draw_bow(i)
 		_present_nocked_arrow(i)
 		_present_aura(i)
@@ -301,6 +306,14 @@ func _present_held(index: int) -> void:
 			held.arrow = (held.nodes[0] as Node).find_child("NockedArrow", true, false)
 
 
+## A knocked-down or knocked-out fighter lets go of its weapon: it is not drawn across the body.
+func _drop_when_down(index: int) -> void:
+	var down := sim.fighters[index].state in DOWN_STATES
+	for node: Node in _held[index].nodes:
+		if is_instance_valid(node):
+			(node as Node3D).visible = not down
+
+
 ## The arrow on a held bow: shown while it has ammo, pulled back with the draw level.
 func _present_nocked_arrow(index: int) -> void:
 	var arrow: Node3D = _held[index].arrow
@@ -487,7 +500,10 @@ func _draw_bow(index: int) -> void:
 	for node: Node in _held[index].nodes:
 		var string := node.find_child("BowString", true, false) as BowString
 		if string != null:
-			string.drawn = sim.fighters[index].state == FighterState.State.ATTACKING
+			# Drawn until the shot: in recovery the arrow has gone and the string is back at rest.
+			var fighter := sim.fighters[index]
+			string.drawn = fighter.state == FighterState.State.ATTACKING \
+				and fighter.attack_phase() != FighterState.AttackPhase.RECOVERY
 
 
 ## The bow string of fighter index's held bow, or null.

@@ -30,3 +30,9 @@ extends Resource
 @export var dive_pitch := 95.0
 ## Hips dip (m) when a strike lands on the active tick; 0 for none (Brann's ground-pound weight).
 @export var impact_weight := 0.0
+## Held-weapon grip points pushed forward and out from the shoulder (arm lengths), for builds
+## whose chest or short arms would bring a hold into the body (chibi Lyra, bulky Brann).
+@export var hold_forward := 0.0
+@export var hold_out := 0.0
+## Heavy weapons rest at the side between attacks instead of across the chest.
+@export var heavy_at_side := false
