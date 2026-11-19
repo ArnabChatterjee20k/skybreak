@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/view/shaders/vfx/shockwave_effect.gd" id="1_script"]
+[ext_resource type="Shader" path="res://game/view/shaders/shockwave.gdshader" id="2_shockwave"]
+
+[sub_resource type="ShaderMaterial" id="ring_material"]
+render_priority = 1
+shader = ExtResource("2_shockwave")
+
+[sub_resource type="QuadMesh" id="ring_quad"]
+material = SubResource("ring_material")
+size = Vector2(4, 4)
+
+[node name="Shockwave" type="Node3D"]
+script = ExtResource("1_script")
+lifetime = 0.45
+default_color = Color(1, 0.85, 0.6, 1)
+
+[node name="Ring" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("ring_quad")

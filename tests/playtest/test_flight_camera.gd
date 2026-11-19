@@ -54,7 +54,14 @@ func test_camera_distance_never_pumps() -> void:
 	for scenario_name in _results:
 		var frames := _settled(scenario_name)
 		var fastest := 0.0
+		var frames_since_teleport := 1000
 		for i in range(1, frames.size()):
+			# After a teleport the camera glides to the player for ~0.2 s; that
+			# distance change is the glide, not zoom pumping.
+			var player_jump: float = frames[i].player.distance_to(frames[i - 1].player)
+			frames_since_teleport = 0 if player_jump > 3.0 else frames_since_teleport + 1
+			if frames_since_teleport < 20:
+				continue
 			var change: float = absf(frames[i].camera_distance - frames[i - 1].camera_distance)
 			fastest = maxf(fastest, change / FlightPlaytest.FRAME_SECONDS)
 		assert_lte(fastest, MAX_DISTANCE_CHANGE_SPEED, "%s: %.1f m/s" % [scenario_name, fastest])
@@ -104,3 +111,62 @@ func test_opponent_is_on_screen_in_most_locked_frames_at_moderate_height_gaps() 
 			visible += int(frame.opponent_on_screen)
 		if counted > 0:
 			assert_gte(float(visible) / counted, 0.99, "%s: %d/%d frames" % [scenario_name, visible, counted])
+
+
+func test_player_rarely_hides_the_opponent_while_strafing() -> void:
+	# T-114: in circle-strafe and figure-8 the player covers more than 20% of the
+	# opponent in at most 20% of locked frames.
+	for scenario_name in ["2_circle_strafe_locked", "3_figure_eight"]:
+		var locked := _settled(scenario_name).filter(func(f): return f.locked)
+		var hidden := locked.filter(func(f): return f.opponent_hidden > 0.2)
+		var share := float(hidden.size()) / locked.size()
+		assert_lte(share, 0.2, "%s: opponent >20%% hidden in %d/%d frames" % [scenario_name, hidden.size(), locked.size()])
+
+
+func test_player_sits_about_a_third_from_the_screen_edge_while_locked() -> void:
+	var screen := Vector2(1920, 1080)
+	for scenario_name in ["2_circle_strafe_locked", "3_figure_eight", "5_rush_from_far"]:
+		var off := 0
+		var locked := 0
+		for frame in _settled(scenario_name):
+			if not frame.locked:
+				continue
+			locked += 1
+			var x: float = OpponentMarker.placement(frame.camera, frame.fov, screen, frame.player).position.x / screen.x
+			if absf(x - 0.5) < 0.12:  # within the middle quarter of the screen
+				off += 1
+		assert_lte(float(off) / locked, 0.1, "%s: player centred in %d/%d frames" % [scenario_name, off, locked])
+
+
+## Angle in degrees between two frames' view directions.
+func _turn_degrees(a: Dictionary, b: Dictionary) -> float:
+	return rad_to_deg((-a.camera.basis.z).angle_to(-b.camera.basis.z))
+
+
+func test_camera_never_turns_faster_than_180_degrees_per_second() -> void:
+	for scenario_name in _results:
+		var frames := _settled(scenario_name)
+		var fastest := 0.0
+		for i in range(1, frames.size()):
+			fastest = maxf(fastest, _turn_degrees(frames[i - 1], frames[i]) / FlightPlaytest.FRAME_SECONDS)
+		assert_lte(fastest, 181.0, "%s: %.0f°/s" % [scenario_name, fastest])
+
+
+func test_camera_never_jumps_more_than_10_degrees_in_a_frame() -> void:
+	for scenario_name in _results:
+		var frames := _settled(scenario_name)
+		var biggest := 0.0
+		for i in range(1, frames.size()):
+			biggest = maxf(biggest, _turn_degrees(frames[i - 1], frames[i]))
+		assert_lte(biggest, 10.0, "%s: %.1f° in one frame" % [scenario_name, biggest])
+
+
+func test_camera_glides_instead_of_cutting_on_teleports() -> void:
+	# A vanish step moves the player 6 m in one tick; the camera should take
+	# several frames to follow instead of jumping with them.
+	for scenario_name in _results:
+		var frames := _settled(scenario_name)
+		var biggest := 0.0
+		for i in range(1, frames.size()):
+			biggest = maxf(biggest, frames[i].camera.origin.distance_to(frames[i - 1].camera.origin))
+		assert_lte(biggest, 2.5, "%s: camera moved %.2f m in one frame" % [scenario_name, biggest])

@@ -14,6 +14,14 @@ extends Camera3D
 ## so fast flight never stretches the camera distance.
 @export var position_sharpness := 14.0
 @export var rotation_sharpness := 9.0
+## Fastest the view may turn, in degrees per second (anti-nausea). At 60 fps
+## that is 3 degrees per frame, so re-locks never snap.
+@export var max_turn_speed := 180.0
+## A player jump longer than this in one frame (m) is a teleport, e.g. a vanish
+## step; normal movement tops out around 1.3 m per frame.
+@export var teleport_distance := 3.0
+## How fast the camera glides after a teleport, per second (~0.2 s to settle).
+@export var teleport_glide_sharpness := 18.0
 ## How fast the shoulder blends to its new side, in sides per second.
 @export var shoulder_switch_speed := 2.5
 ## How fast the locked-on mouse orbit springs back once the mouse stops.
@@ -36,6 +44,9 @@ var _has_pose := false
 var _far_blend := -1.0
 ## Camera position relative to the player, smoothed.
 var _offset := Vector3.ZERO
+## The point the camera follows: the player, except while gliding after a teleport.
+var _anchor := Vector3.ZERO
+var _gliding := false
 var _was_locked := false
 
 
@@ -71,14 +82,14 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	if locked:
 		if _seconds_since_mouse_moved > orbit_return_delay:
 			orbit = orbit.lerp(Vector2.ZERO, _blend(orbit_return_sharpness, delta))
-		_shoulder_goal = LockOnFraming.shoulder_side_for(global_transform, target, _shoulder_goal)
+		_shoulder_goal = LockOnFraming.shoulder_side_for(global_transform, player, target, _shoulder_goal)
 		_shoulder = move_toward(_shoulder, _shoulder_goal, shoulder_switch_speed * delta)
 		var range_goal := LockOnFraming.range_blend(player.distance_to(target))
 		if _far_blend < 0.0:
 			_far_blend = range_goal
 		else:
 			_far_blend = lerpf(_far_blend, range_goal, _blend(range_blend_sharpness, delta))
-		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend)
+		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, base_fov)
 	else:
 		if _was_locked and _has_pose:
 			_continue_free_orbit_from_here(player)
@@ -90,15 +101,42 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		global_transform = goal
 		fov = fov_goal
 		_offset = goal.origin - player
+		_anchor = player
 		_has_pose = true
 		return
 	fov = lerpf(fov, fov_goal, _blend(fov_sharpness, delta))
-	# slerp turns the offset around the player instead of cutting through it.
-	_offset = _offset.slerp(goal.origin - player, _blend(position_sharpness, delta))
-	var position_now := player + _offset
-	var rotation_now := global_basis.get_rotation_quaternion().slerp(
+	# slerp turns the offset around the player instead of cutting through it;
+	# its orbit is capped like the view turn so the two stay in step.
+	var offset_from := _offset
+	_offset = offset_from.slerp(goal.origin - player, _blend(position_sharpness, delta))
+	var orbit_angle := offset_from.angle_to(_offset)
+	var max_orbit := deg_to_rad(max_turn_speed) * delta
+	if orbit_angle > max_orbit:
+		_offset = offset_from.slerp(_offset, max_orbit / orbit_angle)
+	_follow_anchor(player, delta)
+	var position_now := _anchor + _offset
+	var rotation_from := global_basis.get_rotation_quaternion()
+	var rotation_now := rotation_from.slerp(
 		goal.basis.get_rotation_quaternion(), _blend(rotation_sharpness, delta))
+	var turn := rotation_from.angle_to(rotation_now)
+	var max_turn := deg_to_rad(max_turn_speed) * delta
+	if turn > max_turn:
+		rotation_now = rotation_from.slerp(rotation_now, max_turn / turn)
 	global_transform = Transform3D(Basis(rotation_now), position_now)
+
+
+## Follows the player rigidly, but glides over ~0.2 s after a teleport so a
+## vanish step doesn't read as a camera cut.
+func _follow_anchor(player: Vector3, delta: float) -> void:
+	if not _gliding and _anchor.distance_to(player) > teleport_distance:
+		_gliding = true
+	if not _gliding:
+		_anchor = player
+		return
+	_anchor = _anchor.lerp(player, _blend(teleport_glide_sharpness, delta))
+	if _anchor.distance_to(player) < 0.05:
+		_anchor = player
+		_gliding = false
 
 
 ## Starts the free orbit where the camera already is, so unlocking doesn't swing it.

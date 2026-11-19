@@ -24,6 +24,9 @@ const TOON_DEFAULTS := {
 	"rim_width": "0.3",
 	"rim_softness": "0.05",
 	"rim_strength": "0.35",
+}
+
+const TOON_INSTANCE_DEFAULTS := {
 	"rim_energy_color": "vec4(0.3, 0.85, 1.0, 1.0)",
 	"rim_energy_mix": "0.0",
 }
@@ -73,6 +76,23 @@ func test_outline_shader_loads_as_a_spatial_shader() -> void:
 
 func test_toon_uniforms_have_expected_defaults() -> void:
 	_assert_defaults(load(TOON_PATH), TOON_DEFAULTS)
+
+
+func test_toon_energy_rim_is_set_per_fighter_through_instance_uniforms() -> void:
+	var shader: Shader = load(TOON_PATH)
+	var names := _uniform_names(shader)
+	for uniform_name: String in TOON_INSTANCE_DEFAULTS:
+		var regex := RegEx.create_from_string("instance\\s+uniform\\s+\\w+\\s+" + uniform_name + "\\b")
+		assert_not_null(regex.search(shader.code), "%s is an instance uniform" % uniform_name)
+		assert_does_not_have(names, uniform_name, "%s is not a material uniform" % uniform_name)
+		assert_eq(_declared_default(shader, uniform_name), TOON_INSTANCE_DEFAULTS[uniform_name], uniform_name)
+
+
+func test_preview_energy_fighter_sets_its_rim_on_the_instance() -> void:
+	var preview: Node = (load(PREVIEW_PATH) as PackedScene).instantiate()
+	add_child_autofree(preview)
+	var fighter: MeshInstance3D = preview.get_node("EnergyRimFighter")
+	assert_eq(fighter.get_instance_shader_parameter("rim_energy_mix"), 1.0)
 
 
 func test_toon_exposes_albedo_and_ramp_textures() -> void:
