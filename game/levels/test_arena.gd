@@ -50,6 +50,7 @@ func _ready() -> void:
 	$Hud.add_child(impact_frame)
 	combat_feedback.impact_frame = impact_frame
 	$Hud.add_child(combo_counter)
+	match_flow.spawn_points = FIGHTER_STARTS
 	match_hud.sim = sim
 	match_hud.flow = match_flow
 	for view in _fighter_views:
