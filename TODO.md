@@ -132,6 +132,8 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 
 ## Done
 
+- T-D27 [desktop] VFX polish: pooled `MatchVfx` layer (game/view/vfx): heavy/counter anime burst + two-tone impact frame, guard-break shatter, KO dome + colour pop, Stormfall lightning, Heartbloom petals, weapon smears, afterimages, speed lines, sonic ring, zone landing dust, aura flare, ki blast/beam components; GLES3-safe (no instance uniforms).
+
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,

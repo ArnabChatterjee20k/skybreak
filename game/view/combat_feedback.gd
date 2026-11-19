@@ -23,10 +23,19 @@ const ITEM_COLOR := Color(1.0, 0.8, 0.3)
 ## Set by the arena.
 var camera: FighterCamera
 var impact_frame: ImpactFrame
+## Pooled T-D27 effects (smears, afterimages, KO finisher, zone extras); same events.
+var vfx := MatchVfx.new()
+
+
+func _ready() -> void:
+	# Internal, so the feedback's own children stay just the one-shot sparks.
+	add_child(vfx, false, Node.INTERNAL_MODE_FRONT)
 
 
 ## Spawns the feedback for one tick's events.
 func react(events: Array[Dictionary]) -> void:
+	if vfx.is_inside_tree():
+		vfx.react(events)
 	for event in events:
 		var plan := plan_for(event)
 		for scene: PackedScene in plan.effects:

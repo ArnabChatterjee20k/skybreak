@@ -47,6 +47,7 @@ func start(camera: Camera3D) -> void:
 		effect.global_position = origin
 		effect.play()
 		_spawned.append(effect)
+	_spawned.append_array(VfxCatalog.build_prewarm(self, origin))
 	var aura := AURA.instantiate() as Node3D
 	add_child(aura)
 	aura.global_position = origin
