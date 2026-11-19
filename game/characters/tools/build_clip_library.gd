@@ -1,7 +1,8 @@
 extends SceneTree
 ## Builds the shared humanoid AnimationLibrary from the retargeted Quaternius
 ## Universal Animation Library imports and measures each strike's impact window
-## into the given ClipSets. Run after `--import`:
+## into the given ClipSets. Clips it does not own (tools/author_clips.gd) are
+## kept. Run after `--import`:
 ## godot --headless --path . -s res://game/characters/tools/build_clip_library.gd
 
 const SOURCES := [
@@ -52,7 +53,7 @@ const HIPS_TRACK := NodePath("%GeneralSkeleton:Hips")
 
 
 func _init() -> void:
-	var library := AnimationLibrary.new()
+	var library: AnimationLibrary = load(OUTPUT) if ResourceLoader.exists(OUTPUT) else AnimationLibrary.new()
 	var players := {}
 	for path: String in SOURCES:
 		var scene: Node = (load(path) as PackedScene).instantiate()
@@ -72,6 +73,8 @@ func _init() -> void:
 		animation.resource_name = clip
 		animation.loop_mode = Animation.LOOP_LINEAR if CLIPS[clip][1] else Animation.LOOP_NONE
 		_pin_hips(animation, _standing_hips_height(players) if CLIPS[clip].size() > 2 else NAN)
+		if library.has_animation(clip):
+			library.remove_animation(clip)
 		library.add_animation(clip, animation)
 		if clip in STRIKES:
 			windows[clip] = _impact_window(player, source)
@@ -82,7 +85,7 @@ func _init() -> void:
 	for set_path: String in CLIP_SETS:
 		var clip_set: ClipSet = load(set_path)
 		clip_set.library = library
-		clip_set.impact_windows = windows
+		clip_set.impact_windows.merge(windows, true)
 		print("updated %s (%s)" % [set_path, error_string(ResourceSaver.save(clip_set, set_path))])
 	for scene: Node in players.values():
 		scene.free()
