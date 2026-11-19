@@ -11,6 +11,8 @@ const EPSILON := 0.001
 var _sim: CombatSim
 var _tuning: MovementTuning
 var _previous: Array[FighterInput] = []
+## False holds fighter 0's camera at yaw 0 in _drive_locked, as a camera that has not turned yet.
+var _camera_follows := true
 
 
 ## Starts a sim with one fighter per position; fighter 0 is the one under test.
@@ -18,6 +20,7 @@ func _start(positions: Array) -> void:
 	_sim = CombatSim.new()
 	_tuning = _sim.tuning
 	_previous = []
+	_camera_follows = true
 	for start_position in positions:
 		_sim.add_fighter(start_position)
 		_previous.append(FighterInput.new())
@@ -236,12 +239,10 @@ func test_a_vanish_step_teleports_the_vanish_distance_and_waits_out_its_ticks() 
 	assert_eq(_fighter().state, FighterState.State.IDLE)
 
 
-func test_a_neutral_vanish_step_goes_straight_back() -> void:
-	_start([Vector3.ZERO, Vector3(0, 0, -60)])
-	_drive(1, LOCK)
-	_drive(1)
+func test_an_unlocked_neutral_vanish_step_goes_straight_back() -> void:
+	_start([Vector3.ZERO])
 	_drive(1, DASH | BLOCK)
-	assert_almost_eq(_fighter().position.z, _tuning.vanish_step_distance, EPSILON)
+	assert_almost_eq(_fighter().position.z, _tuning.vanish_step_distance, EPSILON, "yaw 0 faces -Z")
 
 
 # Arena bounds
@@ -316,3 +317,208 @@ func test_a_custom_movement_tuning_changes_the_feel() -> void:
 	_previous = [FighterInput.new()]
 	_drive(120, 0, FORWARD)
 	assert_almost_eq(_planar_speed(_fighter()), 3.0, EPSILON)
+
+
+# Playtest #1 regressions (T-D01b)
+
+## Starts two hovering fighters 12 m apart, locked onto each other, as in the playtest.
+func _start_locked_pair(height: float = 10.0) -> void:
+	_start([Vector3(0, height, 6), Vector3(0, height, -6)])
+	_sim.lock_everyone_onto_nearest()
+
+
+## Heading from fighter 0 to its target, as a camera on the lock line sees it.
+func _lock_yaw() -> float:
+	var to_target := _sim.fighters[1].position - _fighter().position
+	return atan2(-to_target.x, -to_target.z)
+
+
+## Runs ticks with fighter 0's camera yawed camera_yaw_offset off the lock
+## line, as the playtest camera was; fighter 1 holds target_vertical.
+func _drive_locked(ticks: int, held: int, move: Vector2, camera_yaw_offset: float = 0.0,
+		target_vertical: int = 0) -> void:
+	for _i in ticks:
+		var inputs: Array[FighterInput] = []
+		var input := FighterInput.from_held(held, _previous[0])
+		input.move = move
+		input.view_yaw = (_lock_yaw() if _camera_follows else 0.0) + camera_yaw_offset
+		inputs.append(input)
+		var other := FighterInput.from_held(0, _previous[1])
+		other.vertical = target_vertical
+		inputs.append(other)
+		_sim.tick(inputs)
+		_previous = inputs
+
+
+func _gap() -> float:
+	return _fighter().position.distance_to(_sim.fighters[1].position)
+
+
+func _height_gap() -> float:
+	return _fighter().position.y - _sim.fighters[1].position.y
+
+
+func test_locked_strafing_orbits_the_target_at_the_strafe_start_radius() -> void:
+	# Playtest: 12 -> 22.7 m in 5 s with the camera slightly off the lock line.
+	_start_locked_pair()
+	var widest := 0.0
+	for _i in 300:
+		_drive_locked(1, 0, RIGHT, -0.05)
+		widest = maxf(widest, absf(_gap() - 12.0))
+	assert_lt(widest, 0.01, "gap after 5 s: %.2f m (drifted up to %.2f m)" % [_gap(), widest])
+	assert_almost_eq(_height_gap(), 0.0, EPSILON)
+
+
+func test_locked_strafing_keeps_the_radius_even_with_the_camera_on_the_lock_line() -> void:
+	_start_locked_pair()
+	_drive_locked(300, 0, -RIGHT)
+	assert_almost_eq(_gap(), 12.0, 0.01, "gap after 5 s: %.2f m" % _gap())
+
+
+func test_locked_strafing_on_the_ground_orbits_too() -> void:
+	_start([Vector3(0, 0, 6), Vector3(0, 0, -6)])
+	_sim.lock_everyone_onto_nearest()
+	_drive_locked(180, 0, RIGHT, 0.3)
+	assert_almost_eq(_gap(), 12.0, 0.01, "gap after 3 s: %.2f m" % _gap())
+
+
+func test_forward_and_back_while_locked_change_the_orbit_radius() -> void:
+	_start_locked_pair()
+	_drive_locked(20, 0, Vector2(1, 1).normalized())
+	assert_lt(_gap(), 12.0 - 1.0, "W+D closes in")
+	_drive_locked(60, 0, RIGHT)
+	var settled := _gap()
+	_drive_locked(60, 0, RIGHT)
+	assert_almost_eq(_gap(), settled, 0.01, "once the approach momentum is gone, a strafe holds the radius")
+	_drive_locked(60, 0, BACK)
+	assert_gt(_gap(), settled + 5.0, "S backs off")
+
+
+func test_a_locked_dash_away_goes_straight_back_along_the_line_from_the_target() -> void:
+	# Playtest: a 1.8 s sustained dash-away drifted 22 m sideways.
+	_start_locked_pair()
+	_drive_locked(108, DASH, BACK, 0.1)
+	var away := _fighter().position - _sim.fighters[1].position
+	var sideways := Vector2(away.x, 0.0).length()
+	assert_gt(away.z, 90.0, "it went back")
+	assert_lt(sideways, 0.01, "sideways drift %.1f m over %.0f m" % [sideways, away.z])
+
+
+func test_a_locked_back_step_goes_straight_back() -> void:
+	_start_locked_pair()
+	_drive_locked(1, DASH, BACK, 0.4)
+	_drive_locked(_tuning.dash_step_ticks - 1, 0, Vector2.ZERO, 0.4)
+	assert_almost_eq(_fighter().position.x, 0.0, EPSILON)
+	assert_almost_eq(_gap(), 12.0 + _tuning.dash_step_distance, 0.01)
+
+
+func test_a_locked_side_step_curves_around_the_target() -> void:
+	_start_locked_pair()
+	_drive_locked(1, DASH, RIGHT)
+	_drive_locked(_tuning.dash_step_ticks - 1, 0, Vector2.ZERO)
+	assert_almost_eq(_gap(), 12.0, 0.01)
+
+
+func test_the_rush_brakes_over_rush_brake_ticks_instead_of_stopping_dead() -> void:
+	# Playtest: 80 -> 0 m/s in one tick.
+	_start([Vector3(0, 10, 0), Vector3(0, 10, -60)])
+	_sim.lock_everyone_onto_nearest()
+	_drive(1, DASH, FORWARD)
+	assert_eq(_fighter().dash_kind, FighterState.DashKind.RUSH)
+	var speeds: Array[float] = [_fighter().velocity.length()]
+	while _fighter().state == FighterState.State.DASHING and speeds.size() <= _tuning.rush_max_ticks:
+		_drive(1)
+		speeds.append(_fighter().velocity.length())
+	var biggest_drop := 0.0
+	var braking := 0
+	for i in range(1, speeds.size()):
+		biggest_drop = maxf(biggest_drop, speeds[i - 1] - speeds[i])
+		if speeds[i] > 0.0 and speeds[i] < _tuning.rush_speed - EPSILON:
+			braking += 1
+	var even_drop := _tuning.rush_speed / _tuning.rush_brake_ticks
+	assert_lt(biggest_drop, even_drop * 1.5, "biggest one-tick drop %.1f m/s" % biggest_drop)
+	assert_between(braking, _tuning.rush_brake_ticks - 2, _tuning.rush_brake_ticks + 2,
+		"braking ticks: %d" % braking)
+	assert_almost_eq(_gap(), _tuning.rush_stop_distance, 0.05, "still arrives at the stop distance")
+	assert_eq(_fighter().velocity, Vector3.ZERO)
+
+
+func test_a_locked_sideways_vanish_keeps_the_distance_and_height_to_the_target() -> void:
+	# Playtest: two side vanishes before the camera turned took the gap 12 -> 17 m,
+	# and the height fell 0.8 m behind a target that was still climbing.
+	_start_locked_pair()
+	_camera_follows = false
+	_drive_locked(1, DASH | BLOCK, RIGHT, 0.0, 1)
+	_drive_locked(5, 0, Vector2.ZERO, 0.0, 1)
+	_drive_locked(_tuning.vanish_step_ticks - 6, 0, Vector2.ZERO)
+	assert_eq(_fighter().state, FighterState.State.VANISHING)
+	var first := "after one: gap %.2f m, height %.2f m" % [_gap(), _height_gap()]
+	assert_almost_eq(_height_gap(), 0.0, 0.01, first)
+	_drive_locked(60, 0, Vector2.ZERO)
+	_drive_locked(1, DASH | BLOCK, RIGHT)
+	_drive_locked(_tuning.vanish_step_ticks - 1, 0, Vector2.ZERO)
+	assert_almost_eq(_gap(), 12.0, 0.01, "%s; after two: gap %.2f m" % [first, _gap()])
+
+
+func test_a_locked_neutral_vanish_keeps_the_offset_to_the_target() -> void:
+	_start_locked_pair()
+	var offset := _fighter().position - _sim.fighters[1].position
+	_drive_locked(1, DASH | BLOCK, Vector2.ZERO, 0.0, 1)
+	_drive_locked(_tuning.vanish_step_ticks - 1, 0, Vector2.ZERO, 0.0, 1)
+	var now := _fighter().position - _sim.fighters[1].position
+	assert_lt(now.distance_to(offset), 0.01)
+
+
+func test_a_locked_vanish_toward_or_away_changes_the_distance_by_the_vanish_distance() -> void:
+	_start_locked_pair()
+	_drive_locked(1, DASH | BLOCK, FORWARD)
+	assert_almost_eq(_gap(), 12.0 - _tuning.vanish_step_distance, 0.01)
+	_start_locked_pair()
+	_drive_locked(1, DASH | BLOCK, BACK, 0.5)
+	assert_almost_eq(_gap(), 12.0 + _tuning.vanish_step_distance, 0.01)
+
+
+func test_holding_block_then_pressing_dash_vanishes() -> void:
+	_start([Vector3(0, 10, 0)])
+	_drive(20, BLOCK)
+	assert_eq(_fighter().state, FighterState.State.BLOCKING)
+	_drive(1, BLOCK | DASH, RIGHT)
+	assert_eq(_fighter().state, FighterState.State.VANISHING)
+
+
+func test_holding_dash_then_pressing_block_vanishes() -> void:
+	_start([Vector3(0, 10, 0)])
+	_drive(20, DASH, RIGHT)
+	assert_eq(_fighter().dash_kind, FighterState.DashKind.SUSTAINED)
+	_drive(1, DASH | BLOCK, RIGHT)
+	assert_eq(_fighter().state, FighterState.State.VANISHING)
+
+
+## Vertical speed each tick after letting go, until it settles at 0 (or max_ticks).
+func _vertical_speeds_after_release(max_ticks: int) -> Array[float]:
+	var speeds: Array[float] = [_fighter().velocity.y]
+	while speeds.size() <= max_ticks and _fighter().velocity.y != 0.0:
+		_drive(1)
+		speeds.append(_fighter().velocity.y)
+	return speeds
+
+
+func test_releasing_ascend_eases_the_climb_out_instead_of_stopping_dead() -> void:
+	_start([Vector3(0, 50, 0)])
+	_drive(60, 0, Vector2.ZERO, 1)
+	var speeds := _vertical_speeds_after_release(120)
+	var first_drop := speeds[0] - speeds[1]
+	var last_drop := speeds[speeds.size() - 2] - speeds[speeds.size() - 1]
+	assert_lt(last_drop, first_drop * 0.5, "drops %s" % str(speeds))
+	assert_lte(speeds.size() - 1, _tuning.climb_ease_out_ticks + 1, "settles in %d ticks" % (speeds.size() - 1))
+	assert_almost_eq(speeds[speeds.size() - 1], 0.0, EPSILON)
+
+
+func test_releasing_descend_eases_the_dive_out() -> void:
+	_start([Vector3(0, 150, 0)])
+	_drive(60, 0, Vector2.ZERO, -1)
+	var speeds := _vertical_speeds_after_release(120)
+	var first_drop := speeds[1] - speeds[0]
+	var last_drop := speeds[speeds.size() - 1] - speeds[speeds.size() - 2]
+	assert_lt(last_drop, first_drop * 0.5, "drops %s" % str(speeds))
+	assert_almost_eq(speeds[speeds.size() - 1], 0.0, EPSILON)
