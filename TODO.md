@@ -131,3 +131,9 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-116 [developer] VFX prewarm at arena load, PR #19.
 - T-D09b [desktop] VFX fixes (ground shockwave, aura, flame tongues), PR #18.
 - T-D03 [desktop] Moves, light string and cancels, PR #15.
+- T-D20 [desktop] Audio system and every gameplay sound effect: bus layout
+  (Master limiter, Music, SFX, Ambience, UI, Voice), `AudioDirector` autoload,
+  `CombatAudioMapper`, per-category `SoundBank`s, synthesised CC0 cues, zone
+  ambience that follows altitude. Follow-ups: weapon, pickup, ki blast/beam and
+  round-flow cues are banked and mapped but wait for sim events; audio volume
+  sliders in the settings menu.

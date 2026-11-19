@@ -14,6 +14,8 @@ var input_override: Callable
 ## Compiles VFX at load behind a loading cover; scripts can await
 ## vfx_prewarm.finished (or check is_finished) before capturing frames.
 var vfx_prewarm := VfxPrewarm.new()
+## Sound for sim events and fighter states (T-D20).
+var match_audio := MatchAudio.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -29,6 +31,8 @@ func _ready() -> void:
 	$DebugOverlay.sim = sim
 	opponent_marker.camera = camera
 	add_child(vfx_prewarm)
+	match_audio.sim = sim
+	add_child(match_audio)
 	# After the first frame so the camera has its starting pose.
 	(func(): vfx_prewarm.start(camera)).call_deferred()
 
@@ -53,6 +57,7 @@ func step_tick() -> void:
 		inputs.append(_player_input.read_tick(camera.view_yaw(), camera.orbit))
 		inputs.append(FighterInput.new())
 	sim.tick(inputs)
+	match_audio.after_tick()
 
 
 ## Draws one frame: fighters at blend between the last two ticks, then the camera.

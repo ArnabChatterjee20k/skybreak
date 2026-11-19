@@ -1,0 +1,117 @@
+[gd_resource type="Resource" script_class="SoundBank" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_bank.gd" id="bank"]
+[ext_resource type="Script" path="res://game/audio/sound_cue.gd" id="cue"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/pickups/pickup_spawn.ogg" id="s1"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/pickups/sky_drop_whistle.ogg" id="s2"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/pickups/pickup_1.ogg" id="s3"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/pickups/pickup_2.ogg" id="s4"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/pickups/weapon_switch_1.ogg" id="s5"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/pickups/weapon_switch_2.ogg" id="s6"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/pickups/weapon_throw_1.ogg" id="s7"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/pickups/weapon_throw_2.ogg" id="s8"]
+
+[sub_resource type="Resource" id="pickup_spawn"]
+script = ExtResource("cue")
+id = &"pickup_spawn"
+streams = Array[AudioStream]([ExtResource("s1")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 60
+cooldown = 0.03
+positional = true
+unit_size = 25.0
+max_distance = 400.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="sky_drop_whistle"]
+script = ExtResource("cue")
+id = &"sky_drop_whistle"
+streams = Array[AudioStream]([ExtResource("s2")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 60
+cooldown = 0.03
+positional = true
+unit_size = 25.0
+max_distance = 400.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="pickup"]
+script = ExtResource("cue")
+id = &"pickup"
+streams = Array[AudioStream]([ExtResource("s3"), ExtResource("s4")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 65
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="weapon_switch"]
+script = ExtResource("cue")
+id = &"weapon_switch"
+streams = Array[AudioStream]([ExtResource("s5"), ExtResource("s6")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 50
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="weapon_throw"]
+script = ExtResource("cue")
+id = &"weapon_throw"
+streams = Array[AudioStream]([ExtResource("s7"), ExtResource("s8")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 50
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[resource]
+script = ExtResource("bank")
+category = &"pickups"
+cues = Array[ExtResource("cue")]([SubResource("pickup_spawn"), SubResource("sky_drop_whistle"), SubResource("pickup"), SubResource("weapon_switch"), SubResource("weapon_throw")])
