@@ -1,0 +1,129 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 6
+		},
+		"light_1": {
+			"3": 8,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 3,
+			"9": 3
+		},
+		"light_2": {
+			"3": 11,
+			"5": 4
+		},
+		"light_3": {
+			"3": 10,
+			"8": 4
+		},
+		"spike": {
+			"7": 3
+		}
+	},
+	"id": "1001:shattered_mesa:1v1:vexa,brann:53",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		5,
+		3
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1001,
+	"sim_ms_per_tick": 2.23774111111111,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.00634258193895221,
+		"finger_pops_per_fighter_minute": 21.011673151751,
+		"foot_error_p95_cm": 14.1071893193267,
+		"foot_slide_cm_per_frame": 1.18498176330161,
+		"locked_on_screen_share": 0.996989765201686,
+		"pops_per_fighter_minute": 35.0194552529183
+	},
+	"view_ms_per_frame": 2.53116722222222,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 127,
+			"detail": "lowest sole +39.7 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 798,
+			"worst_value": 0.397336848145589
+		},
+		{
+			"check": "foot_ground",
+			"count": 14,
+			"detail": "lowest sole +5.7 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 12,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 14,
+			"worst_value": 0.0571572484198501
+		},
+		{
+			"check": "pop",
+			"count": 25,
+			"detail": "SashLower turned 2.46 rad in one frame (FLYING, move )",
+			"fighter": 0,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1051,
+			"worst_value": 2.46494722366333
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 663,
+			"detail": "fighters 0 and 1 overlap 1.05 m (ATTACKING vs HITSTUN)",
+			"fighter": 0,
+			"first_tick": 241,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 395,
+			"worst_value": 1.04684249958955
+		},
+		{
+			"check": "pop",
+			"count": 10,
+			"detail": "BeardBraid turned 2.15 rad in one frame (HITSTUN, move )",
+			"fighter": 1,
+			"first_tick": 300,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 300,
+			"worst_value": 2.14733362197876
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "35 pops in 1.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 1.99888888888889,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 35
+		}
+	],
+	"wall_seconds": 28.07,
+	"zone": "shattered_mesa"
+}

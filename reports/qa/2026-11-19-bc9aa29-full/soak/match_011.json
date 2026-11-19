@@ -1,0 +1,226 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 3,
+			"10": 3
+		},
+		"launcher": {
+			"7": 8
+		},
+		"light_1": {
+			"3": 11,
+			"4": 6,
+			"5": 5
+		},
+		"light_1+counter": {
+			"7": 7,
+			"8": 4,
+			"9": 1
+		},
+		"light_2": {
+			"3": 8,
+			"4": 8,
+			"5": 4
+		},
+		"light_3": {
+			"3": 5,
+			"4": 4,
+			"5": 3,
+			"8": 3
+		},
+		"revolver/projectile": {
+			"4": 6
+		}
+	},
+	"id": "1023:shattered_mesa:2v2:lyra,kael,vexa,brann:5243",
+	"kos": 0,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		5,
+		2,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1023,
+	"sim_ms_per_tick": 3.70243388888889,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0115885809063911,
+		"finger_pops_per_fighter_minute": 36.0200111172874,
+		"foot_error_p95_cm": 19.7792837604936,
+		"foot_slide_cm_per_frame": 1.37632867652995,
+		"locked_on_screen_share": 0.947603833865815,
+		"pops_per_fighter_minute": 18.5102834908282
+	},
+	"view_ms_per_frame": 3.06407277777778,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 133,
+			"detail": "lowest sole -70.7 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "revolver",
+			"worst_tick": 877,
+			"worst_value": -0.70721985200386
+		},
+		{
+			"check": "pop",
+			"count": 15,
+			"detail": "RightHand turned 2.03 rad in one frame (MOVING, move )",
+			"fighter": 1,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 2.02893877029419
+		},
+		{
+			"check": "pop",
+			"count": 7,
+			"detail": "RightLowerArm turned 2.00 rad in one frame (MOVING, move )",
+			"fighter": 2,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 2.0001392364502
+		},
+		{
+			"check": "pop",
+			"count": 13,
+			"detail": "LeftUpperArm turned 1.76 rad in one frame (ATTACKING, move revolver/shot)",
+			"fighter": 3,
+			"first_tick": 215,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "revolver",
+			"worst_tick": 1750,
+			"worst_value": 1.76333010196686
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 644,
+			"detail": "fighters 0 and 2 overlap 0.88 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 227,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 995,
+			"worst_value": 0.878492542887107
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 697,
+			"detail": "fighters 1 and 3 overlap 1.10 m (HITSTUN vs ATTACKING)",
+			"fighter": 1,
+			"first_tick": 279,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 564,
+			"worst_value": 1.09815047357697
+		},
+		{
+			"check": "foot_ground",
+			"count": 16,
+			"detail": "lowest sole -147.6 cm off the visible ground (MOVING)",
+			"fighter": 0,
+			"first_tick": 868,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 875,
+			"worst_value": -1.47632221240823
+		},
+		{
+			"check": "pop",
+			"count": 2,
+			"detail": "RightHand turned 2.30 rad in one frame (MOVING, move )",
+			"fighter": 0,
+			"first_tick": 872,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 872,
+			"worst_value": 2.29922199249268
+		},
+		{
+			"check": "foot_ground",
+			"count": 20,
+			"detail": "lowest sole -61.8 cm off the visible ground (BLOCKING)",
+			"fighter": 2,
+			"first_tick": 886,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 893,
+			"worst_value": -0.618367647924288
+		},
+		{
+			"check": "foot_ground",
+			"count": 10,
+			"detail": "lowest sole +69.6 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 907,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 912,
+			"worst_value": 0.696132440899348
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 55,
+			"detail": "fighters 2 and 3 overlap 0.58 m (HITSTUN vs ATTACKING)",
+			"fighter": 2,
+			"first_tick": 1090,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1177,
+			"worst_value": 0.575071948766708
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "37 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 37
+		},
+		{
+			"check": "camera_on_screen",
+			"count": 1,
+			"detail": "both locked fighters on screen in 94.8% of 1565 locked frames",
+			"fighter": 0,
+			"first_tick": 1800,
+			"legend": "lyra",
+			"limit": 0.95,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 0.947603833865815
+		}
+	],
+	"wall_seconds": 33.509,
+	"zone": "shattered_mesa"
+}

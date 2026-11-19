@@ -1,0 +1,217 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1,
+			"8": 1,
+			"10": 1
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"chakram/light_1": {
+			"4": 4
+		},
+		"chakram/light_1+counter": {
+			"8": 1
+		},
+		"chakram/light_2": {
+			"4": 3
+		},
+		"chakram/light_3": {
+			"6": 3
+		},
+		"chakram/light_3+counter": {
+			"10": 1
+		},
+		"light_1": {
+			"3": 8,
+			"4": 10,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 7,
+			"9": 3
+		},
+		"light_2": {
+			"3": 14,
+			"4": 11,
+			"5": 4
+		},
+		"light_3": {
+			"3": 8,
+			"4": 3,
+			"5": 3,
+			"8": 4
+		},
+		"sweep": {
+			"7": 1
+		}
+	},
+	"id": "3421:verdant_falls:2v2:vexa,brann,lyra,kael:2432",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		4,
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 3421,
+	"sim_ms_per_tick": 4.40745888888889,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0186970084905624,
+		"finger_pops_per_fighter_minute": 20.5113952195664,
+		"foot_error_p95_cm": 14.1328011444253,
+		"foot_slide_cm_per_frame": 0.513371709537643,
+		"locked_on_screen_share": 0.988882712618121,
+		"pops_per_fighter_minute": 13.0072262367982
+	},
+	"view_ms_per_frame": 3.76653277777778,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 140,
+			"detail": "lowest sole +40.6 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 373,
+			"worst_value": 0.406186206593143
+		},
+		{
+			"check": "foot_ground",
+			"count": 9,
+			"detail": "lowest sole +5.1 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 23,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 103,
+			"worst_value": 0.0513043206033146
+		},
+		{
+			"check": "pop",
+			"count": 8,
+			"detail": "RightLowerArm turned 2.03 rad in one frame (MOVING, move )",
+			"fighter": 3,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 2.02893877029419
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 963,
+			"detail": "fighters 0 and 3 overlap 0.95 m (ATTACKING vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 174,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1749,
+			"worst_value": 0.948350920854136
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 161,
+			"detail": "fighters 2 and 3 overlap 0.58 m (FLYING vs ATTACKING)",
+			"fighter": 2,
+			"first_tick": 176,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 657,
+			"worst_value": 0.577864997386932
+		},
+		{
+			"check": "pop",
+			"count": 12,
+			"detail": "RightHoodPoint turned 1.66 rad in one frame (FLYING, move )",
+			"fighter": 0,
+			"first_tick": 176,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 176,
+			"worst_value": 1.65877616405487
+		},
+		{
+			"check": "camera_cover",
+			"count": 1,
+			"detail": "fighter 2 covers 94% of the screen",
+			"fighter": 2,
+			"first_tick": 183,
+			"legend": "lyra",
+			"limit": 0.6,
+			"weapon": "",
+			"worst_tick": 183,
+			"worst_value": 0.93746696566358
+		},
+		{
+			"check": "pop",
+			"count": 6,
+			"detail": "LeftLowerArm turned 1.40 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 1,
+			"first_tick": 257,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1414,
+			"worst_value": 1.3969954252243
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +43.2 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 570,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 570,
+			"worst_value": 0.431600088132063
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 215,
+			"detail": "fighters 1 and 2 overlap 1.03 m (ATTACKING vs HITSTUN)",
+			"fighter": 1,
+			"first_tick": 908,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1587,
+			"worst_value": 1.02796834518202
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "26 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 26
+		}
+	],
+	"wall_seconds": 36.783,
+	"zone": "verdant_falls"
+}

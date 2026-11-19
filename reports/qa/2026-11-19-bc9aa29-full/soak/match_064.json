@@ -1,0 +1,200 @@
+{
+	"hitstops": {
+		"breaker+counter": {
+			"14": 1
+		},
+		"hammer/light_1": {
+			"7": 1
+		},
+		"launcher": {
+			"7": 6,
+			"8": 4,
+			"9": 1
+		},
+		"light_1": {
+			"3": 5,
+			"4": 2,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 8,
+			"8": 5,
+			"9": 1
+		},
+		"light_2": {
+			"3": 12,
+			"4": 6,
+			"5": 2
+		},
+		"light_3": {
+			"3": 6,
+			"4": 5,
+			"5": 5,
+			"8": 2
+		},
+		"spike": {
+			"8": 1
+		},
+		"sweep": {
+			"7": 1
+		},
+		"sweep+counter": {
+			"12": 1
+		}
+	},
+	"id": "1510:ember_rift:ffa4:kael,vexa,brann,lyra:5424",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		5,
+		4,
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1510,
+	"sim_ms_per_tick": 4.61872444444444,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0108195394277573,
+		"finger_pops_per_fighter_minute": 38.0211228460256,
+		"foot_error_p95_cm": 11.3252790233375,
+		"foot_slide_cm_per_frame": 0.648943540768727,
+		"locked_on_screen_share": 0.986915887850467,
+		"pops_per_fighter_minute": 37.0205669816565
+	},
+	"view_ms_per_frame": 4.35278055555556,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 504,
+			"detail": "fighters 0 and 2 overlap 1.10 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 1.1
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 624,
+			"detail": "fighters 1 and 3 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 1,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1,
+			"worst_value": 0.88
+		},
+		{
+			"check": "foot_ground",
+			"count": 131,
+			"detail": "lowest sole +24.5 cm off the visible ground (IDLE)",
+			"fighter": 2,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1089,
+			"worst_value": 0.244615564158678
+		},
+		{
+			"check": "foot_ground",
+			"count": 44,
+			"detail": "lowest sole +6.3 cm off the visible ground (IDLE)",
+			"fighter": 1,
+			"first_tick": 10,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 16,
+			"worst_value": 0.0634003210060143
+		},
+		{
+			"check": "pop",
+			"count": 40,
+			"detail": "RightLowerLeg turned 2.16 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 0,
+			"first_tick": 136,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 793,
+			"worst_value": 2.16207480430603
+		},
+		{
+			"check": "foot_ground",
+			"count": 13,
+			"detail": "lowest sole +47.6 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 167,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1469,
+			"worst_value": 0.476494037832168
+		},
+		{
+			"check": "pop",
+			"count": 17,
+			"detail": "RightLowerLeg turned 1.80 rad in one frame (ATTACKING, move sweep)",
+			"fighter": 1,
+			"first_tick": 287,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1757,
+			"worst_value": 1.79964017868042
+		},
+		{
+			"check": "pop",
+			"count": 17,
+			"detail": "LeftHand turned 1.45 rad in one frame (HITSTUN, move )",
+			"fighter": 2,
+			"first_tick": 717,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 921,
+			"worst_value": 1.44611001014709
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -5.8 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1135,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1135,
+			"worst_value": -0.0581673705654708
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "74 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 74
+		}
+	],
+	"wall_seconds": 40.206,
+	"zone": "ember_rift"
+}

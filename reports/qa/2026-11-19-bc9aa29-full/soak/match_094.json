@@ -1,0 +1,215 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1,
+			"10": 1
+		},
+		"lance/light_1": {
+			"4": 3
+		},
+		"lance/light_1+counter": {
+			"8": 2
+		},
+		"lance/light_2": {
+			"4": 3
+		},
+		"lance/light_3": {
+			"7": 3
+		},
+		"launcher": {
+			"7": 4,
+			"8": 2
+		},
+		"light_1": {
+			"3": 11,
+			"4": 6,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 5,
+			"8": 2,
+			"9": 2
+		},
+		"light_2": {
+			"3": 15,
+			"4": 6,
+			"5": 4
+		},
+		"light_3": {
+			"3": 6,
+			"4": 3,
+			"5": 4,
+			"8": 2
+		},
+		"light_3+counter": {
+			"12": 1
+		}
+	},
+	"id": "2022:shattered_mesa:2v2:brann,lyra,kael,vexa:3333",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		3,
+		3,
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": true,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2022,
+	"sim_ms_per_tick": 4.25004833333333,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.011825761757791,
+		"finger_pops_per_fighter_minute": 28.5158421345192,
+		"foot_error_p95_cm": 15.9275883895887,
+		"foot_slide_cm_per_frame": 1.58954436956972,
+		"locked_on_screen_share": 0.998332406892718,
+		"pops_per_fighter_minute": 21.5119510839355
+	},
+	"view_ms_per_frame": 3.84056722222222,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 234,
+			"detail": "lowest sole +41.8 cm off the visible ground (IDLE)",
+			"fighter": 0,
+			"first_tick": 1,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 859,
+			"worst_value": 0.418152798383527
+		},
+		{
+			"check": "pop",
+			"count": 19,
+			"detail": "RightLowerArm turned 2.03 rad in one frame (MOVING, move )",
+			"fighter": 2,
+			"first_tick": 124,
+			"legend": "kael",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 2.02893877029419
+		},
+		{
+			"check": "pop",
+			"count": 8,
+			"detail": "RightLowerArm turned 2.00 rad in one frame (MOVING, move )",
+			"fighter": 3,
+			"first_tick": 124,
+			"legend": "vexa",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 124,
+			"worst_value": 2.00014543533325
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 728,
+			"detail": "fighters 0 and 2 overlap 1.09 m (HITSTUN vs ATTACKING)",
+			"fighter": 0,
+			"first_tick": 205,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 264,
+			"worst_value": 1.0917468149215
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 234,
+			"detail": "fighters 2 and 3 overlap 0.77 m (HITSTUN vs ATTACKING)",
+			"fighter": 2,
+			"first_tick": 207,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 354,
+			"worst_value": 0.773766753077507
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 757,
+			"detail": "fighters 1 and 2 overlap 0.93 m (HITSTUN vs ATTACKING)",
+			"fighter": 1,
+			"first_tick": 219,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 1473,
+			"worst_value": 0.929013946857303
+		},
+		{
+			"check": "foot_ground",
+			"count": 3,
+			"detail": "lowest sole -8.9 cm off the visible ground (IDLE)",
+			"fighter": 3,
+			"first_tick": 465,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 776,
+			"worst_value": -0.0887347265680276
+		},
+		{
+			"check": "pop",
+			"count": 12,
+			"detail": "LeftLowerArm turned 1.38 rad in one frame (BLOCKSTUN, move )",
+			"fighter": 0,
+			"first_tick": 608,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1493,
+			"worst_value": 1.38298809528351
+		},
+		{
+			"check": "pop",
+			"count": 4,
+			"detail": "CapeLeftLower turned 2.14 rad in one frame (FLYING, move )",
+			"fighter": 1,
+			"first_tick": 1070,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 1071,
+			"worst_value": 2.13860368728638
+		},
+		{
+			"check": "arena_bounds",
+			"count": 1,
+			"detail": "outside the arena at (512.47, 16.61, 545.99) (stand 17.00, GRABBED)",
+			"fighter": 0,
+			"first_tick": 1245,
+			"legend": "brann",
+			"limit": 300.05,
+			"weapon": "",
+			"worst_tick": 1245,
+			"worst_value": 137.528991699219
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "43 pops in 2.0 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 1800,
+			"legend": "",
+			"limit": 3.99777777777778,
+			"weapon": "",
+			"worst_tick": 1800,
+			"worst_value": 43
+		}
+	],
+	"wall_seconds": 37.794,
+	"zone": "shattered_mesa"
+}

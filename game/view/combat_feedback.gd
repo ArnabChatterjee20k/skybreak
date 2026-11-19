@@ -21,9 +21,12 @@ const ARMOR_COLOR := Color(0.75, 0.75, 0.8)
 const DUST_COLOR := Color(0.8, 0.72, 0.6)
 ## Weapon events use the gold item colour (GAME_DESIGN §5.11); the weapon layer draws the rest.
 const ITEM_COLOR := Color(1.0, 0.8, 0.3)
+## Most one-shot sparks alive at once; past it, minor sparks are skipped.
+const MAX_LIVE_SPARKS := 6
 
 ## Set by the arena.
 var camera: FighterCamera
+## Unused for hits: the rationed, partial impact moment lives in MatchVfx (ImpactFrameGate).
 var impact_frame: ImpactFrame
 ## Pooled T-D27 effects (smears, afterimages, KO finisher, zone extras); same events.
 var vfx := MatchVfx.new()
@@ -38,21 +41,38 @@ func _ready() -> void:
 func react(events: Array[Dictionary]) -> void:
 	if vfx.is_inside_tree():
 		vfx.react(events)
+	var sim := vfx.sim
+	var size := vfx.crowd_scale()
 	for event in events:
 		var plan := plan_for(event)
+		var where: Vector3 = event.get("position", Vector3.ZERO)
+		if sim != null:
+			where = MatchVfx.spark_point(event, sim.fighters)
+		var minor: bool = plan.scale < 1.0 and plan.shake < 0.3
 		for scene: PackedScene in plan.effects:
+			if minor and live_sparks() >= MAX_LIVE_SPARKS:
+				continue
 			var effect := scene.instantiate() as Node3D
 			add_child(effect)
-			effect.global_position = event.get("position", Vector3.ZERO)
-			effect.play(plan.color, plan.scale)
+			effect.global_position = where
+			effect.play(plan.color, plan.scale * size)
 		if camera != null and plan.shake > 0.0:
 			camera.shake(plan.shake)
-		if impact_frame != null and plan.impact_frames > 0:
-			impact_frame.flash(plan.impact_frames)
+
+
+## One-shot sparks still playing.
+func live_sparks() -> int:
+	var count := 0
+	for child in get_children():
+		if child is ImpactEffect and not child.is_queued_for_deletion():
+			count += 1
+	return count
+
 
 
 ## What one event shows: effects (scenes), color (transparent = the effect's
-## own), scale, shake (camera trauma 0-1) and impact_frames (inverted frames).
+## own), scale and shake (camera trauma 0-1). Screen-wide impact frames are
+## MatchVfx's, rationed by ImpactFrameGate, so impact_frames stays 0 here.
 static func plan_for(event: Dictionary) -> Dictionary:
 	var plan := {"effects": [], "color": Color.TRANSPARENT, "scale": 1.0, "shake": 0.0, "impact_frames": 0}
 	var heavy: bool = event.get("hitstop", 0) >= HEAVY_HITSTOP
@@ -77,11 +97,9 @@ static func plan_for(event: Dictionary) -> Dictionary:
 		E.GUARD_BREAK:
 			plan.effects = [GUARD_BREAK]
 			plan.shake = 0.6
-			plan.impact_frames = 2
 		E.KO:
-			plan.effects = [SPARK_HEAVY, SHOCKWAVE]
+			plan.effects = [SPARK_HEAVY]
 			plan.shake = 0.9
-			plan.impact_frames = 3
 		E.PUSH_BLOCK:
 			plan.effects = [SHOCKWAVE]
 			plan.color = BLOCK_COLOR
