@@ -2,8 +2,9 @@ class_name GraphicsSettings
 extends RefCounted
 ## Player-chosen graphics quality, saved to user://settings.cfg and applied to
 ## a viewport. Presets stay inside the GTX 1650 budget: high is the 1080p60 target.
+## WEB is the browser tier (Compatibility/WebGL2), picked by default in web builds.
 
-enum Quality { LOW, MEDIUM, HIGH }
+enum Quality { LOW, MEDIUM, HIGH, WEB }
 
 const SAVE_PATH := "user://settings.cfg"
 const SECTION := "graphics"
@@ -12,27 +13,49 @@ const MAX_RESOLUTION_SCALE := 1.0
 ## Windowed mode size, shrunk (keeping 16:9) to fit the usable screen area.
 const WINDOWED_SIZE := Vector2i(1600, 900)
 
-## Per-quality values. Shadow sizes are in pixels.
+## Per-quality values. Shadow sizes are in pixels; vfx_density is a particle
+## amount multiplier; terrain_chunk_radius counts chunks around the camera;
+## post_effects gates glow and other full-screen passes.
 const QUALITY_VALUES := {
 	Quality.LOW: {
 		"msaa_3d": Viewport.MSAA_DISABLED,
 		"screen_space_aa": Viewport.SCREEN_SPACE_AA_FXAA,
 		"directional_shadow_size": 1024,
 		"mesh_lod_threshold": 4.0,
+		"vfx_density": 0.6,
+		"terrain_chunk_radius": 3,
+		"post_effects": true,
 	},
 	Quality.MEDIUM: {
 		"msaa_3d": Viewport.MSAA_2X,
 		"screen_space_aa": Viewport.SCREEN_SPACE_AA_DISABLED,
 		"directional_shadow_size": 2048,
 		"mesh_lod_threshold": 2.0,
+		"vfx_density": 0.85,
+		"terrain_chunk_radius": 4,
+		"post_effects": true,
 	},
 	Quality.HIGH: {
 		"msaa_3d": Viewport.MSAA_4X,
 		"screen_space_aa": Viewport.SCREEN_SPACE_AA_DISABLED,
 		"directional_shadow_size": 4096,
 		"mesh_lod_threshold": 1.0,
+		"vfx_density": 1.0,
+		"terrain_chunk_radius": 5,
+		"post_effects": true,
+	},
+	Quality.WEB: {
+		"msaa_3d": Viewport.MSAA_DISABLED,
+		"screen_space_aa": Viewport.SCREEN_SPACE_AA_DISABLED,
+		"directional_shadow_size": 1024,
+		"mesh_lod_threshold": 8.0,
+		"vfx_density": 0.4,
+		"terrain_chunk_radius": 2,
+		"post_effects": false,
 	},
 }
+## Starting resolution scale in the browser, where fill rate is the bottleneck.
+const WEB_RESOLUTION_SCALE := 0.75
 
 var quality: Quality = Quality.HIGH
 ## Fraction of the window resolution the 3D scene renders at, then upscaled.
@@ -44,6 +67,19 @@ var vsync_enabled: bool = true
 var fullscreen: bool = true
 
 
+func _init(is_web: bool = OS.has_feature("web")) -> void:
+	if is_web:
+		quality = Quality.WEB
+		resolution_scale = WEB_RESOLUTION_SCALE
+		# Browsers only allow fullscreen from a user gesture; the page fills the tab.
+		fullscreen = false
+
+
+## One value of the current quality tier, e.g. "vfx_density".
+func quality_value(key: String) -> Variant:
+	return QUALITY_VALUES[quality][key]
+
+
 func apply_to(viewport: Viewport) -> void:
 	var values: Dictionary = QUALITY_VALUES[quality]
 	viewport.msaa_3d = values.msaa_3d
@@ -52,7 +88,8 @@ func apply_to(viewport: Viewport) -> void:
 	viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 	viewport.scaling_3d_scale = resolution_scale
 	RenderingServer.directional_shadow_atlas_set_size(values.directional_shadow_size, true)
-	if DisplayServer.get_name() != "headless":
+	# The browser owns vsync and the canvas size.
+	if DisplayServer.get_name() != "headless" and not OS.has_feature("web"):
 		DisplayServer.window_set_vsync_mode(
 			DisplayServer.VSYNC_ENABLED if vsync_enabled else DisplayServer.VSYNC_DISABLED)
 		_apply_window_mode()
@@ -77,8 +114,9 @@ func save(path: String = SAVE_PATH) -> Error:
 
 
 ## Loads saved settings; anything missing or invalid keeps its default.
-static func load_saved(path: String = SAVE_PATH) -> GraphicsSettings:
-	var settings := GraphicsSettings.new()
+static func load_saved(
+		path: String = SAVE_PATH, is_web: bool = OS.has_feature("web")) -> GraphicsSettings:
+	var settings := GraphicsSettings.new(is_web)
 	var config := ConfigFile.new()
 	if config.load(path) != OK:
 		return settings

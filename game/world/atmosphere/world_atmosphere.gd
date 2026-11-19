@@ -26,6 +26,8 @@ var night_materials: Array[ShaderMaterial] = []
 var current: Dictionary = {}
 ## Map overview: blend the ground zones only, wherever the camera is.
 var ground_only := false
+## Zone index whose preset alone applies everywhere (a zone match), or -1 to blend by position.
+var pinned_zone := -1
 var _applied_weights := PackedFloat32Array()
 var _applied_time := -1
 
@@ -46,9 +48,32 @@ func set_time_of_day(id: int) -> void:
 		sky_material.set_shader_parameter("star_amount", 1.0 if time_of_day == TimeOfDay.NIGHT else 0.0)
 
 
+## Uses only this zone's fog, light, sky and weather, wherever the camera goes (T-D19).
+## Other zones' weather emitters are switched off and hidden.
+func pin_zone(index: int) -> void:
+	pinned_zone = index
+	_applied_weights = PackedFloat32Array()
+	var own := layout.zones[index].weather if index >= 0 else -1
+	for type in weather:
+		var particles: GPUParticles3D = weather[type]
+		particles.visible = index < 0 or type == own
+		if not particles.visible:
+			particles.emitting = false
+
+
+## Zone weights at a point; one-hot on the pinned zone.
+func weights_at(x: float, z: float, y: float = -INF) -> PackedFloat32Array:
+	if pinned_zone < 0:
+		return layout.weights_at(x, z, y)
+	var w := PackedFloat32Array()
+	w.resize(layout.zones.size())
+	w[pinned_zone] = 1.0
+	return w
+
+
 ## Preset blended at (x, z) and altitude `y` for the current time of day.
 func blend_at(x: float, z: float, y: float = -INF) -> Dictionary:
-	var w := layout.weights_at(x, z, y)
+	var w := weights_at(x, z, y)
 	var t := int(time_of_day)
 	var out := {
 		"fog_color": Color(0, 0, 0, 0), "fog_end": 0.0, "sun_color": Color(0, 0, 0, 0),
@@ -79,7 +104,7 @@ func apply_at(position: Vector3) -> void:
 		particles.global_position = position
 	# Skip the writes when nothing changed (most frames, away from borders).
 	var y := -INF if ground_only else position.y
-	var weights := layout.weights_at(position.x, position.z, y)
+	var weights := weights_at(position.x, position.z, y)
 	if int(time_of_day) == _applied_time and _same(weights, _applied_weights):
 		return
 	_applied_weights = weights
@@ -103,7 +128,7 @@ func apply_at(position: Vector3) -> void:
 	for type in weather:
 		var particles: GPUParticles3D = weather[type]
 		var amount: float = current.weather.get(type, 0.0)
-		particles.emitting = amount > 0.02
+		particles.emitting = amount > 0.02 and particles.visible
 		particles.amount_ratio = clampf(amount, 0.0, 1.0)
 
 

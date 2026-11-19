@@ -133,6 +133,22 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 ## Done
 
 - T-D24 [desktop] Brann playable: FigureKit stone smith (merged mesh, ember cracks, apron, braided beard, boulder shoulders, stowed hammer and cannon), P1/P2 palettes, heavy armoured MoveSet and stats, posed move clips, roster entry, renders. Open: per-fighter flight speed needs a FighterStats field.
+- T-106 + T-D13 + T-D19 [desktop] Zone match (`zone_match.tscn`, `configure()`) in all 7 zones: only the chosen zone's props, far terrain at its lowest LOD, per-zone arena box; sim floor from a quantised `ZoneGround` (`CombatSim.ground_height`), landing on islands and falling off their rims; atmosphere, weather and ambience pinned to the zone (no Stormfall rain in Heartbloom). Open: `CharacterView.is_airborne` and `WeaponLayer` pillar still use the flat floor (read `FighterState.stand_height` / the sim ground), sim lock-on and hits ignore teams, `rounds` is stored but MatchFlow is best of 3, no AIDriver yet (WeaponBot drives AI slots); Skyhold Ruins' floating stones are props only, so fighters hover there over the terrain.
+- T-D25 [desktop] Lyra playable: star-cartographer zoner built with FigureKit (merged mesh, star-map
+  cape on springs, astrolabe, Sky Lance + Ki Bow), Star-Step teleport, Star Trap, constellation beams,
+  roster entry with 3 palettes. Ranged moves are long hitboxes until MoveData can spawn sim projectiles.
+- T-123 [developer] Web build: single-threaded Compatibility/WebGL2 preset, `web` quality tier,
+  `tools/web/build_web.sh` (checksummed templates), loading/click-to-start shell, headless
+  Chromium smoke test, Appwrite Sites steps in `tools/web/DEPLOY.md` (not deployed yet). Follow-up: VFX,
+  terrain and post read `quality_value("vfx_density" / "terrain_chunk_radius" / "post_effects")`.
+- T-D16 [desktop] KO physics and round reset: KO_FALL (no flight, falls with
+  its knockback, one damped floor bounce with a slide) then KO_DOWN until the
+  round ends; KO_BOUNCE/KO_REST events; KO'd fighters unhittable and inputless;
+  FFA/teams win (`team` per fighter, friendly fire off); `start_round(spawn_points)`
+  resets positions, facing, meters (burst carries over), states, clears
+  weapons, pickups and projectiles; MatchFlow passes spawn points and credits
+  teams. Open: flat ground only (no TerrainHeightmap in the sim yet); KO clip is
+  the existing knockdown fall (MotionLibrary `ko_fall` left to T-D22b).
 - T-D14 [desktop] Weapon pickups (Brawlhalla-inspired): seeded sky drops with
   per-zone tables (Heartstring Bow only in Heartbloom), 3-slot inventory with
   switching and throwing, drop on KO/guard break/knockdown, 6 melee MoveSets,
