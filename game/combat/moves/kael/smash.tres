@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_move"]
+
+[resource]
+script = ExtResource("1_move")
+id = &"smash"
+display_name = "Smash"
+startup_ticks = 14
+active_ticks = 4
+recovery_ticks = 22
+step_distance = 0.8
+hitbox_offsets = PackedVector3Array(0, 0.2, -1.3, 0, 0.2, -1.3, 0, 0.2, -1.3, 0, 0.2, -1.3)
+hitbox_radii = PackedFloat32Array(0.7, 0.7, 0.7, 0.7)
+damage = 800
+hitstun_ticks = 40
+blockstun_ticks = 17
+hitstop_ticks = 8
+knockback_type = 1
+knockback = Vector3(0, 6, -30)
+guard_damage = 18
+cancel_level = 2
+cancel_start_tick = 14
+cancel_end_tick = 28
+charge_level_ticks = PackedInt32Array(12, 35, 60)

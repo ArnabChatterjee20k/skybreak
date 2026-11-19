@@ -16,11 +16,21 @@ const DEFAULT_FIGHTER_STATS := preload("res://game/combat/default_fighter_stats.
 const _DASH := FighterInput.Action.DASH
 const _BLOCK := FighterInput.Action.BLOCK
 const _CHARGE := FighterInput.Action.CHARGE
+const _LIGHT := FighterInput.Action.LIGHT
+const _HEAVY := FighterInput.Action.HEAVY
 const _UNIT := FighterState.METER_UNIT
 ## Presses that do not interrupt charging.
 const _CHARGE_SAFE_ACTIONS := FighterInput.Action.CHARGE | FighterInput.Action.LOCK_TOGGLE
 ## A rush dash counts as arrived within this many metres of its stop distance.
 const _RUSH_ARRIVAL_MARGIN := 0.01
+## Planar move input shorter than this makes a neutral heavy.
+const _HEAVY_DEADZONE := 0.5
+## Move input within 45 degrees of toward/away from the target picks Breaker/Launcher.
+const _HEAVY_CONE := 0.7071
+## States an attack can start from; charging is ended first by the attack press.
+const _ATTACK_START_STATES: Array[FighterState.State] = [
+	FighterState.State.IDLE, FighterState.State.MOVING, FighterState.State.FLYING,
+]
 
 var current_tick: int = 0
 var fighters: Array[FighterState] = []
@@ -79,7 +89,8 @@ func start_round() -> void:
 	round_winner = -1
 	for fighter in fighters:
 		_reset_round_meters(fighter)
-		if fighter.state in [FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN]:
+		if fighter.state in [FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN,
+				FighterState.State.ATTACKING]:
 			_enter_free_state(fighter)
 
 
@@ -183,6 +194,31 @@ func apply_guard_damage(fighter_index: int, amount: int) -> void:
 		fighter.enter_state(FighterState.State.GUARD_BROKEN)
 
 
+## Records that the fighter's current move touched an opponent, which opens
+## its cancel window. T-D04 calls it on hit or block; ignored when not attacking.
+func register_contact(fighter_index: int, blocked: bool) -> void:
+	var fighter := fighters[fighter_index]
+	if fighter.state != FighterState.State.ATTACKING or fighter.holding_charge:
+		return
+	if blocked:
+		fighter.contact_blocked = true
+	else:
+		fighter.contact_hit = true
+
+
+## True if the current move may be cancelled into a move of this level right
+## now: higher level only, inside the cancel window, after contact.
+func can_cancel_into(fighter_index: int, level: MoveData.CancelLevel) -> bool:
+	var fighter := fighters[fighter_index]
+	var move := fighter.move
+	if fighter.state != FighterState.State.ATTACKING or fighter.holding_charge \
+			or level <= move.cancel_level \
+			or fighter.move_tick < move.cancel_start_tick or fighter.move_tick >= move.cancel_end_tick:
+		return false
+	return (fighter.contact_hit and move.cancel_on_hit) \
+		or (fighter.contact_blocked and move.cancel_on_block)
+
+
 ## Uses up a vanish input (both presses). False if there is none.
 func consume_vanish_input(fighter_index: int) -> bool:
 	if not has_vanish_input(fighter_index):
@@ -202,6 +238,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 	_finish_timed_action(index, input)
 	if not round_over:
 		_start_buffered_action(index, input, wish)
+		_start_attack(index, input, wish)
 		_start_charging(index)
 	match fighter.state:
 		FighterState.State.IDLE, FighterState.State.MOVING:
@@ -212,12 +249,16 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 			_move_flying(fighter, input, wish)
 		FighterState.State.DASHING:
 			_move_dashing(index, input, wish)
+		FighterState.State.ATTACKING:
+			_move_attacking(fighter)
 		FighterState.State.VANISHING, FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN:
 			fighter.velocity = Vector3.ZERO
 	fighter.position += fighter.velocity * TICK_SECONDS
 	_clamp_to_arena(fighter)
 	_land_if_on_floor(fighter)
-	_update_facing(index)
+	# An attack keeps the facing it started with.
+	if fighter.state != FighterState.State.ATTACKING:
+		_update_facing(index)
 	if not round_over:
 		_update_meters(fighter)
 	fighter.state_ticks += 1
@@ -243,10 +284,13 @@ func _update_lock_on(index: int, input: FighterInput) -> void:
 		fighter.lock_on_target = _next_opponent(index, fighter.lock_on_target, input.target_switch)
 
 
-## Ends dashes, vanishes, charging and guard breaks that are over, before new actions.
+## Ends dashes, vanishes, charging, guard breaks and attacks that are over, before new actions.
 func _finish_timed_action(index: int, input: FighterInput) -> void:
 	var fighter := fighters[index]
 	match fighter.state:
+		FighterState.State.ATTACKING:
+			_advance_attack(index, input)
+			return
 		FighterState.State.VANISHING:
 			if fighter.state_ticks >= tuning.vanish_step_ticks:
 				_enter_free_state(fighter)
@@ -289,7 +333,8 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 func _start_buffered_action(index: int, input: FighterInput, wish: Vector3) -> void:
 	var fighter := fighters[index]
 	var free := _is_free(fighter)
-	var can_vanish := free or fighter.state == FighterState.State.DASHING
+	var can_vanish := free or fighter.state == FighterState.State.DASHING \
+		or can_cancel_into(index, MoveData.CancelLevel.VANISH)
 	if can_vanish and has_vanish_input(index):
 		if _spend_ki(fighter, meter_tuning.vanish_step_ki_cost):
 			consume_vanish_input(index)
@@ -306,6 +351,136 @@ func _start_charging(index: int) -> void:
 	if consume_buffered(index, _CHARGE):
 		fighter.velocity = Vector3.ZERO
 		fighter.enter_state(FighterState.State.CHARGING)
+
+
+## Starts a buffered attack from a free state, or a heavy that cancels the current move.
+func _start_attack(index: int, input: FighterInput, wish: Vector3) -> void:
+	var fighter := fighters[index]
+	if fighter.state == FighterState.State.ATTACKING:
+		if is_buffered(index, _HEAVY) and can_cancel_into(index, MoveData.CancelLevel.HEAVY):
+			_begin_heavy(index, input, wish)
+		return
+	if fighter.state not in _ATTACK_START_STATES:
+		return
+	if is_buffered(index, _HEAVY):
+		_begin_heavy(index, input, wish)
+	elif is_buffered(index, _LIGHT):
+		_begin_light(index, 1)
+
+
+## Starts light number (1-based) of the string. False if the fighter lacks the move or its ki.
+func _begin_light(index: int, number: int) -> bool:
+	var fighter := fighters[index]
+	var lights := _move_set(fighter).light_string
+	if number > lights.size() or not _spend_ki(fighter, lights[number - 1].ki_cost):
+		return false
+	consume_buffered(index, _LIGHT)
+	_update_facing(index)
+	fighter.begin_move(lights[number - 1])
+	fighter.string_index = number
+	return true
+
+
+func _begin_heavy(index: int, input: FighterInput, wish: Vector3) -> void:
+	var fighter := fighters[index]
+	var move := _heavy_for(index, input, wish)
+	if move == null or not _spend_ki(fighter, move.ki_cost):
+		return
+	consume_buffered(index, _HEAVY)
+	_update_facing(index)
+	fighter.begin_move(move)
+	if move.can_charge() and input.is_held(_HEAVY):
+		fighter.charge_ticks = 1
+
+
+## Push-block while blocking; else ascend/descend, then direction relative to the target.
+func _heavy_for(index: int, input: FighterInput, wish: Vector3) -> MoveData:
+	var fighter := fighters[index]
+	var moves := _move_set(fighter)
+	if fighter.blocking:
+		return moves.push_block
+	if input.vertical > 0:
+		return moves.rising
+	if input.vertical < 0:
+		return moves.spike
+	var planar := Vector3(wish.x, 0.0, wish.z)
+	if planar.length() < _HEAVY_DEADZONE:
+		return moves.smash
+	var along := planar.normalized().dot(_attack_forward(index))
+	if along >= _HEAVY_CONE:
+		return moves.breaker
+	if along <= -_HEAVY_CONE:
+		return moves.launcher
+	return moves.sweep
+
+
+## Planar unit direction toward the lock-on target, or the facing when unlocked.
+func _attack_forward(index: int) -> Vector3:
+	var fighter := fighters[index]
+	if fighter.lock_on_target >= 0:
+		var to_target := fighters[fighter.lock_on_target].position - fighter.position
+		to_target.y = 0.0
+		if to_target.length_squared() > 0.0001:
+			return to_target.normalized()
+	return Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+
+
+## Moves the attack on by one tick: charge, string, end of the move.
+func _advance_attack(index: int, input: FighterInput) -> void:
+	var fighter := fighters[index]
+	if fighter.holding_charge:
+		_hold_charge(fighter, input)
+		return
+	fighter.move_tick += 1
+	var move := fighter.move
+	if fighter.move_tick >= move.total_ticks():
+		_enter_free_state(fighter)
+		return
+	if move.can_charge() and fighter.move_tick < move.startup_ticks:
+		# Charge counts only while the button stays held since the press.
+		if input.is_held(_HEAVY) and fighter.charge_ticks == fighter.move_tick:
+			fighter.charge_ticks += 1
+			if fighter.charge_ticks >= move.charge_level_ticks[0]:
+				fighter.holding_charge = true
+				fighter.move_tick = 0
+				_hold_charge(fighter, input, false)
+		return
+	_advance_string(index)
+
+
+## Raises the charge level while held; release or the top level performs it.
+func _hold_charge(fighter: FighterState, input: FighterInput, count_tick: bool = true) -> void:
+	var levels := _move_set(fighter).charged_smash
+	if input.is_held(_HEAVY):
+		if count_tick:
+			fighter.charge_ticks += 1
+		var level := 0
+		for threshold in fighter.move.charge_level_ticks:
+			if fighter.charge_ticks >= threshold:
+				level += 1
+		fighter.charge_level = mini(level, levels.size())
+		if fighter.charge_level < levels.size():
+			return
+	var reached := fighter.charge_level
+	fighter.begin_move(levels[reached - 1])
+	fighter.charge_level = reached
+
+
+## Light string: one press inside the window queues the next hit; any press
+## outside it drops the string, and later presses are ignored (no mashing).
+func _advance_string(index: int) -> void:
+	var fighter := fighters[index]
+	var move := fighter.move
+	if fighter.string_index == 0 or fighter.string_index >= _move_set(fighter).light_string.size():
+		return
+	if consume_buffered(index, _LIGHT) and not fighter.string_dropped and not fighter.string_queued:
+		var opens := move.string_window_start_tick
+		if fighter.move_tick >= opens and fighter.move_tick < opens + move.string_window_ticks:
+			fighter.string_queued = true
+		else:
+			fighter.string_dropped = true
+	if fighter.string_queued and fighter.move_tick >= move.recovery_start_tick():
+		_begin_light(index, fighter.string_index + 1)
 
 
 func _start_dash(index: int, input: FighterInput, wish: Vector3) -> void:
@@ -404,6 +579,16 @@ func _move_dashing(index: int, input: FighterInput, wish: Vector3) -> void:
 			# Never overshoot the stop distance in one tick.
 			var room := maxf(to_target.length() - tuning.rush_stop_distance, 0.0)
 			fighter.velocity = fighter.dash_direction * minf(tuning.rush_speed, room / TICK_SECONDS)
+
+
+## Attacks hold position except the move's step, spread over its startup.
+func _move_attacking(fighter: FighterState) -> void:
+	var move := fighter.move
+	fighter.velocity = Vector3.ZERO
+	if fighter.holding_charge or fighter.move_tick >= move.startup_ticks:
+		return
+	var forward := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+	fighter.velocity = forward * (move.step_distance / (move.startup_ticks * TICK_SECONDS))
 
 
 ## Keeps fighters inside the arena box and stops motion into its walls.
@@ -561,6 +746,12 @@ func _add_ki(fighter: FighterState, units: int) -> void:
 func _add_burst(fighter: FighterState, units: int) -> void:
 	var cap := meter_tuning.burst_max_stocks * meter_tuning.burst_stock_size * _UNIT
 	fighter.burst = mini(fighter.burst + units, cap)
+
+
+func _move_set(fighter: FighterState) -> MoveSet:
+	if fighter.stats.move_set:
+		return fighter.stats.move_set
+	return (DEFAULT_FIGHTER_STATS as FighterStats).move_set
 
 
 ## Standing, moving, falling or flying: able to start a new action.

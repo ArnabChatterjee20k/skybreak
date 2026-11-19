@@ -17,6 +17,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - T-D09b [desktop] VFX fixes from the GTX 1650 check of T-D09: shockwave no
   longer cut by the ground, aura never darkens the body, flames break into
   tongues, PR #18.
+- T-D03 [desktop] `MoveData` Resource + light string + cancels, PR #15.
 
 ## Backlog
 
@@ -69,7 +70,6 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   0.15 s (`MovementTuning`) instead of 80 → 0 in one tick; vanish steps keep
   distance and height relative to the target (no 12 → 17 m drift). Regression
   test for each.
-- T-D03 [desktop] `MoveData` Resource + light string + cancels.
 - T-D04 [desktop] Hitbox/hurtbox collision + hitstun, blockstun, hitstop,
   damage scaling, hitstun decay.
 - T-D05 [desktop] Defense: block, perfect block + lockout, grab and tech,

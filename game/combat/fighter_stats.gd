@@ -1,6 +1,6 @@
 class_name FighterStats
 extends Resource
-## Meter numbers that differ between fighters. In display units.
+## Numbers and moves that differ between fighters. Meters in display units.
 
 ## Health at the start of each round.
 @export var max_health: int = 10_000
@@ -10,3 +10,5 @@ extends Resource
 @export var vanish_counter_ki_cost: int = 25
 ## Ki cost of the second vanish counter in the same exchange (used from T-D06).
 @export var second_vanish_counter_ki_cost: int = 40
+## Which move each attack input performs.
+@export var move_set: MoveSet

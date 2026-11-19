@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="MoveSet" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_set.gd" id="1_set"]
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="2_move"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/light_1.tres" id="3_light_1"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/light_2.tres" id="4_light_2"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/light_3.tres" id="5_light_3"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/light_4.tres" id="6_light_4"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/smash.tres" id="7_smash"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/breaker.tres" id="8_breaker"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/launcher.tres" id="9_launcher"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/rising.tres" id="10_rising"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/spike.tres" id="11_spike"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/sweep.tres" id="12_sweep"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/push_block.tres" id="13_push_block"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/charged_smash_1.tres" id="14_charged_smash_1"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/charged_smash_2.tres" id="15_charged_smash_2"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/charged_smash_3.tres" id="16_charged_smash_3"]
+
+[resource]
+script = ExtResource("1_set")
+light_string = Array[ExtResource("2_move")]([ExtResource("3_light_1"), ExtResource("4_light_2"), ExtResource("5_light_3"), ExtResource("6_light_4")])
+smash = ExtResource("7_smash")
+charged_smash = Array[ExtResource("2_move")]([ExtResource("14_charged_smash_1"), ExtResource("15_charged_smash_2"), ExtResource("16_charged_smash_3")])
+breaker = ExtResource("8_breaker")
+launcher = ExtResource("9_launcher")
+rising = ExtResource("10_rising")
+spike = ExtResource("11_spike")
+sweep = ExtResource("12_sweep")
+push_block = ExtResource("13_push_block")

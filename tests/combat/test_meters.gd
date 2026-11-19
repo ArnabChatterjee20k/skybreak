@@ -3,7 +3,6 @@ extends GutTest
 const DASH := FighterInput.Action.DASH
 const BLOCK := FighterInput.Action.BLOCK
 const CHARGE := FighterInput.Action.CHARGE
-const LIGHT := FighterInput.Action.LIGHT
 const LOCK := FighterInput.Action.LOCK_TOGGLE
 const RIGHT := Vector2(1, 0)
 const FORWARD := Vector2(0, 1)
@@ -162,7 +161,7 @@ func test_a_hit_cancels_charging() -> void:
 func test_pressing_another_action_cancels_charging() -> void:
 	_start()
 	_drive(10, CHARGE)
-	_drive(1, CHARGE | LIGHT)
+	_drive(1, CHARGE | FighterInput.Action.TRANSFORM)
 	assert_eq(_fighter().state, FighterState.State.IDLE)
 
 
