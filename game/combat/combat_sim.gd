@@ -12,6 +12,17 @@ const INPUT_BUFFER_TICKS := 6
 const DEFAULT_TUNING := preload("res://game/combat/default_movement_tuning.tres")
 const DEFAULT_METER_TUNING := preload("res://game/combat/default_meter_tuning.tres")
 const DEFAULT_FIGHTER_STATS := preload("res://game/combat/default_fighter_stats.tres")
+const DEFAULT_HIT_TUNING := preload("res://game/combat/default_hit_tuning.tres")
+
+## What an entry in events reports.
+enum EventType {
+	HIT, ## A hit landed.
+	COUNTER, ## A hit landed during the target's startup (or charge hold).
+	ARMOR, ## A hit landed on armor: damage, but no stun or knockback.
+	BLOCK, ## A hit was blocked.
+	GUARD_BREAK, ## A blocked hit broke the guard.
+	KO, ## A hit knocked the target out.
+}
 
 const _DASH := FighterInput.Action.DASH
 const _BLOCK := FighterInput.Action.BLOCK
@@ -23,6 +34,17 @@ const _UNIT := FighterState.METER_UNIT
 const _CHARGE_SAFE_ACTIONS := FighterInput.Action.CHARGE | FighterInput.Action.LOCK_TOGGLE
 ## A rush dash counts as arrived within this many metres of its stop distance.
 const _RUSH_ARRIVAL_MARGIN := 0.01
+## Hitbox pitch toward a locked target is clamped to this, in radians (45 degrees).
+const _MAX_AIM_PITCH := PI / 4.0
+## States in which the facing stays where it was.
+const _FACING_LOCKED_STATES: Array[FighterState.State] = [
+	FighterState.State.ATTACKING, FighterState.State.HITSTUN,
+	FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN,
+]
+## States that cannot block even with blocking set.
+const _NO_BLOCK_STATES: Array[FighterState.State] = [
+	FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN, FighterState.State.GUARD_BROKEN,
+]
 ## Planar move input shorter than this makes a neutral heavy.
 const _HEAVY_DEADZONE := 0.5
 ## Move input within 45 degrees of toward/away from the target picks Breaker/Launcher.
@@ -43,13 +65,21 @@ var round_winner: int = -1
 var tuning: MovementTuning
 ## Meter constants shared by all fighters. Configuration, like tuning.
 var meter_tuning: MeterTuning
+## Hit constants (scaling, stun, hitstop, knockback). Configuration, like tuning.
+var hit_tuning: HitTuning
+## What happened this tick, for the view: hits, blocks, guard breaks and KOs, in
+## the order they were resolved. Each entry: {type: EventType, attacker, target,
+## position (contact point), move_id, damage (display units), hitstop,
+## knockback_type, counter}. Replaced by a new array at the start of every tick.
+var events: Array[Dictionary] = []
 
 
 func _init(seed_value: int = 0, movement_tuning: MovementTuning = null,
-		meters: MeterTuning = null) -> void:
+		meters: MeterTuning = null, hits: HitTuning = null) -> void:
 	rng.seed = seed_value
 	tuning = movement_tuning if movement_tuning else DEFAULT_TUNING as MovementTuning
 	meter_tuning = meters if meters else DEFAULT_METER_TUNING as MeterTuning
+	hit_tuning = hits if hits else DEFAULT_HIT_TUNING as HitTuning
 
 
 ## Adds a fighter with round-start meters; above the floor it hovers, otherwise stands.
@@ -77,9 +107,14 @@ func lock_everyone_onto_nearest() -> void:
 ## Advances the sim by one tick. inputs[i] belongs to fighters[i].
 func tick(inputs: Array[FighterInput]) -> void:
 	assert(inputs.size() == fighters.size(), "one input per fighter")
+	events = []
+	var frozen: Array[bool] = []
 	for i in fighters.size():
+		frozen.append(fighters[i].hitstop_ticks > 0)
 		# After a KO everyone gets neutral input until the next round.
 		_step_fighter(i, FighterInput.new() if round_over else inputs[i])
+	if not round_over:
+		_resolve_hits(frozen)
 	current_tick += 1
 
 
@@ -89,14 +124,17 @@ func start_round() -> void:
 	round_winner = -1
 	for fighter in fighters:
 		_reset_round_meters(fighter)
+		fighter.hitstop_ticks = 0
 		if fighter.state in [FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN,
-				FighterState.State.ATTACKING]:
+				FighterState.State.ATTACKING, FighterState.State.HITSTUN,
+				FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN]:
 			_enter_free_state(fighter)
 
 
 ## Hash of everything that defines the sim state; equal hashes mean equal states.
 func state_hash() -> int:
-	var parts: Array = [current_tick, rng.state, round_over, round_winner]
+	# Events are this tick's output, but cheap to cover, so replays can compare them too.
+	var parts: Array = [current_tick, rng.state, round_over, round_winner, events]
 	for fighter in fighters:
 		parts.append_array(fighter.state_values())
 	return hash(var_to_bytes(parts))
@@ -130,12 +168,12 @@ func try_spend_ki(fighter_index: int, amount: int) -> bool:
 	return _spend_ki(fighters[fighter_index], amount)
 
 
-## Ki gain for landing a hit; T-D04 calls it for the attacker.
+## Ki gain for landing a hit; a landed hit calls it for the attacker.
 func add_landed_hit_ki(fighter_index: int) -> void:
 	_add_ki(fighters[fighter_index], meter_tuning.ki_per_landed_hit * _UNIT)
 
 
-## Ki gain for a blocked hit; T-D05 calls it.
+## Ki gain for a blocked hit; a blocked hit calls it for the attacker.
 func add_blocked_hit_ki(fighter_index: int) -> void:
 	_add_ki(fighters[fighter_index], meter_tuning.ki_per_blocked_hit * _UNIT)
 
@@ -156,15 +194,18 @@ func try_spend_burst(fighter_index: int, stocks: int) -> bool:
 
 
 ## Applies already-scaled damage (display units); attacker -1 means no attacker.
+## Grey health builds up while the target is in HITSTUN (one combo); damage
+## outside hitstun starts a new combo and loses the earlier grey part.
 func apply_damage(target_index: int, attacker_index: int, amount: int) -> void:
 	var target := fighters[target_index]
 	if round_over or amount <= 0 or target.is_knocked_out():
 		return
 	var dealt := mini(amount * _UNIT, target.health)
 	target.health -= dealt
-	# Earlier grey health is lost; this hit leaves its own grey part.
-	target.grey_health = 0 if target.is_knocked_out() \
-		else dealt * meter_tuning.grey_percent / 100
+	var grey := dealt * meter_tuning.grey_percent / 100
+	if target.state == FighterState.State.HITSTUN:
+		grey += target.grey_health
+	target.grey_health = 0 if target.is_knocked_out() else grey
 	target.ticks_since_hit = 0
 	if target.state == FighterState.State.CHARGING:
 		_enter_free_state(target)
@@ -195,7 +236,7 @@ func apply_guard_damage(fighter_index: int, amount: int) -> void:
 
 
 ## Records that the fighter's current move touched an opponent, which opens
-## its cancel window. T-D04 calls it on hit or block; ignored when not attacking.
+## its cancel window. Hits and blocks call it; ignored when not attacking.
 func register_contact(fighter_index: int, blocked: bool) -> void:
 	var fighter := fighters[fighter_index]
 	if fighter.state != FighterState.State.ATTACKING or fighter.holding_charge:
@@ -219,6 +260,22 @@ func can_cancel_into(fighter_index: int, level: MoveData.CancelLevel) -> bool:
 		or (fighter.contact_blocked and move.cancel_on_block)
 
 
+## Damage (display units) of a move as hit number combo_hit (1-based) of a combo.
+func scaled_damage(move: MoveData, combo_hit: int) -> int:
+	var floor_percent := hit_tuning.scaling_floor_percent
+	if move.cancel_level == MoveData.CancelLevel.ULTIMATE:
+		floor_percent = hit_tuning.ultimate_scaling_floor_percent
+	var percent := maxi(floor_percent, 100 - hit_tuning.scaling_step_percent * (combo_hit - 1))
+	return move.damage * percent / 100
+
+
+## Hitstun of a move as hit number combo_hit of a combo, after hitstun decay.
+func decayed_hitstun(move: MoveData, combo_hit: int) -> int:
+	var base := move.hitstun_ticks
+	var decay := maxi(combo_hit - hit_tuning.hitstun_decay_after_hit, 0) * hit_tuning.hitstun_decay_per_hit
+	return maxi(mini(base, hit_tuning.min_hitstun_ticks), base - decay)
+
+
 ## Uses up a vanish input (both presses). False if there is none.
 func consume_vanish_input(fighter_index: int) -> bool:
 	if not has_vanish_input(fighter_index):
@@ -232,6 +289,11 @@ func consume_vanish_input(fighter_index: int) -> bool:
 
 func _step_fighter(index: int, input: FighterInput) -> void:
 	var fighter := fighters[index]
+	if fighter.hitstop_ticks > 0:
+		# Frozen: new presses still buffer, but nothing else moves on.
+		fighter.hitstop_ticks -= 1
+		_record_presses(fighter, input, false)
+		return
 	_record_presses(fighter, input)
 	_update_lock_on(index, input)
 	var wish := _wish_direction(input)
@@ -251,26 +313,32 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 			_move_dashing(index, input, wish)
 		FighterState.State.ATTACKING:
 			_move_attacking(fighter)
-		FighterState.State.VANISHING, FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN:
+		FighterState.State.HITSTUN:
+			_move_in_hitstun(fighter)
+		FighterState.State.VANISHING, FighterState.State.CHARGING, FighterState.State.GUARD_BROKEN, \
+				FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN:
 			fighter.velocity = Vector3.ZERO
 	fighter.position += fighter.velocity * TICK_SECONDS
+	if fighter.state == FighterState.State.HITSTUN:
+		_bounce_or_knock_down(fighter)
 	_clamp_to_arena(fighter)
 	_land_if_on_floor(fighter)
-	# An attack keeps the facing it started with.
-	if fighter.state != FighterState.State.ATTACKING:
+	# Attacks and stuns keep the facing they started with.
+	if fighter.state not in _FACING_LOCKED_STATES:
 		_update_facing(index)
 	if not round_over:
 		_update_meters(fighter)
 	fighter.state_ticks += 1
 
 
-func _record_presses(fighter: FighterState, input: FighterInput) -> void:
+## Buffers this tick's presses; with age false (hitstop) older presses keep their age.
+func _record_presses(fighter: FighterState, input: FighterInput, age: bool = true) -> void:
 	for index in fighter.press_ages.size():
 		var bit := 1 << index
 		if (input.pressed_actions & bit) != 0:
 			fighter.press_ages[index] = 0
 			fighter.consumed_presses &= ~bit
-		elif fighter.press_ages[index] < INPUT_BUFFER_TICKS:
+		elif age and fighter.press_ages[index] < INPUT_BUFFER_TICKS:
 			fighter.press_ages[index] += 1
 			if fighter.press_ages[index] == INPUT_BUFFER_TICKS:
 				fighter.consumed_presses &= ~bit
@@ -284,12 +352,16 @@ func _update_lock_on(index: int, input: FighterInput) -> void:
 		fighter.lock_on_target = _next_opponent(index, fighter.lock_on_target, input.target_switch)
 
 
-## Ends dashes, vanishes, charging, guard breaks and attacks that are over, before new actions.
+## Ends dashes, vanishes, charging, guard breaks, stuns and attacks that are over, before new actions.
 func _finish_timed_action(index: int, input: FighterInput) -> void:
 	var fighter := fighters[index]
 	match fighter.state:
 		FighterState.State.ATTACKING:
 			_advance_attack(index, input)
+			return
+		FighterState.State.HITSTUN, FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN:
+			if fighter.state_ticks >= fighter.stun_ticks:
+				_enter_free_state(fighter)
 			return
 		FighterState.State.VANISHING:
 			if fighter.state_ticks >= tuning.vanish_step_ticks:
@@ -376,6 +448,7 @@ func _begin_light(index: int, number: int) -> bool:
 		return false
 	consume_buffered(index, _LIGHT)
 	_update_facing(index)
+	_aim_at_target(index)
 	fighter.begin_move(lights[number - 1])
 	fighter.string_index = number
 	return true
@@ -388,6 +461,9 @@ func _begin_heavy(index: int, input: FighterInput, wish: Vector3) -> void:
 		return
 	consume_buffered(index, _HEAVY)
 	_update_facing(index)
+	_aim_at_target(index)
+	var right := _attack_forward(index).cross(Vector3.UP)
+	fighter.aim_side = -1 if wish.dot(right) < 0.0 else 1
 	fighter.begin_move(move)
 	if move.can_charge() and input.is_held(_HEAVY):
 		fighter.charge_ticks = 1
@@ -423,6 +499,18 @@ func _attack_forward(index: int) -> Vector3:
 		if to_target.length_squared() > 0.0001:
 			return to_target.normalized()
 	return Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+
+
+## Pitches the coming attack's hitboxes toward the locked target, clamped; level when unlocked.
+func _aim_at_target(index: int) -> void:
+	var fighter := fighters[index]
+	fighter.aim_pitch = 0.0
+	if fighter.lock_on_target < 0:
+		return
+	var to_target := fighters[fighter.lock_on_target].position - fighter.position
+	var planar := Vector2(to_target.x, to_target.z).length()
+	if planar > 0.0001 or absf(to_target.y) > 0.0001:
+		fighter.aim_pitch = clampf(atan2(to_target.y, planar), -_MAX_AIM_PITCH, _MAX_AIM_PITCH)
 
 
 ## Moves the attack on by one tick: charge, string, end of the move.
@@ -589,6 +677,249 @@ func _move_attacking(fighter: FighterState) -> void:
 		return
 	var forward := Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
 	fighter.velocity = forward * (move.step_distance / (move.startup_ticks * TICK_SECONDS))
+
+
+## Flight while in hitstun: drag, plus gravity for launches, sweeps and bounced spikes.
+func _move_in_hitstun(fighter: FighterState) -> void:
+	var drag := hit_tuning.knockback_drag * TICK_SECONDS
+	var falls := false
+	match fighter.knockback_type:
+		MoveData.KnockbackType.LAUNCH, MoveData.KnockbackType.SWEEP:
+			falls = true
+		MoveData.KnockbackType.SPIKE:
+			falls = fighter.spike_bounced
+		_:
+			fighter.velocity = fighter.velocity.move_toward(Vector3.ZERO, drag)
+			return
+	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z).move_toward(Vector3.ZERO, drag)
+	var vertical := fighter.velocity.y
+	if falls:
+		vertical = maxf(vertical - hit_tuning.juggle_gravity * TICK_SECONDS, -tuning.max_fall_speed)
+	fighter.velocity = planar + Vector3.UP * vertical
+
+
+## A spiked fighter bounces off the floor once; landing after the bounce knocks it down.
+func _bounce_or_knock_down(fighter: FighterState) -> void:
+	if fighter.knockback_type != MoveData.KnockbackType.SPIKE or not _is_on_floor(fighter) \
+			or fighter.velocity.y >= 0.0:
+		return
+	fighter.position.y = tuning.ground_height
+	if not fighter.spike_bounced:
+		fighter.spike_bounced = true
+		fighter.velocity.y = hit_tuning.spike_bounce_speed
+		return
+	fighter.velocity = Vector3.ZERO
+	fighter.enter_state(FighterState.State.KNOCKDOWN)
+	fighter.stun_ticks = hit_tuning.knockdown_ticks
+
+
+## Finds every hitbox touching an opponent this tick, then applies them in
+## fighter index order. All hits are found first, so trades happen. Fighters
+## frozen in hitstop this tick do not hit.
+func _resolve_hits(frozen: Array[bool]) -> void:
+	var contacts: Array[Dictionary] = []
+	for attacker_index in fighters.size():
+		var attacker := fighters[attacker_index]
+		if frozen[attacker_index] or attacker.state != FighterState.State.ATTACKING:
+			continue
+		var shapes := attacker.active_hitboxes()
+		if shapes.is_empty():
+			continue
+		for target_index in fighters.size():
+			var bit := 1 << target_index
+			if target_index == attacker_index \
+					or ((attacker.hit_targets & bit) != 0 and not attacker.move.multi_hit):
+				continue
+			var contact := _find_contact(attacker_index, target_index, shapes)
+			if not contact.is_empty():
+				attacker.hit_targets |= bit
+				contacts.append(contact)
+	for contact in contacts:
+		# Nothing more lands once the round is decided.
+		if round_over:
+			return
+		if contact.type == EventType.BLOCK:
+			_apply_block(contact)
+		else:
+			_apply_hit(contact)
+
+
+## The first hitbox touching the target's hurtbox, as a contact with everything
+## about both fighters the hit needs before any hit this tick changes them; empty if none.
+func _find_contact(attacker_index: int, target_index: int, shapes: Array[Dictionary]) -> Dictionary:
+	var attacker := fighters[attacker_index]
+	var target := fighters[target_index]
+	if not target.can_be_hit():
+		return {}
+	var body := target.hurtbox()
+	for shape in shapes:
+		var points := _closest_points(shape.start, shape.end, body.start, body.end)
+		var reach: float = shape.radius + body.radius
+		if points[0].distance_squared_to(points[1]) > reach * reach:
+			continue
+		var centre: Vector3 = (shape.start + shape.end) * 0.5
+		if target.is_invincible_to(target.is_upper_body(centre)):
+			return {}
+		var type := EventType.HIT
+		if _blocks(target, attacker.position):
+			type = EventType.BLOCK
+		elif target.is_armored():
+			type = EventType.ARMOR
+		elif target.attack_phase() in [FighterState.AttackPhase.STARTUP, FighterState.AttackPhase.HOLD]:
+			type = EventType.COUNTER
+		return {
+			"type": type, "attacker": attacker_index, "target": target_index,
+			"move": attacker.move, "yaw": attacker.facing_yaw, "pitch": attacker.aim_pitch,
+			"side": attacker.aim_side,
+			# Contact point: on the hurtbox surface toward the hitbox, or the hitbox centre line inside it.
+			"position": points[1] + (points[0] - points[1]).limit_length(body.radius),
+		}
+	return {}
+
+
+## Blocking stops a hit from the front 180 degrees, unless stunned.
+func _blocks(target: FighterState, from: Vector3) -> bool:
+	if not target.blocking or target.state in _NO_BLOCK_STATES:
+		return false
+	var to_attacker := from - target.position
+	to_attacker.y = 0.0
+	var forward := Basis(Vector3.UP, target.facing_yaw) * Vector3.FORWARD
+	return to_attacker.dot(forward) >= 0.0
+
+
+## Damage with combo scaling, then hitstun and knockback unless armored; KO ends it.
+func _apply_hit(contact: Dictionary) -> void:
+	var attacker_index: int = contact.attacker
+	var target_index: int = contact.target
+	var attacker := fighters[attacker_index]
+	var target := fighters[target_index]
+	var move: MoveData = contact.move
+	var type: EventType = contact.type
+	var continuing := target.state == FighterState.State.HITSTUN
+	var combo_hit := target.combo_hits + 1 if continuing else 1
+	var damage := scaled_damage(move, combo_hit)
+	var combo_damage := target.combo_damage if continuing else 0
+	apply_damage(target_index, attacker_index, damage)
+	register_contact(attacker_index, false)
+	add_landed_hit_ki(attacker_index)
+	_add_ki(attacker, move.ki_gain * _UNIT)
+	_add_burst(attacker, move.burst_gain * _UNIT)
+	var hitstop := move.hitstop_ticks
+	var knockback := MoveData.KnockbackType.NONE
+	if type != EventType.ARMOR:
+		if type == EventType.COUNTER:
+			hitstop += hit_tuning.counter_hit_extra_hitstop_ticks
+		knockback = move.knockback_type
+		_enter_stun(target, FighterState.State.HITSTUN, decayed_hitstun(move, combo_hit))
+		target.knockback_type = knockback
+		target.spike_bounced = false
+		target.velocity = _knockback_velocity(contact)
+		target.combo_hits = combo_hit
+		target.combo_damage = combo_damage + damage
+	var knocked_out := target.is_knocked_out()
+	if knocked_out:
+		hitstop = maxi(hitstop, hit_tuning.knockout_hitstop_ticks)
+	_freeze(attacker, target, hitstop)
+	events.append(_event(type, contact, damage, hitstop, knockback))
+	if knocked_out:
+		events.append(_event(EventType.KO, contact, damage, hitstop, knockback))
+
+
+## Guard damage and blockstun; a guard broken by this block stuns instead.
+func _apply_block(contact: Dictionary) -> void:
+	var attacker_index: int = contact.attacker
+	var target_index: int = contact.target
+	var target := fighters[target_index]
+	var move: MoveData = contact.move
+	var guard_damage := move.guard_damage
+	if target.guard < move.guard_break_below * _UNIT:
+		guard_damage = maxi(guard_damage, ceili(float(target.guard) / _UNIT))
+	apply_guard_damage(target_index, guard_damage)
+	register_contact(attacker_index, true)
+	add_blocked_hit_ki(attacker_index)
+	var hitstop := move.hitstop_ticks * hit_tuning.blocked_hitstop_percent / 100
+	var broken := target.state == FighterState.State.GUARD_BROKEN
+	if broken:
+		hitstop = maxi(hitstop, hit_tuning.guard_break_hitstop_ticks)
+	else:
+		_enter_stun(target, FighterState.State.BLOCKSTUN, move.blockstun_ticks)
+	_freeze(fighters[attacker_index], target, hitstop)
+	events.append(_event(EventType.BLOCK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
+	if broken:
+		events.append(_event(EventType.GUARD_BREAK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
+
+
+## Puts the fighter in a stun state for ticks; it stops dashing and stands still.
+func _enter_stun(fighter: FighterState, stun: FighterState.State, ticks: int) -> void:
+	fighter.dash_kind = FighterState.DashKind.NONE
+	fighter.dash_direction = Vector3.ZERO
+	fighter.velocity = Vector3.ZERO
+	fighter.enter_state(stun)
+	fighter.stun_ticks = ticks
+
+
+## Target velocity from the move's knockback. LAUNCH and SPIKE turn by yaw only,
+## so up stays up and down stays down; SWEEP pushes to the attacker's aim side.
+func _knockback_velocity(contact: Dictionary) -> Vector3:
+	var move: MoveData = contact.move
+	var knockback := move.knockback
+	var yaw := Basis(Vector3.UP, contact.yaw)
+	match move.knockback_type:
+		MoveData.KnockbackType.LAUNCH, MoveData.KnockbackType.SPIKE:
+			return yaw * knockback
+		MoveData.KnockbackType.SWEEP:
+			var side: int = contact.side
+			return yaw * Vector3.RIGHT * (side * Vector2(knockback.x, knockback.z).length()) \
+				+ Vector3.UP * knockback.y
+	return yaw * Basis(Vector3.RIGHT, contact.pitch) * knockback
+
+
+## Freezes both fighters of an exchange for at least ticks.
+func _freeze(attacker: FighterState, target: FighterState, ticks: int) -> void:
+	attacker.hitstop_ticks = maxi(attacker.hitstop_ticks, ticks)
+	target.hitstop_ticks = maxi(target.hitstop_ticks, ticks)
+
+
+func _event(type: EventType, contact: Dictionary, damage: int, hitstop: int,
+		knockback: MoveData.KnockbackType) -> Dictionary:
+	return {
+		"type": type, "attacker": contact.attacker, "target": contact.target,
+		"position": contact.position, "move_id": (contact.move as MoveData).id,
+		"damage": damage, "hitstop": hitstop, "knockback_type": knockback,
+		"counter": contact.type == EventType.COUNTER,
+	}
+
+
+## Closest points [on segment p1-q1, on segment p2-q2] (Ericson, Real-Time Collision Detection 5.1.9).
+static func _closest_points(p1: Vector3, q1: Vector3, p2: Vector3, q2: Vector3) -> PackedVector3Array:
+	var d1 := q1 - p1
+	var d2 := q2 - p2
+	var r := p1 - p2
+	var a := d1.dot(d1)
+	var e := d2.dot(d2)
+	var f := d2.dot(r)
+	var s := 0.0
+	var t := 0.0
+	const EPSILON := 0.000001
+	if a <= EPSILON and e > EPSILON:
+		t = clampf(f / e, 0.0, 1.0)
+	elif a > EPSILON:
+		var c := d1.dot(r)
+		if e <= EPSILON:
+			s = clampf(-c / a, 0.0, 1.0)
+		else:
+			var b := d1.dot(d2)
+			var denominator := a * e - b * b
+			if denominator > EPSILON:
+				s = clampf((b * f - c * e) / denominator, 0.0, 1.0)
+			t = (b * s + f) / e
+			if t < 0.0:
+				t = 0.0
+				s = clampf(-c / a, 0.0, 1.0)
+			elif t > 1.0:
+				t = 1.0
+				s = clampf((b - c) / a, 0.0, 1.0)
+	return PackedVector3Array([p1 + d1 * s, p2 + d2 * t])
 
 
 ## Keeps fighters inside the arena box and stops motion into its walls.
