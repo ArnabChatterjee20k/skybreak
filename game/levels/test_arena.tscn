@@ -1,9 +1,10 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://game/levels/test_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://game/input/keyboard_mouse_input.gd" id="2_input"]
 [ext_resource type="Script" path="res://game/debug/debug_overlay.gd" id="3_overlay"]
 [ext_resource type="Script" path="res://game/ui/graphics_menu.gd" id="4_graphics"]
+[ext_resource type="Script" path="res://game/view/camera/fighter_camera.gd" id="5_camera"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.25, 0.45, 0.85, 1)
@@ -54,8 +55,10 @@ surface_material_override/0 = SubResource("fighter1_material")
 mesh = SubResource("fighter_mesh")
 surface_material_override/0 = SubResource("fighter2_material")
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 4, 14)
+[node name="FighterCamera" type="Camera3D" parent="."]
+fov = 75.0
+far = 2000.0
+script = ExtResource("5_camera")
 
 [node name="KeyboardMouseInput" type="Node" parent="."]
 script = ExtResource("2_input")

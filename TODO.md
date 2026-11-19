@@ -13,6 +13,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-102 [developer] Lock-on camera: both fighters on screen, over the shoulder
+  with smooth shoulder switch, distance by range band, mouse orbit ±35° yaw /
+  ±20° pitch that springs back, fast position lerp, slower rotation.
 - T-003 [developer] Export preset for a Windows .exe build: `export_presets.cfg`,
   single exe with embedded pck, tests and GUT left out.
 - T-D08 [desktop] Toon + outline + rim shaders. PR #3.
@@ -23,9 +26,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 - T-101 [developer] Free flight and ground movement in the view/controller on
   top of sim movement: ascend/descend, camera-relative move.
-- T-102 [developer] Lock-on camera: both fighters on screen, over the shoulder
-  with smooth shoulder switch, distance by range band, mouse orbit ±35° yaw /
-  ±20° pitch that springs back, fast position lerp, slower rotation.
 - T-103 [developer] Target switching (mouse wheel) and lock-on toggle (MMB/Tab).
 - T-104 [developer] Dash (tap = step, hold = sustained, toward target = rush)
   and vanish step (Shift+E) feel, tuned through `MovementTuning`.
@@ -35,6 +35,8 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   energy-dome boundary.
 - T-107 [developer] Performance check on the GTX 1650 with two fighters flying;
   record fps and frame time.
+- T-109 [developer] Debug overlay text is clipped at the left edge in a
+  1280x720 movie-writer capture; check anchoring at other window sizes.
 - T-108 [developer] Graphics presets follow-up (from PR #2): try
   `SCALING_3D_MODE_FSR` instead of bilinear when resolution scale < 1.0, and
   lower the high preset (4096 shadows, MSAA 4x) if it misses 60 fps in T-107.
