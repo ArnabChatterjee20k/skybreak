@@ -17,7 +17,7 @@ const KI_RESERVE: Array[int] = [0, 15, 20, 25, 30]
 ## Chance a zoning shot is a charged blast (held Q).
 const CHARGED_CHANCE: Array[float] = [0.0, 0.08, 0.14, 0.2, 0.25]
 ## Chance per zoning tick to start a beam when it has the ki.
-const BEAM_CHANCE: Array[float] = [0.0, 0.002, 0.004, 0.006, 0.008]
+const BEAM_CHANCE: Array[float] = [0.0, 0.004, 0.008, 0.012, 0.016]
 ## Chance to answer a seen whiff at range with a beam.
 const BEAM_PUNISH_CHANCE: Array[float] = [0.0, 0.1, 0.3, 0.5, 0.7]
 ## Chance to sidestep a seen beam tell (else it blocks).
@@ -127,12 +127,14 @@ static func target_busy_close(target: FighterState, distance: float) -> bool:
 ## A seen whiff at beam range: fire a beam into the recovery.
 func punish(ai: FighterAI, me: FighterState, target: FighterState, distance: float, plan: FighterInput) -> bool:
 	var kit := KiRules.kit_of(me)
-	if kit.beam == null or target.state != _S.ATTACKING or target.attack_phase() != FighterState.AttackPhase.RECOVERY \
-			or distance < ZONE_NEAR or distance > kit.beam_range * 0.8 or not ai.may_attack(me) \
+	if kit.beam == null or distance < ZONE_NEAR or distance > kit.beam_range * 0.8 or not ai.may_attack(me) \
 			or me.ki < kit.beam.ki_cost * FighterState.METER_UNIT:
 		return false
+	# A long recovery, or charging ki in the open at range: both too slow to get out of a beam.
 	var left := target.move_total_ticks() - target.move_tick
-	if left < kit.beam.startup_ticks + 4 or rng.randf() >= BEAM_PUNISH_CHANCE[ai.profile.level - 1] * 0.1:
+	var open := (target.state == _S.ATTACKING and target.attack_phase() == FighterState.AttackPhase.RECOVERY
+		and left >= kit.beam.startup_ticks + 4) or (target.state == _S.CHARGING and target.state_ticks >= 10)
+	if not open or rng.randf() >= BEAM_PUNISH_CHANCE[ai.profile.level - 1] * 0.1:
 		return false
 	plan.held_actions |= _A.SPECIAL_1
 	return true

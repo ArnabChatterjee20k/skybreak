@@ -5,6 +5,9 @@ const A := FighterInput.Action
 const E := CombatSim.EventType
 const UNIT := FighterState.METER_UNIT
 const LYRA_STATS := preload("res://game/combat/moves/lyra/lyra_fighter_stats.tres")
+## The ki duel DetCheck chains (tools/diag/det_check_run.gd).
+const KI_MATCH_SEED := 2026
+const KI_MATCH_TICKS := 3600
 
 var _sim: CombatSim
 var _previous: Array[FighterInput] = []
@@ -327,3 +330,38 @@ func test_the_state_hash_ignores_ki_while_nothing_ki_is_alive() -> void:
 	var plain := Projectile.new()
 	plain.move = MoveData.new()
 	assert_eq(plain.state_values().size(), 16, "weapon shots hash as before T-KI1")
+
+
+## An AI duel built to use ki (level 5 Lyra vs Kael from 24 m, full ki); also a DetCheck scenario.
+func _ki_match(seed_value: int, ticks: int, after_tick := Callable()) -> Dictionary:
+	var sim := CombatSim.new(seed_value)
+	sim.add_fighter(Vector3(0, 1, 12), EngagementBand.stats_for(&"lyra"))
+	sim.add_fighter(Vector3(0, 1, -12), EngagementBand.stats_for(&"kael"))
+	sim.lock_everyone_onto_nearest()
+	var driver := AIDriver.for_sim(sim, [
+		{"character": &"lyra", "team": 0, "is_ai": true, "ai_level": 5},
+		{"character": &"kael", "team": 1, "is_ai": true, "ai_level": 5},
+	])
+	var seen := {}
+	for _tick in ticks:
+		if sim.round_over:
+			sim.start_round()
+		if sim.current_tick % 600 == 0:
+			for fighter in sim.fighters:
+				fighter.ki = 100 * UNIT
+		sim.tick(driver.inputs_for(sim))
+		for event in sim.events:
+			seen[event.type] = int(seen.get(event.type, 0)) + 1
+		if after_tick.is_valid():
+			after_tick.call(sim)
+	return {"hash": sim.state_hash(), "seen": seen}
+
+
+func test_a_ki_heavy_ai_duel_is_deterministic_and_uses_blasts_and_beams() -> void:
+	var first := _ki_match(KI_MATCH_SEED, KI_MATCH_TICKS)
+	assert_eq(_ki_match(KI_MATCH_SEED, KI_MATCH_TICKS).hash, first.hash)
+	var seen: Dictionary = first.seen
+	gut.p("ki duel events: blasts %d, beams %d, clashes %d" % [seen.get(E.KI_FIRE, 0), seen.get(E.BEAM_FIRE, 0),
+		seen.get(E.BEAM_CLASH, 0)])
+	assert_gt(seen.get(E.KI_FIRE, 0), 10)
+	assert_gt(seen.get(E.BEAM_FIRE, 0), 0)
