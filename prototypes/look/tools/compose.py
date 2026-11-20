@@ -19,7 +19,7 @@ def font(size):
     return ImageFont.load_default()
 
 
-def compare(zone, styles, out, tile=(480, 270)):
+def compare(zone, styles, out, tile=(440, 248)):
     label_w, head_h = 230, 50
     w = label_w + tile[0] * len(MOMENTS)
     h = head_h + tile[1] * len(styles)
