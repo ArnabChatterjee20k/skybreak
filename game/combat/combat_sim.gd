@@ -318,6 +318,7 @@ func state_hash() -> int:
 		parts.append_array(projectile.state_values())
 	for gadget in gadgets:
 		parts.append_array(gadget.state_values())
+	parts.append_array(SpecialRules.state_values(self))
 	return hash(var_to_bytes(parts))
 
 

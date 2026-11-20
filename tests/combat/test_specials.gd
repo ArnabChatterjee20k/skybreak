@@ -406,3 +406,12 @@ func test_a_mirrored_special_duel_is_deterministic() -> void:
 			_tick(a, b)
 		hashes.append(_sim.state_hash())
 	assert_eq(hashes[0], hashes[1])
+
+
+func test_the_state_hash_covers_special_state_without_widening_fighter_rows() -> void:
+	_start(KAEL, 3.0)
+	var width := _me().state_values().size()
+	var before := _sim.state_hash()
+	_me().specials.momentum = 2
+	assert_ne(_sim.state_hash(), before, "Momentum is hashed")
+	assert_eq(_me().state_values().size(), width, "golden digest rows keep their width")

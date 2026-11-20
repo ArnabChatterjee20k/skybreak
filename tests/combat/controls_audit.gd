@@ -189,7 +189,7 @@ func _scenarios() -> Array[Dictionary]:
 		"check": func(l): return "" if l.events.has("WEAPON_THROW") else "no WEAPON_THROW"})
 	list.append({"name": "cycle weapons (B/Z)", "keys": [[0, KEY_G, true], [2, KEY_G, false], [12, KEY_B, true], [14, KEY_B, false], [40, KEY_Z, true], [42, KEY_Z, false]], "ticks": 60, "pickup": [Weapon.Kind.STORM_BLADE],
 		"check": func(l): return "" if l.events.count("WEAPON_SWITCH") >= 2 else "WEAPON_SWITCH x%d" % l.events.count("WEAPON_SWITCH")})
-	list.append({"name": "quick swap (C)", "keys": [[0, KEY_G, true], [2, KEY_G, false], [12, KEY_B, true], [14, KEY_B, false], [40, KEY_C, true], [42, KEY_C, false]], "ticks": 60, "pickup": [Weapon.Kind.STORM_BLADE],
+	list.append({"name": "quick swap (Y)", "keys": [[0, KEY_G, true], [2, KEY_G, false], [12, KEY_B, true], [14, KEY_B, false], [40, KEY_Y, true], [42, KEY_Y, false]], "ticks": 60, "pickup": [Weapon.Kind.STORM_BLADE],
 		"check": func(l): return "" if l.events.count("WEAPON_SWITCH") >= 2 or l.events.has("SWAP_CANCEL") else "WEAPON_SWITCH x%d" % l.events.count("WEAPON_SWITCH")})
 	list.append({"name": "mouse wheel (target switch)", "keys": [[0, WHEEL_DOWN, true], [0, WHEEL_DOWN, false]], "ticks": 5,
 		"check": func(l): return "" if l.wheel_seen else "wheel never reached FighterInput.target_switch"})

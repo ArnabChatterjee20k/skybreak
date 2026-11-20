@@ -374,6 +374,18 @@ static func reset_fighter(fighter: FighterState) -> void:
 	fighter.specials.reset()
 
 
+## Specials values for CombatSim.state_hash(); empty while no fighter has any, so older hashes hold.
+## Kept out of FighterState.state_values() so golden digest rows keep a fixed width.
+static func state_values(sim: CombatSim) -> Array:
+	var values: Array = []
+	var any := false
+	for fighter in sim.fighters:
+		var own := fighter.specials.state_values()
+		any = any or not own.is_empty()
+		values.append(own)
+	return values if any else []
+
+
 static func canonicalize(sim: CombatSim) -> void:
 	for fighter in sim.fighters:
 		var state := fighter.specials

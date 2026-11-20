@@ -7,6 +7,10 @@ extends RefCounted
 
 const FREE_FOR_ALL_EVERY := 2_000
 const BOT_MATCH_EVERY := 600
+## Kael vs Vexa AI duel at level 5: specials, Momentum and the afterimage (T-SP1).
+const SPECIALS_SEED := 4242
+const SPECIALS_TICKS := 3_600
+const SPECIALS_EVERY := 600
 
 var _chain := PackedByteArray()
 var _lines := PackedStringArray()
@@ -25,8 +29,32 @@ func run() -> PackedStringArray:
 	weapons._bot_match(FlatFloorSequences.BOT_MATCH_SEED, FlatFloorSequences.BOT_MATCH_TICKS, &"skyhold_ruins",
 		func(sim: CombatSim) -> void: _link("bot", sim, BOT_MATCH_EVERY))
 	weapons.free()
+	_chain = "chain".to_utf8_buffer()
+	_specials_duel()
 	_lines.append("det_check total %s" % _sha("\n".join(_lines).to_utf8_buffer()))
 	return _lines
+
+
+## Two level-5 AIs, Kael and Vexa, on the flat floor; their specials fire often.
+func _specials_duel() -> void:
+	var sim := CombatSim.new(SPECIALS_SEED)
+	sim.add_fighter(Vector3(0, 1, 6), EngagementBand.stats_for(&"kael"))
+	sim.add_fighter(Vector3(0, 1, -6), EngagementBand.stats_for(&"vexa"))
+	sim.lock_everyone_onto_nearest()
+	var driver := AIDriver.for_sim(sim, [
+		{"character": &"kael", "team": 0, "is_ai": true, "ai_level": 5},
+		{"character": &"vexa", "team": 1, "is_ai": true, "ai_level": 5},
+	])
+	var specials := 0
+	for _i in SPECIALS_TICKS:
+		if sim.round_over:
+			sim.start_round()
+		sim.tick(driver.inputs_for(sim))
+		for event in sim.events:
+			if event.type == CombatSim.EventType.SPECIAL_START:
+				specials += 1
+		_link("specials", sim, SPECIALS_EVERY)
+	_lines.append("specials started %d" % specials)
 
 
 # Chains this tick's full state into the running hash; prints it every `every` ticks.
@@ -40,6 +68,7 @@ func _link(name: String, sim: CombatSim, every: int) -> void:
 		parts.append_array(pickup.state_values())
 	for gadget in sim.gadgets:
 		parts.append_array(gadget.state_values())
+	parts.append_array(SpecialRules.state_values(sim))
 	var context := HashingContext.new()
 	context.start(HashingContext.HASH_SHA256)
 	context.update(_chain)

@@ -184,7 +184,7 @@ var powers := FighterPowers.new()
 # Dodge (T-DEF2).
 var dodge := FighterDodge.new()
 
-# Specials and legend mechanics (T-SP1).
+# Specials and legend mechanics (T-SP1); hashed by CombatSim.state_hash() via SpecialRules.
 var specials := FighterSpecials.new()
 
 # Pushback (T-D29): a hit or block slides the target apart from its attacker.
@@ -391,7 +391,7 @@ func state_values() -> Array:
 		pushback_velocity, pushback_ticks, pushback_from,
 		last_slot, heat, overheated, draw_ticks, pin_ticks, pinned,
 		tether_partner, tether_ticks, tether_length, combo_starter_percent,
-	] + powers.state_values() + dodge.state_values() + specials.state_values()
+	] + powers.state_values() + dodge.state_values()
 
 
 ## Weapon in hand (Weapon.Kind), NONE when unarmed.

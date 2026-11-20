@@ -12,6 +12,17 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `AGENTS.md`. Remaining: CI green on GitHub.
 
 ## In review
+- T-SP1 specials framework + Kael and Vexa kits [desktop] (`claude/T-SP1-specials`): `game/combat/specials/`
+  (`SpecialKit` .tres per legend, `SpecialRules`, small `combat_sim.gd` hooks), keys 1/2/3 with
+  rise/dive variants, ki costs, Special level of the cancel hierarchy, counter/rush/leap/blink/decoy
+  effects, AI hooks per level (`game/ai/ai_specials.gd`), Kael Momentum (HUD pips), Vexa Afterimage.
+  Salvaged from #132: controls audit, web keyboard lock, §3 table. Follow-ups:
+  - SP1-1 [desktop] Brann and Lyra kits (they keep the T-KI1 beam on `1` until then).
+  - SP1-2 [desktop] Ultimates (`SpecialKit.ultimate`, 2 burst) and transformations (`T`, 1 burst,
+    `FighterSpecials.transform_ticks`) on the hooks this lane put in place.
+  - SP1-3 [desktop] Dedicated special clips (they borrow retimed mocap takes today) and a decoy
+    mesh ghost (today an afterimage refreshed every 6 ticks).
+  - SP1-4 [desktop] On merging with T-KI1: keep `SpecialRules.start` before `KiRules.start`.
 - T-DEF2 dodge [desktop] (`claude/T-DEF2-dodge`): tap Shift = directional / spot / sidestep dodge with
   i-frames, chain and cooldown, air limits, perfect dodge (attacker freeze, READ pop, +10 ki once per
   3 s), Sweep tracks sidesteps, recovery grabs are untechable counter-hits; `DodgeTuning`,

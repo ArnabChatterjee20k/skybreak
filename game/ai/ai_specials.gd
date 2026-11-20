@@ -8,7 +8,7 @@ const _ROLE := SpecialMove.AiRole
 ## Per level 1..5: chance to answer a seen close strike with a counter or evade special.
 const ANSWER_CHANCE: Array[float] = [0.0, 0.1, 0.22, 0.32, 0.4]
 ## Per level: chance per neutral tick to open with an approach, anti-guard or mix-up special.
-const NEUTRAL_CHANCE: Array[float] = [0.0, 0.004, 0.008, 0.012, 0.016]
+const NEUTRAL_CHANCE: Array[float] = [0.0, 0.01, 0.02, 0.03, 0.04]
 ## Per level: chance to cancel a confirmed heavy into a special.
 const ENDER_CHANCE: Array[float] = [0.0, 0.15, 0.35, 0.55, 0.7]
 ## Ticks before a seen strike lands that a counter stance still catches it.
@@ -33,18 +33,19 @@ static func neutral(sim: CombatSim, index: int, target: FighterState, distance: 
 		rng: RandomNumberGenerator) -> int:
 	if SpecialRules.kit_of(sim.fighters[index]) == null:
 		return 0
-	if rng.randf() >= NEUTRAL_CHANCE[clampi(level, 1, 5) - 1]:
-		return 0
+	var slot := 0
 	if target.blocking:
-		var slot := SpecialRules.ai_pick(sim, index, _ROLE.ANTI_GUARD, distance, level)
+		slot = SpecialRules.ai_pick(sim, index, _ROLE.ANTI_GUARD, distance, level)
 		if slot == 0:
 			slot = SpecialRules.ai_pick(sim, index, _ROLE.MIXUP, distance, level)
-		if slot != 0:
-			return slot
-	var approach := SpecialRules.ai_pick(sim, index, _ROLE.APPROACH, distance, level)
-	if approach != 0:
-		return approach
-	return SpecialRules.ai_pick(sim, index, _ROLE.MIXUP, distance, level)
+	if slot == 0:
+		slot = SpecialRules.ai_pick(sim, index, _ROLE.APPROACH, distance, level)
+	if slot == 0:
+		slot = SpecialRules.ai_pick(sim, index, _ROLE.MIXUP, distance, level)
+	# Rolls only with a usable special, so levels and legends without one keep their rng stream.
+	if slot == 0 or rng.randf() >= NEUTRAL_CHANCE[clampi(level, 1, 5) - 1]:
+		return 0
+	return slot
 
 
 ## Key to cancel a confirmed hit into (an ender, else an approach that chases), or 0.

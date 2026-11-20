@@ -1,7 +1,7 @@
 class_name FighterSpecials
 extends RefCounted
 ## One fighter's special-move state (T-SP1). Sim state: only SpecialRules writes
-## it; FighterState.state_values() includes state_values().
+## it; CombatSim.state_hash() covers state_values() through SpecialRules.state_values().
 
 ## Planar-or-pitched unit direction of the current special's travel.
 var travel_direction: Vector3 = Vector3.ZERO
