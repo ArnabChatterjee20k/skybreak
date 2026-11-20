@@ -1157,7 +1157,8 @@ func _camera() -> void:
 			var across := (d - k)
 			yaw_goal = rad_to_deg(atan2(across.x, across.z)) + 90.0 * _cam_side - 18.0 * _cam_side
 			if _cam_mode == "pair":
-				height = 2.3
+				# Close on the pair, but widen when a launch or knockback opens the gap.
+				height = maxf(2.3, span * 0.75 + 0.6)
 		"shoulder":
 			# Behind and right of Kael, looking past him at the dummy.
 			var fwd := _hero.forward()
