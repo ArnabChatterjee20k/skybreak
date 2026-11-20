@@ -4,12 +4,12 @@ extends SceneTree
 ##   godot --path . --disable-vsync -s res://game/lookdev/lookdev_capture.gd -- <out dir>
 ##       [quick|turntable|closeups|spin|idle|compare|all]
 ##       --scene=res://game/characters/<name>_voxel/<name>_voxel.tscn
-##       [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0]
+##       [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0] [--head-fit]
 ## Needs a GPU (not headless); renders at exactly 1920x1080 through a
 ## SubViewport. spin and idle write numbered PNG frames (30 fps) for ffmpeg;
 ## compare renders the old scene at the same angles (skipped without --compare).
 
-const USAGE := "lookdev_capture.gd -- <out dir> [mode] --scene=<character scene> [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0] [--hide-stowed]"
+const USAGE := "lookdev_capture.gd -- <out dir> [mode] --scene=<character scene> [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0] [--hide-stowed] [--head-fit]"
 const CLIP_FPS := 30
 
 var _scene := ""
@@ -18,6 +18,8 @@ var _compare := ""
 var _hand_bone := &"RightHand"
 var _hand_yaw_deg := 0.0
 var _hide_stowed := false
+## --head-fit: the head close-up spans chin to the figure's top (tall ears, crests).
+var _head_fit := false
 
 var _out := ""
 ## Renders go through a fixed-size viewport so stills and clips are exactly
@@ -38,6 +40,7 @@ func _initialize() -> void:
 	_hand_bone = StringName(args.get_option("hand", "RightHand"))
 	_hand_yaw_deg = float(args.get_option("hand-yaw", "0"))
 	_hide_stowed = args.options.has("hide-stowed")
+	_head_fit = args.options.has("head-fit")
 	if _scene == "" or _out == "":
 		return
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -130,8 +133,14 @@ func _full(yaw: float, name: String) -> void:
 func _head(name: String) -> void:
 	_pivot.rotation.y = deg_to_rad(-28.0)
 	var head := _bone_position(&"Head") + Vector3(0, 0.17, 0)
+	var height := 0.62
+	if _head_fit:
+		var crest := _crest_above_head()
+		var chin := 0.08
+		head = _bone_position(&"Head") + Vector3(0, (crest - chin) * 0.5, 0)
+		height = crest + chin + 0.04
 	_stage.camera.fov = 24.0
-	_stage.frame(head, 0.62, 0.9, -6.0)
+	_stage.frame(head, height, 0.9, -6.0)
 	await _save(name)
 	_stage.camera.fov = 30.0
 
@@ -145,6 +154,17 @@ func _hand(name: String) -> void:
 	_stage.frame(hand, 0.42, 0.8, -8.0, 0.0)
 	await _save(name)
 	_stage.camera.fov = 30.0
+
+
+## Rest-pose height of the figure's top (ear or crest tip) above the Head bone.
+func _crest_above_head() -> float:
+	var skeleton := _view.model.get_node("%GeneralSkeleton") as Skeleton3D
+	var head_y := skeleton.get_bone_global_rest(skeleton.find_bone(&"Head")).origin.y
+	var top := -INF
+	for mesh: MeshInstance3D in skeleton.find_children("*", "MeshInstance3D", false, false):
+		var box := skeleton.global_transform.affine_inverse() * mesh.global_transform * mesh.get_aabb()
+		top = maxf(top, box.end.y)
+	return top - head_y
 
 
 func _bone_position(bone: StringName) -> Vector3:
