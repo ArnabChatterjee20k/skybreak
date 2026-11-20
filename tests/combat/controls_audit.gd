@@ -194,7 +194,7 @@ func _scenarios() -> Array[Dictionary]:
 	list.append({"name": "mouse wheel (target switch)", "keys": [[0, WHEEL_DOWN, true], [0, WHEEL_DOWN, false]], "ticks": 5,
 		"check": func(l): return "" if l.wheel_seen else "wheel never reached FighterInput.target_switch"})
 	list.append({"name": "ki blast tap (Q)", "keys": [[0, KEY_Q, true], [2, KEY_Q, false]], "ticks": 30,
-		"check": func(l): return "" if l.events.has("KI_BLAST") and l.blast_nodes > 0 else "no KI_BLAST/visual"})
+		"check": func(l): return "" if l.events.has("KI_FIRE") and l.blast_nodes > 0 else "no KI_FIRE/visual"})
 	list.append({"name": "ki blast hold (Q)", "keys": [[0, KEY_Q, true], [30, KEY_Q, false]], "ticks": 40,
 		"check": func(l): return "" if _has_move(l, "charged_blast") == "" and l.blast_nodes > 0 else "no charged blast"})
 	list.append({"name": "charge ki (R)", "keys": [[0, KEY_R, true], [40, KEY_R, false]], "ticks": 42, "ki": 50,
@@ -282,9 +282,9 @@ func _run(scenario: Dictionary) -> String:
 			var clip: StringName = character.current_clip()
 			if not l.clips.has(clip):
 				l.clips.append(clip)
-		for child in _level.weapon_layer.get_children():
-			if String(child.name).begins_with("KiBlast") and (child as Node3D).is_visible_in_tree():
-				l.blast_nodes += 1
+		# Ki shots in flight or charging at the hands, drawn by the T-KI1 KiLayer.
+		var ki_layer: KiLayer = _level.combat_feedback.vfx.ki_layer
+		l.blast_nodes += ki_layer._shots.size() + ki_layer._charge_orbs.size()
 		top = maxf(top, me.position.y)
 		ki_low = mini(ki_low, me.ki)
 		l.drop = maxf(l.drop, top - me.position.y)
