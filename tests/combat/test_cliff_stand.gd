@@ -129,3 +129,12 @@ func test_a_tech_roll_into_a_cliff_stops_at_its_foot() -> void:
 	_walk(Vector2.ZERO, 18)
 	assert_lt(fighter.position.y, _sim.tuning.ground_height + 0.3, "not up the face: y %.2f" % fighter.position.y)
 	assert_lt(fighter.position.x, 2.0, "x %.2f" % fighter.position.x)
+
+
+func test_a_fighter_landing_on_a_cliff_face_slides_down_to_its_foot() -> void:
+	var fighter := _start(_cliff)
+	fighter.position = Vector3(3.0, _cliff(3.0, 0.0, 0.0) + _sim.tuning.ground_height + 0.5, 0.0)
+	fighter.enter_state(FighterState.State.FALLING)
+	_walk(RIGHT, 120)
+	assert_lt(fighter.position.x, 2.05, "slid off the face: x %.2f" % fighter.position.x)
+	assert_lt(fighter.position.y, _sim.tuning.ground_height + 0.3, "at the foot: y %.2f" % fighter.position.y)

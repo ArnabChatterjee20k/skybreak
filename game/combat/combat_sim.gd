@@ -1001,6 +1001,10 @@ func _move_on_ground(fighter: FighterState, input: FighterInput, wish: Vector3) 
 	var rate := tuning.ground_acceleration if wish != Vector3.ZERO else tuning.ground_deceleration
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
 	fighter.velocity = planar.move_toward(wish * tuning.ground_speed, rate * TICK_SECONDS)
+	var downhill := _steep_downhill(fighter)
+	if downhill != Vector3.ZERO:
+		# Too steep to stand on (landed on a cliff face): slide down it.
+		fighter.velocity = downhill * tuning.ground_speed
 	if ground_height.is_valid() and fighter.position.y > _stand_height(fighter) + _LEDGE_DROP:
 		# Walked off a ledge (an island rim): fall.
 		fighter.enter_state(FighterState.State.FALLING)
@@ -1782,10 +1786,25 @@ func _stop_at_cliff(fighter: FighterState, from: Vector3) -> void:
 
 ## Squared steepness (rise over run) of the ground under a fighter, from samples _SLOPE_PROBE apart.
 func _ground_slope_sq(fighter: FighterState) -> float:
+	return _ground_gradient(fighter).length_squared()
+
+
+## Ground rise per metre along x and z under a fighter (zero on the flat floor).
+func _ground_gradient(fighter: FighterState) -> Vector3:
+	if not ground_height.is_valid():
+		return Vector3.ZERO
 	var at := fighter.position - Vector3.UP * _FIGHTER_HALF_HEIGHT
 	var dx := _ground_at(at + Vector3(_SLOPE_PROBE, 0.0, 0.0)) - _ground_at(at - Vector3(_SLOPE_PROBE, 0.0, 0.0))
 	var dz := _ground_at(at + Vector3(0.0, 0.0, _SLOPE_PROBE)) - _ground_at(at - Vector3(0.0, 0.0, _SLOPE_PROBE))
-	return (dx * dx + dz * dz) / (4.0 * _SLOPE_PROBE * _SLOPE_PROBE)
+	return Vector3(dx, 0.0, dz) / (2.0 * _SLOPE_PROBE)
+
+
+## Unit planar direction down the ground under a fighter when it is too steep to stand on, else zero.
+func _steep_downhill(fighter: FighterState) -> Vector3:
+	var gradient := _ground_gradient(fighter)
+	if gradient.length_squared() <= _MAX_CLIMB_SLOPE * _MAX_CLIMB_SLOPE:
+		return Vector3.ZERO
+	return -gradient.normalized()
 
 
 ## Puts a fighter moved from outside its own step (a pushbox) back inside the
