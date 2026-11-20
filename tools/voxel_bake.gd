@@ -13,6 +13,10 @@ const SEARCH_ROOT := "res://game/characters"
 
 
 func _initialize() -> void:
+	_main.call_deferred()
+
+
+func _main() -> void:
 	var scenes: Array[String] = []
 	var check := false
 	var time := false
@@ -49,24 +53,38 @@ static func voxel_scenes(dir: String) -> Array[String]:
 	return out
 
 
-## The design script and skeleton of a voxel scene (the scene stays out of the tree).
-static func open_scene(path: String) -> Array:
+## [scene root, design script, skeleton] of a voxel scene, or [] without a
+## VoxelBody. The scene enters the tree (some figures build their skeleton in
+## _ready) with its VoxelBody swapped for a plain node, so nothing builds.
+static func open_scene(path: String, tree: SceneTree) -> Array:
 	var root: Node = (load(path) as PackedScene).instantiate()
-	var body := root.find_child("VoxelBody", true, false) as VoxelBody
-	if body == null:
-		for n in root.find_children("*", "Node", true, false):
-			if n is VoxelBody:
-				body = n
-				break
+	var body: VoxelBody = null
+	for n in root.find_children("*", "Node", true, false):
+		if n is VoxelBody:
+			body = n
+			break
 	if body == null:
 		root.free()
 		return []
-	var skeleton := (body.get_node(body.mesh_path) as MeshInstance3D).get_parent() as Skeleton3D
-	return [root, body.design, skeleton]
+	var stand_in := Node.new()
+	var parent := body.get_parent()
+	parent.add_child(stand_in)
+	parent.move_child(stand_in, body.get_index())
+	stand_in.name = body.name
+	parent.remove_child(body)
+	tree.root.add_child(root)
+	var target := stand_in.get_node_or_null(body.mesh_path) as MeshInstance3D
+	var design := body.design
+	body.free()
+	if target == null or not (target.get_parent() is Skeleton3D):
+		printerr("voxel_bake: %s: mesh_path doesn't lead to a MeshInstance3D under a Skeleton3D" % path)
+		root.free()
+		return []
+	return [root, design, target.get_parent()]
 
 
 func _run(path: String, check: bool, time: bool) -> bool:
-	var opened := open_scene(path)
+	var opened := open_scene(path, self)
 	if opened.is_empty():
 		printerr("voxel_bake: no VoxelBody in ", path)
 		return false
