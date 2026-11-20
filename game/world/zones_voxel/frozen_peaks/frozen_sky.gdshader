@@ -80,10 +80,11 @@ void sky() {
 		float tw = 0.5 + 0.5 * hash(g + vec2(5.0, 9.0));
 		col += vec3(0.85, 0.9, 1.0) * (s1 * 0.35 * tw + s2 * 1.1) * star_amount * smoothstep(0.02, 0.25, h);
 	}
-	if (aurora_amount > 0.0 && h > 0.05) {
-		float az = atan(EYEDIR.z, EYEDIR.x);
-		float da = abs(mod(az - aurora_azimuth + PI, TAU) - PI);
-		float spread = 1.0 - smoothstep(0.5, 1.5, da);
+	if (aurora_amount > 0.0 && h > 0.0) {
+		// Azimuth relative to the anchor, so atan's wrap sits opposite it (no seam).
+		float az = mod(atan(EYEDIR.z, EYEDIR.x) - aurora_azimuth + PI, TAU) - PI;
+		float da = abs(az);
+		float spread = (1.0 - smoothstep(0.5, 1.5, da)) * smoothstep(0.02, 0.14, h);
 		float a = curtain(az, h, 0.0, aurora_time) + 0.7 * curtain(az + 0.4, h, 1.0, aurora_time + 11.0)
 			+ 0.45 * curtain(az - 0.3, h, 2.0, aurora_time + 23.0);
 		float pulse = 0.85 + 0.15 * sin(aurora_time * 0.2);

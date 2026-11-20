@@ -37,7 +37,7 @@ godot --path . --disable-vsync -s res://game/world/voxel_zone_kit/zone_capture.g
   - **camp** with Kael for scale (night / day): standing tent with its lantern, crates, tripod and pennant, sledge
   - **spire_axe** with Kael beside the cluster nearest the camp (day / night); **waterfall** with Kael (night / day)
   - **cairn_crevasse** (the first cairn, boot prints, crevasse and bridge), **shelf_cliffs** (day / night), **ice_crown** (night / dusk)
-- `frozen_peaks_flythrough_v1.mp4`: 1920×1080, 30 fps, 20 s, night. High in from the east, down past the camp, low along the glacier, then a climb to circle the Ice Crown under the aurora. The task asked for 720p; the skill's quality rule (1080p30 minimum) overrides that.
+- `frozen_peaks_flythrough_v1.mp4`: 1920×1080, 30 fps, 20 s, night. High in from the east, down past the camp, low along the glacier, then a climb to circle the Ice Crown under the aurora. The task asked for 720p; the skill's quality rule (1080p30 minimum) overrides that. H.264 CRF 23 so it fits in git (the CRF 18 master is 74 MB). Frames 270–599 were re-rendered after an aurora fix (see critique 11); the stills predate that fix but show no seam.
 
 ## Perf
 
@@ -87,7 +87,13 @@ Prop meshes come from the character kit's `VoxelMesher`, which emits one quad pe
 7. **Crevasses are painted, not carved,** because the sim floor is continuous (carving would float the fighters). The raised lips help, but they read as dark strokes from height.
 8. **Dusk still leans warm and pink** on the snow despite the lilac fog: too close to Heartbloom's hero time.
 9. **Missing from the sheet:** the snowstorm shot, the spindrift plumes, the readability strip (4 legends over snow, slate and the night sky), and the render benchmark before and after. The stand-in range beyond the zone box replaces the real neighbouring zones (look-dev framing only).
-10. **One hack:** the zone swaps `VoxelStage._sky_mat`'s shader (a private member) to add the aurora. The kit should get a per-zone sky shader hook. No kit file was edited.
+10. **The fly-through flies higher than planned.** Every control point is lifted until the spline clears the 60 sim spires and the ground by 4 m and 2.5 m (tested), so the "low along the valley" leg runs at roughly 20–40 m. The first full render dipped below the floor around frame 210 and showed a seam where the T1 and T2 floors meet. Both were fixed (ground clearance in the check; lattice squares owned by their centre) and the video re-rendered.
+11. **Aurora seam (fixed in the video):** the first render showed a vertical seam (atan's wrap fell inside the visible spread) and a hard bottom edge when seen from altitude. Fixed in `frozen_sky.gdshader`; frames 270–599 re-rendered.
+12. **One hack:** the zone swaps `VoxelStage._sky_mat`'s shader (a private member) to add the aurora. The kit should get a per-zone sky shader hook. No kit file was edited.
+
+## Publishing
+
+No GitHub pre-release: this cloud session has no release-capable tool (the `gh` CLI is limited to search here, and the GitHub MCP tools can't create releases). Per the task's fallback, the stills, contact sheet and video are committed to this folder on `lookdev/zone-frozen_peaks`.
 
 ## Verification
 
