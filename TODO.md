@@ -22,7 +22,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
     `FighterSpecials.transform_ticks`) on the hooks this lane put in place.
   - SP1-3 [desktop] Dedicated special clips (they borrow retimed mocap takes today) and a decoy
     mesh ghost (today an afterimage refreshed every 6 ticks).
-  - SP1-4 [desktop] On merging with T-KI1: keep `SpecialRules.start` before `KiRules.start`.
+  - SP1-4 [desktop] Done in this PR: merged with T-KI1; `SpecialRules.start` runs before `KiRules.start`,
+    and `KiRules.beam_special()` gives key 1 to a kit that owns it.
+  - SP1-5 [developer] QA quick view soak `camera_on_screen`: Kael vs Vexa, seed 100, shattered_mesa,
+    both locked fighters on screen in 93.4% of frames (limit 95%). Probe: 79 of the 146 off-screen
+    frames are Kael firing the Storm Repeater at Vexa in hitstun, 15 are Shade Flicker; without those
+    15 it is still 94.1%. Locked-camera framing of a ranged juggle. Repro:
+    `tools/qa/run_qa.sh --repro '100:shattered_mesa:1v1:kael,vexa:54' --tick 2400 --fighter 0`.
 - T-DEF2 dodge [desktop] (`claude/T-DEF2-dodge`): tap Shift = directional / spot / sidestep dodge with
   i-frames, chain and cooldown, air limits, perfect dodge (attacker freeze, READ pop, +10 ki once per
   3 s), Sweep tracks sidesteps, recovery grabs are untechable counter-hits; `DodgeTuning`,

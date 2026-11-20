@@ -1,0 +1,121 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 4,
+			"8": 3
+		},
+		"chakram/light_1+counter": {
+			"8": 1
+		},
+		"chakram/light_2": {
+			"4": 1
+		},
+		"chakram/light_3": {
+			"6": 1
+		},
+		"hammer/light_1+counter": {
+			"11": 1
+		},
+		"hammer/light_2": {
+			"10": 1
+		},
+		"kael_comet_drive": {
+			"9": 2
+		},
+		"kael_skyfall": {
+			"10": 1
+		},
+		"launcher": {
+			"7": 4
+		},
+		"light_1": {
+			"3": 6,
+			"4": 2
+		},
+		"light_1+counter": {
+			"7": 3,
+			"8": 2
+		},
+		"light_2": {
+			"3": 7,
+			"4": 3
+		},
+		"light_3": {
+			"3": 6,
+			"4": 3,
+			"5": 3
+		},
+		"light_3+counter": {
+			"7": 1
+		},
+		"vexa_shade_flicker": {
+			"7": 2
+		},
+		"vexa_shade_flicker+counter": {
+			"11": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "120:heartbloom_gardens:2v2:brann,lyra,kael,vexa:5245",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		2,
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 120,
+	"sim_ms_per_tick": 1.15267208333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00975018180906773,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.08072483378692,
+		"foot_slide_cm_per_frame": 0.00113877423041026,
+		"foot_slide_frames": 555,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.963671128107075,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.02916,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole -21.1 cm off the visible ground (MOVING, clip run)",
+			"fighter": 0,
+			"first_tick": 1591,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1591,
+			"worst_value": -0.21140064415323
+		}
+	],
+	"wall_seconds": 18.279,
+	"zone": "heartbloom_gardens"
+}
