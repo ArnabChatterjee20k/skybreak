@@ -57,9 +57,10 @@ func input_for(index: int, _tick: int) -> FighterInput:
 			elif index == 0 and phase_tick > 0:
 				_go("beam")
 		"beam":
-			if phase_tick < 2:
-				# Key 1 is the beam only for a legend without a special kit (Lyra); Kael's beam is
-				# his ultimate on 4 since T-SP1 (key 1 is Comet Drive), so give it the burst.
+			# Key 1 is the beam only for a legend without a special kit (Lyra); Kael's beam is his
+			# ultimate on 4 since T-SP1 (key 1 is Comet Drive). The quicker beam waits so both fire together.
+			var delay := maxi(_beam_of(them).startup_ticks - _beam_of(me).startup_ticks, 0)
+			if phase_tick >= delay and phase_tick < delay + 2:
 				if SpecialRules.owns_key(me, 1):
 					me.burst = maxi(me.burst, 2 * sim.meter_tuning.burst_stock_size * FighterState.METER_UNIT)
 					held |= A.ULTIMATE
@@ -113,3 +114,9 @@ func input_for(index: int, _tick: int) -> FighterInput:
 	input.vertical = vertical
 	_previous[index] = input
 	return input
+
+
+## The beam this fighter fires in the showcase: its ultimate when a special kit owns key 1.
+func _beam_of(fighter: FighterState) -> MoveData:
+	var kit := KiRules.kit_of(fighter)
+	return kit.ultimate if SpecialRules.owns_key(fighter, 1) else kit.beam
