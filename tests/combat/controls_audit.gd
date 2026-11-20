@@ -1,9 +1,11 @@
+class_name ControlsAudit
 extends SceneTree
 ## T-UX2 controls audit: for each legend, goes through the real front end to a
 ## vs-AI zone_match, then drives every GAME_DESIGN §3 control with real
 ## InputEvents (keys, mouse buttons, wheel) through KeyboardMouseInput and
 ## reports the sim effect, the player's character clips and the audio cues.
 ## godot --headless --path . -s res://tests/combat/controls_audit.gd [-- legend ...]
+## In the browser: tools/web/controls_audit_web.sh (runs it as the main loop).
 
 const UNIT := FighterState.METER_UNIT
 const LMB := -MOUSE_BUTTON_LEFT
@@ -57,9 +59,11 @@ var _order: Array[String] = []
 
 
 func _initialize() -> void:
+	print("controls_audit: start ", OS.get_name())
 	_legends = Array(OS.get_cmdline_user_args())
 	if _legends.is_empty():
-		_legends = ["kael", "vexa", "brann", "lyra"]
+		# The wasm run (main_loop_type, no user args) audits one legend to stay short.
+		_legends = ["kael"] if OS.has_feature("web") else ["kael", "vexa", "brann", "lyra"]
 	_boot_menu()
 
 
@@ -85,6 +89,7 @@ func _process(_delta: float) -> bool:
 				_phase = "loading"
 		"loading":
 			if current_scene is ZoneMatch:
+				print("controls_audit: match loaded")
 				_level = current_scene
 				_frame = 0
 				_phase = "ready"

@@ -3,7 +3,7 @@
 //     Boots the real build, focuses the canvas and checks the browser defaults behind
 //     game bindings are suppressed (Tab focus, Space/wheel scroll, Ctrl+key shortcuts,
 //     Ctrl+wheel zoom, right-click menu, middle-click autoscroll). Exits 1 on a leak.
-//   node tools/web/controls_web.js audit <build dir> [legend]
+//   node tools/web/controls_web.js audit <build dir>
 //     Runs tests/combat/controls_audit.gd inside the wasm build (export it with
 //     tools/web/controls_audit_web.sh) and prints its table. Exits 1 on BROKEN rows.
 const http = require('http');
@@ -13,7 +13,6 @@ const { chromium } = require('playwright');
 
 const mode = process.argv[2];
 const root = path.resolve(process.argv[3] || 'build/web');
-const legend = process.argv[4] || 'kael';
 const types = {
 	'.html': 'text/html', '.js': 'application/javascript', '.wasm': 'application/wasm',
 	'.pck': 'application/octet-stream', '.png': 'image/png',
@@ -28,13 +27,6 @@ const server = http.createServer((req, res) => {
 		return;
 	}
 	res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
-	if (mode === 'audit' && file.endsWith('index.html')) {
-		// Run the audit script as the main loop instead of the front end.
-		const html = fs.readFileSync(file, 'utf8').replace("args: ['--main-pack', pack]",
-			`args: ['--main-pack', pack, '-s', 'res://tests/combat/controls_audit.gd', '--', '${legend}']`);
-		res.end(html);
-		return;
-	}
 	fs.createReadStream(file).pipe(res);
 });
 
@@ -103,7 +95,7 @@ async function conflicts(page) {
 	page.on('console', (m) => {
 		const text = m.text();
 		lines.push(text);
-		if (mode === 'audit' && (text.startsWith('  ') || text.startsWith('==') || text.startsWith('|'))) {
+		if (mode === 'audit' && (text.startsWith('  ') || text.startsWith('==') || text.startsWith('|') || text.startsWith('controls_audit'))) {
 			console.log(text);
 		}
 		if (text.startsWith('| lock-on toggle (Tab)')) finish();
@@ -117,8 +109,12 @@ async function conflicts(page) {
 		await page.waitForTimeout(8000);
 		ok = await conflicts(page);
 	} else {
-		await Promise.race([done, page.waitForTimeout(1500 * 1000)]);
+		await Promise.race([done, page.waitForTimeout(Number(process.env.AUDIT_SECONDS || 1500) * 1000)]);
 		ok = lines.some((l) => l.startsWith('| lock-on toggle (Tab)')) && !lines.some((l) => l.includes('BROKEN'));
+	}
+	if (!ok) {
+		console.log('--- last browser console lines ---');
+		lines.slice(-40).forEach((l) => console.log(l));
 	}
 	await browser.close();
 	server.close();
