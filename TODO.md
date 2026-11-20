@@ -12,6 +12,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `AGENTS.md`. Remaining: CI green on GitHub.
 
 ## In review
+- polish batch 3 [desktop] (`claude/polish-batch-3`): media-2 flaws. Lyra UNARMED (#78 follow-up) is
+  the design-correct auto-throw of an emptied 12-arrow Ki Bow (regression test added); KO drops its
+  burst lines and post-KO trails/rings/smears; Ember Rift lava fissures around the spawns
+  (`zone_ember_rift` re-blessed); 1v1 drops land 8-16 m out (`pickups_heartbloom` replay and the
+  flat-floor `bot_match` re-blessed at the first drop). Open: 4 Heartbloom character shots fail the
+  visual tiles (6-7%) because the duel drop's telegraph pillar is now in frame; owner to decide
+  whether to re-bless them.
 
 - T-KI1 [desktop] Ki blasts and beams as sim attacks (GAME_DESIGN §5.8): `KiRules` + per-legend
   `KiKit` (`game/combat/ki/`): tap Q blast (4 ki), hold Q charged blast (20 ki, not dash-soaked),
@@ -24,7 +31,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   reading/clash beats, QA ki counts, DetCheck ki duel. Open: beam ultimate cinematic, beam clash
   camera framing (developer), dedicated ki clips per legend (palm thrust stands in), new ki
   sounds (existing cues re-pitched), dodge (T-DEF2) i-frames vs beams once it lands.
-
+- T-UX1 [desktop] Controls and readability (owner feedback "how to get to the ground"): descend
+  moves from Left Ctrl to `C` (Ctrl stays a desktop-only alternate, never on the web; Ctrl/Cmd/Alt
+  rebinds refused on the web), quick-swap moves from `C` to `Y`; double-tap `C` dives until landing
+  (input side, no sim change); in-match controls strip (`H`, on for the first 5 matches, then
+  remembered) with a "fly down" prompt after 3 s hovering; ground disc + short dashed tick replace
+  the drop lines; compact FFA/2v2 plates, slot tags on duplicate legends, no weapon box unarmed.
+  Follow-ups: gamepad bindings (none exist yet: the strip says so on a pad).
 - T-D36 [desktop] Playable web build: exports kept as text resources (Godot 4.7.2's binary
   conversion emptied zone spawn points, so every exported match crashed), webrtc-native left
   out of the Web preset, no Quit on web, `tools/web/match_smoke_test.js` (menu -> vs AI, 30 s).
@@ -111,6 +124,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+- PB3-1 [developer] AI pickup interest: in 14 seeded 60 s duels a level-3 AI picks up a weapon in
+  only ~half, even with the drop 4-9 m away (PRESSURE outscores PICKUP up close, `fighter_ai.gd`
+  `_choose_plan`). Raise the duel pickup weight so a typical duel shows a weapon.
 
 - QA-18 [desktop] Godot 4.7.2 text-to-binary export conversion drops `Packed*Array` values in
   `ZoneData` .tres; re-enable `editor/export/convert_text_resources_to_binary` once fixed

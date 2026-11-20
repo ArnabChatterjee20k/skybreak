@@ -213,3 +213,64 @@ func test_chip_trail_starts_at_the_current_health() -> void:
 	add_child_autofree(hud)
 	await wait_process_frames(1)
 	assert_almost_eq(hud.trail_of(1), 0.5, 0.0001, "no drain animation for damage taken before the HUD existed")
+
+
+# --- T-UX1: declutter ---
+
+func test_two_fighters_keep_the_full_plates() -> void:
+	var rects := MatchHud.plate_layout(2, 0, [0, 1] as Array[int])
+	assert_eq(rects, [MatchHud.plate_rect(0, 2), MatchHud.plate_rect(1, 2)] as Array[Rect2])
+
+
+func test_ffa_gives_only_the_player_a_full_plate_and_stacks_rivals_compactly() -> void:
+	var rects := MatchHud.plate_layout(4, 2, [0, 1, 2, 3] as Array[int])
+	assert_eq(rects[2].size, MatchHud.PLATE_SIZE, "player keeps the full plate")
+	assert_lt(rects[2].position.x, MatchHud.DESIGN.x / 2.0, "player on the left")
+	var screen := Rect2(Vector2.ZERO, MatchHud.DESIGN)
+	for i in 4:
+		assert_true(screen.encloses(rects[i]), "plate %d on screen" % i)
+		if i != 2:
+			assert_eq(rects[i].size, MatchHud.COMPACT_SIZE, "rival %d compact" % i)
+			assert_gt(rects[i].position.x, MatchHud.DESIGN.x / 2.0, "rival %d on the right" % i)
+		for j in range(i + 1, 4):
+			assert_false(rects[i].intersects(rects[j]), "plates %d and %d" % [i, j])
+	var area := 0.0
+	for r in rects:
+		area += r.get_area()
+	assert_lt(area, MatchHud.PLATE_SIZE.x * MatchHud.PLATE_SIZE.y * 2.5, "smaller than four full plates")
+
+
+func test_teams_put_the_teammate_under_the_player_on_the_left() -> void:
+	var rects := MatchHud.plate_layout(4, 0, [0, 1, 0, 1] as Array[int])
+	assert_eq(rects[2].size, MatchHud.COMPACT_SIZE)
+	assert_lt(rects[2].position.x, MatchHud.DESIGN.x / 2.0, "teammate left")
+	assert_gt(rects[2].position.y, rects[0].end.y, "under the player")
+	assert_gt(rects[1].position.x, MatchHud.DESIGN.x / 2.0)
+	assert_gt(rects[3].position.x, MatchHud.DESIGN.x / 2.0)
+
+
+func test_duplicate_legends_get_slot_tags() -> void:
+	var tagged := MatchHud.plate_names(["VEXA", "KAEL", "VEXA", "VEXA"] as Array[String],
+		[false, true, true, false] as Array[bool], 0)
+	assert_eq(tagged, ["VEXA (P1)", "KAEL", "VEXA (CPU 3)", "VEXA (P4)"] as Array[String])
+
+
+func test_weapon_box_hides_while_unarmed() -> void:
+	var fighter := FighterState.new()
+	assert_false(MatchHud.shows_weapon_box(fighter))
+	fighter.weapons = PackedInt32Array([Weapon.Kind.STORM_BLADE, 0, 0])
+	fighter.active_slot = 0
+	assert_true(MatchHud.shows_weapon_box(fighter))
+
+
+func test_compact_hud_draws_without_errors() -> void:
+	var hud := MatchHud.new()
+	hud.sim = _sim(4)
+	hud.flow = MatchFlow.new(4)
+	hud.names.assign(["VEXA", "VEXA", "LYRA", "BRANN"])
+	hud.team_colors.assign([Color.ORANGE, Color.CYAN, Color.GREEN, Color.VIOLET])
+	hud.is_ai.assign([false, true, true, true])
+	hud.teams.assign([0, 1, 2, 3])
+	add_child_autofree(hud)
+	await get_tree().process_frame
+	assert_eq(hud._name_of(1), "VEXA (CPU 2)")
