@@ -13,14 +13,14 @@ extends VoxelZone
 const TERRAIN_SHADER := preload("res://game/world/voxel_zone_kit/voxel_terrain.gdshader")
 const SKY_SHADER := preload("res://game/world/zones_voxel/frozen_peaks/frozen_sky.gdshader")
 ## The valley floor: within this distance (m) of the valley line.
-const FLOOR_HALF := 70.0
+const FLOOR_HALF := 50.0
 ## T1 floor around the spawns and the camp (x, z, w, h).
 const HERO_RECT := Rect2(-722, -606, 144, 150)
 ## The zone's own terrain (x, z): beyond it a coarse stand-in range.
 const ZONE_RECT := Rect2(-1022, -1022, 840, 980)
 const FAR_CELL := 16.0
 ## Mountain chunks switch to the 2 x T3 tier past this distance (m).
-const MOUNTAIN_LOD := 330.0
+const MOUNTAIN_LOD := 240.0
 ## Glacier half-width (m) and the crevasse band beside it.
 const GLACIER_HALF := 12.0
 
@@ -43,6 +43,7 @@ var _pennant: Node3D
 var _tent_flap: Node3D
 var _sky_done := false
 var _snow: Array[GPUParticles3D] = []
+var _snow_noise := FastNoiseLite.new()
 
 
 func _init() -> void:
@@ -55,6 +56,9 @@ func build() -> void:
 	layout = ZoneLayout.load_default()
 	zone = load("res://game/world/zones/frozen_peaks.tres")
 	centre = zone.centre
+	_snow_noise.seed = 4245
+	_snow_noise.frequency = 0.03
+	_snow_noise.fractal_octaves = 3
 	_placements()
 	_story_layout()
 	_contact_shade()
@@ -207,6 +211,7 @@ func _floor_colour(w: Vector2, cell: float) -> Color:
 	var n := VoxelSdf.hash3(ci, 3)
 	# Sastrugi: wind ripples across the valley, crests packed brighter.
 	var rip := sin((w.x * 0.8 + w.y * 0.6) * 1.9 + 1.3 * sin(w.y * 0.23 + w.x * 0.05))
+	rip *= VoxelSdf.hash3(Vector3i(floori((w.x * 0.6 - w.y * 0.8) / 2.6), 0, floori((w.x * 0.8 + w.y * 0.6) / 1.6)), 19)
 	var col := Color("#E4E8EE")
 	if rip > 0.82:
 		col = Color("#F0F2F5")
@@ -222,8 +227,8 @@ func _floor_colour(w: Vector2, cell: float) -> Color:
 		col = Color("#9CB4C4").lerp(Color("#B4C8D4"), streak * 0.5 + flow * 0.25)
 		if edge - ad < 1.2:
 			col = Color("#C8DAE4")
-		elif VoxelSdf.hash3(ci, 11) < 0.012:
-			col = Color("#5A7488")  # trapped bubbles
+		elif VoxelSdf.hash3(ci, 11) < 0.0025:
+			col = Color("#6E889C")  # trapped bubbles
 		col = col * (0.97 + 0.06 * n)
 	elif ad < edge + 2.5 and VoxelSdf.hash3(Vector3i(floori(w.x / 0.7), 0, floori(w.y / 0.7)), 13) < (edge + 2.5 - ad) / 2.5:
 		col = Color("#D8E0E8")  # snow drifting onto the ice
@@ -295,14 +300,15 @@ func _rock_colour(w: Vector2, h: float) -> Color:
 	var grade := Vector2(gx, gz).length()
 	var ci := Vector3i(floori(w.x / T3), 0, floori(w.y / T3))
 	var n := VoxelSdf.hash3(ci, 23)
-	var snow_line := 1.05 + 0.4 * clampf((h - 120.0) / 140.0, 0.0, 1.0)
-	if grade < snow_line + (n - 0.5) * 0.5:
+	var patch := _snow_noise.get_noise_2d(w.x, w.y)
+	var snow_line := 1.0 + 0.45 * clampf((h - 120.0) / 140.0, 0.0, 1.0)
+	if grade < snow_line + patch * 0.55:
 		var c := Color("#E4E8EE") * (0.98 + 0.03 * n)
 		c.a = 0.0
 		return c
 	var slate := Color("#4A505E") * (0.95 + 0.1 * n)
-	if VoxelSdf.hash3(ci, 29) < 0.015:
-		slate = Color("#6A6656")
+	if VoxelSdf.hash3(ci, 29) < 0.008:
+		slate = Color("#5E5C54")
 	elif grade < 2.0 and VoxelSdf.hash3(ci, 31) < 0.3:
 		slate = Color("#C9D0DA")  # old snow in a crack
 	slate.a = 0.0
@@ -328,9 +334,9 @@ func _far_range() -> void:
 				continue
 			var dist := maxf(absf(w.x - centre.x) - ZONE_RECT.size.x * 0.5, absf(w.y - centre.y) - ZONE_RECT.size.y * 0.5)
 			var ridge := noise.get_noise_2d(w.x, w.y) * 0.5 + 0.5
-			var h := 90.0 + clampf(dist / 900.0, 0.0, 1.0) * 380.0 * pow(ridge, 1.5) + 120.0 * ridge
-			if map != null and absf(w.x) < 1020.0 and absf(w.y) < 1020.0:
-				h = maxf(h * clampf(dist / 300.0, 0.3, 1.0), ground_at(w.x, w.y))
+			var h := 110.0 + clampf(dist / 500.0, 0.45, 1.0) * 320.0 * pow(ridge, 1.5) + 70.0 * ridge
+			if absf(w.x) < 1020.0 and absf(w.y) < 1020.0:
+				h = maxf(h, ground_at(w.x, w.y))
 			var lv := roundi(h / FAR_CELL)
 			var snowy := ridge > 0.55 or VoxelSdf.hash3(Vector3i(x, 0, z), 5) < 0.4
 			var c := Color("#DCE2EA") if snowy else Color("#4A505E")
@@ -369,9 +375,10 @@ func _spires() -> void:
 	for v in lists.size():
 		if (lists[v] as Array).is_empty():
 			continue
-		var tiers: Array[ArrayMesh] = [FrozenPeaksDesigns.spire(v, T2), FrozenPeaksDesigns.spire(v, T3)]
+		var tiers: Array[ArrayMesh] = [FrozenPeaksDesigns.spire(v, T2), FrozenPeaksDesigns.spire(v, T2 * 2.0),
+			FrozenPeaksDesigns.spire(v, T3)]
 		quads += VoxelProp.quads(tiers[0])
-		_place(tiers, lists[v], "Spires%d" % v, [160.0, 0.0], 1)
+		_place(tiers, lists[v], "Spires%d" % v, [70.0, 200.0, 0.0], 1)
 	stats["spire_quads_t2"] = quads
 
 
@@ -560,18 +567,18 @@ func _waterfall() -> void:
 	var top := Vector2.ZERO
 	var g0 := ground_at(base.x, base.y)
 	for k in 120:
-		var p := base + Vector2(0, k * 1.0)
+		var p := base + Vector2(0, -k * 1.2)
 		var h := ground_at(p.x, p.y)
 		if foot == Vector2.ZERO and h > g0 + 6.0:
 			foot = p
-		if h > g0 + 46.0:
+		if h > g0 + 40.0:
 			top = p
 			break
 	if foot == Vector2.ZERO or top == Vector2.ZERO:
 		return
 	var y0 := ground_at(foot.x, foot.y) - 2.0
 	var y1 := ground_at(top.x, top.y) + 1.0
-	var bounds := AABB(Vector3(foot.x - 7.0, y0, foot.y - 2.0), Vector3(14.0, y1 - y0, top.y - foot.y + 4.0))
+	var bounds := AABB(Vector3(foot.x - 7.0, y0, top.y - 2.0), Vector3(14.0, y1 - y0, foot.y - top.y + 4.0))
 	var zone_ground := ground_at
 	var paint := func(g: VoxelGrid) -> void:
 		g.paint(bounds, func(p: Vector3) -> float:
@@ -582,7 +589,7 @@ func _waterfall() -> void:
 			var surf: float = zone_ground.call(p.x, p.z)
 			var col := 0.6 * sin(lat * 2.1) + 0.5
 			# In the air, within ~2 m in front of the stepped cliff.
-			var behind: float = zone_ground.call(p.x, p.z + 1.6 + col)
+			var behind: float = zone_ground.call(p.x, p.z - 1.6 - col)
 			return 1.0 if p.y < surf - 0.8 or p.y > behind + 0.4 else -1.0, FrozenPeaksDesigns.Mat.ICE_CLEAR)
 		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
 			return absf(sin((p.x - foot.x) * 2.1)) < 0.3 or VoxelSdf.hash3(c, 81) < 0.05, FrozenPeaksDesigns.Mat.ICE, [FrozenPeaksDesigns.Mat.ICE_CLEAR])
@@ -600,12 +607,12 @@ func _sastrugi() -> void:
 	var lists: Array = [[], [], []]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 4244
-	for k in 900:
+	for k in 420:
 		var p := Vector2(rng.randf_range(HERO_RECT.position.x, HERO_RECT.end.x), rng.randf_range(HERO_RECT.position.y, HERO_RECT.end.y))
 		var ad := absf(valley_d(p.x, p.y))
 		if ad < GLACIER_HALF + 5.0 or p.distance_to(camp) < 9.0:
 			continue
-		lists[k % 3].append(Transform3D(Basis(Vector3.UP, -0.64 + rng.randf_range(-0.2, 0.2)).scaled(Vector3.ONE * rng.randf_range(0.7, 1.5)),
+		lists[k % 3].append(Transform3D(Basis(Vector3.UP, -0.64 + rng.randf_range(-0.2, 0.2)).scaled(Vector3(rng.randf_range(1.5, 2.6), 1.0, rng.randf_range(1.2, 2.0))),
 			Vector3(p.x, ground_at(p.x, p.y) - 0.01, p.y)))
 	for v in 3:
 		_place([FrozenPeaksDesigns.sastrugi(v)], lists[v], "Sastrugi%d" % v, [45.0], 0)
@@ -659,7 +666,7 @@ func presets() -> Dictionary:
 	p.night = {
 		"sky_top": Color("#0E1428"), "sky_horizon": Color("#2A3450"), "sky_below": Color("#2A3450"),
 		"cloud": Color("#3A4466"), "cloud_shadow": Color("#1A2038"), "cloud_cover": 0.12,
-		"sun_dir": Vector3(-0.3, -0.62, -0.72), "sun_color": Color("#B4C4EC"), "sun_energy": 1.25,
+		"sun_dir": Vector3(-0.3, -0.62, -0.72), "sun_color": Color("#B4C4EC"), "sun_energy": 1.05,
 		"sun_size": 0.0, "moon": true, "stars": 1.0,
 		"rim_color": Color("#B0C4F0"), "rim_energy": 0.6,
 		"ambient_color": Color("#34466E"), "ambient_energy": 0.7,
@@ -720,8 +727,8 @@ func shots() -> Array[Dictionary]:
 		"fov": 62.0, "kael": [sp, PI * 0.8], "times": all})
 	var c := camp
 	var cy := ground_at(c.x, c.y)
-	out.append({"name": "camp", "from": Vector3(c.x - 6.5, cy + 2.4, c.y + 7.5), "at": Vector3(c.x + 1.5, cy + 0.9, c.y - 0.5),
-		"fov": 55.0, "kael": [c + Vector2(-2.6, 3.2), PI * 1.15], "times": ["night", "day"]})
+	out.append({"name": "camp", "from": Vector3(c.x - 3.0, cy + 2.6, c.y + 10.5), "at": Vector3(c.x + 2.5, cy + 0.6, c.y - 0.5),
+		"fov": 55.0, "kael": [c + Vector2(-4.4, 3.4), PI * 0.9], "times": ["night", "day"]})
 	var fc := first_cairn
 	out.append({"name": "cairn_crevasse", "from": Vector3(fc.x + 3.0, ground_at(fc.x, fc.y) + 1.9, fc.y + 3.5),
 		"at": Vector3(fc.x - 30.0, ground_at(fc.x, fc.y) - 1.0, fc.y - 4.0), "fov": 55.0, "times": ["day"]})
@@ -745,9 +752,9 @@ func shots() -> Array[Dictionary]:
 		if Vector2(xf.origin.x, xf.origin.z).distance_to(Vector2(-500, -700)) < Vector2(sbest.origin.x, sbest.origin.z).distance_to(Vector2(-500, -700)):
 			sbest = xf
 	var outx := sbest.basis.orthonormalized() * Vector3(1, 0, 0)
-	var sc := sbest.origin + outx * 45.0 + Vector3(0, -10.0, 0)
-	out.append({"name": "shelf_cliffs", "from": Vector3(sc.x + 12.0, maxf(sc.y, ground_at(sc.x, sc.z) + 4.0), sc.z + 12.0),
-		"at": sbest.origin + Vector3(0, -3.0, 0), "fov": 55.0, "times": ["day", "night"]})
+	var sc := sbest.origin + outx * 75.0 + Vector3(0, 6.0, 0)
+	out.append({"name": "shelf_cliffs", "from": Vector3(sc.x + 20.0, maxf(sc.y, ground_at(sc.x + 20.0, sc.z + 20.0) + 6.0), sc.z + 20.0),
+		"at": sbest.origin + Vector3(0, -6.0, 0), "fov": 55.0, "times": ["day", "night"]})
 	return out
 
 

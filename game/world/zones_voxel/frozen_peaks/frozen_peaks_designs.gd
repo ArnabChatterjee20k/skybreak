@@ -8,7 +8,7 @@ extends RefCounted
 ## and ice turn to snow in color(), so a cap never floats.
 
 ## Bump to rebuild the cached meshes after changing a design.
-const VERSION := 3
+const VERSION := 5
 
 enum Mat {
 	EMPTY, SNOW, SNOW_PACKED, ICE, ICE_CLEAR, ICE_DEEP, SLATE, SLATE_DARK, LICHEN,
@@ -17,8 +17,8 @@ enum Mat {
 ## Palette (sRGB) from the sheet. Aurora green lives in the sky only.
 const COLORS := {
 	Mat.SNOW: Color("#E4E8EE"), Mat.SNOW_PACKED: Color("#F0F2F5"),
-	Mat.ICE: Color("#9CB4C4"), Mat.ICE_CLEAR: Color("#C8DAE4"), Mat.ICE_DEEP: Color("#5A7488"),
-	Mat.SLATE: Color("#4A505E"), Mat.SLATE_DARK: Color("#2C303A"), Mat.LICHEN: Color("#7A7458"),
+	Mat.ICE: Color("#7E98AA"), Mat.ICE_CLEAR: Color("#C8DAE4"), Mat.ICE_DEEP: Color("#5A7488"),
+	Mat.SLATE: Color("#4A505E"), Mat.SLATE_DARK: Color("#2C303A"), Mat.LICHEN: Color("#6A6650"),
 	Mat.CANVAS: Color("#8A7E68"), Mat.CANVAS_DARK: Color("#5A5040"),
 	Mat.WOOD: Color("#6A5440"), Mat.WOOD_NEW: Color("#9A8262"), Mat.ROPE: Color("#A08A68"),
 	Mat.IRON: Color("#3E4048"), Mat.LANTERN: Color("#F0C890"), Mat.PENNANT: Color("#7A5652"),
@@ -43,7 +43,7 @@ static func color(mat: int, p: Vector3, c: Vector3i, n: Vector3, occlusion: floa
 		mat = Mat.SNOW
 	var quiet := mat in [Mat.SNOW, Mat.SNOW_PACKED]
 	var col := VoxelDesign.default_color(base, mat, c, occlusion * (0.6 if quiet else 1.0), exposure, quiet,
-		mat in [Mat.ICE, Mat.ICE_CLEAR, Mat.SLATE, Mat.WOOD, Mat.CANVAS], true)
+		mat in [Mat.SLATE, Mat.WOOD, Mat.CANVAS], true)
 	if quiet:
 		# Snow stays clean: +-2% only, blue in its hollows, never dirty.
 		col = base * (0.985 + 0.03 * VoxelSdf.hash3(c, 43))
@@ -55,7 +55,7 @@ static func color(mat: int, p: Vector3, c: Vector3i, n: Vector3, occlusion: floa
 		# Ice: up to +-6% in layers, lighter clear edges, darker deep cores.
 		var layer := VoxelSdf.hash3(Vector3i(0, floori(p.y / 0.9), 0), 53) * 2.0 - 1.0
 		col *= 1.0 + 0.05 * layer
-		col = col.lerp(COLORS[Mat.ICE_CLEAR], clampf(exposure * 0.6, 0.0, 0.5))
+		col = col.lerp(COLORS[Mat.ICE_CLEAR], clampf(exposure * 0.25, 0.0, 0.2))
 		col.a = 1.0
 	return col
 
@@ -144,26 +144,22 @@ static func spire(v: int, cell: float) -> ArrayMesh:
 			g.paint(AABB(off - Vector3(reach, 0.5, reach), Vector3(reach * 2.0, sh + 1.0, reach * 2.0)), func(p: Vector3) -> float:
 				return crystal(frame(p, off, yaw, tx, tz), sa, sh * 0.7, sh, 4), Mat.ICE, -1, VoxelGrid.Mode.ADD)
 		var bands := []
-		for k in 6:
-			bands.append(rng.randf_range(2.0, h * 0.8))
+		for k in 3:
+			bands.append([rng.randf_range(3.0, h * 0.7), rng.randf() * TAU])
 		var crack_a := rng.randf() * TAU
 		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
-			for b: float in bands:
-				if absf(p.y - b) < 0.45:
+			var ang := atan2(p.z, p.x)
+			for b: Array in bands:
+				if absf(p.y - float(b[0])) < 0.3 and absf(wrapf(ang - float(b[1]), -PI, PI)) < 1.1:
 					return true
-			if VoxelSdf.hash3(c, 61) < 0.025:
+			if VoxelSdf.hash3(c, 61) < 0.03:
 				return true  # bubbles
 			# A long diagonal crack on one face.
-			var ang := atan2(p.z, p.x)
 			return absf(wrapf(ang - crack_a, -PI, PI)) < 0.5 and absf(fposmod(p.y * 0.8 + ang * 3.0, 6.0) - 3.0) < 0.18,
 				Mat.ICE_DEEP, [Mat.ICE])
-		# Clear ice on the vertical edges of every crystal.
-		g.paint_surface(bounds, func(_p: Vector3, c: Vector3i) -> bool:
-			var open := 0
-			for d: Vector3i in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
-				if g.get_mat(c.x + d.x, c.y, c.z + d.z) == 0:
-					open += 1
-			return open >= 2, Mat.ICE_CLEAR, [Mat.ICE])
+		# Clear ice: the tips, plus rare glints.
+		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
+			return p.y > h * 0.8 or VoxelSdf.hash3(c, 65) < 0.02, Mat.ICE_CLEAR, [Mat.ICE])
 	return _mesh("fp_spire%d" % v, bounds, cell, paint)
 
 
@@ -294,7 +290,7 @@ static func boulder(v: int, cell: float) -> ArrayMesh:
 			g.paint_surface(bounds, func(p: Vector3, _c: Vector3i) -> bool:
 				return fposmod(p.dot(tilt) / 0.45, 1.0) < 0.22, Mat.SLATE_DARK, [Mat.SLATE])
 			g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
-				return p.y < half.y * 0.2 and VoxelSdf.hash3(Vector3i(c.x / 2, c.y / 2, c.z / 2), 67) < 0.06, Mat.LICHEN, [Mat.SLATE])
+				return p.y < half.y * 0.2 and VoxelSdf.hash3(Vector3i(c.x / 2, c.y / 2, c.z / 2), 67) < 0.025, Mat.LICHEN, [Mat.SLATE])
 	return _mesh("fp_boulder%d" % v, bounds, cell, paint)
 
 
@@ -337,7 +333,7 @@ static func cairn(v: int, tall: bool) -> ArrayMesh:
 				var slot := floori((p.x + 0.28) / 0.05)
 				return slot >= 0 and slot < 11 and slot % 5 != 4 and fposmod(p.x + 0.28, 0.05) < 0.02, Mat.PAINT, [Mat.SLATE])
 		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
-			return p.y < 0.5 and VoxelSdf.hash3(c, 71) < 0.08, Mat.LICHEN, [Mat.SLATE, Mat.SLATE_DARK])
+			return p.y < 0.5 and VoxelSdf.hash3(c, 71) < 0.03, Mat.LICHEN, [Mat.SLATE, Mat.SLATE_DARK])
 		# Drifted snow against the windward foot.
 		g.paint(bounds, func(p: Vector3) -> float:
 			return maxf(VoxelSdf.ellipsoid(p, Vector3(-0.35, 0.0, 0.1), Vector3(0.55, 0.22, 0.6)), -p.y), Mat.SNOW, -1, VoxelGrid.Mode.ADD)
