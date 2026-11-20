@@ -4,12 +4,17 @@ extends Control
 ## the window, so it reads the same at 1080p, 720p and in the web build.
 ## Per fighter: a name plate in team colour, health with a chip-damage trail
 ## and the recoverable grey part, ki in 4 bars, guard, burst stocks, round-win
-## pips, the held weapon and inventory slots. Centre: round clock and banners.
+## pips, the held weapon and inventory slots (only while armed). Centre: round
+## clock and banners. With 3+ fighters (FFA, 2v2) only the player keeps a full
+## plate; teammates (left) and opponents (right) get compact ones (T-UX1).
 
 const DESIGN := Vector2(1920, 1080)
 const PLATE_SIZE := Vector2(560, 132)
 const MARGIN := 32.0
 const ROW_GAP := 14.0
+## Compact plate (3+ fighters): name, health and ki only.
+const COMPACT_SIZE := Vector2(340, 62)
+const COMPACT_GAP := 8.0
 ## The chip trail waits this long after a hit, then drains at TRAIL_SPEED
 ## (fraction of the bar per second).
 const TRAIL_HOLD := 0.5
@@ -35,6 +40,11 @@ var sim: CombatSim
 var flow: MatchFlow
 var names: Array[String] = []
 var team_colors: Array[Color] = []
+## Team per fighter and AI flags, for the 3+ fighter layout and name tags; optional.
+var teams: Array[int] = []
+var is_ai: Array[bool] = []
+## The fighter this screen belongs to (keeps the full plate).
+var player := 0
 
 var _trail: Array[float] = []
 var _trail_hold: Array[float] = []
@@ -69,9 +79,12 @@ func _draw() -> void:
 	var scale_factor := design_scale(size)
 	var offset := design_offset(size)
 	draw_set_transform(offset, 0.0, Vector2.ONE * scale_factor)
-	var count := sim.fighters.size()
-	for i in count:
-		_draw_plate(i, plate_rect(i, count))
+	var rects := plate_layout(sim.fighters.size(), player, teams)
+	for i in rects.size():
+		if rects[i].size == COMPACT_SIZE:
+			_draw_compact_plate(i, rects[i])
+		else:
+			_draw_plate(i, rects[i])
 	# No clock or banners when the round flow is off (scripted playtests).
 	if flow != null and flow.enabled:
 		_draw_clock()
@@ -80,7 +93,8 @@ func _draw() -> void:
 
 
 func _name_of(index: int) -> String:
-	return names[index] if index < names.size() and names[index] != "" else "P%d" % (index + 1)
+	var tagged := plate_names(names, is_ai, player)
+	return tagged[index] if index < tagged.size() and tagged[index] != "" else "P%d" % (index + 1)
 
 
 func _draw_plate(index: int, rect: Rect2) -> void:
@@ -123,7 +137,19 @@ func _draw_plate(index: int, rect: Rect2) -> void:
 	var guard_rect := Rect2(guard_x, rect.position.y + 98, inner_w * 0.62, 8)
 	draw_rect(guard_rect, INK)
 	_bar(guard_rect, guard, GUARD if guard > 0.3 else GUARD_LOW, right_side)
-	# Held weapon and inventory slots, on the far side from the badge.
+	# Held weapon and inventory slots, on the far side from the badge, only while armed.
+	if shows_weapon_box(fighter):
+		_draw_weapon(fighter, team, inner_x, inner_w, rect, right_side)
+	# Burst stocks.
+	var stocks := burst_stocks(fighter, sim.meter_tuning)
+	for s in sim.meter_tuning.burst_max_stocks:
+		var stock_x := inner_x + inner_w - 8.0 - s * 18.0 if right_side else inner_x + 8.0 + s * 18.0
+		draw_circle(Vector2(stock_x, rect.position.y + 120), 6, team if s < stocks else INK)
+
+
+func _draw_weapon(fighter: FighterState, team: Color, inner_x: float, inner_w: float, rect: Rect2,
+		right_side: bool) -> void:
+	var font := ThemeDB.fallback_font
 	var weapon_w := inner_w * 0.34 - 52.0
 	var weapon_x := inner_x + 52.0 if right_side else inner_x + inner_w - weapon_w - 52.0
 	var weapon_rect := Rect2(weapon_x, rect.position.y + 78, weapon_w, 30)
@@ -141,11 +167,40 @@ func _draw_plate(index: int, rect: Rect2) -> void:
 			draw_rect(slot.grow(-4), team)
 		if slots[slot_index].active:
 			draw_rect(slot, Color.WHITE, false, 2.0)
-	# Burst stocks.
-	var stocks := burst_stocks(fighter, sim.meter_tuning)
-	for s in sim.meter_tuning.burst_max_stocks:
-		var stock_x := inner_x + inner_w - 8.0 - s * 18.0 if right_side else inner_x + 8.0 + s * 18.0
-		draw_circle(Vector2(stock_x, rect.position.y + 120), 6, team if s < stocks else INK)
+
+
+## Small plate: team stripe, name (plus the held weapon), win pips, health and ki.
+func _draw_compact_plate(index: int, rect: Rect2) -> void:
+	var fighter := sim.fighters[index]
+	var team := team_colors[index] if index < team_colors.size() else Color.WHITE
+	var font := ThemeDB.fallback_font
+	var faded := fighter.is_knocked_out()
+	draw_rect(rect, Color(PANEL, PANEL.a * (0.6 if faded else 1.0)))
+	draw_rect(Rect2(rect.position, Vector2(8, rect.size.y)), team)
+	var inner_x := rect.position.x + 18.0
+	var inner_w := rect.size.x - 30.0
+	var label := _name_of(index)
+	var name_size := fit_font_size(font, label, inner_w * 0.6, 20, 12)
+	_text(font, Vector2(inner_x, rect.position.y + 22), label, name_size, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 4)
+	if shows_weapon_box(fighter):
+		var weapon_text := weapon_label(fighter)
+		var weapon_size := fit_font_size(font, weapon_text, inner_w * 0.38 - 50.0, 13, 9)
+		_text(font, Vector2(inner_x + inner_w - 52.0, rect.position.y + 20), weapon_text, weapon_size,
+			Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, 3)
+	for p in MatchFlow.WINS_NEEDED:
+		var won := flow != null and index < flow.wins.size() and p < flow.wins[index]
+		var centre := Vector2(inner_x + inner_w - 6.0 - p * 16.0, rect.position.y + 15)
+		draw_circle(centre, 5, BANNER if won else INK)
+		draw_arc(centre, 5, 0, TAU, 12, Color(1, 1, 1, 0.6), 1.0, true)
+	var bar := Rect2(inner_x, rect.position.y + 30, inner_w, 14)
+	draw_rect(bar, INK)
+	var health := health_fraction(fighter)
+	_bar(bar, trail_of(index) if index < _trail.size() else health, CHIP, false)
+	_bar(bar, minf(health + grey_fraction(fighter), 1.0), GREY, false)
+	_bar(bar, health, HEALTH.lerp(team, 0.15), false)
+	var ki_rect := Rect2(inner_x, rect.position.y + 49, inner_w, 5)
+	draw_rect(ki_rect, INK)
+	_bar(ki_rect, ki_fraction(fighter, sim.meter_tuning), KI, false)
 
 
 func _draw_pips(index: int, at: Vector2) -> void:
@@ -230,6 +285,54 @@ static func plate_rect(index: int, _count: int) -> Rect2:
 	return Rect2(Vector2(x, MARGIN + row * (PLATE_SIZE.y + ROW_GAP)), PLATE_SIZE)
 
 
+## Plates for count fighters, in design space. Up to two: plate_rect. With more,
+## the player's full plate top left, teammates' compact plates under it and
+## opponents' compact plates stacked top right. Without teams everyone else is
+## an opponent.
+static func plate_layout(count: int, player_index: int, team_of: Array[int]) -> Array[Rect2]:
+	var rects: Array[Rect2] = []
+	if count <= 2:
+		for i in count:
+			rects.append(plate_rect(i, count))
+		return rects
+	var me := clampi(player_index, 0, count - 1)
+	var my_team := team_of[me] if me < team_of.size() else -1
+	var left_y := MARGIN + PLATE_SIZE.y + COMPACT_GAP
+	var right_y := MARGIN
+	for i in count:
+		if i == me:
+			rects.append(Rect2(Vector2(MARGIN, MARGIN), PLATE_SIZE))
+			continue
+		var teammate := my_team >= 0 and i < team_of.size() and team_of[i] == my_team
+		if teammate:
+			rects.append(Rect2(Vector2(MARGIN, left_y), COMPACT_SIZE))
+			left_y += COMPACT_SIZE.y + COMPACT_GAP
+		else:
+			rects.append(Rect2(Vector2(DESIGN.x - MARGIN - COMPACT_SIZE.x, right_y), COMPACT_SIZE))
+			right_y += COMPACT_SIZE.y + COMPACT_GAP
+	return rects
+
+
+## Plate names; a legend picked more than once gets a slot tag, "VEXA (P1)" for
+## the player and "VEXA (CPU 3)" for an AI in slot 3 ("P3" for other humans).
+static func plate_names(base: Array[String], ai: Array[bool], player_index: int) -> Array[String]:
+	var counts := {}
+	for n in base:
+		counts[n] = int(counts.get(n, 0)) + 1
+	var out: Array[String] = []
+	for i in base.size():
+		var n := base[i]
+		if n == "" or int(counts[n]) < 2:
+			out.append(n)
+		elif i == player_index:
+			out.append("%s (P1)" % n)
+		elif i < ai.size() and ai[i]:
+			out.append("%s (CPU %d)" % [n, i + 1])
+		else:
+			out.append("%s (P%d)" % [n, i + 1])
+	return out
+
+
 static func health_fraction(fighter: FighterState) -> float:
 	return clampf(fighter.health_display() / maxf(fighter.stats.max_health, 1.0), 0.0, 1.0)
 
@@ -270,6 +373,11 @@ static func weapon_label(fighter: FighterState) -> String:
 	if Weapon.is_ranged(kind):
 		label += " RELOAD" if fighter.reload_ticks > 0 else " %d" % fighter.ammo[fighter.active_slot]
 	return label
+
+
+## The weapon box (and inventory slots) only shows while a weapon is held.
+static func shows_weapon_box(fighter: FighterState) -> bool:
+	return fighter.held_weapon() != Weapon.Kind.NONE
 
 
 ## Largest font size from largest down to smallest at which text fits width.

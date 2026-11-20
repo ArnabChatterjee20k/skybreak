@@ -32,7 +32,7 @@ func build(player_id: StringName, opponent_id: StringName) -> void:
 func read_player_input() -> FighterInput:
 	var keyboard: KeyboardMouseInput = arena.get_node("KeyboardMouseInput")
 	var camera: FighterCamera = arena.camera
-	return keyboard.read_tick(camera.view_yaw(), camera.orbit)
+	return keyboard.read_tick(camera.view_yaw(), camera.orbit, sim.fighters[0].is_grounded())
 
 
 ## Advances the arena one tick with inputs (one per fighter).
