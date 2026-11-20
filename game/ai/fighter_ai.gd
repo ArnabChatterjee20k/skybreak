@@ -105,6 +105,8 @@ var _stacked_now: bool = false
 var _last_hitter := PackedInt32Array()
 ## This AI's ki this tick (read from the sim each tick, so no snapshot needed).
 var _ki: int = 0
+## Combo breaker, air tech, chase and wakeups (T-DEF3); its own rng.
+var escapes: EscapeAI
 
 
 ## seed_value should come from seed_for(sim seed, slot).
@@ -112,6 +114,7 @@ func _init(index: int, level: int = 3, seed_value: int = 0) -> void:
 	fighter_index = index
 	rng.seed = seed_value
 	profile = AIProfile.for_level(level, rng)
+	escapes = EscapeAI.new(level, hash([seed_value, "skybreak-escapes"]))
 
 
 ## The rng seed of the AI in slot for a match with sim_seed.
@@ -158,6 +161,7 @@ func snapshot() -> Dictionary:
 			_defend_left, _escape_left, _tech_tick, _hold_left, _hold_move, _hold_vertical,
 			_last_state, _grudge, _grudge_tick, _push_rolled, _step_out, _edge_gap, _perfect_streak, _target_air_ticks, legend,
 			profile.spacing, _last_hitter.duplicate()],
+		"escapes": escapes.snapshot(),
 	}
 
 
@@ -183,6 +187,8 @@ func restore(saved: Dictionary) -> void:
 	_edge_gap = v[26]; _perfect_streak = v[27]; _target_air_ticks = v[28]; legend = v[29]
 	profile.spacing = v[30]
 	_last_hitter = (v[31] as PackedInt32Array).duplicate() if v.size() > 31 else PackedInt32Array()
+	if saved.has("escapes"):
+		escapes.restore(saved.escapes)
 
 
 ## How far a move's hitboxes reach from the attacker's centre to a target's centre (planar).
@@ -216,15 +222,18 @@ func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 		elif me.lock_on_target != _target:
 			plan.target_switch = 1
 	var distance := to_target.length()
+	escapes.level = profile.level
 	match me.state:
 		_S.GRABBED:
 			_tech(me, plan)
 			return
-		_S.HITSTUN, _S.KNOCKDOWN, _S.GUARD_BROKEN, _S.THROWING, _S.VANISHING:
+		_S.HITSTUN, _S.KNOCKDOWN, _S.GUARD_BROKEN, _S.THROWING, _S.VANISHING, _S.ESCAPING:
 			_tech_tick = -1
+			escapes.decide(sim, me, target, plan)
 			return
 		_S.ATTACKING:
-			_continue_attack(sim, me, target, plan)
+			if not escapes.chase(sim, me, plan):
+				_continue_attack(sim, me, target, plan)
 			return
 		_S.BLOCKING, _S.BLOCKSTUN:
 			_keep_guard(sim, me, target, distance, plan)
@@ -238,6 +247,8 @@ func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 			if me.ki < 85 * FighterState.METER_UNIT and distance > 9.0 and _plan == Plan.CHARGE:
 				plan.held_actions |= _A.CHARGE
 			return
+	if escapes.chase(sim, me, plan):
+		return
 	_act_free(sim, me, target, distance, plan)
 
 

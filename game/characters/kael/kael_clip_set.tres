@@ -11,6 +11,7 @@ state_clips = Dictionary[StringName, StringName]({
 &"BLOCKSTUN": &"block_hit",
 &"CHARGING": &"power_up",
 &"DASHING": &"dash",
+&"ESCAPING": &"dash",
 &"FALLING": &"fall",
 &"FLYING": &"fly_hover",
 &"GRABBED": &"guard_broken",

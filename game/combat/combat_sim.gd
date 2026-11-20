@@ -13,6 +13,7 @@ const DEFAULT_TUNING := preload("res://game/combat/default_movement_tuning.tres"
 const DEFAULT_METER_TUNING := preload("res://game/combat/default_meter_tuning.tres")
 const DEFAULT_FIGHTER_STATS := preload("res://game/combat/default_fighter_stats.tres")
 const DEFAULT_HIT_TUNING := preload("res://game/combat/default_hit_tuning.tres")
+const DEFAULT_ESCAPE_TUNING := preload("res://game/combat/escapes/default_escape_tuning.tres")
 
 ## What an entry in events reports.
 enum EventType {
@@ -57,6 +58,12 @@ enum EventType {
 	BULLET_ABSORB, ## fighter's dash absorbed repeater bullet id (+2 ki).
 	SWAP_CANCEL, ## fighter swap-cancelled into weapon for 10 ki.
 	DISC_CATCH, ## fighter caught its Orbit Chakram disc id.
+	# Escapes (T-DEF3). Entries: {type, fighter, attacker (= fighter), target, position, way, caught}.
+	COMBO_BREAKER, ## fighter burst out of a combo; target is the first opponent blown away (or -1).
+	AIR_TECH, ## fighter teched out of knockback (way); caught: a chaser (target) read it.
+	CHASE, ## fighter chased its knocked-back target (way: over, under, straight).
+	TECH_ROLL, ## fighter rolled out of a knockdown.
+	WAKEUP, ## fighter got up from a knockdown; delayed: it held descend.
 }
 
 const _DASH := FighterInput.Action.DASH
@@ -92,7 +99,7 @@ const _FACING_LOCKED_STATES: Array[FighterState.State] = [
 	FighterState.State.ATTACKING, FighterState.State.HITSTUN,
 	FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN,
 	FighterState.State.GRABBED, FighterState.State.THROWING,
-	FighterState.State.KO_FALL, FighterState.State.KO_DOWN,
+	FighterState.State.KO_FALL, FighterState.State.KO_DOWN, FighterState.State.ESCAPING,
 ]
 ## States that cannot block even with blocking set.
 const _NO_BLOCK_STATES: Array[FighterState.State] = [
@@ -146,6 +153,8 @@ var tuning: MovementTuning
 var meter_tuning: MeterTuning
 ## Hit constants (scaling, stun, hitstop, knockback). Configuration, like tuning.
 var hit_tuning: HitTuning
+## Escape tools (combo breaker, air tech, chase, wakeups). Configuration, not hashed.
+var escape_tuning: EscapeTuning = DEFAULT_ESCAPE_TUNING as EscapeTuning
 ## What happened this tick, for the view (every EventType), in the order it was
 ## resolved. Each entry: {type: EventType, attacker, target, position (contact
 ## point), move_id, damage (display units), hitstop, knockback_type, counter}.
@@ -482,6 +491,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		return
 	var state_before := fighter.state
 	var start_y := fighter.position.y
+	EscapeRules.count(fighter)
 	_record_presses(fighter, input)
 	_update_lock_on(index, input)
 	_count_weapon_timers(fighter)
@@ -523,6 +533,8 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 			_move_ko_falling(fighter)
 		FighterState.State.KO_DOWN:
 			_move_ko_down(fighter)
+		FighterState.State.ESCAPING:
+			EscapeRules.move(self, fighter)
 	# Haste stretches this tick's travel without changing the stored velocity.
 	var speed := PowerRules.speed_percent(fighter) / 100.0
 	var from := fighter.position
@@ -585,7 +597,9 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 		FighterState.State.ATTACKING:
 			_advance_attack(index, input)
 			return
-		FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN:
+		FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN, FighterState.State.ESCAPING:
+			if EscapeRules.step(self, index, input):
+				return
 			if fighter.state_ticks >= fighter.stun_ticks:
 				_enter_free_state(fighter)
 			return
@@ -633,8 +647,8 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 		FighterState.DashKind.RUSH:
 			var target := fighter.lock_on_target
 			if target < 0 or fighter.state_ticks >= tuning.rush_max_ticks \
-					or fighter.position.distance_to(fighters[target].position) \
-					<= tuning.rush_stop_distance + _RUSH_ARRIVAL_MARGIN:
+					or (fighter.position.distance_to(fighters[target].position) \
+					<= tuning.rush_stop_distance + _RUSH_ARRIVAL_MARGIN and not EscapeRules.tailing(self, fighter)):
 				# Braked to its stop point in front of the target, ready for a follow-up.
 				fighter.velocity = Vector3.ZERO
 				_end_dash(fighter)
@@ -647,6 +661,8 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 ## Starts a buffered vanish step or dash if affordable; a vanish never falls back to a dash.
 func _start_buffered_action(index: int, input: FighterInput, wish: Vector3) -> void:
 	var fighter := fighters[index]
+	if EscapeRules.try_chase(self, index, input):
+		return
 	var free := _is_free(fighter)
 	var can_vanish := free or fighter.state == FighterState.State.DASHING \
 		or fighter.state == FighterState.State.BLOCKING \
@@ -687,7 +703,8 @@ func _track_block_press(index: int, input: FighterInput, state_before: FighterSt
 	fighter.perfect_block_lockout = maxi(fighter.perfect_block_lockout - 1, 0)
 	if fighter.perfect_block_armed:
 		fighter.perfect_block_ticks += 1
-		if fighter.perfect_block_ticks > hit_tuning.perfect_block_window_ticks:
+		# A fresh press covers exactly the window, counting its own tick (S3: no early held press).
+		if fighter.perfect_block_ticks >= hit_tuning.perfect_block_window_ticks:
 			_miss_perfect_block(fighter)
 	if not input.is_pressed(_BLOCK) or fighter.state == FighterState.State.VANISHING \
 			or state_before not in _PERFECT_BLOCK_STATES or _opponent_vanishing(index):
@@ -1032,7 +1049,8 @@ func _move_dashing(index: int, input: FighterInput, wish: Vector3) -> void:
 				fighter.dash_direction = steer
 			fighter.velocity = fighter.dash_direction * tuning.sustained_dash_speed
 		FighterState.DashKind.RUSH:
-			var to_target := fighters[fighter.lock_on_target].position - fighter.position
+			var to_target := fighters[fighter.lock_on_target].position + EscapeRules.chase_offset(self, fighter) \
+				- fighter.position
 			if to_target != Vector3.ZERO:
 				fighter.dash_direction = to_target.normalized()
 			var room := maxf(to_target.length() - tuning.rush_stop_distance, 0.0)
@@ -1275,6 +1293,7 @@ func _reset_fighter(fighter: FighterState, start: Vector3) -> void:
 	fighter.tether_length = 0.0
 	fighter.combo_starter_percent = 100
 	fighter.powers = FighterPowers.new()
+	fighter.escapes.reset()
 
 
 ## Finds every hitbox touching an opponent this tick, then applies them in
@@ -1421,6 +1440,7 @@ func _apply_hit(contact: Dictionary, from_projectile: bool = false) -> void:
 		_enter_stun(target, FighterState.State.HITSTUN, decayed_hitstun(move, combo_hit))
 		target.knockback_type = knockback
 		target.spike_bounced = false
+		EscapeRules.on_hit(self, attacker_index, target_index, knockback, from_projectile)
 		target.velocity = _air_knockback_guarded(attacker, target, move, _knockback_velocity(contact))
 		if not from_projectile:
 			_start_pushback(target_index, attacker_index, hit_tuning.hit_pushback_distance)

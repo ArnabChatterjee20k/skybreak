@@ -72,7 +72,23 @@ static func state_clip(fighter: FighterState, local_velocity: Vector3, airborne:
 			return &"throw"
 		FighterState.State.KNOCKDOWN:
 			return &"ko_fall"
+		FighterState.State.ESCAPING:
+			return escape_clip(fighter.escapes.kind)
 	return &""
+
+
+## Pose for an escape (T-DEF3): the breaker shoves out, techs flip, a blown-away attacker reels.
+static func escape_clip(kind: FighterEscapes.Kind) -> StringName:
+	match kind:
+		FighterEscapes.Kind.BREAKER:
+			return &"push_block"
+		FighterEscapes.Kind.BLOWN_AWAY:
+			return &"hit_heavy"
+		FighterEscapes.Kind.AIR_TECH, FighterEscapes.Kind.TECH_ROLL:
+			return &"tech"
+		FighterEscapes.Kind.CHASE_MISS:
+			return &"dash_stop"
+	return &"hit_light"
 
 
 static func staggers(fighter: FighterState) -> bool:

@@ -30,6 +30,8 @@ var camera: FighterCamera
 var impact_frame: ImpactFrame
 ## Pooled T-D27 effects (smears, afterimages, KO finisher, zone extras); same events.
 var vfx := MatchVfx.new()
+## The 0.8x view slow after a perfect block (§5.10); the arena multiplies time_scale() in.
+var view_slow := EscapeVfx.ViewSlow.new(CombatSim.DEFAULT_ESCAPE_TUNING as EscapeTuning)
 
 
 func _ready() -> void:
@@ -39,6 +41,7 @@ func _ready() -> void:
 
 ## Spawns the feedback for one tick's events.
 func react(events: Array[Dictionary]) -> void:
+	view_slow.react(events)
 	if vfx.is_inside_tree():
 		vfx.react(events)
 	var sim := vfx.sim
@@ -60,6 +63,11 @@ func react(events: Array[Dictionary]) -> void:
 			camera.shake(plan.shake)
 
 
+## Engine.time_scale this feedback wants now (the perfect-block slow), 1.0 otherwise.
+func time_scale() -> float:
+	return view_slow.time_scale()
+
+
 ## One-shot sparks still playing.
 func live_sparks() -> int:
 	var count := 0
@@ -74,6 +82,9 @@ func live_sparks() -> int:
 ## own), scale and shake (camera trauma 0-1). Screen-wide impact frames are
 ## MatchVfx's, rationed by ImpactFrameGate, so impact_frames stays 0 here.
 static func plan_for(event: Dictionary) -> Dictionary:
+	var escape := EscapeVfx.plan_for(event, SHOCKWAVE, SPARK_HEAVY, COUNTER)
+	if not escape.is_empty():
+		return escape
 	var plan := {"effects": [], "color": Color.TRANSPARENT, "scale": 1.0, "shake": 0.0, "impact_frames": 0}
 	var heavy: bool = event.get("hitstop", 0) >= HEAVY_HITSTOP
 	match event.get("type", -1):
