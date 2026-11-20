@@ -12,6 +12,8 @@ extends VoxelZone
 ## plateau, the far floor and mist; 2xT3 the backdrop hills.
 
 const VERSION := 1
+## Outer floor tiers sit this far under the finer tier they overlap (no seam).
+const TIER_DROP := 0.03
 const TERRAIN_SHADER := preload("res://game/world/voxel_zone_kit/voxel_terrain.gdshader")
 const WATER_SHADER := preload("res://game/world/zones_voxel/verdant_falls/vf_water.gdshader")
 const FALLS_SHADER := preload("res://game/world/zones_voxel/verdant_falls/vf_falls.gdshader")
@@ -20,8 +22,8 @@ const SHAFT_SHADER := preload("res://game/world/zones_voxel/verdant_falls/vf_sha
 const HEIGHTMAP := "res://game/world/terrain/terrain_heightmap.res"
 ## Spawn ring kept clear of new props (m), and the props' shared LOD ranges.
 const SPAWN_RING := 25.0
-const CANOPY_RANGES := [160.0, 0.0]
-const TRUNK_RANGES := [70.0, 220.0, 0.0]
+const CANOPY_RANGES := [55.0, 0.0]
+const TRUNK_RANGES := [35.0, 120.0, 0.0]
 
 enum Mat {
 	EMPTY, LEAF_TOP, LEAF, LEAF_DARK, MOSS, MOSS_LIGHT, FERN, FERN_DARK, BARK, BARK_DARK, BARK_RIDGE,
@@ -44,7 +46,7 @@ const COLORS := {
 	Mat.HEARTWOOD: Color("#B89870"), Mat.CARVE: Color("#2A221C"), Mat.PETAL_WHITE: Color("#F2EEE2"),
 }
 ## Floor tones: moss light to deep, leaf litter, blue-green ground fern.
-const FLOOR_MOSS: Array[Color] = [Color("#8AA656"), Color("#76964C"), Color("#6E9048"), Color("#5C7E40")]
+const FLOOR_MOSS: Array[Color] = [Color("#7A9A4A"), Color("#66863F"), Color("#567439"), Color("#43602F")]
 const LITTER: Array[Color] = [Color("#7C6A4A"), Color("#8E7A52"), Color("#6A5A40")]
 
 var map: TerrainHeightmap
@@ -263,14 +265,14 @@ func _floor() -> void:
 	var t1 := _t1_rect()
 	var t2 := _t2_rect()
 	var box := _box_rect()
-	quads += _smooth_field(T1, t1, Rect2(), "FloorT1", 0.0)
-	quads += _smooth_field(T2, t2, t1.grow(-T1 * 2.0), "FloorT2", 0.0)
-	quads += _smooth_field(T3, box, t2.grow(-T2 * 2.0), "FloorT3", 0.0)
+	quads += _smooth_field(T1, t1, Rect2(), "FloorT1", 0.0, 0.0)
+	quads += _smooth_field(T2, t2, t1.grow(-1.0), "FloorT2", 0.0, TIER_DROP)
+	quads += _smooth_field(T3, box, t2.grow(-3.0), "FloorT3", 0.0, TIER_DROP * 2.0)
 	stats["floor_quads"] = quads
 
 
 ## A smooth top on the sim's floor over `rect`, skipping `hole`, coloured per cell.
-func _smooth_field(cell: float, rect: Rect2, hole: Rect2, node_name: String, vis_end: float) -> int:
+func _smooth_field(cell: float, rect: Rect2, hole: Rect2, node_name: String, vis_end: float, drop: float) -> int:
 	var hf := VoxelHeightfield.new(cell, rect.position, rect.end)
 	var cliff_z := centre.y - 128.0
 	for z in hf.size.y:
@@ -280,7 +282,7 @@ func _smooth_field(cell: float, rect: Rect2, hole: Rect2, node_name: String, vis
 				continue
 			var h := ground_at(w.x, w.y)
 			hf.set_column(x, z, roundi(h / cell), roundi((h - 1.2) / cell), _floor_colour(w, h, x, z, cell))
-	hf.smooth_height = func(x: float, z: float) -> float: return ground_at(x, z)
+	hf.smooth_height = func(x: float, z: float) -> float: return ground_at(x, z) - drop
 	var mat := _terrain_material(hf)
 	var node := hf.build(self, mat, node_name, vis_end, false)
 	return VoxelHeightfield.count_quads(node)
@@ -312,7 +314,7 @@ func _floor_colour(w: Vector2, h: float, x: int, z: int, cell: float) -> Color:
 	# litter and blue-green ground fern under the canopies.
 	var n1 := sin(w.x * 0.071 + w.y * 0.043) + sin(w.x * 0.033 - w.y * 0.089 + 1.3)
 	var n2 := sin(w.x * 0.37 + 2.1) * sin(w.y * 0.31 - 0.7)
-	var tone := clampf(0.45 + n1 * 0.22 + n2 * 0.2 + (hv - 0.5) * 0.22 + shade * 0.35, 0.0, 0.999)
+	var tone := clampf(0.4 + n1 * 0.3 + n2 * 0.25 + (hv - 0.5) * 0.3 + shade * 0.4, 0.0, 0.999)
 	var k := tone * 3.0
 	var c := FLOOR_MOSS[int(k)].lerp(FLOOR_MOSS[mini(int(k) + 1, 3)], fposmod(k, 1.0))
 	var litter := shade * (0.5 + 0.5 * sin(w.x * 0.9 + w.y * 0.4))
@@ -378,15 +380,15 @@ func _cliff_field(cell: float, rect: Rect2, prism: int, node_name: String) -> in
 			var h := ground_at(pc.x, pc.y)
 			var steep := absf(ground_at(pc.x, pc.y - 4.0) - ground_at(pc.x, pc.y + 4.0))
 			# Columns stand proud on the face by up to 1.2 m.
-			var jitter := (VoxelSdf.hash3(pid, 3) - 0.5) * minf(steep * 0.2, 2.4)
+			var jitter := (VoxelSdf.hash3(pid, 3) - 0.35) * minf(steep * 0.4, 7.0)
 			var top := h + jitter
 			var lv := roundi(top / cell)
 			hf.set_column(x, z, lv, roundi((top - 14.0) / cell), _cliff_colour(w, top, steep, pid, hf, x, z))
 	var mat := _terrain_material(hf)
 	mat.set_shader_parameter("strata_cells", 8.0 if cell < 1.0 else 2.0)
 	mat.set_shader_parameter("crack_amount", 1.0)
-	mat.set_shader_parameter("rock_color", Color("#424a48"))
-	mat.set_shader_parameter("rock_shadow", Color("#1E2424"))
+	mat.set_shader_parameter("rock_color", Color("#3A4040"))
+	mat.set_shader_parameter("rock_shadow", Color("#181e1e"))
 	mat.set_shader_parameter("soil_color", Color("#2e3a2a"))
 	var node := hf.build(self, mat, node_name)
 	return VoxelHeightfield.count_quads(node)
@@ -405,7 +407,7 @@ func _cliff_colour(w: Vector2, top: float, steep: float, pid: Vector3i, hf: Voxe
 	if top > 100.0 and groove < 12.0:
 		return COLORS[Mat.STONE_DARK] * (0.9 + 0.2 * hv)
 	# Moss on every ledge; on the face some tops are bare wet basalt.
-	if steep > 20.0 and hv < 0.35:
+	if steep > 20.0 and hv < 0.55:
 		return COLORS[Mat.BASALT] * (0.9 + 0.2 * hv)
 	var moss := FLOOR_MOSS[int(hv * 4.0) % 4]
 	if top > 100.0:
@@ -420,7 +422,7 @@ func _cliff_colour(w: Vector2, top: float, steep: float, pid: Vector3i, hf: Voxe
 ## Hills beyond the zone box (2xT3 stepped), coloured as far canopy, so no
 ## shot ever sees the box edge.
 func _backdrop() -> void:
-	var cell := T3 * 2.0
+	var cell := T3 * 4.0
 	var outer := Rect2(local(-760, -860), Vector2(1520, 1720))
 	var inner := _box_rect().merge(Rect2(local(-340, -470), Vector2(680, 342)))
 	var hf := VoxelHeightfield.new(cell, outer.position, outer.end)
@@ -431,13 +433,14 @@ func _backdrop() -> void:
 				continue
 			# Rise toward the horizon so the backdrop frames the valley.
 			var d := maxf(absf(w.x - centre.x) - 340.0, absf(w.y - centre.y) - 470.0)
-			var h := maxf(ground_at(w.x, w.y), 0.0) * 0.5 + 18.0 + clampf(d, 0.0, 400.0) * 0.28 \
-				+ 22.0 * sin(w.x * 0.013) * sin(w.y * 0.011)
+			var crown := VoxelSdf.hash3(Vector3i(floori(w.x / 11.0), 5, floori(w.y / 11.0)), 3) * 9.0
+			var h := maxf(ground_at(w.x, w.y), 0.0) * 0.5 + 20.0 + clampf(d, 0.0, 400.0) * 0.1 \
+				+ 12.0 * sin(w.x * 0.013) * sin(w.y * 0.011) + crown
 			if w.y < centre.y - 128.0:
 				h = maxf(h, 118.0 + 10.0 * sin(w.x * 0.02))
 			var n := VoxelSdf.hash3(Vector3i(x, 3, z), 7)
 			var c := COLORS[Mat.LEAF].lerp(COLORS[Mat.LEAF_DARK], 0.35 + 0.4 * n)
-			hf.set_column(x, z, roundi(h / cell), roundi((h - 30.0) / cell), c)
+			hf.set_column(x, z, roundi(h / cell), roundi(-20.0 / cell), c)
 	var mat := _terrain_material(hf)
 	mat.set_shader_parameter("rock_color", Color("#3c5034"))
 	mat.set_shader_parameter("rock_shadow", Color("#22321e"))
@@ -565,11 +568,11 @@ func _trees() -> void:
 		var ut: Array[ArrayMesh] = []
 		ut.assign(upper_tiers[v])
 		VoxelProp.place(self, "GiantBase%d" % v, bt, TRUNK_RANGES, lb, 2)
-		VoxelProp.place(self, "GiantTrunk%d" % v, ut, [160.0, 0.0], lu, 1)
+		VoxelProp.place(self, "GiantTrunk%d" % v, ut, [70.0, 0.0], lu, 1)
 		tris += VoxelProp.quads(bt[0]) * 2 + VoxelProp.quads(ut[0]) * 2
 	var st: Array[ArrayMesh] = []
 	st.assign(small_tiers)
-	VoxelProp.place(self, "SmallTrunks", st, [90.0, 0.0], smalls, 1)
+	VoxelProp.place(self, "SmallTrunks", st, [45.0, 0.0], smalls, 1)
 	stats["giant_tris_per_variant_near"] = tris / 3
 	stats["small_trunk_tris"] = VoxelProp.quads(st[0]) * 2
 
@@ -788,7 +791,7 @@ func _scatter() -> void:
 		var spawn := near_spawn(w)
 		if spawn and rng.randf() < 0.85:
 			continue
-		if near_trunk(w, 0.6) or w.distance_to(shrine_at) < 7.0 or w.distance_to(sluice_at) < 4.0:
+		if near_trunk(w, 0.6) or w.distance_to(shrine_at) < 11.0 or w.distance_to(sluice_at) < 6.0 or w.distance_to(fallen_at) < 9.0:
 			continue
 		# Denser under the canopies and near the play space.
 		var dense := 0.25 + shade * 0.75
@@ -809,9 +812,9 @@ func _scatter() -> void:
 		elif not spawn:
 			logs.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.8, 1.2)), xf.origin))
 	for v in 4:
-		_place([_fern_mesh(v), _fern_mesh(v, T1)], ferns[v], "Ferns%d" % v, [38.0, 90.0], 0)
+		_place([_fern_mesh(v, T1), _fern_mesh(v, T1 * 2.0)], ferns[v], "Ferns%d" % v, [30.0, 70.0], 0)
 	for v in 2:
-		_place([_ear_mesh(v), _ear_mesh(v, T1)], ears[v], "Ears%d" % v, [40.0, 100.0], 0)
+		_place([_ear_mesh(v, T1), _ear_mesh(v, T1 * 2.0)], ears[v], "Ears%d" % v, [30.0, 80.0], 0)
 		_place(_lod(_boulder_mesh.bind(v + 2, false), 4.0), boulders[v], "Boulders%d" % v, [60.0, 180.0], 1)
 	_place([_mushroom_mesh()], shrooms, "Mushrooms", [30.0], 0)
 	_place(_lod(_log_mesh, 2.0), logs, "Logs", [60.0, 180.0], 1)
@@ -824,6 +827,7 @@ func _place(meshes: Array, list: Array, node_name: String, ranges: Array, shadow
 	var tiers: Array[ArrayMesh] = []
 	tiers.assign(meshes)
 	stats["n_" + node_name] = typed.size()
+	stats["tris_" + node_name] = tiers.map(func(m: ArrayMesh) -> int: return VoxelProp.quads(m) * 2)
 	return VoxelProp.place(self, node_name, tiers, ranges, typed, shadow_tiers)
 
 
@@ -864,7 +868,7 @@ func _ear_mesh(v: int, cell := T1 * 0.5) -> ArrayMesh:
 		for f in 3 + v:
 			var a := TAU * f / (3 + v) + rng.randf_range(-0.3, 0.3)
 			var dir := Vector3(cos(a), 0, sin(a))
-			var top := dir * rng.randf_range(0.6, 1.0) + Vector3.UP * rng.randf_range(1.2, 1.9)
+			var top := dir * rng.randf_range(0.6, 1.0) + Vector3.UP * rng.randf_range(0.55, 1.05)
 			g.paint(AABB(Vector3(-1.2, 0, -1.2), Vector3(2.4, 2.0, 2.4)), func(p: Vector3) -> float:
 				return VoxelSdf.capsule(p, Vector3.ZERO, top, 0.05, 0.035), Mat.FERN_DARK, -1, VoxelGrid.Mode.ADD)
 			var lc := top + dir * 0.55
@@ -874,12 +878,12 @@ func _ear_mesh(v: int, cell := T1 * 0.5) -> ArrayMesh:
 				var along := q.dot(dir)
 				var side := q.dot(Vector3(-dir.z, 0, dir.x))
 				var plane := absf(q.y - along * tilt) - 0.04
-				return maxf(plane, VoxelSdf.slice(along, side, 0.75, 0.5 - along * 0.15)), Mat.LEAF, -1, VoxelGrid.Mode.ADD)
+				return maxf(plane, VoxelSdf.slice(along, side, 0.85, 0.55 - along * 0.15)), Mat.LEAF, -1, VoxelGrid.Mode.ADD)
 		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
-			return g.get_mat(c.x, c.y + 1, c.z) == 0 and p.y > 1.0, Mat.LEAF_TOP, [Mat.LEAF])
+			return g.get_mat(c.x, c.y + 1, c.z) == 0 and p.y > 0.5, Mat.LEAF_TOP, [Mat.LEAF])
 		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
 			return VoxelSdf.hash3(c, 9) < 0.15, Mat.FERN, [Mat.LEAF, Mat.LEAF_TOP])
-	return _mesh("vf_ear%d" % v, bounds, cell, paint)
+	return _mesh("vf_ear_b%d" % v, bounds, cell, paint)
 
 
 ## A mossy boulder (design about 2 m): faceted, a moss cap, wet-dark foot;
@@ -1041,7 +1045,7 @@ func _single(meshes: Array, ranges: Array, xf: Transform3D, node_name: String) -
 ## with the Falling Leaf emblem and fresh orchids, a frog guardian, roots
 ## through the stones; its heron guardian lies toppled in the lake shallows.
 func _shrine() -> void:
-	var g := _min_ground(shrine_at, 4.5)
+	var g := _max_ground(shrine_at, 4.0) - 0.1
 	var yaw := atan2(spawns[1].x - shrine_at.x, spawns[1].y - shrine_at.y)
 	_single(_lod(_shrine_mesh, 4.0), [80.0, 0.0], Transform3D(Basis(Vector3.UP, yaw), Vector3(shrine_at.x, g, shrine_at.y)), "Shrine")
 	# The toppled heron: the nearest shallows toward the lake (north).
@@ -1056,6 +1060,16 @@ func _shrine() -> void:
 	stats["heron_at"] = w
 
 
+## Highest floor under a footprint of radius r.
+func _max_ground(w: Vector2, r: float) -> float:
+	var hi := -INF
+	for k in 9:
+		var a := TAU * k / 8.0
+		var p := w + (Vector2(cos(a), sin(a)) * r if k > 0 else Vector2.ZERO)
+		hi = maxf(hi, ground_at(p.x, p.y))
+	return hi
+
+
 ## Lowest floor under a footprint of radius r (props sink, never float).
 func _min_ground(w: Vector2, r: float) -> float:
 	var lo := INF
@@ -1067,7 +1081,7 @@ func _min_ground(w: Vector2, r: float) -> float:
 
 
 func _shrine_mesh() -> ArrayMesh:
-	var bounds := AABB(Vector3(-5.5, -1.5, -5.5), Vector3(11, 6.5, 11))
+	var bounds := AABB(Vector3(-5.5, -2.2, -5.5), Vector3(11, 7.2, 11))
 	var paint := func(g: VoxelGrid) -> void:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = 6100
@@ -1078,6 +1092,9 @@ func _shrine_mesh() -> ArrayMesh:
 				var lift := rng.randf_range(-0.06, 0.08)
 				g.paint(AABB(c - Vector3(0.8, 1.1, 0.8), Vector3(1.6, 2.2, 1.6)), func(p: Vector3) -> float:
 					return VoxelSdf.box(p, c + Vector3(0, lift, 0), Vector3(0.7, 1.0, 0.7), 0.04), Mat.STONE)
+				# Foundation course under it, into the slope.
+				g.paint(AABB(c - Vector3(0.8, 2.1, 0.8), Vector3(1.6, 1.2, 1.6)), func(p: Vector3) -> float:
+					return VoxelSdf.box(p, c + Vector3(0, -1.5, 0), Vector3(0.74, 0.55, 0.74), 0.03), Mat.STONE_DARK, -1, VoxelGrid.Mode.ADD)
 		# Stair down the front (+z), three steps.
 		for s in 3:
 			var c := Vector3(0, -0.85 - s * 0.3, 4.9 + s * 0.45)
@@ -1142,7 +1159,7 @@ func _shrine_mesh() -> ArrayMesh:
 			return (fposmod(p.x + 0.75, 1.5) < 0.09 or fposmod(p.z + 0.75, 1.5) < 0.09) and p.y > -0.1 and p.y < 0.6 and VoxelSdf.hash3(c, 5) < 0.7,
 			Mat.MOSS, [Mat.STONE])
 		g.paint_surface(bounds, func(_p: Vector3, c: Vector3i) -> bool: return VoxelSdf.hash3(c, 9) < 0.3, Mat.MOSS_LIGHT, [Mat.MOSS])
-	return _mesh("vf_shrine", bounds, T1, paint, [Mat.MOSS])
+	return _mesh("vf_shrine_b", bounds, T1, paint, [Mat.MOSS])
 
 
 ## The Falling Leaf (original emblem): a leaf whose vein becomes a falling
@@ -1465,7 +1482,7 @@ func _marks_mesh() -> ArrayMesh:
 func _mist() -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = MIST_SHADER
-	mat.set_shader_parameter("opacity", 0.22)
+	mat.set_shader_parameter("opacity", 0.09)
 	_mist_mats.append(mat)
 	var spray := ShaderMaterial.new()
 	spray.shader = MIST_SHADER
@@ -1479,7 +1496,7 @@ func _mist() -> void:
 		var a := rng.randf() * TAU
 		var r := sqrt(rng.randf()) * 120.0
 		var p := Vector3(centre.x + cos(a) * r, rng.randf_range(2.0, 6.0), centre.y - 30.0 + sin(a) * r * 0.7)
-		lake.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(rng.randf_range(0.8, 1.6), 0.25, rng.randf_range(0.8, 1.6))), p))
+		lake.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(rng.randf_range(1.4, 2.4), 0.2, rng.randf_range(1.4, 2.4))), p))
 	var foot := falls_quad[2].lerp(falls_quad[3], 0.5)
 	var plume: Array[Transform3D] = []
 	for k in 9:
@@ -1630,15 +1647,15 @@ func presets() -> Dictionary:
 	p.day.merge({
 		"sky_top": Color("#8AB0D8"), "sky_horizon": Color("#E8E0C8"), "sky_below": Color("#cfd2c4"),
 		"cloud": Color("#fffaf0"), "cloud_shadow": Color("#c8cabe"), "cloud_cover": 0.32,
-		"sun_dir": Vector3(-0.74, -0.44, -0.5), "sun_color": Color("#fff0d8"), "sun_energy": 2.5, "sun_size": 0.03,
+		"sun_dir": Vector3(-0.74, -0.44, -0.5), "sun_color": Color("#fff0d8"), "sun_energy": 2.25, "sun_size": 0.03,
 		"rim_color": Color("#fff2dc"), "rim_energy": 0.45,
-		"ambient_color": Color("#a9b4a4"), "ambient_energy": 0.6,
-		"fog_color": Color("#E4E4D8"), "fog_density": 0.0016, "exposure": 1.0,
+		"ambient_color": Color("#a2b0a0"), "ambient_energy": 0.5,
+		"fog_color": Color("#E4E4D8"), "fog_density": 0.0005, "exposure": 1.0,
 	}, true)
 	p.dusk.merge({
 		"sky_top": Color("#5e6a9e"), "sky_horizon": Color("#f0b080"), "sun_dir": Vector3(-0.9, -0.2, -0.38),
 		"sun_color": Color("#ffc890"), "sun_energy": 2.3, "rim_color": Color("#ffc090"), "rim_energy": 0.45,
-		"ambient_color": Color("#9a8a8a"), "fog_color": Color("#e0c8b4"), "fog_density": 0.0016,
+		"ambient_color": Color("#9a8a8a"), "fog_color": Color("#e0c8b4"), "fog_density": 0.0006,
 	}, true)
 	p.night.merge({
 		"sky_top": Color("#0c1628"), "sky_horizon": Color("#26384a"), "rim_color": Color("#b0c4ff"), "rim_energy": 0.55,
@@ -1657,8 +1674,8 @@ func animate(t: float) -> void:
 		for n in get_parent().get_children():
 			if n is VoxelStage:
 				var env := (n as VoxelStage).env
-				env.fog_height = 14.0
-				env.fog_height_density = 0.012
+				env.fog_height = 9.0
+				env.fog_height_density = 0.004
 	var stage: VoxelStage = null
 	for n in get_parent().get_children():
 		if n is VoxelStage:
@@ -1675,7 +1692,7 @@ func animate(t: float) -> void:
 			m.set_shader_parameter("mist_color", (cur.fog_color as Color).lightened(0.15))
 			m.set_shader_parameter("light_level", lerpf(0.4, 1.0, lvl))
 		for m in _shaft_mats:
-			m.set_shader_parameter("strength", 0.12 * lvl * lvl)
+			m.set_shader_parameter("strength", 0.07 * lvl * lvl)
 			m.set_shader_parameter("light_color", cur.sun_color)
 	_water_mat.set_shader_parameter("t", t)
 	for m in _falls_mats:
@@ -1689,15 +1706,15 @@ func shots() -> Array[Dictionary]:
 	var top := falls_quad[0].lerp(falls_quad[1], 0.5)
 	# 1. The key image: the Great Falls across the mirror lake at sunrise, Kael on the south shore.
 	var shore := _shore_point(centre.x - 4.0)
-	out.append({"name": "falls_key", "from": Vector3(shore.x + 7.0, ground_at(shore.x, shore.y) + 3.2, shore.y + 13.0),
-		"at": Vector3(top.x, 52.0, top.z), "fov": 55.0, "kael": [shore, PI], "times": ["day", "dusk"]})
+	out.append({"name": "falls_key", "from": Vector3(shore.x + 3.0, ground_at(shore.x, shore.y) + 3.0, shore.y + 9.0),
+		"at": Vector3(top.x, 44.0, top.z), "fov": 55.0, "kael": [shore, PI], "times": ["day", "dusk"]})
 	# 2. The overgrown shrine, Kael on its stair.
 	var yaw := atan2(spawns[1].x - shrine_at.x, spawns[1].y - shrine_at.y)
-	var front := shrine_at + Vector2(sin(yaw), cos(yaw)) * 5.6
-	var cam := shrine_at + Vector2(sin(yaw + 0.55), cos(yaw + 0.55)) * 15.0
-	out.append({"name": "shrine", "from": Vector3(cam.x, ground_at(cam.x, cam.y) + 3.0, cam.y),
+	var front := shrine_at + Vector2(sin(yaw), cos(yaw)) * 2.4
+	var cam := shrine_at + Vector2(sin(yaw + 0.3), cos(yaw + 0.3)) * 11.5
+	out.append({"name": "shrine", "from": Vector3(cam.x, ground_at(cam.x, cam.y) + 3.4, cam.y),
 		"at": Vector3(shrine_at.x, ground_at(shrine_at.x, shrine_at.y) + 1.6, shrine_at.y), "fov": 52.0,
-		"kael": [front, yaw], "times": ["day"]})
+		"kael": [front, yaw], "kael_y": _max_ground(shrine_at, 4.0) - 0.1 + 0.52, "times": ["day"]})
 	# 3. The Giant Grove: buttress roots and the walkway overhead, Kael at the roots.
 	if grove_pair.size() == 2:
 		var a := tree_base(grove_pair[0])
@@ -1727,10 +1744,15 @@ func shots() -> Array[Dictionary]:
 ## The south shore point at world x (the first floor above the waterline
 ## walking south from the lake centre).
 func _shore_point(x: float) -> Vector2:
-	for k in 200:
+	for k in 300:
 		var z := centre.y + 60.0 + k * 0.5
-		if ground_at(x, z) > 0.4:
-			return Vector2(x, z + 1.0)
+		var dry := true
+		for j in 25:
+			if ground_at(x, z + j) < 0.5:
+				dry = false
+				break
+		if dry:
+			return Vector2(x, z + 1.5)
 	return Vector2(x, centre.y + 100.0)
 
 

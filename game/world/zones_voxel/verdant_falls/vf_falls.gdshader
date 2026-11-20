@@ -37,6 +37,6 @@ void fragment() {
 	float edge_cells = 3.0 + 4.0 * h1(row * 0.37 + col);
 	float from_edge = min(col, floor(size_m.x / cell_m) - col);
 	float a = step(edge_cells * 0.5, from_edge) * (0.86 + 0.14 * streak);
-	ALBEDO = c * light_level;
+	ALBEDO = c * light_level * 1.25;
 	ALPHA = a;
 }

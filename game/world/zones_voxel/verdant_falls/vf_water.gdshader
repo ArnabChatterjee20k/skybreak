@@ -62,13 +62,13 @@ void fragment() {
 		float df = (falls.z - wpos.z) / r.z;
 		vec3 hf = wpos + r * df;
 		float halfw = falls.y * mix(1.2, 1.0, clamp(hf.y / falls.w, 0.0, 1.0));
-		if (df > 0.0 && abs(hf.x - falls.x) < halfw && hf.y < falls.w) {
+		if (df > 0.0 && abs(hf.x - falls.x) < halfw && hf.y < falls.w && hash2(floor(wpos.xz / 0.7) + floor(t * 5.0)) < 0.75) {
 			float col = floor((hf.x - falls.x) / 0.7);
 			float streak = step(0.5, fract(hf.y / 6.0 + t * 0.9 + hash2(vec2(col, 1.0))));
-			refl = mix(falls_color * 0.82, falls_color, streak * 0.6);
+			refl = mix(refl, mix(falls_color * 0.5, falls_color * 0.72, streak), 0.75 * smoothstep(230.0, 110.0, distance(wpos.xz, vec2(falls.x, falls.z))));
 		}
 	}
-	float fres = 0.25 + 0.75 * pow(1.0 - clamp(-eye.y, 0.0, 1.0), 4.0);
+	float fres = 0.15 + 0.7 * pow(1.0 - clamp(-eye.y, 0.0, 1.0), 5.0);
 	vec3 body = mix(shelf_color, deep_color, smoothstep(0.2, 3.5, water_depth));
 	vec3 col = mix(body, refl, fres * 0.85);
 	// Foam: a stepped white ring at the plunge pool and lines at the shore.
