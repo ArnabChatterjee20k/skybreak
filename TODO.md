@@ -35,6 +35,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
     frames are Kael firing the Storm Repeater at Vexa in hitstun, 15 are Shade Flicker; without those
     15 it is still 94.1%. Locked-camera framing of a ranged juggle. Repro:
     `tools/qa/run_qa.sh --repro '100:shattered_mesa:1v1:kael,vexa:54' --tick 2400 --fighter 0`.
+    Accepted for now (owner): developer's hybrid camera (T-135) is the fix; not blocking.
+  - SP1-6 [desktop] Done in the merge with main 7695141 (T-DEF3): no special from hitstun, an
+    escape or a dodge; a special ends wakeup/breaker intangibility; a breaker ends a special; a
+    special that hits chases only inside its Vanish cancel window (GAME_DESIGN §6). Specials fire
+    no beams of their own: key 4 stays the KiRules beam ultimate. Kael/Vexa HUD pips moved into
+    the restyled plate's name row (#143 put the burst stocks on the portrait foot).
 
 - T-ART2 [desktop] Art round 2 (#99, #135, #137, #120, #138, #118, #121, #98, #124): crisp opaque
   Skyhold cloud sea and lighter haze, Heartbloom lawn shader (petals, stepping-stone walk, no fan
