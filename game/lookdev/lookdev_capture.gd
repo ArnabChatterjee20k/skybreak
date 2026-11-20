@@ -5,11 +5,12 @@ extends SceneTree
 ##       [quick|turntable|closeups|spin|idle|compare|all]
 ##       --scene=res://game/characters/<name>_voxel/<name>_voxel.tscn
 ##       [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0]
+##       [--head-yaw=-28] [--head-lift=0.17] [--head-pitch=-6] [--head-height=0.62]
 ## Needs a GPU (not headless); renders at exactly 1920x1080 through a
 ## SubViewport. spin and idle write numbered PNG frames (30 fps) for ffmpeg;
 ## compare renders the old scene at the same angles (skipped without --compare).
 
-const USAGE := "lookdev_capture.gd -- <out dir> [mode] --scene=<character scene> [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0] [--hide-stowed]"
+const USAGE := "lookdev_capture.gd -- <out dir> [mode] --scene=<character scene> [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0] [--head-yaw=-28] [--head-lift=0.17] [--head-pitch=-6] [--head-height=0.62] [--hide-stowed]"
 const CLIP_FPS := 30
 
 var _scene := ""
@@ -18,6 +19,11 @@ var _compare := ""
 var _hand_bone := &"RightHand"
 var _hand_yaw_deg := 0.0
 var _hide_stowed := false
+## Head close-up framing; a wide hat brim wants a lower, face-level camera.
+var _head_yaw_deg := -28.0
+var _head_lift := 0.17
+var _head_pitch_deg := -6.0
+var _head_height := 0.62
 
 var _out := ""
 ## Renders go through a fixed-size viewport so stills and clips are exactly
@@ -38,6 +44,10 @@ func _initialize() -> void:
 	_hand_bone = StringName(args.get_option("hand", "RightHand"))
 	_hand_yaw_deg = float(args.get_option("hand-yaw", "0"))
 	_hide_stowed = args.options.has("hide-stowed")
+	_head_yaw_deg = float(args.get_option("head-yaw", "-28"))
+	_head_lift = float(args.get_option("head-lift", "0.17"))
+	_head_pitch_deg = float(args.get_option("head-pitch", "-6"))
+	_head_height = float(args.get_option("head-height", "0.62"))
 	if _scene == "" or _out == "":
 		return
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -128,10 +138,10 @@ func _full(yaw: float, name: String) -> void:
 
 
 func _head(name: String) -> void:
-	_pivot.rotation.y = deg_to_rad(-28.0)
-	var head := _bone_position(&"Head") + Vector3(0, 0.17, 0)
+	_pivot.rotation.y = deg_to_rad(_head_yaw_deg)
+	var head := _bone_position(&"Head") + Vector3(0, _head_lift, 0)
 	_stage.camera.fov = 24.0
-	_stage.frame(head, 0.62, 0.9, -6.0)
+	_stage.frame(head, _head_height, 0.9, _head_pitch_deg)
 	await _save(name)
 	_stage.camera.fov = 30.0
 
