@@ -84,16 +84,18 @@ async function promptPixels(page) {
 	}
 	await page.waitForTimeout(15000);
 	await shot('match_start');
+	// Software WebGL runs at a few fps, so hold and wait long enough for real ticks.
+	const slow = Number(process.env.SLOW || 4);
 	await page.keyboard.down('Space');
-	await page.waitForTimeout(1500);
+	await page.waitForTimeout(1500 * slow);
 	await page.keyboard.up('Space');
-	await page.waitForTimeout(6000);
+	await page.waitForTimeout(4000 * slow);
 	await shot('hovering');
 	const hovering = await promptPixels(page);
 	await page.keyboard.press('KeyC');
 	await page.waitForTimeout(80);
 	await page.keyboard.press('KeyC');
-	await page.waitForTimeout(5000);
+	await page.waitForTimeout(3000 * slow);
 	await shot('after_dive');
 	const landed = await promptPixels(page);
 	const open = !page.isClosed();
