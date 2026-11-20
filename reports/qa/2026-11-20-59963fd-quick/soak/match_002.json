@@ -1,0 +1,114 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1
+		},
+		"charged_blast": {
+			"10": 5
+		},
+		"ki_blast": {
+			"4": 19
+		},
+		"lance/light_1": {
+			"4": 4
+		},
+		"lance/light_1+counter": {
+			"8": 1
+		},
+		"lance/light_2": {
+			"4": 4,
+			"20": 1
+		},
+		"lance/light_3": {
+			"7": 4
+		},
+		"launcher": {
+			"7": 1,
+			"8": 4
+		},
+		"light_1": {
+			"3": 2,
+			"4": 5,
+			"5": 1
+		},
+		"light_1+counter": {
+			"8": 3,
+			"9": 3
+		},
+		"light_2": {
+			"3": 1,
+			"4": 6,
+			"5": 3
+		},
+		"light_3": {
+			"3": 1,
+			"4": 6,
+			"8": 3
+		},
+		"light_4": {
+			"6": 2
+		},
+		"light_4+counter": {
+			"10": 1
+		},
+		"repeater/projectile": {
+			"1": 12
+		},
+		"repeater/projectile+counter": {
+			"5": 1
+		},
+		"smash": {
+			"10": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "102:stormfall_city:2v2:kael,vexa,brann,lyra:4455",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 27,
+		"charged": 8,
+		"clashes": 0,
+		"ki_hits": 24,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		4,
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 102,
+	"sim_ms_per_tick": 2.94602416666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00669931387528777,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.94146742636152,
+		"foot_slide_cm_per_frame": 0.00281875773066702,
+		"foot_slide_frames": 532,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.971022416621104,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 2.25243291666667,
+	"violations": [],
+	"wall_seconds": 38.511,
+	"zone": "stormfall_city"
+}
