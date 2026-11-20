@@ -43,6 +43,10 @@ const MAX_TURN_RATE := 54.0
 const MAX_ARM_FRAME_TURN := 1.1
 ## Clear-then-limit rounds after the turn cap: a trimmed arm gets another solve within the limit.
 const POST_CAP_ROUNDS := 6
+## Shares of this frame's arm turn the trim fallback tries, from the most to none (last frame's arm).
+const TRIM_FALLBACK_SHARES: Array[float] = [0.75, 0.5, 0.25, 0.0]
+## Smallest trim (rad) the fallback checks: less moves the weapon under the solver's gap at an arm's reach.
+const TRIM_FALLBACK_MIN := 0.05
 ## Post-cap rounds that may swing the weapon; the rest only move the hand.
 const SWING_ROUNDS := 2
 ## Costume spring chains (hood points, sash, cape, beard braid, apron) the pop guard covers too: their
@@ -222,6 +226,7 @@ var _hips_offset := Vector3.ZERO
 var _hips_offset_velocity := Vector3.ZERO
 var _pending_blend := false
 var _last_out: Array[Quaternion] = []
+var _moving_sets := {}
 var _prev_out: Array[Quaternion] = []
 var _last_hips := Vector3.ZERO
 var _prev_hips := Vector3.ZERO
@@ -520,6 +525,7 @@ func process_pose(rotations: Array[Quaternion], hips: Vector3, delta: float) -> 
 		_arm_pop_limit(rotations)
 		if arm_trim <= 0.0:
 			break
+	_trim_fallback(rotations, hips)
 	_remember_clearance(rotations, hips)
 	# Next frame's turn cap starts from this output as drawn (cleared), not the pre-clearance pose.
 	_guard_world.clear()
@@ -956,41 +962,24 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3, swing := true) -> v
 	var main := _arm_chain(weapon_hand)
 	if main.is_empty():
 		return
-	var names: Array = CLEAR_OF.get(weapon_hand, [])
-	if weapon_off_hand != Vector3.INF:
-		names = names.filter(func(n: StringName) -> bool: return not n.begins_with("lower_arm"))
-	var tested := _clear_capsules(names)
+	var tested := _clear_capsules(main)
 	var key_bones := _clear_bones(tested, main)
 	# A drawn bow: its string runs to the string hand, so the solver tests that string against the head.
-	var string_chain := _arm_chain(&"RightHand") if weapon_hand == &"LeftHand" else []
-	var drawn := not weapon_drawn_boxes.is_empty() and not string_chain.is_empty() and bow_at_anchor()
+	var drawn := not weapon_drawn_boxes.is_empty() and weapon_hand == &"LeftHand" and bow_at_anchor()
+	var string_chain := _arm_chain(&"RightHand") if drawn else []
+	drawn = drawn and not string_chain.is_empty()
 	if not drawn and _clear_valid and _pose_of(rotations, key_bones) == _clear_rotations:
 		_world_cache.clear()
 		return
 	var own := weapon_drawn_boxes if drawn else weapon_boxes
+	var capsules := {}
+	_world_cache.clear()
+	_place_capsules(rotations, hips, capsules, tested)
+	var moving := _moving_capsules(tested, main)
 	for pass_index in CLEARANCE_PASSES + 1:
 		_world_cache.clear()
 		var hand := _world_at(rotations, hips, main[2])
-		var weapon := hand * weapon_grip
-		var boxes: Array[Transform3D] = []
-		for box in own:
-			boxes.append(weapon * box)
-		var capsules := {}
-		for entry: Array in tested:
-			var from := _world_at(rotations, hips, entry[1])
-			var b: Vector3 = _world_at(rotations, hips, entry[2]).origin if entry[2] >= 0 else from * (entry[3] as Vector3)
-			capsules[entry[0]] = [from.origin, b, entry[4]]
-		var hit := BodyCapsules.deepest_box(capsules, boxes)
-		if drawn and capsules.has(&"head"):
-			var nock := (_world_at(rotations, hips, string_chain[2]) * off_hand_socket).origin
-			var tip := WeaponGrip.BOW_TIP
-			# Both halves of the string, and the nocked arrow from the nock out through the grip.
-			var arrow := (weapon.origin - nock).normalized() * BowString.ARROW_LENGTH * weapon.basis.get_scale().z
-			var strings: Array[Transform3D] = [_segment_box(weapon * tip, nock),
-				_segment_box(weapon * Vector3(tip.x, -tip.y, tip.z), nock), _segment_box(nock, nock + arrow)]
-			var string_hit := BodyCapsules.deepest_box({&"head": capsules[&"head"]}, strings)
-			if float(string_hit[0]) > float(hit[0]):
-				hit = string_hit
+		var hit := _holder_hit(rotations, hips, hand * weapon_grip, capsules, moving, own, string_chain if drawn else [])
 		weapon_overlap = maxf(float(hit[0]), 0.0)
 		if float(hit[0]) <= -CLEARANCE_GAP:
 			_clear_rotations = _pose_of(rotations, key_bones)
@@ -1018,6 +1007,110 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3, swing := true) -> v
 		_grip_off_hand(rotations, hips, 1.0)
 
 
+## The weapon's deepest reach into the tested capsules: [depth, push, capsule, contact, centre]
+## (BodyCapsules.deepest_box). With a string chain, also a drawn bow's string and arrow vs the head.
+func _holder_hit(rotations: Array[Quaternion], hips: Vector3, weapon: Transform3D, capsules: Dictionary,
+		refresh: Array, own: Array[Transform3D], string_chain: Array) -> Array:
+	var boxes: Array[Transform3D] = []
+	for box in own:
+		boxes.append(weapon * box)
+	_place_capsules(rotations, hips, capsules, refresh)
+	var hit := BodyCapsules.deepest_box(capsules, boxes)
+	if not string_chain.is_empty() and capsules.has(&"head"):
+		var nock := (_world_at(rotations, hips, string_chain[2]) * off_hand_socket).origin
+		var tip := WeaponGrip.BOW_TIP
+		# Both halves of the string, and the nocked arrow from the nock out through the grip.
+		var arrow := (weapon.origin - nock).normalized() * BowString.ARROW_LENGTH * weapon.basis.get_scale().z
+		var strings: Array[Transform3D] = [_segment_box(weapon * tip, nock),
+			_segment_box(weapon * Vector3(tip.x, -tip.y, tip.z), nock), _segment_box(nock, nock + arrow)]
+		var string_hit := BodyCapsules.deepest_box({&"head": capsules[&"head"]}, strings)
+		if float(string_hit[0]) > float(hit[0]):
+			hit = string_hit
+	return hit
+
+
+## Writes the world [a, b, radius] of each capsule entry ([name, bone, end bone, offset, radius]) into capsules.
+func _place_capsules(rotations: Array[Quaternion], hips: Vector3, capsules: Dictionary, entries: Array) -> void:
+	for entry: Array in entries:
+		var from := _world_at(rotations, hips, entry[1])
+		var b: Vector3 = _world_at(rotations, hips, entry[2]).origin if entry[2] >= 0 else from * (entry[3] as Vector3)
+		capsules[entry[0]] = [from.origin, b, entry[4]]
+
+
+## The tested capsules the solver's arm moves (on the main or off-hand chain); the rest hold still during a solve.
+func _moving_capsules(tested: Array, main: Array) -> Array:
+	var two_handed := weapon_off_hand != Vector3.INF
+	# Per body, fixed by the main hand, the tested set and whether the off hand grips too.
+	var key: int = (main[2] * 64 + tested.size()) * 2 + int(two_handed)
+	if not _moving_sets.has(key):
+		var chains: Array = main.duplicate()
+		if two_handed:
+			chains.append_array(_arm_chain(&"RightHand" if weapon_hand == &"LeftHand" else &"LeftHand"))
+		_moving_sets[key] = tested.filter(func(entry: Array) -> bool: return chains.has(entry[1]) or chains.has(entry[2]))
+	return _moving_sets[key]
+
+
+## When the turn cap leaves a one-hand weapon in the body, the arm eases back toward last frame's
+## cleared pose instead: the largest share of this frame's turn that is clear (else the shallowest) within the cap.
+func _trim_fallback(rotations: Array[Quaternion], hips: Vector3) -> void:
+	if arm_trim < TRIM_FALLBACK_MIN or weapon_hand == &"" or body == null or weapon_boxes.is_empty() \
+			or weapon_off_hand != Vector3.INF or _last_out.size() != rotations.size():
+		return
+	var main := _arm_chain(weapon_hand)
+	if main.is_empty():
+		return
+	var tested := _clear_capsules(main)
+	var drawn := not weapon_drawn_boxes.is_empty() and weapon_hand == &"LeftHand" and bow_at_anchor()
+	var string_chain := _arm_chain(&"RightHand") if drawn else []
+	drawn = drawn and not string_chain.is_empty()
+	var own := weapon_drawn_boxes if drawn else weapon_boxes
+	var strings := string_chain if drawn else []
+	_world_cache.clear()
+	var capsules := {}
+	_place_capsules(rotations, hips, capsules, tested)
+	var moving := _moving_capsules(tested, main)
+	var depth := float(_holder_hit(rotations, hips, _world_at(rotations, hips, main[2]) * weapon_grip, capsules, [], own, strings)[0])
+	if depth <= 0.0:
+		return
+	var trimmed: Array[Quaternion] = [rotations[main[0]], rotations[main[1]], rotations[main[2]]]
+	# Two arms to ease toward: last frame's, carried by this frame's torso, and last frame's as held in the world.
+	var shoulder := _world_rotation(rotations, _parents[main[0]]) if _parents[main[0]] >= 0 else Quaternion.IDENTITY
+	var held: Array[Quaternion] = [(shoulder.inverse() * _world_rotation(_last_out, main[0])).normalized(),
+		_last_out[main[1]], _last_out[main[2]]]
+	var carried: Array[Quaternion] = [_last_out[main[0]], _last_out[main[1]], _last_out[main[2]]]
+	# None clear: the shallowest within the cap.
+	var best := trimmed
+	var best_depth := depth
+	for base: Array[Quaternion] in [carried, held]:
+		for share: float in TRIM_FALLBACK_SHARES:
+			for k in 3:
+				rotations[main[k]] = base[k].slerp(trimmed[k], share).normalized()
+			_world_cache.clear()
+			if not _arm_turn_within_cap(rotations, main):
+				continue
+			var reach := float(_holder_hit(rotations, hips, _world_at(rotations, hips, main[2]) * weapon_grip, capsules, moving, own, strings)[0])
+			if reach <= 0.0:
+				weapon_overlap = 0.0
+				return
+			if reach < best_depth:
+				best_depth = reach
+				best = [rotations[main[0]], rotations[main[1]], rotations[main[2]]]
+	for k in 3:
+		rotations[main[k]] = best[k]
+	weapon_overlap = best_depth
+	_world_cache.clear()
+
+
+## Whether every bone of the arm chain turned at most MAX_ARM_FRAME_TURN (model space) since the last output.
+func _arm_turn_within_cap(rotations: Array[Quaternion], chain: Array) -> bool:
+	for i: int in chain:
+		var now := _world_rotation(rotations, i)
+		var last := _world_rotation(_last_out, i)
+		if last.angle_to(now) > MAX_ARM_FRAME_TURN + 1e-4:
+			return false
+	return true
+
+
 ## A thin box (unit-cube transform) along the segment a to b, as thick as a bow string.
 static func _segment_box(a: Vector3, b: Vector3) -> Transform3D:
 	var along := b - a
@@ -1029,13 +1122,19 @@ static func _segment_box(a: Vector3, b: Vector3) -> Transform3D:
 
 
 ## The body's capsules the clearance tests, in BodyCapsules order: [name, bone, end bone, offset, radius].
-func _clear_capsules(names: Array) -> Array:
-	var key := str(names)
+## The set is CLEAR_OF's for the main hand, less the forearms while the off hand grips the weapon too.
+func _clear_capsules(main: Array) -> Array:
+	var two_handed := weapon_off_hand != Vector3.INF
+	var key: int = main[2] * 2 + int(two_handed)
 	if _clear_capsule_body != body:
 		_clear_capsule_body = body
 		_clear_capsule_sets.clear()
 		_clear_key_bones.clear()
+		_moving_sets.clear()
 	if not _clear_capsule_sets.has(key):
+		var names: Array = CLEAR_OF.get(weapon_hand, [])
+		if two_handed:
+			names = names.filter(func(n: StringName) -> bool: return not n.begins_with("lower_arm"))
 		var entries: Array = []
 		for name: StringName in body.bones:
 			if names.is_empty() or names.has(name):

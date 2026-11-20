@@ -175,3 +175,60 @@ func test_a_bow_in_a_hit_reaction_or_in_flight_is_held_clear_of_the_body() -> vo
 			for box in WeaponGrip.part_boxes(held[0]):
 				boxes.append(held[0].global_transform * box)
 			assert_lt(float(BodyCapsules.deepest_box(torso, boxes)[0]), 0.0, "%s: the bow is clear of the torso" % label)
+
+
+func test_a_bow_hands_the_solver_its_boxes_without_the_resting_string() -> void:
+	var view := _view(&"lyra")
+	var fighter := FighterState.new()
+	fighter.stats = Roster.character(&"lyra").stats
+	fighter.weapons[0] = Weapon.Kind.HEARTSTRING_BOW
+	fighter.active_slot = 0
+	view.apply_state(fighter, 1.0 / 60.0)
+	assert_eq(view.layers.weapon_drawn_boxes.size(), WeaponGrip.model_boxes(Weapon.Kind.HEARTSTRING_BOW).size())
+	assert_lt(view.layers.weapon_drawn_boxes.size(), view.layers.weapon_boxes.size(), "the resting string is left out")
+	fighter.weapons[0] = Weapon.Kind.SKY_LANCE
+	view.apply_state(fighter, 1.0 / 60.0)
+	assert_true(view.layers.weapon_drawn_boxes.is_empty(), "no drawn string on a lance")
+
+
+func test_a_segment_box_covers_its_segment_as_thick_as_a_string() -> void:
+	var box := MotionLayers._segment_box(Vector3(0, 0, 0), Vector3(0, 0, -1))
+	var through := {&"head": [Vector3(-1, 0, -0.5), Vector3(1, 0, -0.5), 0.1]}
+	var beside := {&"head": [Vector3(-1, 0.2, -0.5), Vector3(1, 0.2, -0.5), 0.1]}
+	var past := {&"head": [Vector3(-1, 0, -1.2), Vector3(1, 0, -1.2), 0.1]}
+	assert_gt(float(BodyCapsules.deepest_box(through, [box])[0]), 0.09, "a capsule across the middle overlaps")
+	assert_lt(float(BodyCapsules.deepest_box(beside, [box])[0]), -0.05, "20 cm off the segment is clear")
+	assert_lt(float(BodyCapsules.deepest_box(past, [box])[0]), -0.05, "past the end is clear")
+
+
+func test_a_bow_drawn_out_of_a_hit_reaction_never_passes_through_the_chest() -> void:
+	for id: StringName in Roster.ids():
+		var view := _view(id)
+		var skeleton: Skeleton3D = view.model.get_node("%GeneralSkeleton")
+		var held := WeaponLayer.attach(skeleton, Weapon.Kind.HEARTSTRING_BOW)
+		var poses: Array[Transform3D] = []
+		skeleton.skeleton_updated.connect(func() -> void:
+			poses.resize(skeleton.get_bone_count())
+			for b in poses.size():
+				poses[b] = skeleton.get_bone_global_pose(b))
+		var fighter := FighterState.new()
+		fighter.stats = Roster.character(id).stats
+		fighter.weapons[0] = Weapon.Kind.HEARTSTRING_BOW
+		fighter.active_slot = 0
+		fighter.enter_state(FighterState.State.HITSTUN)
+		for _f in 20:
+			view.apply_state(fighter, 1.0 / 60.0)
+			await get_tree().process_frame
+		# The tucked bow swings up into the draw: the biggest arm turn a bow makes.
+		fighter.begin_move(WeaponMoves.move_set(Weapon.Kind.HEARTSTRING_BOW, fighter.stats.move_set).light_string[0])
+		var deepest := -INF
+		for _f in 16:
+			view.apply_state(fighter, 1.0 / 60.0)
+			await get_tree().process_frame
+			var torso := view.body.capsules(func(b: int) -> Transform3D: return poses[b],
+				skeleton.global_transform, [&"pelvis", &"chest", &"head"])
+			var boxes: Array[Transform3D] = []
+			for box in WeaponGrip.part_boxes(held[0]):
+				boxes.append(held[0].global_transform * box)
+			deepest = maxf(deepest, float(BodyCapsules.deepest_box(torso, boxes)[0]))
+		assert_lt(deepest, VisualQa.OVERLAP_TOLERANCE, "%s: the bow stays out of the body through the draw" % id)
