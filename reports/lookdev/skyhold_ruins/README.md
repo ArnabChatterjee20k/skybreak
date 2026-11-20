@@ -15,6 +15,10 @@ godot --path . --disable-vsync -s res://game/world/voxel_zone_kit/zone_capture.g
 godot --headless --path . -s res://game/world/zones_voxel/skyhold_ruins/flight_probe.gd
 ```
 
+## Verification
+
+Clean checkout of this branch, `rm -rf .godot`, `godot --headless --import` (exit 0), then the full GUT run: **1546 tests, 1540 passing, 0 failing**, 11 pending (pre-existing known issues: QA-11, QA-12 and similar), 379 s. New tests: `tests/world/test_skyhold_ruins_voxel.gd` (layout matches the sim's builder, landmarks, every column inside its fractured outline, paving = top + cap, a built top within half a T1 cell of the floor, saturation ceiling). Writing that test caught a real bug: columns on stacked islands were first assigned to the nearest centre instead of their own island.
+
 ## Assets
 
 - `skyhold_ruins_v1_<shot>_<time>.jpg`, 1920×1080, plus `skyhold_ruins_v1_contact_sheet.jpg`:
