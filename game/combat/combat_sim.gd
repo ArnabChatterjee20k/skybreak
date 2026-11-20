@@ -2553,13 +2553,16 @@ func _step_pickups() -> void:
 	pickups = kept
 
 
-## A sky drop from the zone's table, 25-60 m from the fighters' midpoint.
+## A sky drop from the zone's table, 25-60 m from the fighters' midpoint (8-16 m in a 1v1).
 func _spawn_pickup() -> void:
 	var middle := Vector3.ZERO
 	for fighter in fighters:
 		middle += fighter.position / fighters.size()
 	var angle := rng.randf() * TAU
-	var distance := rng.randf_range(pickup_tuning.spawn_distance_min, pickup_tuning.spawn_distance_max)
+	var duel := fighters.size() == 2
+	var distance := rng.randf_range(
+		pickup_tuning.duel_spawn_distance_min if duel else pickup_tuning.spawn_distance_min,
+		pickup_tuning.duel_spawn_distance_max if duel else pickup_tuning.spawn_distance_max)
 	var pickup := WeaponPickup.new()
 	pickup.id = _new_entity_id()
 	if pickup_tuning.powers_enabled and spawn_count % 2 == 1:

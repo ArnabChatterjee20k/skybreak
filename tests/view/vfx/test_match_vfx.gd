@@ -54,6 +54,27 @@ func test_ko_gets_the_finisher_and_lightning_only_in_stormfall() -> void:
 	assert_eq(MatchVfx.screen_for(_event(E.KO, 20)), &"ko")
 
 
+func test_the_ko_flashes_without_speed_lines_over_the_contact() -> void:
+	var vfx := _vfx_with_sim()
+	_react(vfx, [_event(E.KO, 20)] as Array[Dictionary])
+	assert_true(vfx.screen().is_active(VfxScreen.Mode.FLASH), "the KO still flashes")
+	assert_false(vfx.screen().is_active(VfxScreen.Mode.LINES), "media-2 #6: no burst lines on the KO")
+
+
+func test_a_knocked_out_fighter_flying_off_leaves_no_rings_trails_or_ghosts() -> void:
+	var vfx := _vfx_with_sim()
+	var loser := vfx.sim.fighters[1]
+	_react(vfx)
+	loser.state = S.KO_FALL
+	loser.velocity = Vector3(MatchVfx.SONIC_SPEED + 10.0, 4, 0)
+	vfx.sim.round_over = true
+	for i in 3:
+		_react(vfx)
+	vfx.follow_fighters()
+	assert_eq(vfx.pool(&"sonic_ring").playing_count(), 0, "no sonic ring off the KO launch")
+	assert_eq(vfx.pool(&"afterimage").playing_count(), 0, "no afterimages")
+
+
 func test_heartbloom_hits_sparkle_and_heavy_ones_shed_petals() -> void:
 	var light := MatchVfx.effects_for(_event(E.HIT, 4), &"heartbloom_gardens")
 	var heavy := MatchVfx.effects_for(_event(E.HIT, 8), &"heartbloom_gardens")

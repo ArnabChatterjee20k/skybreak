@@ -24,6 +24,8 @@ func _drive(ticks: int, held: int = 0, other_held: int = 0) -> void:
 			FighterInput.from_held(held, _previous[0]),
 			FighterInput.from_held(other_held, _previous[1]),
 		]
+		for i in range(2, _previous.size()):
+			inputs.append(FighterInput.from_held(0, _previous[i]))
 		_sim.tick(inputs)
 		_previous = inputs
 
@@ -75,8 +77,8 @@ func test_drops_spawn_from_the_sky_with_a_telegraph_then_fall_and_rest() -> void
 	assert_almost_eq(pickup.position.y, _sim.floor_height() + _sim.pickup_tuning.drop_height, 0.01)
 	var middle := Vector2.ZERO
 	var planar := Vector2(pickup.position.x, pickup.position.z) - Vector2(0, -3)
-	assert_between(planar.length(), _sim.pickup_tuning.spawn_distance_min - 0.01,
-		_sim.pickup_tuning.spawn_distance_max + 0.01, "25-60 m from the fighters' midpoint")
+	assert_between(planar.length(), _sim.pickup_tuning.duel_spawn_distance_min - 0.01,
+		_sim.pickup_tuning.duel_spawn_distance_max + 0.01, "a duel's drop lands 8-16 m from the midpoint")
 	assert_false(pickup.can_be_picked_up(), "not grabbable during the telegraph")
 	_drive(_sim.pickup_tuning.telegraph_ticks)
 	assert_eq(pickup.phase, WeaponPickup.Phase.FALLING)
@@ -84,6 +86,30 @@ func test_drops_spawn_from_the_sky_with_a_telegraph_then_fall_and_rest() -> void
 	assert_eq(pickup.phase, WeaponPickup.Phase.GROUNDED)
 	assert_almost_eq(pickup.position.y, _sim.floor_height() + _sim.pickup_tuning.rest_height, 0.001)
 	assert_eq(pickup.ammo, Weapon.full_ammo(pickup.kind))
+
+
+func test_with_more_than_two_fighters_drops_land_25_to_60_m_out() -> void:
+	_start()
+	_sim.add_fighter(Vector3(6, 0, -3))
+	_previous.append(FighterInput.new())
+	_sim.pickups_enabled = true
+	_drive(_sim.pickup_tuning.first_spawn_ticks + 1)
+	assert_eq(_sim.pickups.size(), 1)
+	var middle := (_sim.fighters[0].position + _sim.fighters[1].position + _sim.fighters[2].position) / 3.0
+	var planar := Vector2(_sim.pickups[0].position.x - middle.x, _sim.pickups[0].position.z - middle.z)
+	assert_between(planar.length(), _sim.pickup_tuning.spawn_distance_min - 0.01,
+		_sim.pickup_tuning.spawn_distance_max + 0.01, "25-60 m from the fighters' midpoint")
+
+
+func test_a_duels_first_drop_is_a_weapon_inside_the_fight() -> void:
+	_start()
+	_sim.pickups_enabled = true
+	_drive(_sim.pickup_tuning.first_spawn_ticks + 1)
+	assert_eq(_sim.pickups.size(), 1)
+	assert_false(_sim.pickups[0].is_power(), "media-2 #5: the first drop is a weapon")
+	assert_lte(_sim.pickup_tuning.first_spawn_ticks + _sim.pickup_tuning.telegraph_ticks, 5 * 60,
+		"announced within the first 5 s")
+	assert_lte(_sim.pickup_tuning.duel_spawn_distance_max, 16.0, "close enough to stay in the duel's framing")
 
 
 func test_drops_despawn_after_their_lifetime() -> void:
@@ -386,6 +412,34 @@ func test_bow_arrows_drop_under_gravity_and_expire() -> void:
 	assert_lt(arrow.velocity.y, vy, "gravity pulls the arrow down")
 	_drive(130)
 	assert_eq(_sim.projectiles.size(), 0, "expired or hit the floor")
+
+
+func test_an_emptied_ki_bow_is_auto_thrown_and_the_hud_reads_unarmed_the_same_tick() -> void:
+	# media-2 #4: the sim, not the HUD, empties the slot; the HUD always names the held weapon.
+	_start(Vector3(0, 0, -200))
+	_sim.fighters[0].lock_on_target = -1
+	_arm(K.KI_BOW)
+	var fighter := _sim.fighters[0]
+	var shots := 0
+	var thrown_at := -1
+	for _shot in Weapon.RANGED_STATS[K.KI_BOW].ammo + 1:
+		_drive(1, A.LIGHT)
+		for _i in 40:
+			for event in _sim.events:
+				if event.type == E.FIRE:
+					shots += 1
+				elif event.type == E.WEAPON_THROW:
+					thrown_at = _sim.current_tick
+			var label := MatchHud.weapon_label(fighter)
+			if fighter.held_weapon() == K.KI_BOW:
+				assert_eq(label, "KI BOW %d" % fighter.ammo[fighter.active_slot])
+			else:
+				assert_eq(label, "UNARMED")
+			_drive(1)
+	assert_eq(shots, 12, "12 arrows")
+	assert_gt(thrown_at, 0, "the next shot press throws the empty bow")
+	assert_eq(fighter.held_weapon(), K.NONE)
+	assert_eq(fighter.weapon_count(), 0, "the empty bow left the inventory")
 
 
 func test_the_scatter_cannon_fires_spread_pellets_that_die_past_short_range() -> void:
