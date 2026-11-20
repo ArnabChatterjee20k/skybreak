@@ -1,18 +1,22 @@
 class_name VoxelHeightfield
 extends RefCounted
 ## Island-scale voxel terrain as columns of cells on a square grid: each column
-## spans [hidden, shown] in whole cells. Meshed per 32x32-column chunk with
-## coplanar faces merged into strips (a lawn of millions of cells stays a few
-## hundred thousand quads), while the per-cell look survives in textures the
-## voxel terrain shader reads cell by cell:
+## spans [hidden, shown] in whole cells. Meshed per CHUNK x CHUNK chunk with
+## greedy 2D merging (coplanar shown faces become rectangles, walls become
+## runs), while the per-cell look survives in two textures the voxel terrain
+## shader reads cell by cell:
 ## - colour_texture: the column's colour (sRGB) with baked AO and painted
-##   detail (paths, petals, clover); alpha is a material code for the shader;
+##   detail (paths, petals, clover); alpha is a free material code;
 ## - level_texture: the column's shown level in cells, so the shader can find
 ##   each face's neighbours for the bevel highlight and the step AO.
 ## `down` builds an underside: bottoms show, steps face downward.
+## A smooth top (`smooth_height`) follows a height function exactly, meshed as
+## a quadtree of quads (big where the whole block exists), walls only at the rim.
 
-const CHUNK := 32
+const CHUNK := 64
 const NONE := -2147483648
+## Quadtree block sizes (cells) for a smooth top, biggest first.
+const SMOOTH_BLOCKS: Array[int] = [32, 8, 2, 1]
 
 var cell := 0.088
 var origin := Vector2.ZERO  # world (x, z) of column (0, 0)'s corner
@@ -21,11 +25,9 @@ var down := false
 var shown := PackedInt32Array()  # per column, in cells; NONE = no column
 var hidden := PackedInt32Array()
 var colours := PackedByteArray()  # RGBA8 per column
-## Smooth top (a lawn): when set, height(x, z) -> world y gives the shown
-## surface exactly (no contour steps; feet stay on it), meshed as a grid of
-## 4x4-cell quads; walls only at the rim. The per-cell look stays in the shader.
+## Smooth top: height(x, z) -> world y. The visible lawn equals it exactly, so
+## feet placed with the same function stand on the mesh.
 var smooth_height: Callable
-const SMOOTH_STEP := 4
 
 
 func _init(cell_size: float, world_min: Vector2, world_max: Vector2, is_down := false) -> void:
@@ -44,6 +46,7 @@ func index(x: int, z: int) -> int:
 	return x + size.x * z
 
 
+## World (x, z) of a column's centre.
 func centre(x: int, z: int) -> Vector2:
 	return origin + (Vector2(x, z) + Vector2(0.5, 0.5)) * cell
 
@@ -52,16 +55,50 @@ func set_column(x: int, z: int, shown_level: int, hidden_level: int, colour: Col
 	var i := index(x, z)
 	shown[i] = shown_level
 	hidden[i] = hidden_level
-	colours[i * 4] = int(clampf(colour.r, 0.0, 1.0) * 255.0)
-	colours[i * 4 + 1] = int(clampf(colour.g, 0.0, 1.0) * 255.0)
-	colours[i * 4 + 2] = int(clampf(colour.b, 0.0, 1.0) * 255.0)
-	colours[i * 4 + 3] = int(clampf(colour.a, 0.0, 1.0) * 255.0)
+	set_colour(x, z, colour)
+
+
+func set_colour(x: int, z: int, colour: Color) -> void:
+	var i := index(x, z) * 4
+	colours[i] = int(clampf(colour.r, 0.0, 1.0) * 255.0)
+	colours[i + 1] = int(clampf(colour.g, 0.0, 1.0) * 255.0)
+	colours[i + 2] = int(clampf(colour.b, 0.0, 1.0) * 255.0)
+	colours[i + 3] = int(clampf(colour.a, 0.0, 1.0) * 255.0)
 
 
 func level_at(x: int, z: int) -> int:
 	if x < 0 or z < 0 or x >= size.x or z >= size.y:
 		return NONE
 	return shown[index(x, z)]
+
+
+## Bakes contact AO into the colours: a column darkens by up to `strength`
+## for each neighbour within `radius` cells whose shown level is higher (lower,
+## for an underside), so step feet and crevices read without SSAO.
+func bake_step_ao(strength := 0.3, radius := 2) -> void:
+	var sgn := -1 if down else 1
+	var out := colours.duplicate()
+	for z in size.y:
+		for x in size.x:
+			var lv := shown[index(x, z)]
+			if lv == NONE:
+				continue
+			var occ := 0.0
+			var total := 0.0
+			for dz in range(-radius, radius + 1):
+				for dx in range(-radius, radius + 1):
+					if dx == 0 and dz == 0:
+						continue
+					var w := 1.0 / float(absi(dx) + absi(dz))
+					total += w
+					var o := level_at(x + dx, z + dz)
+					if o != NONE and (o - lv) * sgn > 0:
+						occ += w * minf(float((o - lv) * sgn), 2.0) * 0.5
+			var k := 1.0 - strength * clampf(occ / total * 2.0, 0.0, 1.0)
+			var i := index(x, z) * 4
+			for c in 3:
+				out[i + c] = int(colours[i + c] * k)
+	colours = out
 
 
 func colour_texture() -> ImageTexture:
@@ -79,7 +116,7 @@ func level_texture() -> ImageTexture:
 	return ImageTexture.create_from_image(Image.create_from_data(size.x, size.y, false, Image.FORMAT_RF, data.to_byte_array()))
 
 
-## Shader parameters that tie a material to this field.
+## Shader parameters that tie a terrain material to this field.
 func bind(material: ShaderMaterial) -> void:
 	material.set_shader_parameter("cell", cell)
 	material.set_shader_parameter("field_origin", origin)
@@ -90,24 +127,27 @@ func bind(material: ShaderMaterial) -> void:
 	material.set_shader_parameter("smooth_top", smooth_height.is_valid())
 
 
-## One MeshInstance3D per non-empty chunk, all sharing `material`.
-func build(parent: Node3D, material: Material, node_name: String) -> Node3D:
+## One MeshInstance3D per non-empty chunk (frustum-culled separately), all
+## sharing `material`. visibility_end > 0 hides chunks past that distance.
+func build(parent: Node3D, material: Material, node_name: String, visibility_end := 0.0) -> Node3D:
 	var root := Node3D.new()
 	root.name = node_name
 	parent.add_child(root)
 	for cz in ceili(float(size.y) / CHUNK):
 		for cx in ceili(float(size.x) / CHUNK):
-			var mesh := _chunk(cx * CHUNK, cz * CHUNK)
+			var mesh := chunk_mesh(cx * CHUNK, cz * CHUNK)
 			if mesh == null:
 				continue
 			var mi := MeshInstance3D.new()
 			mi.mesh = mesh
 			mi.material_override = material
+			if visibility_end > 0.0:
+				mi.visibility_range_end = visibility_end
 			root.add_child(mi)
 	return root
 
 
-## Quad count of the whole field (for the perf notes).
+## Quad count under a node built by build().
 static func count_quads(root: Node3D) -> int:
 	var total := 0
 	for mi: MeshInstance3D in root.get_children():
@@ -115,35 +155,69 @@ static func count_quads(root: Node3D) -> int:
 	return total
 
 
-func _chunk(x0: int, z0: int) -> ArrayMesh:
+## The mesh of the chunk whose first column is (x0, z0), or null if empty.
+func chunk_mesh(x0: int, z0: int) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var x1 := mini(x0 + CHUNK, size.x)
 	var z1 := mini(z0 + CHUNK, size.y)
-	var up := Vector3(0, -1 if down else 1, 0)
 	if smooth_height.is_valid() and not down:
 		_smooth_top(verts, normals, x0, z0, x1, z1)
-	# Shown faces: runs of equal level along x.
-	var rows: Array = [] if smooth_height.is_valid() and not down else range(z0, z1)
-	for z: int in rows:
+	else:
+		_greedy_top(verts, normals, x0, z0, x1, z1)
+	_walls(verts, normals, x0, z0, x1, z1)
+	if verts.is_empty():
+		return null
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+## Shown faces of a stepped field: greedy rectangles of equal level.
+func _greedy_top(verts: PackedVector3Array, normals: PackedVector3Array, x0: int, z0: int, x1: int, z1: int) -> void:
+	var up := Vector3(0, -1 if down else 1, 0)
+	var w := x1 - x0
+	var used := PackedByteArray()
+	used.resize(w * (z1 - z0))
+	for z in range(z0, z1):
 		var x := x0
 		while x < x1:
 			var lv := shown[index(x, z)]
-			if lv == NONE:
+			if lv == NONE or used[(x - x0) + (z - z0) * w] != 0:
 				x += 1
 				continue
 			var end := x + 1
-			while end < x1 and shown[index(end, z)] == lv:
+			while end < x1 and shown[index(end, z)] == lv and used[(end - x0) + (z - z0) * w] == 0:
 				end += 1
+			var zend := z + 1
+			while zend < z1:
+				var ok := true
+				for xx in range(x, end):
+					if shown[index(xx, zend)] != lv or used[(xx - x0) + (zend - z0) * w] != 0:
+						ok = false
+						break
+				if not ok:
+					break
+				zend += 1
+			for zz in range(z, zend):
+				for xx in range(x, end):
+					used[(xx - x0) + (zz - z0) * w] = 1
 			var y := lv * cell
 			var ax := origin.x + x * cell
 			var bx := origin.x + end * cell
 			var az := origin.y + z * cell
-			var bz := origin.y + (z + 1) * cell
+			var bz := origin.y + zend * cell
 			_quad(verts, normals, Vector3(ax, y, az), Vector3(bx, y, az), Vector3(bx, y, bz), Vector3(ax, y, bz), up)
 			x = end
-	# Step walls, merged along the wall where neighbouring columns' spans match:
-	# x-facing walls run along z, z-facing walls along x.
+
+
+## Step walls, merged along the wall where neighbouring columns' spans match:
+## x-facing walls run along z, z-facing walls along x.
+func _walls(verts: PackedVector3Array, normals: PackedVector3Array, x0: int, z0: int, x1: int, z1: int) -> void:
 	for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		var x_facing := d.y == 0
 		var line_range := range(x0, x1) if x_facing else range(z0, z1)
@@ -162,15 +236,6 @@ func _chunk(x0: int, z0: int) -> ArrayMesh:
 				if run_start < 0 and span.x != NONE:
 					run_start = k
 					run_span = span
-	if verts.is_empty():
-		return null
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return mesh
 
 
 ## The wall on column (x, z)'s side facing d, as (from, to) levels, or NONE:
@@ -208,29 +273,34 @@ func _wall(verts: PackedVector3Array, normals: PackedVector3Array, k0: int, k1: 
 		_quad(verts, normals, Vector3(xa, y0, fz), Vector3(xb, y0, fz), Vector3(xb, y1, fz), Vector3(xa, y1, fz), n)
 
 
-## The smooth top of a chunk: SMOOTH_STEP-cell quads where all their columns
-## exist, single-cell quads along the rim.
+## The smooth top of a chunk: a quadtree of quads, each block as big as
+## SMOOTH_BLOCKS allows while all its columns exist (the T-junction gap on a
+## gentle dome stays under a millimetre).
 func _smooth_top(verts: PackedVector3Array, normals: PackedVector3Array, x0: int, z0: int, x1: int, z1: int) -> void:
-	var st := SMOOTH_STEP
+	_smooth_block(verts, normals, x0, z0, x1, z1, 0)
+
+
+func _smooth_block(verts: PackedVector3Array, normals: PackedVector3Array, x0: int, z0: int, x1: int, z1: int,
+		level: int) -> void:
+	var st := SMOOTH_BLOCKS[level]
 	for bz in range(z0, z1, st):
 		for bx in range(x0, x1, st):
 			var ex := mini(bx + st, x1)
 			var ez := mini(bz + st, z1)
 			var full := true
+			var any := false
 			for z in range(bz, ez):
 				for x in range(bx, ex):
 					if shown[index(x, z)] == NONE:
 						full = false
-						break
-				if not full:
-					break
+					else:
+						any = true
+			if not any:
+				continue
 			if full:
 				_smooth_quad(verts, normals, bx, bz, ex, ez)
-				continue
-			for z in range(bz, ez):
-				for x in range(bx, ex):
-					if shown[index(x, z)] != NONE:
-						_smooth_quad(verts, normals, x, z, x + 1, z + 1)
+			elif level + 1 < SMOOTH_BLOCKS.size():
+				_smooth_block(verts, normals, bx, bz, ex, ez, level + 1)
 
 
 func _smooth_quad(verts: PackedVector3Array, normals: PackedVector3Array, xa: int, za: int, xb: int, zb: int) -> void:

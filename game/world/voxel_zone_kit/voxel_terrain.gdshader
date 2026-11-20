@@ -6,7 +6,8 @@ shader_type spatial;
 // - a bevel highlight on convex cell edges (a lower neighbour) and a soft
 //   shadow at the foot of a step (a higher neighbour), from level_tex;
 // - walls: a grass lip on the top cell, then planar rock strata below.
-// Undersides (down): mauve-grey strata darkening with depth into the clouds.
+// Undersides (down): strata slabs in two alternating rock tones with a dark
+// seam at each slab's foot, darkening with depth into the clouds.
 render_mode diffuse_burley, specular_schlick_ggx;
 
 uniform float cell = 0.088;
@@ -21,7 +22,8 @@ uniform float crack_amount = 0.6;
 
 uniform vec3 rock_color : source_color = vec3(0.79, 0.6, 0.56);
 uniform vec3 rock_shadow : source_color = vec3(0.54, 0.38, 0.36);
-uniform vec3 under_color : source_color = vec3(0.43, 0.35, 0.38);
+uniform vec3 under_color : source_color = vec3(0.6, 0.56, 0.52);
+uniform vec3 under_alt : source_color = vec3(0.5, 0.44, 0.39);
 uniform vec3 under_deep : source_color = vec3(0.26, 0.21, 0.24);
 uniform float under_top = 285.0;
 uniform float under_depth = 74.0;
@@ -56,6 +58,20 @@ float level_of(ivec2 col) {
 		return down ? 1.0e6 : -1.0e6;
 	}
 	return texelFetch(level_tex, col, 0).r;
+}
+
+// Rock strata at height y: slabs of strata_cells cells alternate between two
+// tones (hashed per slab), a dark seam at each slab's foot, deeper rock darker.
+vec3 strata(float y, float seam) {
+	float slab_h = cell * strata_cells;
+	float fy = y / slab_h;
+	int slab = int(floor(fy));
+	float k = hash3(ivec3(slab, 0, 7));
+	vec3 tone = mix(under_color, under_alt, step(0.5, k)) * (0.92 + 0.16 * hash3(ivec3(slab, 1, 9)));
+	float depth = clamp((under_top - y) / under_depth, 0.0, 1.0);
+	tone = mix(tone, under_deep, pow(depth, 1.3) * 0.85);
+	float foot = 1.0 - smoothstep(0.0, 0.12, fract(fy));
+	return tone * (1.0 - 0.3 * foot * seam);
 }
 
 float ramp(float t) {
@@ -105,9 +121,7 @@ void fragment() {
 			ao = 1.0;
 		}
 		if (down) {
-			float depth = clamp((under_top - world_pos.y) / under_depth, 0.0, 1.0);
-			float band = hash3(ivec3(0, int(floor(world_pos.y / (cell * strata_cells))), 7));
-			albedo = mix(under_color, under_deep, pow(depth, 0.7)) * (0.88 + 0.22 * band);
+			albedo = strata(world_pos.y + cell * 0.5, 0.0);
 		} else {
 			albedo = to_linear(texel.rgb);
 		}
@@ -122,8 +136,7 @@ void fragment() {
 		vec2 run = floor(vec2(p.x + p.z, p.y) / (cell * vec2(1.0, 6.0)));
 		float crack = step(1.0 - 0.06 * crack_amount, hash3(ivec3(int(run.x), int(run.y), 11)));
 		if (down) {
-			float depth = clamp((under_top - world_pos.y) / under_depth, 0.0, 1.0);
-			albedo = mix(under_color, under_deep, pow(depth, 0.7)) * (0.9 + 0.24 * band);
+			albedo = strata(world_pos.y, 1.0);
 			albedo *= 1.0 - crack * 0.45;
 			// The step's lower edge (the convex one) catches light.
 			edge = ramp(clamp(-from_top, 0.0, 1.0));

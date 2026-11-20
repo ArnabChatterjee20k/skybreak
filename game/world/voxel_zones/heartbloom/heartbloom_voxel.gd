@@ -1,45 +1,46 @@
 class_name HeartbloomVoxel
-extends Node3D
-## Heartbloom Gardens in the voxel style (docs/lookdev/heartbloom.md), look-dev
-## v1. The sim stays the truth: island shapes come from IslandField.HEARTBLOOM
-## and every prop position from HeartbloomProps (seed 5151), run as-is so the
-## layout is identical; this only builds the voxel look over them.
+extends VoxelZone
+## Heartbloom Gardens in the voxel style (docs/lookdev/heartbloom.md), look v2,
+## built on the voxel zone kit (game/world/voxel_zone_kit/README.md). The sim
+## stays the truth: island shapes come from IslandField.HEARTBLOOM and every
+## prop position from HeartbloomProps (seed 5151), run as-is so the layout is
+## identical; this only builds the voxel look over them.
 ##
-## Cell tiers (the characters' ladder): T1 8.8 cm lawns and props, T2 35 cm
-## arch core and undersides near the lip, T3 1.4 m deep undersides and the
-## far islands' cones. v1 builds Heart Isle and Wishing Isle tops at T1, the
-## other islands' tops at T2.
+## Tiers: T1 lawns (smooth tops, per-cell colour) on the five big islands and
+## most props, T2 the arch, small islands' lawns and undersides near the lip,
+## T3 deep undersides and clouds.
 
-const T0 := 0.022
-const T1 := 0.088
-const T2 := 0.35
-const T3 := 1.4
 const LIP := 1.6
-const TERRAIN_SHADER := preload("res://game/world/voxel_zone/voxel_terrain.gdshader")
+const TERRAIN_SHADER := preload("res://game/world/voxel_zone_kit/voxel_terrain.gdshader")
 ## Bump to rebuild cached prop meshes after changing a design below.
-const VERSION := 3
-const FINE_ISLANDS := ["Heart Isle", "Wishing Isle"]
+const VERSION := 5
+const FINE_ISLANDS := ["Heart Isle", "Wishing Isle", "Lantern Rise", "Blossom Crown", "Picnic Meadow"]
+## Islands that get the lawn scatter (tufts, flowers, stones).
+const SCATTER_ISLANDS := ["Heart Isle", "Wishing Isle", "Lantern Rise", "Blossom Crown", "Picnic Meadow"]
+## LOD ranges (m): where each tier ends.
+const TREE_RANGES := [32.0, 110.0, 0.0]
+const PROP_RANGES := [60.0, 0.0]
 
 enum Mat {
 	EMPTY, ROSE, ROSE_DARK, MORTAR, MOSS, GOLD, STONE, STONE_DARK, BARK, BARK_DARK,
 	BLOSSOM, BLOSSOM_LIGHT, BLOSSOM_DEEP, WOOD, WOOD_NEW, POST, ROPE, PAPER, PAPER_BLUE, CAP,
-	RIBBON, GRASS_A, GRASS_B, FLOWER_WHITE, FLOWER_YELLOW, SOIL, WATER,
+	RIBBON, GRASS_A, GRASS_B, FLOWER_WHITE, FLOWER_YELLOW, SOIL, WATER, IRON, SAND_A, SAND_B, CLOTH, LEAF,
 }
-## Palette (sRGB), from the design sheet.
+## Palette (sRGB). Pink is the accent: blossoms, ribbons, the blanket.
 const COLORS := {
-	Mat.ROSE: Color("#d8bba8"), Mat.ROSE_DARK: Color("#c4a08f"), Mat.MORTAR: Color("#7d685d"),
+	Mat.ROSE: Color("#d9c3ab"), Mat.ROSE_DARK: Color("#c2a68e"), Mat.MORTAR: Color("#8a7b6e"),
 	Mat.MOSS: Color("#6F8A58"), Mat.GOLD: Color("#d9b46a"),
-	Mat.STONE: Color("#e2d3c3"), Mat.STONE_DARK: Color("#8f8178"),
+	Mat.STONE: Color("#cfc6bb"), Mat.STONE_DARK: Color("#8f8178"),
 	Mat.BARK: Color("#5C4A44"), Mat.BARK_DARK: Color("#3A2E2A"),
-	Mat.BLOSSOM: Color("#efb3c4"), Mat.BLOSSOM_LIGHT: Color("#fbe1e8"), Mat.BLOSSOM_DEEP: Color("#c97d95"),
-	Mat.WOOD: Color("#9C8468"), Mat.WOOD_NEW: Color("#c4ab86"), Mat.POST: Color("#8A4A40"),
+	Mat.BLOSSOM: Color("#efb6c6"), Mat.BLOSSOM_LIGHT: Color("#fbe3ea"), Mat.BLOSSOM_DEEP: Color("#c7849a"),
+	Mat.WOOD: Color("#9C8468"), Mat.WOOD_NEW: Color("#c9b28c"), Mat.POST: Color("#8A4A40"),
 	Mat.ROPE: Color("#cdb994"), Mat.PAPER: Color("#F0D2B0"), Mat.PAPER_BLUE: Color("#b9cfe0"),
 	Mat.CAP: Color("#4a3a36"),
-	Mat.RIBBON: Color("#d9849c"), Mat.GRASS_A: Color("#86a95a"), Mat.GRASS_B: Color("#6a9148"),
+	Mat.RIBBON: Color("#d9849c"), Mat.GRASS_A: Color("#8fb05e"), Mat.GRASS_B: Color("#6a9148"),
 	Mat.FLOWER_WHITE: Color("#f5f1e6"), Mat.FLOWER_YELLOW: Color("#f0cf6a"), Mat.SOIL: Color("#5a4232"),
-	Mat.WATER: Color("#9CCBCB"),
+	Mat.WATER: Color("#9CCBCB"), Mat.IRON: Color("#4b4a4f"), Mat.SAND_A: Color("#e0cdb2"),
+	Mat.SAND_B: Color("#cbb497"), Mat.CLOTH: Color("#e9dccb"), Mat.LEAF: Color("#7d9a5a"),
 }
-const LAWN := Color("#7FA85A")
 const PETAL := Color("#F7CCD8")
 
 var field: IslandField
@@ -48,12 +49,18 @@ var props: HeartbloomProps
 ## World (x, z) of the Heart Arch's foot and its ground height.
 var arch_base := Vector2.ZERO
 var arch_ground := 0.0
-## Coarse (1 m) shade and petal maps under the canopies, for painting lawns.
+## Coarse (1 m) shade map under the canopies, for painting lawns.
 var _shade := {}
-var stats := {}
 ## Where the trees stand (instance transforms), and lanterns hung in the arch.
 var tree_spots: Array[Transform3D] = []
 var arch_lanterns: Array[Vector3] = []
+## Hanging lanterns that sway (node, phase).
+var _swaying: Array = []
+var _petals: GPUParticles3D
+
+
+func _init() -> void:
+	name = "HeartbloomGardens"
 
 
 func build() -> void:
@@ -65,25 +72,22 @@ func build() -> void:
 	arch_base = field.centres[heart] + HeartbloomProps.ARCH_OFFSET
 	arch_ground = field.surface_at(arch_base.x, arch_base.y)
 	_canopy_maps()
-	print("placements in %d ms" % (Time.get_ticks_msec() - t))
-	t = Time.get_ticks_msec()
-	_islands()
-	print("islands in %d ms" % (Time.get_ticks_msec() - t))
-	t = Time.get_ticks_msec()
-	_arch()
-	print("arch in %d ms" % (Time.get_ticks_msec() - t))
-	t = Time.get_ticks_msec()
-	_trees()
-	print("trees in %d ms" % (Time.get_ticks_msec() - t))
-	t = Time.get_ticks_msec()
-	_bridges()
-	_lanterns()
-	_fountain()
-	_clouds()
-	_scatter()
-	_rims_and_roots()
-	_story_props()
-	print("bridges, lanterns, fountain, clouds in %d ms" % (Time.get_ticks_msec() - t))
+	lantern_materials.append(VoxelProp.materials()[VoxelProp.Surf.GLOW] as ShaderMaterial)
+	var steps: Array[Callable] = [_islands, _arch, _trees, _bridges, _lanterns, _fountain, _clouds, _scatter,
+		_rims_and_roots, _story_props, _petal_river]
+	for step in steps:
+		var s := Time.get_ticks_msec()
+		step.call()
+		stats["ms_" + step.get_method().trim_prefix("_")] = Time.get_ticks_msec() - s
+	stats["ms_total"] = Time.get_ticks_msec() - t
+
+
+func ground_at(x: float, z: float) -> float:
+	return field.surface_at(x, z)
+
+
+func cloud_sea() -> Dictionary:
+	return {"rect": Rect2(-360, -260, 720, 520), "height": 196.0, "puffs": 70, "seed": 77}
 
 
 ## Runs the sim's own prop builder to get its placements (it builds its
@@ -102,7 +106,7 @@ func _placements() -> HeartbloomProps:
 
 # ---------------------------------------------------------------- islands
 
-## Shade (AO) and petal density on a 1 m grid under every canopy.
+## Shade (AO) under every canopy on a 1 m grid.
 func _canopy_maps() -> void:
 	for t in props.canopies:
 		var c := t.origin
@@ -144,29 +148,39 @@ func _island_top(i: int, cell: float) -> Node3D:
 			if s > 1.0:
 				continue
 			var h := field.top_profile(i, s)
-			var level := roundi(h / cell)
-			hf.set_column(x, z, level, roundi((h - LIP) / cell), _lawn_colour(w, x, z, s, paths))
+			hf.set_column(x, z, roundi(h / cell), roundi((h - LIP) / cell), _lawn_colour(w, x, z, s, paths))
 	hf.smooth_height = func(x: float, z: float) -> float:
 		return field.top_profile(i, minf(field.rim_fraction(i, x, z), 1.0))
 	var mat := _terrain_material(hf, i)
 	return hf.build(self, mat, "%sTop" % field.names[i].replace(" ", ""))
 
 
+## The underside cone as strata slabs: bottoms quantised to slabs of
+## `slab` cells, each slab's outline pushed in or out by a per-slab wobble,
+## so the rock reads as stacked planar layers stepping in.
 func _island_underside(i: int, cell: float) -> Node3D:
 	var b := _island_bounds(i)
 	var hf := VoxelHeightfield.new(cell, b.position, b.end, true)
+	var slab := 3 if cell > 1.0 else 4
+	var c := field.centres[i]
 	for z in hf.size.y:
 		for x in hf.size.x:
 			var w := hf.centre(x, z)
 			var s := field.rim_fraction(i, w.x, w.y)
 			if s > 0.985:
 				continue
-			var bottom := roundi(field.underside_profile(i, s) / cell)
+			var a := atan2(w.y - c.y, w.x - c.x)
+			var raw := field.underside_profile(i, s) / cell
+			var band := floori(raw / slab)
+			# Each slab's edge wobbles on its own: some ledges stick out further.
+			var wob := sin(a * (3.0 + band % 3) + band * 1.7) * 0.5 + sin(a * 7.0 - band * 2.3) * 0.3
+			var bottom := (floori((raw + wob * slab * 0.9) / slab)) * slab
 			var cap := roundi((field.top_profile(i, s) - LIP) / cell) + 1
 			if bottom >= cap:
 				continue
 			hf.set_column(x, z, bottom, cap, Color.WHITE)
 	var mat := _terrain_material(hf, i)
+	mat.set_shader_parameter("strata_cells", float(slab))
 	return hf.build(self, mat, "%sUnder" % field.names[i].replace(" ", ""))
 
 
@@ -176,12 +190,13 @@ func _terrain_material(hf: VoxelHeightfield, i: int) -> ShaderMaterial:
 	hf.bind(mat)
 	mat.set_shader_parameter("under_top", field.tops[i])
 	mat.set_shader_parameter("under_depth", field.depths[i])
-	# Cool grey-brown stone (pink is the accent, kept for blossoms and hearts).
+	# Grey-brown strata rock (pink is the accent, kept for blossoms and hearts).
 	mat.set_shader_parameter("rock_color", Color("#a39588"))
 	mat.set_shader_parameter("rock_shadow", Color("#6d6159"))
 	mat.set_shader_parameter("soil_color", Color("#5a4232"))
-	mat.set_shader_parameter("under_color", Color("#857a72"))
-	mat.set_shader_parameter("under_deep", Color("#3a3432"))
+	mat.set_shader_parameter("under_color", Color("#9a8e84"))
+	mat.set_shader_parameter("under_alt", Color("#7f7064"))
+	mat.set_shader_parameter("under_deep", Color("#4a4440"))
 	mat.set_shader_parameter("strata_cells", 3.0 if hf.cell > 0.2 else 8.0)
 	return mat
 
@@ -270,17 +285,21 @@ func color(mat: int, p: Vector3, c: Vector3i, n: Vector3, occlusion: float, expo
 	var col := VoxelDesign.default_color(base, mat, c, occlusion, exposure, quiet,
 		mat in [Mat.ROSE, Mat.STONE, Mat.WOOD, Mat.POST, Mat.GOLD, Mat.CAP])
 	if mat in [Mat.BLOSSOM, Mat.BLOSSOM_LIGHT, Mat.BLOSSOM_DEEP]:
-		# Sunlit tops lighter, undersides a little deeper: from height in the cluster.
-		col = col.lerp(COLORS[Mat.BLOSSOM_LIGHT], exposure * 0.6)
-		col = col.lerp(COLORS[Mat.BLOSSOM_DEEP] * 0.85, clampf(occlusion * 1.4, 0.0, 0.8))
+		# Value range: pale sunlit tops and upper crown, deep rose in the core
+		# and on undersides, so each mass reads as a form, not a flat pink.
+		var height := clampf((p.y - 4.0) / 6.0, 0.0, 1.0)
+		col = col.lerp(COLORS[Mat.BLOSSOM_LIGHT], clampf(exposure * 0.5 + height * 0.25 + maxf(n.y, 0.0) * 0.3, 0.0, 0.85))
+		col = col.lerp(COLORS[Mat.BLOSSOM_DEEP] * 0.8, clampf(occlusion * 1.6, 0.0, 0.85))
 		if n.y < -0.5:
-			col = col.lerp(COLORS[Mat.BLOSSOM_DEEP] * 0.8, 0.5)
+			col = col.lerp(COLORS[Mat.BLOSSOM_DEEP] * 0.72, 0.6)
+		col *= 0.95 + 0.1 * VoxelSdf.hash3(c, 71)
+		col.a = 1.0
 	return col
 
 
 func surface_of(mat: int) -> int:
 	match mat:
-		Mat.GOLD:
+		Mat.GOLD, Mat.IRON:
 			return 1
 		Mat.BLOSSOM, Mat.BLOSSOM_LIGHT, Mat.BLOSSOM_DEEP:
 			return 3
@@ -360,11 +379,18 @@ func _arch() -> void:
 				var joint := func(p: Vector3) -> bool:
 					var bl: Vector3 = block.call(p)
 					var f: Vector2 = frame.call(p)
-					return bl.z < T2 * 0.75 or (absf(f.y) < T2 * 0.6 and absf(p.z) > half_depth - T2)
+					return bl.z < T2 * 0.5 or (absf(f.y) < T2 * 0.5 and absf(p.z) > half_depth - T2)
+				# Moss grows in the joints low down and on the shaded tops; mortar elsewhere.
+				var mossy := func(p: Vector3, c: Vector3i) -> bool:
+					var low := 1.0 - smoothstep(4.0, 18.0, p.y)
+					return VoxelSdf.hash3(c, 41) < 0.08 + 0.55 * low
 				g.paint_surface(box, func(p: Vector3, c: Vector3i) -> bool:
-					return joint.call(p) and VoxelSdf.hash3(c, 41) >= 0.35, Mat.MORTAR, [Mat.ROSE, Mat.ROSE_DARK, Mat.STONE])
+					return joint.call(p) and not mossy.call(p, c), Mat.MORTAR, [Mat.ROSE, Mat.ROSE_DARK, Mat.STONE])
 				g.paint_surface(box, func(p: Vector3, c: Vector3i) -> bool:
-					return joint.call(p) and VoxelSdf.hash3(c, 41) < 0.35, Mat.MOSS, [Mat.ROSE, Mat.ROSE_DARK, Mat.STONE])
+					return joint.call(p) and mossy.call(p, c), Mat.MOSS, [Mat.ROSE, Mat.ROSE_DARK, Mat.STONE])
+				# Weathering: a few chipped, darker cells on block faces near the feet.
+				g.paint_surface(box, func(p: Vector3, c: Vector3i) -> bool:
+					return p.y < 10.0 and VoxelSdf.hash3(c, 47) < 0.05, Mat.STONE_DARK, [Mat.ROSE, Mat.ROSE_DARK])
 				arc += seg_len
 		# Blossom vine climbing the right lobe's outside.
 		var vine := PackedVector3Array()
@@ -396,14 +422,18 @@ func _arch() -> void:
 			var q := p - key_c
 			var r := Vector3((q.x + q.y) * 0.7071, (q.y - q.x) * 0.7071, q.z)
 			return VoxelSdf.box(r, Vector3.ZERO, hb)
-		g.paint(AABB(key_c - Vector3(4, 4, 4), Vector3(8, 8, 8)), func(p: Vector3) -> float:
-			return diamond.call(p, Vector3(2.6, 2.6, 3.4)), Mat.STONE, -1, VoxelGrid.Mode.FILL)
-		g.paint(AABB(key_c - Vector3(2.5, 2.5, 4), Vector3(5, 5, 8)), func(p: Vector3) -> float:
-			var q := Vector2(p.x - key_c.x, p.y - key_c.y + 0.3) / 1.9
-			# Heart: two circles over a point.
+		g.paint(AABB(key_c - Vector3(5, 5, 5), Vector3(10, 10, 10)), func(p: Vector3) -> float:
+			return diamond.call(p, Vector3(3.2, 3.2, 3.5)), Mat.SAND_A, -1, VoxelGrid.Mode.FILL)
+		# The gold heart stands out of both faces in relief.
+		g.paint(AABB(key_c - Vector3(3.5, 3.5, 4.6), Vector3(7, 7, 9.2)), func(p: Vector3) -> float:
+			var q := Vector2(p.x - key_c.x, p.y - key_c.y + 0.5) / 2.6
 			var heart := minf(Vector2(q.x - 0.5, q.y - 0.25).length(), Vector2(q.x + 0.5, q.y - 0.25).length()) - 0.55
 			heart = minf(heart, maxf(absf(q.x) + q.y * 0.9 - 0.75, -q.y - 1.1))
-			return maxf(heart, absf(p.z) - 3.55), Mat.GOLD, -1, VoxelGrid.Mode.FILL)
+			return maxf(heart * 2.6, absf(p.z) - 4.2), Mat.GOLD, -1, VoxelGrid.Mode.FILL)
+		g.paint_surface(AABB(key_c - Vector3(5, 5, 5), Vector3(10, 10, 10)), func(p: Vector3, _c: Vector3i) -> bool:
+			var q := p - key_c
+			return absf(absf((q.x + q.y) * 0.7071) - 3.0) < T2 * 0.6 or absf(absf((q.y - q.x) * 0.7071) - 3.0) < T2 * 0.6,
+			Mat.MORTAR, [Mat.SAND_A])
 		g.paint(AABB(Vector3(-7.2, -0.6, -5.2), Vector3(14.4, 1.6, 10.4)), func(p: Vector3) -> float:
 			return VoxelSdf.box(p, Vector3(0, 0.2, 0), Vector3(7.0, 0.7, 5.0)), Mat.STONE, -1, VoxelGrid.Mode.FILL)
 		g.paint(AABB(Vector3(-4.7, 0.5, -3.7), Vector3(9.4, 1.6, 7.4)), func(p: Vector3) -> float:
@@ -416,7 +446,8 @@ func _arch() -> void:
 	node.mesh = m
 	node.position = Vector3(arch_base.x, arch_ground, arch_base.y)
 	add_child(node)
-	stats["arch_quads"] = _quads(m)
+	stats["arch_quads"] = VoxelProp.quads(m)
+	_love_locks()
 	# A lantern hanging inside each lobe.
 	for half: float in [1.0, -1.0]:
 		var top := HeartbloomProps.heart_point(1.0) * scale
@@ -430,32 +461,38 @@ func _arch() -> void:
 ## canopy of lumpy blossom masses with carved gaps the limbs show through.
 ## Colour: deep rose in the canopy's core, pale tips where it's exposed.
 func _trees() -> void:
-	var variants: Array[ArrayMesh] = []
-	var far: Array[ArrayMesh] = []
+	var tiers: Array = []
 	for v in 4:
-		variants.append(_tree_mesh(v, T1))
-		far.append(_tree_mesh(v, T2))
+		tiers.append(_tree_tiers(v))
 	var per_variant: Array = [[], [], [], []]
 	for k in props.trunks.size():
 		var t := props.trunks[k]
 		var sc := t.basis.get_scale()
 		var ground := t.origin + Vector3.UP * 0.5
-		ground.y = field.surface_at(ground.x, ground.z, ground.y + 3.0) if is_finite(field.surface_at(ground.x, ground.z, ground.y + 3.0)) else ground.y
+		var y := field.surface_at(ground.x, ground.z, ground.y + 3.0)
+		ground.y = y if is_finite(y) else ground.y
 		var size := (sc.y - 0.5) / 7.0
 		var yaw := VoxelSdf.hash3(Vector3i(roundi(ground.x), 0, roundi(ground.z)), 5) * TAU
 		var xf := Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3.ONE * size), ground)
 		(per_variant[k % 4] as Array).append(xf)
 		tree_spots.append(xf)
-	var quads := 0
 	for v in 4:
 		var list: Array[Transform3D] = []
 		list.assign(per_variant[v])
-		VoxelProp.instances(self, "Trees%d" % v, variants[v], list, 90.0)
-		var far_node := VoxelProp.instances(self, "TreesFar%d" % v, far[v], list)
-		far_node.visibility_range_begin = 90.0
-		quads += _quads(variants[v]) * list.size()
-	stats["tree_quads_t1_all"] = quads
-	stats["tree_variant_quads"] = _quads(variants[0])
+		VoxelProp.place(self, "Trees%d" % v, tiers[v], TREE_RANGES, list, 2)
+	var quads := []
+	for m: ArrayMesh in tiers[0]:
+		quads.append(VoxelProp.quads(m))
+	stats["tree_quads_per_tier"] = quads
+	stats["trees"] = tree_spots.size()
+
+
+## A tree variant at T1, 2xT1 and T2 (the LOD tiers).
+func _tree_tiers(v: int) -> Array[ArrayMesh]:
+	var out: Array[ArrayMesh] = []
+	for cell: float in [T1, T1 * 2.0, T2]:
+		out.append(_tree_mesh(v, cell))
+	return out
 
 
 func _tree_mesh(v: int, cell: float) -> ArrayMesh:
@@ -478,6 +515,7 @@ func _tree_mesh(v: int, cell: float) -> ArrayMesh:
 	clusters.append(Vector4(top.x, h * 0.98, top.z, 1.8))
 	var bounds := AABB(Vector3(-5.8, -0.6, -5.8), Vector3(11.6, 10.6, 11.6))
 	var paint := func(g: VoxelGrid) -> void:
+		rng.seed = 1900 + v  # same shape at every LOD tier
 		var cap := func(a: Vector3, b: Vector3, ra: float, rb: float, mat: int) -> void:
 			var lo := Vector3(minf(a.x, b.x), minf(a.y, b.y), minf(a.z, b.z)) - Vector3.ONE * (ra + 0.1)
 			g.paint(AABB(lo, (b - a).abs() + Vector3.ONE * (ra + 0.1) * 2), func(p: Vector3) -> float:
@@ -526,8 +564,7 @@ func _tree_mesh(v: int, cell: float) -> ArrayMesh:
 			return VoxelSdf.hash3(c, 61) < 0.2, Mat.BLOSSOM_LIGHT, [Mat.BLOSSOM])
 		g.paint_surface(bounds, func(_p: Vector3, c: Vector3i) -> bool:
 			return VoxelSdf.hash3(c, 67) < 0.12, Mat.BLOSSOM_DEEP, [Mat.BLOSSOM])
-	return VoxelProp.mesh("hb_tree%d_%s" % [v, "t1" if cell < 0.1 else "t2"], VERSION, bounds, cell, paint, color,
-		surface_of, [Mat.BLOSSOM])
+	return VoxelProp.mesh("hb_tree%d" % v, VERSION, bounds, cell, paint, color, surface_of, [Mat.BLOSSOM])
 
 
 # ---------------------------------------------------------------- lawn scatter
@@ -542,7 +579,8 @@ func _scatter() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 4242
 	var fc: Vector3 = zone.get_meta("wishing_fountain").centre
-	for name: String in FINE_ISLANDS:
+	var drifts: Array = [[], []]
+	for name: String in SCATTER_ISLANDS:
 		var i := field.index_of(name)
 		var paths := _paths(i)
 		var area := PI * field.radii[i] * field.radii[i]
@@ -559,7 +597,7 @@ func _scatter() -> void:
 			elif roll < 0.97:
 				(flowers[k % 2] as Array).append(xf)
 			else:
-				(stones[k % 3] as Array).append(Transform3D(xf.basis.scaled(Vector3.ONE * rng.randf_range(0.8, 1.6)), p + Vector3.DOWN * 0.06))
+				(stones[k % 3] as Array).append(Transform3D(xf.basis.scaled(Vector3.ONE * rng.randf_range(0.45, 0.8)), p + Vector3.DOWN * 0.08))
 		# Edging stones along both sides of every walk.
 		for seg: Array in paths:
 			var a: Vector2 = seg[0]
@@ -575,20 +613,33 @@ func _scatter() -> void:
 					if is_finite(y):
 						(stones[k % 3] as Array).append(Transform3D(Basis(Vector3.UP, atan2(dir.x, dir.y) + rng.randf_range(-0.3, 0.3))
 							.scaled(Vector3(0.7, 0.55, 0.9)), Vector3(w.x, y - 0.05, w.y)))
+	# Petal drifts on the lawn under every canopy, thickest downwind.
+	for t in props.canopies:
+		var r := t.basis.get_scale().x * 0.5
+		for k in 7:
+			var a := rng.randf() * TAU
+			var w := Vector2(t.origin.x, t.origin.z) + Vector2(cos(a), sin(a)) * r * sqrt(rng.randf()) + Vector2(0.8, 0.6) * rng.randf() * r * 0.5
+			var y := field.surface_at(w.x, w.y, t.origin.y)
+			if is_finite(y) and absf(y - t.origin.y) < 12.0:
+				(drifts[k % 2] as Array).append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.8, 1.5)), Vector3(w.x, y, w.y)))
 	for v in 3:
-		_place(_tuft_mesh(v), tufts[v], "Tufts%d" % v, 55.0)
-		_place(_stone_mesh(v), stones[v], "Stones%d" % v, 120.0)
+		_place([_tuft_mesh(v)], tufts[v], "Tufts%d" % v, [30.0])
+		_place([_stone_mesh(v, T1 * 0.5), _stone_mesh(v, T1)], stones[v], "Stones%d" % v, [35.0, 90.0])
 	for v in 2:
-		_place(_flower_mesh(v), flowers[v], "Flowers%d" % v, 45.0)
+		_place([_flower_mesh(v)], flowers[v], "Flowers%d" % v, [30.0])
+		_place([_drift_mesh(v)], drifts[v], "PetalDrifts%d" % v, [55.0])
 	stats["scatter"] = tufts.reduce(func(acc, l): return acc + l.size(), 0) + flowers.reduce(func(acc, l): return acc + l.size(), 0) \
 		+ stones.reduce(func(acc, l): return acc + l.size(), 0)
 
 
-func _place(m: ArrayMesh, list: Array, node_name: String, end: float) -> void:
+## Tiled LOD placement; small things (first range under 60 m) cast no shadow.
+func _place(meshes: Array, list: Array, node_name: String, ranges: Array) -> void:
 	var typed: Array[Transform3D] = []
 	typed.assign(list)
-	var node := VoxelProp.instances(self, node_name, m, typed, end)
-	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if end < 60.0 else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	var tiers: Array[ArrayMesh] = []
+	tiers.assign(meshes)
+	VoxelProp.place(self, node_name, tiers, ranges, typed, 0 if float(ranges[0]) < 60.0 else 1)
+	stats["n_" + node_name] = typed.size()
 
 
 func _random_on(i: int, rng: RandomNumberGenerator, s_max: float) -> Vector3:
@@ -637,7 +688,22 @@ func _flower_mesh(v: int) -> ArrayMesh:
 	return VoxelProp.mesh("hb_flower%d" % v, VERSION, bounds, T0, paint, color, surface_of)
 
 
-func _stone_mesh(v: int) -> ArrayMesh:
+## A drift of fallen petals: a flat, ragged clump of 1-voxel flecks.
+func _drift_mesh(v: int) -> ArrayMesh:
+	var bounds := AABB(Vector3(-1.2, -0.05, -1.2), Vector3(2.4, 0.15, 2.4))
+	var paint := func(g: VoxelGrid) -> void:
+		g.paint(bounds, func(p: Vector3) -> float:
+			var r := Vector2(p.x * (1.0 + 0.4 * v), p.z).length()
+			return maxf(r - 1.0 - 0.15 * sin(atan2(p.z, p.x) * 5.0 + v), absf(p.y) - T0 * 0.5), Mat.BLOSSOM_LIGHT)
+		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
+			var r := Vector2(p.x, p.z).length()
+			return VoxelSdf.hash3(c, 91 + v) < smoothstep(0.3, 1.1, r) * 0.85, Mat.EMPTY, [Mat.BLOSSOM_LIGHT])
+		g.paint_surface(bounds, func(_p: Vector3, c: Vector3i) -> bool:
+			return VoxelSdf.hash3(c, 93) < 0.35, Mat.BLOSSOM, [Mat.BLOSSOM_LIGHT])
+	return VoxelProp.mesh("hb_drift%d" % v, VERSION, bounds, T0, paint, color, surface_of)
+
+
+func _stone_mesh(v: int, cell := T1 * 0.5) -> ArrayMesh:
 	var bounds := AABB(Vector3(-0.6, -0.3, -0.6), Vector3(1.2, 0.9, 1.2))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 700 + v
@@ -652,7 +718,7 @@ func _stone_mesh(v: int) -> ArrayMesh:
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.sphere(p, chip, 0.18), Mat.STONE, -1, VoxelGrid.Mode.CARVE)
 		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
 			return p.z < -hz * 0.3 and VoxelSdf.hash3(c, 71) < 0.6, Mat.MOSS, [Mat.STONE])
-	return VoxelProp.mesh("hb_stone%d" % v, VERSION, bounds, T1 * 0.5, paint, color, surface_of)
+	return VoxelProp.mesh("hb_stone%d" % v, VERSION, bounds, cell, paint, color, surface_of)
 
 
 # ---------------------------------------------------------------- rims and roots
@@ -673,7 +739,6 @@ func _rims_and_roots() -> void:
 			var p := field.top_point(i, a, 1.0)
 			var out := Vector3(p.x - c.x, 0, p.z - c.y).normalized()
 			var basis := Basis(Vector3.UP, atan2(out.x, out.z))
-			p.y = roundf(p.y / T1) * T1
 			(lips[k % 3] as Array).append(Transform3D(basis, p))
 		for k in int(field.radii[i] * 2.2):
 			var a := rng.randf() * TAU
@@ -684,8 +749,8 @@ func _rims_and_roots() -> void:
 			(roots[k % 3] as Array).append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.8, 1.6)),
 				Vector3(w.x, y + 0.4, w.y)))
 	for v in 3:
-		_place(_lip_mesh(v), lips[v], "RimLips%d" % v, 160.0)
-		_place(_root_mesh(v), roots[v], "HangingRoots%d" % v, 220.0)
+		_place([_lip_mesh(v)], lips[v], "RimLips%d" % v, [90.0])
+		_place([_root_mesh(v)], roots[v], "HangingRoots%d" % v, [160.0])
 
 
 func _lip_mesh(v: int) -> ArrayMesh:
@@ -742,6 +807,7 @@ func _story_props() -> void:
 	_single(_bench_mesh(), bench_at, PI)
 	_single(_well_mesh(), arch_base + Vector2(16.0, 20.0), 0.4)
 	_single(_carved_stone_mesh(), arch_base + Vector2(7.5, 6.5), -0.3)
+	_single(_shrine_mesh(), arch_base + Vector2(-19.0, 9.0), 0.5)
 	var meadow := field.index_of("Picnic Meadow")
 	var mc := field.centres[meadow]
 	_single(_blanket_mesh(), mc + Vector2(0.0, 16.0), 0.35)
@@ -858,11 +924,74 @@ func _swing_mesh() -> ArrayMesh:
 	return VoxelProp.mesh("hb_swing", VERSION, bounds, T0 * 1.5, paint, color, surface_of)
 
 
-static func _quads(m: Mesh) -> int:
-	var total := 0
-	for s in m.get_surface_count():
-		total += m.surface_get_array_index_len(s) / 6
-	return total
+## A small wayside shrine: stepped plinth, two posts, a tiled roof with
+## upturned eaves, a heart stone with offerings, two candles and a ribbon.
+func _shrine_mesh() -> ArrayMesh:
+	var bounds := AABB(Vector3(-1.1, -0.2, -0.9), Vector3(2.2, 2.9, 1.8))
+	var paint := func(g: VoxelGrid) -> void:
+		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0, 0.0, 0), Vector3(0.95, 0.15, 0.75), 0.02), Mat.STONE)
+		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0, 0.25, -0.1), Vector3(0.75, 0.12, 0.55), 0.02), Mat.STONE)
+		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
+			return p.y < 0.2 and VoxelSdf.hash3(c, 77) < 0.45, Mat.MOSS, [Mat.STONE])
+		for x: float in [-0.6, 0.6]:
+			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(x, 1.1, -0.3), Vector3(0.07, 0.75, 0.07)), Mat.POST)
+		# Back wall of planks, the roof with eaves turning up at the corners.
+		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0, 1.1, -0.42), Vector3(0.55, 0.7, 0.03)), Mat.WOOD)
+		g.paint(bounds, func(p: Vector3) -> float:
+			var lift := 0.18 * pow(absf(p.x) / 1.0, 3.0)
+			var ridge := 2.1 - absf(p.z + 0.25) * 0.55 + lift
+			return maxf(maxf(p.y - ridge, ridge - 0.12 - p.y), maxf(absf(p.x) - 1.0, absf(p.z + 0.25) - 0.62)), Mat.CAP)
+		g.paint_surface(bounds, func(p: Vector3, _c: Vector3i) -> bool:
+			return p.y > 1.7 and fposmod(p.x, 0.18) < 0.05, Mat.IRON, [Mat.CAP])
+		# The heart stone, coins and candles, and a pink ribbon on a post.
+		g.paint(bounds, func(p: Vector3) -> float:
+			var q := Vector2(p.x, p.y - 0.62) / 0.16
+			var heart := minf(Vector2(q.x - 0.5, q.y - 0.25).length(), Vector2(q.x + 0.5, q.y - 0.25).length()) - 0.55
+			heart = minf(heart, maxf(absf(q.x) + q.y * 0.9 - 0.75, -q.y - 1.1))
+			return maxf(heart * 0.16, absf(p.z + 0.25) - 0.06), Mat.ROSE_DARK, -1, VoxelGrid.Mode.ADD)
+		for x: float in [-0.42, 0.42]:
+			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(x, 0.45, 0.05), Vector3(0.04, 0.08, 0.04)), Mat.PAPER, -1, VoxelGrid.Mode.ADD)
+		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0.2, 0.39, 0.15), Vector3(0.05, 0.015, 0.05)), Mat.GOLD, -1, VoxelGrid.Mode.ADD)
+		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0.67, 1.3, -0.22), Vector3(0.012, 0.35, 0.05)), Mat.RIBBON, -1, VoxelGrid.Mode.ADD)
+	return VoxelProp.mesh("hb_shrine", VERSION, bounds, T0 * 2.0, paint, color, surface_of)
+
+
+## Love locks: an iron chain railing in front of the arch's pedestal, hung
+## with padlocks in brass, iron and a few painted ones.
+func _love_locks() -> void:
+	var bounds := AABB(Vector3(-6.4, -0.2, -0.3), Vector3(12.8, 1.4, 0.6))
+	var paint := func(g: VoxelGrid) -> void:
+		for k in 5:
+			var x := -6.0 + k * 3.0
+			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(x, 0.45, 0), Vector3(0.06, 0.6, 0.06)), Mat.IRON)
+			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.sphere(p, Vector3(x, 1.08, 0), 0.08), Mat.GOLD, -1, VoxelGrid.Mode.ADD)
+		for k in 4:
+			var x0 := -6.0 + k * 3.0
+			for row: float in [0.95, 0.55]:
+				g.paint(bounds, func(p: Vector3) -> float:
+					var u := clampf((p.x - x0) / 3.0, 0.0, 1.0)
+					var y := row - 0.18 * 4.0 * u * (1.0 - u)
+					return Vector2(p.y - y, p.z).length() - 0.025 if p.x > x0 and p.x < x0 + 3.0 else 1.0, Mat.IRON, -1, VoxelGrid.Mode.ADD)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 1414
+		var tints := [Mat.GOLD, Mat.GOLD, Mat.IRON, Mat.GOLD, Mat.RIBBON, Mat.PAPER_BLUE]
+		for k in 46:
+			var x := rng.randf_range(-5.85, 5.85)
+			var x0 := -6.0 + floorf((x + 6.0) / 3.0) * 3.0
+			var u := (x - x0) / 3.0
+			var row: float = [0.95, 0.55][k % 2]
+			var y := row - 0.18 * 4.0 * u * (1.0 - u) - 0.09
+			var mat: int = tints[rng.randi() % tints.size()]
+			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(x, y, 0), Vector3(0.045, 0.04, 0.02)), mat, -1, VoxelGrid.Mode.ADD)
+			g.paint(bounds, func(p: Vector3) -> float:
+				return VoxelSdf.torus(p, Vector3(x, y + 0.05, 0), Vector3(0, 0, 1), 0.03, 0.008), Mat.IRON, -1, VoxelGrid.Mode.ADD)
+	var m := VoxelProp.mesh("hb_love_locks", VERSION, bounds, T0, paint, color, surface_of)
+	var at := arch_base + Vector2(0, 7.6)
+	var node := MeshInstance3D.new()
+	node.name = "LoveLocks"
+	node.mesh = m
+	node.position = Vector3(at.x, field.surface_at(at.x, at.y), at.y)
+	add_child(node)
 
 
 # ---------------------------------------------------------------- bridges
@@ -921,10 +1050,10 @@ func _bridges() -> void:
 			for u: float in [0.0, 1.0]:
 				var base: Vector3 = (deck.call(u) as Vector3) + side * 1.7 * s
 				posts.append(Transform3D(Basis(Vector3.UP, atan2(flat.x, flat.z)), base + Vector3.DOWN * 0.4))
-	VoxelProp.instances(self, "BridgePlanks", plank, planks, 160.0)
-	VoxelProp.instances(self, "BridgePlankNew", new_plank, fresh, 160.0)
-	VoxelProp.instances(self, "BridgeRopes", link, links, 120.0)
-	VoxelProp.instances(self, "BridgePosts", post, posts, 200.0)
+	_place([plank], planks, "BridgePlanks", [160.0])
+	_place([new_plank], fresh, "BridgePlankNew", [160.0])
+	_place([link], links, "BridgeRopes", [120.0])
+	_place([post], posts, "BridgePosts", [200.0])
 	stats["bridge_instances"] = planks.size() + links.size() + posts.size()
 
 
@@ -984,8 +1113,8 @@ func _post_mesh() -> ArrayMesh:
 ## paper ribs; one on Lantern Rise is the pale blue replacement. Posts with a
 ## crossbar where the sim stands them.
 func _lanterns() -> void:
-	var paper := _lantern_mesh(false)
-	var blue := _lantern_mesh(true)
+	var paper: Array[ArrayMesh] = [_lantern_mesh(false)]
+	var blue: Array[ArrayMesh] = [_lantern_mesh(true)]
 	var warm: Array[Transform3D] = []
 	var odd: Array[Transform3D] = []
 	var rise := field.centres[field.index_of("Lantern Rise")]
@@ -1000,9 +1129,7 @@ func _lanterns() -> void:
 			warm.append(xf)
 	for at in arch_lanterns:
 		warm.append(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * 1.6), at))
-	VoxelProp.instances(self, "PaperLanterns", paper, warm, 140.0)
-	VoxelProp.instances(self, "PaperLanternBlue", blue, odd, 140.0)
-	var post := _lantern_post_mesh()
+	var post: Array[ArrayMesh] = [_lantern_post_mesh()]
 	var posts: Array[Transform3D] = []
 	var fc: Vector3 = zone.get_meta("wishing_fountain").centre
 	var spots: Array[Vector2] = []
@@ -1018,10 +1145,39 @@ func _lanterns() -> void:
 		spots.append(Vector2(p.x, p.z))
 	for s in spots:
 		var y := field.surface_at(s.x, s.y)
-		if is_finite(y):
-			posts.append(Transform3D(Basis.IDENTITY, Vector3(s.x, y, s.y)))
-	VoxelProp.instances(self, "LanternPosts", post, posts, 200.0)
-	stats["lanterns"] = props.lanterns.size()
+		if not is_finite(y):
+			continue
+		var yaw := VoxelSdf.hash3(Vector3i(roundi(s.x), 1, roundi(s.y)), 3) * PI
+		var b := Basis(Vector3.UP, yaw)
+		posts.append(Transform3D(b, Vector3(s.x, y, s.y)))
+		# Two lanterns hang from the crossbar's ends.
+		for side: float in [-0.6, 0.6]:
+			warm.append(Transform3D(b.scaled(Vector3.ONE * 0.5), Vector3(s.x, y, s.y) + b * Vector3(side, 2.55, 0)))
+	VoxelProp.place(self, "LanternPosts", post, [140.0], posts, 1)
+	var a := VoxelProp.place(self, "PaperLanterns", paper, [140.0], warm, 0)
+	var c := VoxelProp.place(self, "PaperLanternBlue", blue, [140.0], odd, 0)
+	for root: Node3D in [a, c]:
+		for mmi: MultiMeshInstance3D in root.get_children():
+			var base: Array[Transform3D] = []
+			for i in mmi.multimesh.instance_count:
+				base.append(mmi.multimesh.get_instance_transform(i))
+			_swaying.append([mmi.multimesh, base])
+	stats["lanterns"] = warm.size() + odd.size()
+
+
+## Paper lanterns sway as rigid blocks about their hanging point: about
+## +-6 degrees at 0.3 Hz, phase hashed per lantern.
+func animate(t: float) -> void:
+	for entry: Array in _swaying:
+		var mm: MultiMesh = entry[0]
+		var base: Array[Transform3D] = entry[1]
+		for i in base.size():
+			var b := base[i]
+			var phase := VoxelSdf.hash3(Vector3i(roundi(b.origin.x * 3.0), roundi(b.origin.y), roundi(b.origin.z * 3.0)), 7) * TAU
+			var axis := Vector3(cos(phase), 0, sin(phase))
+			var r := Basis(axis, deg_to_rad(6.0) * sin(TAU * 0.3 * t + phase))
+			var hang := b.basis.y * 0.8
+			mm.set_instance_transform(i, Transform3D(r * b.basis, b.origin + hang - r * hang))
 
 
 func _lantern_mesh(blue: bool) -> ArrayMesh:
@@ -1128,49 +1284,136 @@ func _fountain() -> void:
 		w.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		w.position = node.position + Vector3(0, pool[1], 0)
 		add_child(w)
-	stats["fountain_quads"] = _quads(m)
+	stats["fountain_quads"] = VoxelProp.quads(m)
 
 
-# ---------------------------------------------------------------- cloud sea
+# ---------------------------------------------------------------- clouds and petals
 
-## Voxel puff clouds (T3) on the sim's cloud-tuft spots, plus a lower layer
-## drifting under the islands; the fog does the rest.
+## Voxel puff clouds (the kit's, T3, white) on the sim's cloud-tuft spots; the
+## stage adds the cloud sea below.
 func _clouds() -> void:
-	var variants: Array[ArrayMesh] = []
-	for v in 3:
-		variants.append(_cloud_mesh(v))
 	var lists: Array = [[], [], []]
 	for k in props.clouds.size():
 		var t := props.clouds[k]
 		var s := t.basis.get_scale().x / 24.0
 		(lists[k % 3] as Array).append(Transform3D(Basis(Vector3.UP, k * 1.7).scaled(Vector3.ONE * clampf(s, 0.4, 2.0)), t.origin))
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 77
-	for k in 70:
-		var p := Vector3(rng.randf_range(-330, 330), rng.randf_range(196, 228), rng.randf_range(-240, 260))
-		(lists[k % 3] as Array).append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.8, 1.8)), p))
 	for v in 3:
-		var list: Array[Transform3D] = []
-		list.assign(lists[v])
-		var node := VoxelProp.instances(self, "Clouds%d" % v, variants[v], list)
-		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_place([VoxelStage.puff_mesh(v)], lists[v], "Clouds%d" % v, [0.0])
 
 
-func _cloud_mesh(v: int) -> ArrayMesh:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 300 + v
-	var bounds := AABB(Vector3(-26, -6, -26), Vector3(52, 18, 52))
-	var paint := func(g: VoxelGrid) -> void:
-		for k in 9:
-			var c := Vector3(rng.randf_range(-14, 14), rng.randf_range(0, 4), rng.randf_range(-14, 14))
-			var r := rng.randf_range(5.0, 9.0)
-			g.paint(AABB(c - Vector3(r, r * 0.6, r), Vector3(r, r * 0.6, r) * 2), func(p: Vector3) -> float:
-				return maxf(VoxelSdf.ellipsoid(p, c, Vector3(r, r * 0.55, r)), -1.0 - p.y), Mat.PAPER, -1, VoxelGrid.Mode.ADD)
-	return VoxelProp.mesh("hb_cloud%d" % v, VERSION, bounds, T3, paint, _cloud_colour, func(_m: int) -> int: return 3)
+## A slow river of voxel petals drifting from Blossom Crown over Heart Isle,
+## plus a sparse fall everywhere else.
+func _petal_river() -> void:
+	var box := BoxMesh.new()
+	box.size = Vector3(0.03, 0.03, 0.012)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = PETAL
+	mat.roughness = 0.8
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	box.material = mat
+	for spec: Array in [[Vector3(-80, 305, -70), Vector3(40, 12, 40), 5000], [Vector3(0, 300, 0), Vector3(90, 14, 90), 2500]]:
+		var petals := GPUParticles3D.new()
+		petals.name = "Petals"
+		petals.draw_pass_1 = box
+		petals.amount = spec[2]
+		petals.lifetime = 40.0
+		petals.preprocess = 40.0
+		petals.fixed_fps = 30
+		petals.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		petals.visibility_aabb = AABB(Vector3(-220, -80, -220), Vector3(440, 180, 440))
+		var p := ParticleProcessMaterial.new()
+		p.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+		p.emission_box_extents = spec[1]
+		p.direction = Vector3(0.75, -0.12, 0.62)
+		p.spread = 12.0
+		p.initial_velocity_min = 2.0
+		p.initial_velocity_max = 3.2
+		p.gravity = Vector3(0, -0.15, 0)
+		p.angular_velocity_min = -180.0
+		p.angular_velocity_max = 180.0
+		p.turbulence_enabled = true
+		p.turbulence_noise_strength = 1.5
+		p.turbulence_noise_scale = 6.0
+		p.particle_flag_rotate_y = true
+		p.scale_min = 0.7
+		p.scale_max = 1.4
+		petals.process_material = p
+		petals.position = spec[0]
+		add_child(petals)
 
 
-func _cloud_colour(_mat: int, p: Vector3, c: Vector3i, n: Vector3, occlusion: float, _exposure: float) -> Color:
-	var col := Color("#fbe9ec").lerp(Color("#e7c3cf"), clampf(-n.y, 0.0, 1.0) * 0.6 + occlusion * 0.4)
-	col *= 0.97 + 0.06 * VoxelSdf.hash3(c, 5)
-	col.a = 1.0
-	return col
+# ---------------------------------------------------------------- shots
+
+func shots() -> Array[Dictionary]:
+	var a := arch_base
+	var g := arch_ground
+	var all := ["dusk", "day", "night"]
+	var out: Array[Dictionary] = []
+	# The key image: the Heart Arch from the lawn, Kael at its foot.
+	out.append({"name": "arch", "from": Vector3(a.x + 22, g + 4.5, a.y + 52), "at": Vector3(a.x - 2, g + 20, a.y),
+		"fov": 50.0, "kael": [a + Vector2(4.0, 9.5), PI * 1.1], "times": all})
+	out.append({"name": "overview", "from": Vector3(110, 345, 150), "at": Vector3(-10, 280, -10), "fov": 55.0, "times": all})
+	# Gameplay-ish camera on Kael against the lawn, the blossoms and the sky.
+	var k := a + Vector2(-10.0, 30.0)
+	var ky := ground_at(k.x, k.y) + 1.0
+	out.append({"name": "kael_scale", "from": Vector3(k.x + 3.2, ky + 1.4, k.y + 5.0), "at": Vector3(k.x, ky + 0.3, k.y),
+		"fov": 55.0, "kael": [k, PI * 0.85], "times": all})
+	# The arch's foot: the love locks, the keystone above, Kael beside them.
+	out.append({"name": "arch_detail", "from": Vector3(a.x + 5.5, g + 1.7, a.y + 14.0), "at": Vector3(a.x - 0.5, g + 6.0, a.y),
+		"fov": 62.0, "kael": [a + Vector2(2.6, 9.0), PI * 0.8], "times": ["dusk"]})
+	var fc: Vector3 = zone.get_meta("wishing_fountain").centre
+	out.append({"name": "fountain", "from": Vector3(fc.x + 22, fc.y + 7, fc.z + 20), "at": Vector3(fc.x, fc.y + 3, fc.z),
+		"fov": 50.0, "kael": [Vector2(fc.x + 5.0, fc.z + 5.2), PI * 0.25], "times": ["dusk", "day"]})
+	# Kael on the Heart Isle - Wishing Isle bridge.
+	var hi := field.index_of("Heart Isle")
+	var wi := field.index_of("Wishing Isle")
+	var dir := (field.centres[wi] - field.centres[hi]).normalized()
+	var s0 := field.top_point(hi, atan2(dir.y, dir.x), 0.92)
+	var s1 := field.top_point(wi, atan2(dir.y, dir.x) + PI, 0.92)
+	var u := 0.3
+	var deck := s0.lerp(s1, u) + Vector3.DOWN * s0.distance_to(s1) * 0.07 * 4.0 * u * (1.0 - u)
+	var side := Vector3(-dir.y, 0, dir.x)
+	out.append({"name": "bridge", "from": deck + side * 8.0 + Vector3(0, 2.2, 0) - Vector3(dir.x, 0, dir.y) * 7.0,
+		"at": deck + Vector3(0, 0.8, 0), "fov": 55.0, "kael": [Vector2(deck.x, deck.z), atan2(-dir.x, -dir.y)],
+		"kael_y": deck.y + 0.09, "times": ["dusk", "night"]})
+	# Story corner: the shrine, the bench and the carved stone by the arch.
+	var sh := a + Vector2(-19.0, 9.0)
+	var sy := ground_at(sh.x, sh.y)
+	out.append({"name": "shrine", "from": Vector3(sh.x + 4.5, sy + 1.9, sh.y + 5.5), "at": Vector3(sh.x, sy + 1.0, sh.y),
+		"fov": 50.0, "times": ["dusk"]})
+	var pm := field.centres[field.index_of("Picnic Meadow")] + Vector2(0.0, 16.0)
+	var py := ground_at(pm.x, pm.y)
+	out.append({"name": "picnic", "from": Vector3(pm.x + 6.0, py + 3.2, pm.y + 6.5), "at": Vector3(pm.x, py + 0.4, pm.y),
+		"fov": 50.0, "kael": [pm + Vector2(-1.8, -1.2), PI * 0.3], "times": ["dusk"]})
+	var lr := field.centres[field.index_of("Lantern Rise")]
+	out.append({"name": "lantern_rise", "from": Vector3(lr.x - 40, 296, lr.y + 34), "at": Vector3(lr.x, 284, lr.y),
+		"fov": 50.0, "times": ["night", "dusk"]})
+	# Under Heart Isle: the strata cone, the roots, the cloud sea.
+	out.append({"name": "underside", "from": Vector3(70, 236, 95), "at": Vector3(0, 252, 0), "fov": 55.0, "times": ["dusk"]})
+	return out
+
+
+## A 20 s flight: in from the south, through the Heart Arch, past Blossom
+## Crown, under it, over the Wishing Fountain and back up over Heart Isle.
+func flight() -> Array[Dictionary]:
+	var a := arch_base
+	var g := arch_ground
+	var fc: Vector3 = zone.get_meta("wishing_fountain").centre
+	var bc := field.centres[field.index_of("Blossom Crown")]
+	return [
+		{"from": Vector3(46, g + 34, 130), "at": Vector3(0, g + 20, a.y), "fov": 55.0},
+		{"from": Vector3(16, g + 14, 52), "at": Vector3(0, g + 17, a.y), "fov": 55.0},
+		{"from": Vector3(2, g + 17, a.y + 10), "at": Vector3(-4, g + 16, a.y - 30), "fov": 60.0},
+		{"from": Vector3(-14, g + 15, a.y - 40), "at": Vector3(bc.x, 300, bc.y), "fov": 58.0},
+		{"from": Vector3(-62, 300, -96), "at": Vector3(bc.x, 296, bc.y), "fov": 55.0},
+		{"from": Vector3(-96, 246, -66), "at": Vector3(bc.x, 266, bc.y), "fov": 60.0},
+		{"from": Vector3(-150, 262, -10), "at": Vector3(fc.x, fc.y, fc.z), "fov": 55.0},
+		{"from": Vector3(-118, 292, 98), "at": Vector3(fc.x, fc.y + 2, fc.z), "fov": 55.0},
+		{"from": Vector3(-60, g + 6, 30), "at": Vector3(a.x + 4, g + 2, a.y + 9), "fov": 55.0},
+		{"from": Vector3(-6, g + 4, 2), "at": Vector3(a.x + 4, g + 3, a.y + 9), "fov": 55.0},
+		{"from": Vector3(40, g + 46, 70), "at": Vector3(0, g + 12, -20), "fov": 58.0},
+	]
+
+
+func flight_kael() -> Array:
+	return [arch_base + Vector2(4.0, 9.5), PI * 1.1]
