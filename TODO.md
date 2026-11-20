@@ -11,6 +11,15 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   test), keyboard/mouse bindings, debug overlay (fps, frame time), GUT, CI,
   `AGENTS.md`. Remaining: CI green on GitHub.
 
+- LOOKDEV-HB [desktop] Heartbloom voxel look v2 + the voxel zone kit (`game/world/voxel_zone_kit/`,
+  branch `lookdev/heartbloom-zone`, report `reports/lookdev/heartbloom/v2/`). Waiting on the owner's
+  draft-stills gate. Open for v3:
+  - the arch as true per-block voussoirs at T1, with a bigger keystone heart
+  - strata contrast and ledges on the undersides
+  - a web preset (about 3x over its triangle target now)
+  - the render benchmark on the GTX 1650 (estimated 4-6 ms against the 3 ms budget)
+  - stream, Blossom Falls, petal whirlwinds, fireflies, the nearest-4 lantern OmniLights
+
 ## In review
 - T-UI1 [desktop] HUD restyle (`claude/T-UI1-hud-restyle`, #117): plates, clock, banners (pop-in),
   combo, READ!, control hints, fly-down and beam-clash prompts on `MenuTheme` (skewed navy panels,
