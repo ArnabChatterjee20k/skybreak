@@ -11,6 +11,9 @@ extends Resource
 ## Planar distance of a drop from the fighters' midpoint.
 @export var spawn_distance_min: float = 25.0
 @export var spawn_distance_max: float = 60.0
+## In a 1v1 a drop lands this close instead, inside the fight's framing.
+@export var duel_spawn_distance_min: float = 8.0
+@export var duel_spawn_distance_max: float = 16.0
 ## At most this many spawned pickups on the map at once.
 @export var max_pickups: int = 3
 ## Light-pillar telegraph before the drop starts falling (2 s).

@@ -58,6 +58,14 @@ log it here.
     fighter 0's knockback goes from (-0.47, 1.41, -1.33) to (-1.01, 1.41, -2.83).
   `tools/diag/det_check.gd` total on Linux changes from `2bb1c571b216b165` to
   `7f2c2af91b6d870f`.
+- **Polish batch 3 (media-2 #5)**: `bot_match` re-blessed; `free_for_all` (4 fighters)
+  unchanged. A 1v1's sky drops now land 8-16 m from the fighters' midpoint instead of
+  25-60 m (`PickupTuning.duel_spawn_distance_*`, same rng calls).
+  - `bot_match`: first differs at index 241 (sim tick 242). The first drop spawns at
+    tick 121 closer in, leaves its telegraph at tick 241, and the bots turn toward it.
+  `tools/diag/det_check.gd` total on Linux changes from `7f2c2af91b6d870f` to
+  `715c1e5b39ad708c`.
+
 - **T-DEF3 (escape tools)**: re-blessed. Both sequences match main's goldens up to
   the first escape the scripted inputs trigger (intended):
   - `free_for_all`: first differs at index 1085 (sim tick 1086). Fighter 1, in

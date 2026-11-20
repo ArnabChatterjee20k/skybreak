@@ -101,7 +101,8 @@ func step_tick() -> void:
 		for i in sim.fighters.size():
 			inputs.append(input_override.call(i, sim.current_tick))
 	else:
-		inputs.append(_player_input.read_tick(camera.view_yaw(), camera.orbit))
+		inputs.append(_player_input.read_tick(camera.view_yaw(), camera.orbit,
+				sim.fighters[0].is_grounded()))
 		inputs.append(ai_driver.input_for(sim, 1) if ai_driver else FighterInput.new())
 	sim.tick(inputs)
 	# sim.events holds only this tick's events, so read them every tick.

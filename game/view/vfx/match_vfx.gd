@@ -95,7 +95,7 @@ func follow_fighters(delta: float = 1.0 / 60.0) -> void:
 		return
 	for i in mini(_trails.size(), sim.fighters.size()):
 		var fighter := sim.fighters[i]
-		var lines := wants_speed_lines(fighter, sim.tuning)
+		var lines := wants_speed_lines(fighter, sim.tuning) and not sim.round_over
 		_trails[i].follow(fighter.position, fighter.velocity if lines else Vector3.ZERO, color_of(i), delta)
 
 
@@ -275,9 +275,9 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 			_screen.flash(2, 0.25)
 			_screen.burst_lines(center, color.lerp(Color.WHITE, 0.45), 0.35)
 		&"ko":
+			# One clean beat: flash and colour pop, no speed lines over the contact point.
 			_screen.flash(VfxScreen.MAX_FLASH_FRAMES, 0.4)
 			_screen.color_pop(VfxScreen.SKY_POP, 0.6, 0.25)
-			_screen.burst_lines(center, Color.WHITE, 0.35)
 
 
 func _combo_hits(target: int) -> int:
@@ -296,8 +296,10 @@ func _watch_fighters() -> void:
 		var was := _prev_state[i]
 		var color := color_of(i)
 		var speed := fighter.velocity.length()
+		# After a KO nothing adds trails or rings, so the loser's body reads.
+		var calm := sim.round_over or fighter.is_ko_state()
 		# Dash afterimages, stretched along the dash.
-		if state == S.DASHING and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
+		if not calm and state == S.DASHING and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
 			spawn(&"afterimage", _prev_position[i], color, 1.0, stretch_along(fighter.velocity, speed))
 		# Vanish: a ghost and a burst where they left, a burst where they appear.
 		if state == S.VANISHING and was != S.VANISHING:
@@ -310,7 +312,7 @@ func _watch_fighters() -> void:
 			spawn(&"aura_flare", fighter.position, color)
 		# Sonic ring the moment they break the speed line.
 		var fast := speed >= SONIC_SPEED
-		if fast and _was_fast[i] == 0 and sim.current_tick >= _sonic_ready[i]:
+		if fast and not calm and _was_fast[i] == 0 and sim.current_tick >= _sonic_ready[i]:
 			spawn(&"sonic_ring", fighter.position, color.lerp(Color.WHITE, 0.6), 1.0, facing_along(fighter.velocity))
 			_sonic_ready[i] = sim.current_tick + SONIC_COOLDOWN
 		_was_fast[i] = 1 if fast else 0
@@ -321,7 +323,7 @@ func _watch_fighters() -> void:
 			_land(fighter.position, -_prev_velocity[i].y, fighter.state == S.KNOCKDOWN)
 		# Swing smear on the first active tick.
 		var phase := int(fighter.attack_phase())
-		if phase == FighterState.AttackPhase.ACTIVE and _prev_phase[i] != phase:
+		if not calm and phase == FighterState.AttackPhase.ACTIVE and _prev_phase[i] != phase:
 			_smear(fighter, color)
 		_prev_state[i] = state
 		_prev_phase[i] = phase

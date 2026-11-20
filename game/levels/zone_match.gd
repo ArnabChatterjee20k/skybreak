@@ -51,6 +51,7 @@ var combat_feedback := CombatFeedback.new()
 var combo_counter := ComboCounter.new()
 var match_flow: MatchFlow
 var match_hud := MatchHud.new()
+var control_hints := ControlHints.new()
 var match_audio := MatchAudio.new()
 ## Round cues and music from the match flow (T-127).
 var match_cues := MatchCues.new()
@@ -100,10 +101,18 @@ func _ready() -> void:
 	match_flow.spawn_points = spawn_positions()
 	match_hud.sim = sim
 	match_hud.flow = match_flow
-	for view in fighter_views:
-		match_hud.names.append(view.display_name)
-		match_hud.team_colors.append(Color(view.energy_color, 1.0))
+	for i in fighter_views.size():
+		match_hud.names.append(fighter_views[i].display_name)
+		match_hud.team_colors.append(Color(fighter_views[i].energy_color, 1.0))
+		match_hud.is_ai.append(drivers[i] != null)
+	match_hud.teams = teams
+	match_hud.player = player
 	$Hud.add_child(match_hud)
+	control_hints.sim = sim
+	control_hints.player = player
+	control_hints.keyboard = _player_input
+	control_hints.active = false
+	$Hud.add_child(control_hints)
 	add_child(vfx_prewarm)
 	match_audio.sim = sim
 	# No world on the audio: the ambience stays on this zone (T-D19).
@@ -248,7 +257,8 @@ func step_tick() -> void:
 		elif drivers[i] != null:
 			inputs.append(drivers[i].next_input(sim))
 		elif i == player:
-			inputs.append(_player_input.read_tick(camera.view_yaw(), camera.orbit))
+			inputs.append(_player_input.read_tick(camera.view_yaw(), camera.orbit,
+				sim.fighters[i].is_grounded()))
 		else:
 			inputs.append(FighterInput.new())
 	sim.tick(inputs)
@@ -275,7 +285,7 @@ func _update_camera_bodies() -> void:
 func present_frame(blend: float, delta: float) -> void:
 	for view in fighter_views:
 		view.present(blend, delta)
-		# Drop-line and ring go to the zone's floor, not y = 0.
+		# The ground marker sits on the zone's floor under the fighter, not y = 0.
 		view._height_marker.ground_y = view.fighter.stand_height - sim.tuning.ground_height
 	weapon_layer.present(blend, delta)
 	var me := sim.fighters[player]
@@ -299,3 +309,7 @@ func present_frame(blend: float, delta: float) -> void:
 	opponent_marker.origin = fighter_views[player].position
 	opponent_marker.locked = locked
 	combo_counter.show_combo(sim.fighters, delta)
+	# Hints only for a human at the keyboard: not in scripted or all-AI matches.
+	control_hints.player = player
+	match_hud.player = player
+	control_hints.active = not input_override.is_valid() and drivers[player] == null

@@ -61,7 +61,7 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 | Action | Default | Notes |
 |---|---|---|
 | Move | `W A S D` | Relative to camera. When locked on, W/S = toward/away, A/D = circle-strafe |
-| Ascend / Descend | `Space` / `Left Ctrl` | Hold for continuous flight. Tap Space on the ground = jump |
+| Ascend / Descend | `Space` / `C` | Hold for continuous flight. Tap Space on the ground = jump. **Double-tap `C`** = dive straight down until you land (`Space` cancels). `Left Ctrl` also descends on desktop, never in the web build (Ctrl+W closes the tab) |
 | **Light attack** | `Left Mouse` | Strings, hit-confirms |
 | **Heavy attack** | `Right Mouse` | Direction + heavy = different heavies (see §5.3). Hold = charged smash |
 | **Block** | `E` (hold) | **Tap** just before a hit = perfect block (§5.4) |
@@ -78,9 +78,10 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 | Lock-on toggle | `Middle Mouse` | |
 | Switch target | `Tab` | For later multi-opponent modes |
 | Cycle weapons | `Mouse Wheel` | Unarmed → slot 1 → slot 2 (wraps) |
-| Quick-swap weapon | `C` | Toggles between the current and the last-used weapon |
+| Quick-swap weapon | `Y` | Toggles between the current and the last-used weapon |
 | Camera | Mouse movement | Free orbit when unlocked; small offset orbit when locked (§4) |
 | Pause / menu | `Esc` | |
+| Control hints | `H` | Toggles the on-screen controls strip. Shown by default for the first matches, then remembered |
 
 **Input buffer:** 6 frames for every button (press early, it still comes out). **Shortcuts for execution**, not auto-combos: a 4-hit light string is *4 presses with timing*, not 1 held button.
 
@@ -133,7 +134,7 @@ The camera is a gameplay system, not a presentation detail. Rules:
 | W + RMB | Breaker | Guard damage ×2, slow 18 f startup | −4 |
 | S + RMB | Launcher | Pops the target up (aerial follow-up) | −10 |
 | Space + RMB | Rising | Anti-air, upper-body invincible frames 4–9 | −14 |
-| Ctrl + RMB | Spike | Slams the target down (ground bounce or knockdown) | −10 |
+| C + RMB | Spike | Slams the target down (ground bounce or knockdown) | −10 |
 | A/D + RMB | Sweep | Wide arc, hits sidesteppers | −6 |
 | Hold RMB | Charged Smash | 3 charge levels; level 3 crushes guard and wall-splats | level 3: guard break if guard < 40 |
 
@@ -176,7 +177,7 @@ The camera is a gameplay system, not a presentation detail. Rules:
 
 The classic arena-fighter problem: teleport, counter-teleport, counter-counter-teleport, forever. Skybreak's rules:
 
-1. A **vanish counter** puts the defender behind, above or below the attacker. The **defender chooses** with the direction held on the tick the vanish triggers: `Space` = above, `Ctrl` = below, anything else (including `S`, nothing, or both `Space` and `Ctrl`) = behind. Movement doesn't apply while blocking, in hitstun or during a vanish, so these keys can't collide with ascend, descend or back-dash. It's a guess, not a reflex. The attacker's counter-vanish guess is read the same way on the tick they press it.
+1. A **vanish counter** puts the defender behind, above or below the attacker. The **defender chooses** with the direction held on the tick the vanish triggers: `Space` = above, descend (`C`) = below, anything else (including `S`, nothing, or both `Space` and `C`) = behind. Movement doesn't apply while blocking, in hitstun or during a vanish, so these keys can't collide with ascend, descend or back-dash. It's a guess, not a reflex. The attacker's counter-vanish guess is read the same way on the tick they press it.
 2. The attacker can answer in two ways:
    - **Counter-vanish** (`Shift+E`, costs 40 ki): this only works against a vanish *in the direction they press*. A wrong guess wastes the ki.
    - **Sense** (tap `E` within 12 f after the opponent disappears): the attacker turns and blocks the incoming strike. It's cheap (0 ki), but only blocks, so the attacker loses the advantage. Sense is its own input context: a tap of `E` while an opponent is vanished is a Sense attempt, **not** a missed perfect block, so it never triggers the 20 f perfect-block lockout. One Sense attempt per vanish; a wrong-timed tap uses it up.
@@ -198,7 +199,7 @@ After a Smash/Blowback sends the opponent flying:
 On knockdown, the defender picks:
 - **Tech roll** forward, back or sideways (WASD + Space within 10 f of landing)
 - **Neutral wakeup** (do nothing; up after 40 f)
-- **Delayed wakeup** (hold Ctrl; up after 70 f, which messes with the attacker's timing)
+- **Delayed wakeup** (hold descend; up after 70 f, which messes with the attacker's timing)
 
 Every wakeup has 6 f of invincibility, then is vulnerable. The attacker reads it and sets up a strike, a grab or a bait. The roll covers 3.5 m in 18 f; neutral and delayed wakeups count from landing (T-DEF3). Attacking out of a wakeup ends its invincibility (no invincible reversals).
 
@@ -282,7 +283,7 @@ Rules that keep ranged weapons fair in a melee-first game:
 - You always have **Unarmed** plus **two weapon slots**. Any mix works: two melee, two ranged, or one of each.
 - **Switching:**
   - `Mouse Wheel` cycles Unarmed → slot 1 → slot 2.
-  - `C` quick-swaps between the current weapon and the last one you used, the fastest way to flip between, say, a revolver and a blade.
+  - `Y` quick-swaps between the current weapon and the last one you used, the fastest way to flip between, say, a revolver and a blade.
 - **Swap speed:** a swap takes **6 ticks** from neutral (no attacks during it) and is **buffered** like any press, so it comes out the moment you're free.
 - **Swap-cancel (the mastery tool):** during a move's cancel window, **after contact**, you can swap weapons for **10 ki** and immediately use the new weapon's next move. It sits at the SPECIAL level in the cancel hierarchy (§5.3), so it goes after heavies and before vanish and ultimate. A combo like "blade string → swap-cancel → revolver fan → vanish" becomes possible, at a meter cost.
 - **Picking up with full slots:** the new weapon replaces the weapon **in your hand** (that one drops to the ground). If you're unarmed, it fills the first empty slot, or slot 1 when both are full.
