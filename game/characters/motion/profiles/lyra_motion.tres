@@ -22,3 +22,7 @@ dive_pitch = 92.0
 hold_forward = 0.15
 hold_out = 0.1
 heavy_at_side = true
+dodge_lean_degrees = 24.0
+dodge_roll_degrees = 30.0
+dodge_twist_degrees = 70.0
+dodge_drop = 0.18

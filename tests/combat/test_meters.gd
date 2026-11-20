@@ -190,11 +190,11 @@ func test_toggling_lock_on_does_not_cancel_charging() -> void:
 
 # Ki costs on movement
 
-func test_a_dash_costs_its_ki() -> void:
+func test_a_dodge_costs_no_ki() -> void:
 	_start()
 	_drive(1, DASH, RIGHT)
-	assert_eq(_fighter().dash_kind, FighterState.DashKind.STEP)
-	assert_eq(_fighter().ki, (50 - _meters.dash_ki_cost) * UNIT + _meters.ki_passive_per_second)
+	assert_eq(_fighter().dash_kind, FighterState.DashKind.DODGE)
+	assert_eq(_fighter().ki, 50 * UNIT + _meters.ki_passive_per_second)
 
 
 func test_a_rush_dash_costs_its_ki() -> void:
@@ -212,12 +212,11 @@ func test_a_vanish_step_costs_its_ki() -> void:
 	assert_eq(_fighter().ki, (50 - _meters.vanish_step_ki_cost) * UNIT + _meters.ki_passive_per_second)
 
 
-func test_a_dash_is_refused_without_enough_ki() -> void:
+func test_a_dodge_comes_out_with_no_ki() -> void:
 	_start()
-	_fighter().ki = _meters.dash_ki_cost * UNIT - 1
+	_fighter().ki = 0
 	_drive(1, DASH, RIGHT)
-	assert_ne(_fighter().state, FighterState.State.DASHING)
-	assert_eq(_fighter().ki, _meters.dash_ki_cost * UNIT - 1 + _meters.ki_passive_per_second)
+	assert_eq(_fighter().state, FighterState.State.DASHING)
 
 
 func test_a_rush_dash_is_refused_without_enough_ki() -> void:
@@ -237,10 +236,11 @@ func test_a_vanish_step_is_refused_without_enough_ki_and_does_not_dash_instead()
 	assert_eq(_fighter().ki, _meters.vanish_step_ki_cost * UNIT - 1 + _meters.ki_passive_per_second)
 
 
-func test_a_refused_dash_comes_out_once_ki_arrives_inside_the_buffer() -> void:
+func test_a_refused_rush_comes_out_once_ki_arrives_inside_the_buffer() -> void:
 	_start()
-	_fighter().ki = _meters.dash_ki_cost * UNIT - _meters.ki_passive_per_second
-	_drive(1, DASH, RIGHT)
+	_sim.lock_everyone_onto_nearest()
+	_fighter().ki = _meters.rush_dash_ki_cost * UNIT - _meters.ki_passive_per_second
+	_drive(1, DASH, FORWARD)
 	assert_ne(_fighter().state, FighterState.State.DASHING)
 	_drive(1, DASH, RIGHT)
 	assert_eq(_fighter().state, FighterState.State.DASHING)
@@ -443,13 +443,14 @@ func test_state_hash_covers_the_meters() -> void:
 
 func test_a_custom_meter_tuning_changes_the_costs() -> void:
 	var meters := MeterTuning.new()
-	meters.dash_ki_cost = 50
+	meters.rush_dash_ki_cost = 50
 	_sim = CombatSim.new(0, null, meters)
 	_meters = meters
 	_sim.add_fighter(Vector3.ZERO)
 	_sim.add_fighter(Vector3(0, 0, -60))
+	_sim.lock_everyone_onto_nearest()
 	_previous = [FighterInput.new(), FighterInput.new()]
-	_drive(1, DASH, RIGHT)
+	_drive(1, DASH, Vector2(0, 1))
 	assert_eq(_fighter().ki, _meters.ki_passive_per_second)
 
 

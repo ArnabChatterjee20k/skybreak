@@ -26,7 +26,8 @@ func test_reset_puts_the_pair_at_the_centre_inside_light_range() -> void:
 
 
 func test_infinite_meters_keep_ki_full_after_dashing() -> void:
-	_bench.move = Vector2(1, 0)
+	# A rush dash costs ki (a dodge is free).
+	_bench.move = Vector2(0, 1)
 	_bench.tap(DASH)
 	_bench.tick(3)
 	assert_eq(_bench.player().ki, _bench.sim.meter_tuning.ki_max * UNIT)
@@ -34,7 +35,8 @@ func test_infinite_meters_keep_ki_full_after_dashing() -> void:
 
 func test_without_infinite_meters_dashing_spends_ki() -> void:
 	_bench.session.infinite_meters = false
-	_bench.move = Vector2(1, 0)
+	# A rush dash costs ki (a dodge is free).
+	_bench.move = Vector2(0, 1)
 	_bench.tap(DASH)
 	assert_lt(_bench.player().ki, _bench.sim.meter_tuning.ki_max * UNIT)
 

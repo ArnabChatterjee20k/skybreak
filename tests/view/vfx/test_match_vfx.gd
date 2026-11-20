@@ -400,10 +400,10 @@ func test_speed_lines_skip_tapped_dashes_and_keep_long_dashes_boost_and_top_spee
 	var tuning := MovementTuning.new()
 	var fighter := FighterState.new()
 	fighter.state = S.DASHING
-	fighter.dash_kind = FighterState.DashKind.STEP
+	fighter.dash_kind = FighterState.DashKind.DODGE
 	fighter.state_ticks = 3
 	fighter.velocity = Vector3(48, 0, 0)
-	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "a tapped dash")
+	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "a dodge (tapped dash)")
 	fighter.dash_kind = FighterState.DashKind.SUSTAINED
 	assert_true(MatchVfx.wants_speed_lines(fighter, tuning), "a flight boost")
 	fighter.dash_kind = FighterState.DashKind.RUSH
