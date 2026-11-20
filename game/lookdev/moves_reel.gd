@@ -158,6 +158,9 @@ var _cam_height := 2.1
 var _cam_yaw := 30.0
 var _cam_snap := true
 var _cam_side := -1.0
+## Most the smoothed camera target may trail the hero (m), flat and vertical.
+const CAM_LEASH_FLAT := 0.5
+const CAM_LEASH_UP := 0.3
 var _fx: Array[Node3D] = []
 var _shots: Array[Dictionary] = []
 var _kicking := false
@@ -1176,6 +1179,10 @@ func _camera() -> void:
 		_cam_yaw = yaw_goal
 		_cam_snap = false
 	_cam_target = _cam_target.lerp(target, 0.12)
+	# Leash the lag so a jump apex, a landing or a run never leaves the frame.
+	var lag := _cam_target - target
+	var flat := Vector2(lag.x, lag.z).limit_length(CAM_LEASH_FLAT)
+	_cam_target = target + Vector3(flat.x, clampf(lag.y, -CAM_LEASH_UP, CAM_LEASH_UP), flat.y)
 	_cam_height = lerpf(_cam_height, height, 0.06)
 	_cam_yaw = rad_to_deg(lerp_angle(deg_to_rad(_cam_yaw), deg_to_rad(yaw_goal), 0.06))
 	# Stay on the open side of the cyclorama (the back wall is at -Z).
