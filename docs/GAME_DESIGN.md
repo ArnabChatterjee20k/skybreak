@@ -209,6 +209,19 @@ Every wakeup has 6 f of invincibility, then is vulnerable. The attacker reads it
 - **Beam Clash:** if two beams meet, a **rhythm minigame** starts. Four to eight beat prompts on `Q`/`E`/`F`/`R` scroll toward a hit line; accuracy pushes your beam forward. Spending ki mid-clash adds push. The loser takes the beam's full damage; the winner gains 50 burst. Mashing does nothing, because only on-beat presses count.
 - **Anti-turtle:** charging ki is loud (aura sound and visual tell) and leaves you vulnerable, so the opponent can always punish a charger by rush-dashing.
 
+**As built (T-KI1).** Numbers live in `game/combat/ki/kits/<legend>_ki_kit.tres` and `default_ki_tuning.tres`.
+
+| | Kael | Vexa | Brann | Lyra |
+|---|---|---|---|---|
+| Tap blast (Q) | 8 f, 120 dmg, 44 m/s | 8 f, 100, 52 m/s, 9 f recovery | 8 f, 150, 34 m/s, big | 8 f, 110, 40 m/s, **homing** 2.4 rad/s |
+| Charged blast (hold Q past 8 f) | 22 f, 700 | 22 f, 620 | 24 f, 820 | 22 f, 700 |
+| Beam (1) | Dawnspear: 50 ki, 26 f, 1500 | Hexline: 45 ki, 24 f, 1300, thin | Forgemaw: 60 ki, 30 f, 1800, short and wide | Constellation Ray: 40 ki, 26 f, 1300, **splits in three** |
+| Beam ultimate (4, 2 burst stocks) | Zenith Lance 2800 | Umbral Rift 2500 | Magma Torrent 3100 | Starfall Array 2700 |
+
+- Projectile hits use the ranged 80% combo start (§5.11). Hitstop freezes only the target.
+- A beam's aim follows the target until 12 f before it fires, then its line is fixed: a sidestep after that point makes it whiff. A whiff adds 30 f of recovery. It hits once (blowback) and stops at the first body it hits or that blocks it; blocking costs 2 guard and 6 chip per tick and pushes the blocker along it. Beams eat oncoming blasts.
+- Beam clash: beats start 36 f after the clash, then one every 22 f; a press within 4 f of its beat with the right key pushes 10 (16 within 1 f); a wrong or off-beat press gives 6 back; up to 3 presses of `1` spend 10 ki for 6 push. The starting push favours the stronger beam (1 per 100 damage).
+
 ### 5.9 Transformations and ultimates
 
 - **Transform** (`T`, 1 burst stock): a 1.5 s cinematic (skippable, invincible). Gives +15% damage and speed, new specials and a new ultimate, but **drains 5 ki/s**. When ki hits 0 you **revert with Exhaustion** (2 s of slower movement and no dashes). Timing a transformation is a strategic decision.

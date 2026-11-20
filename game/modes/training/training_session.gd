@@ -35,6 +35,7 @@ func _init(training_sim: CombatSim) -> void:
 ## The pair back at the centre facing each other, everything calm and refilled.
 func reset_positions() -> void:
 	sim.projectiles = []
+	KiRules.reset(sim)
 	var starts := [RESET_CENTRE + Vector3(0, 0, RESET_GAP * 0.5), RESET_CENTRE - Vector3(0, 0, RESET_GAP * 0.5)]
 	for i in sim.fighters.size():
 		var fighter := sim.fighters[i]

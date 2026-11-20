@@ -148,3 +148,15 @@ func test_the_ki_game_survives_snapshot_and_restore() -> void:
 	var other := FighterAI.new(0, 4, 5)
 	other.restore(saved)
 	assert_eq(other._ki_game.snapshot_values(), ai._ki_game.snapshot_values())
+
+
+func test_once_a_beam_is_in_its_recovery_the_ai_stops_guarding_it() -> void:
+	var sim := CombatSim.new(3)
+	sim.add_fighter(Vector3(0, 1, 15))
+	sim.add_fighter(Vector3(0, 1, -15))
+	sim.lock_everyone_onto_nearest()
+	var kit := KiRules.kit_of(sim.fighters[0])
+	KiRules._begin(sim, 0, kit.beam)
+	sim.fighters[0].move_tick = kit.beam.recovery_start_tick() + 2
+	var ai := FighterAI.new(1, 5, 3)
+	assert_false(ai._ki_game.answer_beams(ai, sim, sim.fighters[1], FighterInput.new()), "free to punish")

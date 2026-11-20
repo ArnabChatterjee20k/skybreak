@@ -13,6 +13,18 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-KI1 [desktop] Ki blasts and beams as sim attacks (GAME_DESIGN §5.8): `KiRules` + per-legend
+  `KiKit` (`game/combat/ki/`): tap Q blast (4 ki), hold Q charged blast (20 ki, not dash-soaked),
+  beam special on 1 (40-60 ki, 24-30 f tell, aim locks 12 f before firing, +30 f whiff recovery),
+  beam ultimate on 4 (2 burst stocks); perfect block reflects blasts, dash soaks tap blasts for
+  2 ki, blocked beams grind 2 guard/tick, beams eat blasts and stop at the first body; Lyra's tap
+  blasts home and her beam splits in three; rhythm beam clash (6 beats on Q/E/F/R, mashing loses
+  ground, ki spends push, winner +50 burst, loser takes the beam). `KiLayer` view (shots, charge
+  orb, beams at sim thickness, clash prompt), ki sounds and charge hum, `AIKi` zoning/beams/tell
+  reading/clash beats, QA ki counts, DetCheck ki duel. Open: beam ultimate cinematic, beam clash
+  camera framing (developer), dedicated ki clips per legend (palm thrust stands in), new ki
+  sounds (existing cues re-pitched), dodge (T-DEF2) i-frames vs beams once it lands.
+
 - T-D36 [desktop] Playable web build: exports kept as text resources (Godot 4.7.2's binary
   conversion emptied zone spawn points, so every exported match crashed), webrtc-native left
   out of the Web preset, no Quit on web, `tools/web/match_smoke_test.js` (menu -> vs AI, 30 s).

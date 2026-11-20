@@ -188,8 +188,8 @@ func answer_beams(ai: FighterAI, sim: CombatSim, me: FighterState, plan: Fighter
 		if j == ai.fighter_index or other.team == me.team or other.state != _S.ATTACKING:
 			continue
 		var kit := KiRules.kit_of(other)
-		if not kit.is_beam(other.move):
-			continue
+		if not kit.is_beam(other.move) or other.move_tick >= other.move.recovery_start_tick():
+			continue # In its recovery the beam is over: time to punish, not to guard.
 		var to_me := me.position - other.position
 		var forward := other.aim_basis() * Vector3.FORWARD
 		if to_me.length() > kit.range_for(other.move) + 2.0 or to_me.normalized().dot(forward) < 0.9:
