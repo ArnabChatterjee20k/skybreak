@@ -11,7 +11,7 @@ const SHADER := preload("res://game/characters/voxel_kit/voxel_figure.gdshader")
 const CACHE_DIR := "user://voxel_prop_cache/"
 ## Side of a placement tile (m): each tile is its own MultiMesh, so visibility
 ## ranges and frustum culling work per tile, not per zone.
-const TILE := 24.0
+const TILE := 48.0
 
 ## The shared surfaces a design's surface(mat) picks from.
 enum Surf { MATTE, METAL, WATER, PETAL, GLOW, BARK }
@@ -87,15 +87,19 @@ static func quads(m: Mesh) -> int:
 ## Places copies of a mesh with LOD tiers, tiled. meshes: finest first;
 ## ranges: where each tier ends (m), same length (0 = never ends). Tiers fade
 ## into each other over `fade` m. shadow_tiers: how many of the finest tiers
-## cast shadows (the far ones never do). Returns the parent node.
+## cast shadows (the far ones never do). tile: the tile side (m); 0 picks
+## TILE, or a third of it for short-range scatter (first range < 40 m), so
+## the range switches small patches. Returns the parent node.
 static func place(parent: Node3D, node_name: String, meshes: Array[ArrayMesh], ranges: Array,
-		transforms: Array[Transform3D], shadow_tiers := 1, fade := 6.0) -> Node3D:
+		transforms: Array[Transform3D], shadow_tiers := 1, fade := 6.0, tile := 0.0) -> Node3D:
+	if tile <= 0.0:
+		tile = TILE / 3.0 if float(ranges[0]) > 0.0 and float(ranges[0]) < 40.0 else TILE
 	var root := Node3D.new()
 	root.name = node_name
 	parent.add_child(root)
 	var tiles := {}
 	for xf in transforms:
-		var key := Vector2i(floori(xf.origin.x / TILE), floori(xf.origin.z / TILE))
+		var key := Vector2i(floori(xf.origin.x / tile), floori(xf.origin.z / tile))
 		if not tiles.has(key):
 			tiles[key] = [] as Array[Transform3D]
 		(tiles[key] as Array[Transform3D]).append(xf)

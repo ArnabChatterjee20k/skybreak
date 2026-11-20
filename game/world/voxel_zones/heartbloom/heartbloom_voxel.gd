@@ -13,7 +13,7 @@ extends VoxelZone
 const LIP := 1.6
 const TERRAIN_SHADER := preload("res://game/world/voxel_zone_kit/voxel_terrain.gdshader")
 ## Bump to rebuild cached prop meshes after changing a design below.
-const VERSION := 5
+const VERSION := 6
 const FINE_ISLANDS := ["Heart Isle", "Wishing Isle", "Lantern Rise", "Blossom Crown", "Picnic Meadow"]
 ## Islands that get the lawn scatter (tufts, flowers, stones).
 const SCATTER_ISLANDS := ["Heart Isle", "Wishing Isle", "Lantern Rise", "Blossom Crown", "Picnic Meadow"]
@@ -57,6 +57,7 @@ var arch_lanterns: Array[Vector3] = []
 ## Hanging lanterns that sway (node, phase).
 var _swaying: Array = []
 var _petals: GPUParticles3D
+var _cell_scale := 1.0
 
 
 func _init() -> void:
@@ -161,7 +162,7 @@ func _island_top(i: int, cell: float) -> Node3D:
 func _island_underside(i: int, cell: float) -> Node3D:
 	var b := _island_bounds(i)
 	var hf := VoxelHeightfield.new(cell, b.position, b.end, true)
-	var slab := 3 if cell > 1.0 else 4
+	var slab := 2 if cell > 1.0 else 6
 	var c := field.centres[i]
 	for z in hf.size.y:
 		for x in hf.size.x:
@@ -174,7 +175,7 @@ func _island_underside(i: int, cell: float) -> Node3D:
 			var band := floori(raw / slab)
 			# Each slab's edge wobbles on its own: some ledges stick out further.
 			var wob := sin(a * (3.0 + band % 3) + band * 1.7) * 0.5 + sin(a * 7.0 - band * 2.3) * 0.3
-			var bottom := (floori((raw + wob * slab * 0.9) / slab)) * slab
+			var bottom := (floori((raw + wob * slab * 1.6) / slab)) * slab
 			var cap := roundi((field.top_profile(i, s) - LIP) / cell) + 1
 			if bottom >= cap:
 				continue
@@ -260,8 +261,8 @@ func _lawn_colour(w: Vector2, x: int, z: int, s: float, paths: Array) -> Color:
 	# Petal drifts: under the canopies, thinning out downwind in streaks.
 	var drift := shade * shade
 	var streak := 0.5 + 0.5 * sin(w.x * 1.7 + w.y * 0.9)
-	if VoxelSdf.hash3(cell_id, 23) < drift * (0.35 + 0.4 * streak) + 0.002:
-		return _ao(PETAL.lerp(Color("#fde6ec"), VoxelSdf.hash3(cell_id, 31) * 0.5), shade * 0.4)
+	if VoxelSdf.hash3(cell_id, 23) < drift * (0.5 + 0.45 * streak) + 0.003:
+		return _ao(COLORS[Mat.BLOSSOM].lerp(PETAL, VoxelSdf.hash3(cell_id, 31)), shade * 0.4)
 	# Clover and tiny flowers in clumps.
 	var clump := sin(w.x * 0.9) * sin(w.y * 1.1)
 	if clump > 0.75 and h < 0.12:
@@ -275,6 +276,24 @@ func _lawn_colour(w: Vector2, x: int, z: int, s: float, paths: Array) -> Color:
 static func _ao(c: Color, shade: float) -> Color:
 	var k := 1.0 - 0.35 * shade
 	return Color(c.r * k * (1.0 - 0.04 * shade), c.g * k, c.b * k * (1.0 + 0.05 * shade), 0.0)
+
+
+## A prop mesh at this zone's VERSION, its cell scaled by _cell_scale (LOD).
+func _mesh(key: String, bounds: AABB, cell: float, paint: Callable, soft := []) -> ArrayMesh:
+	return VoxelProp.mesh(key, VERSION, bounds, cell * _cell_scale, paint, color, surface_of, soft)
+
+
+## The design make() builds, at k times its cell: a coarse LOD tier.
+func _coarse(make: Callable, k := 4.0) -> ArrayMesh:
+	_cell_scale = k
+	var m: ArrayMesh = make.call()
+	_cell_scale = 1.0
+	return m
+
+
+## Fine and coarse tiers of a design.
+func _lod(make: Callable, k := 4.0) -> Array[ArrayMesh]:
+	return [make.call(), _coarse(make, k)]
 
 
 # ---------------------------------------------------------------- shared colouring
@@ -382,8 +401,8 @@ func _arch() -> void:
 					return bl.z < T2 * 0.5 or (absf(f.y) < T2 * 0.5 and absf(p.z) > half_depth - T2)
 				# Moss grows in the joints low down and on the shaded tops; mortar elsewhere.
 				var mossy := func(p: Vector3, c: Vector3i) -> bool:
-					var low := 1.0 - smoothstep(4.0, 18.0, p.y)
-					return VoxelSdf.hash3(c, 41) < 0.08 + 0.55 * low
+					var low := 1.0 - smoothstep(2.0, 7.0, p.y)
+					return VoxelSdf.hash3(c, 41) < 0.04 + 0.16 * low
 				g.paint_surface(box, func(p: Vector3, c: Vector3i) -> bool:
 					return joint.call(p) and not mossy.call(p, c), Mat.MORTAR, [Mat.ROSE, Mat.ROSE_DARK, Mat.STONE])
 				g.paint_surface(box, func(p: Vector3, c: Vector3i) -> bool:
@@ -423,7 +442,7 @@ func _arch() -> void:
 			var r := Vector3((q.x + q.y) * 0.7071, (q.y - q.x) * 0.7071, q.z)
 			return VoxelSdf.box(r, Vector3.ZERO, hb)
 		g.paint(AABB(key_c - Vector3(5, 5, 5), Vector3(10, 10, 10)), func(p: Vector3) -> float:
-			return diamond.call(p, Vector3(3.2, 3.2, 3.5)), Mat.SAND_A, -1, VoxelGrid.Mode.FILL)
+			return diamond.call(p, Vector3(3.2, 3.2, 3.5)), Mat.ROSE_DARK, -1, VoxelGrid.Mode.FILL)
 		# The gold heart stands out of both faces in relief.
 		g.paint(AABB(key_c - Vector3(3.5, 3.5, 4.6), Vector3(7, 7, 9.2)), func(p: Vector3) -> float:
 			var q := Vector2(p.x - key_c.x, p.y - key_c.y + 0.5) / 2.6
@@ -433,14 +452,14 @@ func _arch() -> void:
 		g.paint_surface(AABB(key_c - Vector3(5, 5, 5), Vector3(10, 10, 10)), func(p: Vector3, _c: Vector3i) -> bool:
 			var q := p - key_c
 			return absf(absf((q.x + q.y) * 0.7071) - 3.0) < T2 * 0.6 or absf(absf((q.y - q.x) * 0.7071) - 3.0) < T2 * 0.6,
-			Mat.MORTAR, [Mat.SAND_A])
+			Mat.MORTAR, [Mat.ROSE_DARK])
 		g.paint(AABB(Vector3(-7.2, -0.6, -5.2), Vector3(14.4, 1.6, 10.4)), func(p: Vector3) -> float:
 			return VoxelSdf.box(p, Vector3(0, 0.2, 0), Vector3(7.0, 0.7, 5.0)), Mat.STONE, -1, VoxelGrid.Mode.FILL)
 		g.paint(AABB(Vector3(-4.7, 0.5, -3.7), Vector3(9.4, 1.6, 7.4)), func(p: Vector3) -> float:
 			return VoxelSdf.box(p, Vector3(0, 1.4, 0), Vector3(4.5, 0.7, 3.5)), Mat.STONE, -1, VoxelGrid.Mode.FILL)
 		g.paint_surface(AABB(Vector3(-7.2, -0.6, -5.2), Vector3(14.4, 2.8, 10.4)), func(p: Vector3, c: Vector3i) -> bool:
 			return p.y < 0.5 and VoxelSdf.hash3(c, 43) < 0.3, Mat.MOSS, [Mat.STONE])
-	var m := VoxelProp.mesh("hb_arch", VERSION, bounds, T2, paint, color, surface_of)
+	var m := _mesh("hb_arch", bounds, T2, paint)
 	var node := MeshInstance3D.new()
 	node.name = "HeartArch"
 	node.mesh = m
@@ -564,7 +583,7 @@ func _tree_mesh(v: int, cell: float) -> ArrayMesh:
 			return VoxelSdf.hash3(c, 61) < 0.2, Mat.BLOSSOM_LIGHT, [Mat.BLOSSOM])
 		g.paint_surface(bounds, func(_p: Vector3, c: Vector3i) -> bool:
 			return VoxelSdf.hash3(c, 67) < 0.12, Mat.BLOSSOM_DEEP, [Mat.BLOSSOM])
-	return VoxelProp.mesh("hb_tree%d" % v, VERSION, bounds, cell, paint, color, surface_of, [Mat.BLOSSOM])
+	return _mesh("hb_tree%d" % v, bounds, cell, paint, [Mat.BLOSSOM])
 
 
 # ---------------------------------------------------------------- lawn scatter
@@ -579,7 +598,6 @@ func _scatter() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 4242
 	var fc: Vector3 = zone.get_meta("wishing_fountain").centre
-	var drifts: Array = [[], []]
 	for name: String in SCATTER_ISLANDS:
 		var i := field.index_of(name)
 		var paths := _paths(i)
@@ -613,21 +631,11 @@ func _scatter() -> void:
 					if is_finite(y):
 						(stones[k % 3] as Array).append(Transform3D(Basis(Vector3.UP, atan2(dir.x, dir.y) + rng.randf_range(-0.3, 0.3))
 							.scaled(Vector3(0.7, 0.55, 0.9)), Vector3(w.x, y - 0.05, w.y)))
-	# Petal drifts on the lawn under every canopy, thickest downwind.
-	for t in props.canopies:
-		var r := t.basis.get_scale().x * 0.5
-		for k in 7:
-			var a := rng.randf() * TAU
-			var w := Vector2(t.origin.x, t.origin.z) + Vector2(cos(a), sin(a)) * r * sqrt(rng.randf()) + Vector2(0.8, 0.6) * rng.randf() * r * 0.5
-			var y := field.surface_at(w.x, w.y, t.origin.y)
-			if is_finite(y) and absf(y - t.origin.y) < 12.0:
-				(drifts[k % 2] as Array).append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.8, 1.5)), Vector3(w.x, y, w.y)))
 	for v in 3:
-		_place([_tuft_mesh(v)], tufts[v], "Tufts%d" % v, [30.0])
-		_place([_stone_mesh(v, T1 * 0.5), _stone_mesh(v, T1)], stones[v], "Stones%d" % v, [35.0, 90.0])
+		_place([_tuft_mesh(v)], tufts[v], "Tufts%d" % v, [26.0])
+		_place(_lod(_stone_mesh.bind(v), 2.0), stones[v], "Stones%d" % v, [30.0, 80.0])
 	for v in 2:
-		_place([_flower_mesh(v)], flowers[v], "Flowers%d" % v, [30.0])
-		_place([_drift_mesh(v)], drifts[v], "PetalDrifts%d" % v, [55.0])
+		_place([_flower_mesh(v)], flowers[v], "Flowers%d" % v, [26.0])
 	stats["scatter"] = tufts.reduce(func(acc, l): return acc + l.size(), 0) + flowers.reduce(func(acc, l): return acc + l.size(), 0) \
 		+ stones.reduce(func(acc, l): return acc + l.size(), 0)
 
@@ -670,7 +678,7 @@ func _tuft_mesh(v: int) -> ArrayMesh:
 			var tip := base + Vector3(rng.randf_range(-0.15, 0.15), rng.randf_range(0.22, 0.42), rng.randf_range(-0.15, 0.15))
 			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.capsule(p, base, tip, 0.03, 0.012),
 				Mat.GRASS_A if k % 3 else Mat.GRASS_B, -1, VoxelGrid.Mode.ADD)
-	return VoxelProp.mesh("hb_tuft%d" % v, VERSION, bounds, T0 * 1.5, paint, color, surface_of)
+	return _mesh("hb_tuft%d" % v, bounds, T0 * 1.5, paint)
 
 
 func _flower_mesh(v: int) -> ArrayMesh:
@@ -685,22 +693,7 @@ func _flower_mesh(v: int) -> ArrayMesh:
 			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.capsule(p, base, head, 0.012, 0.012), Mat.GRASS_B)
 			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.ellipsoid(p, head, Vector3(0.05, 0.025, 0.05)), petal, -1, VoxelGrid.Mode.ADD)
 			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.sphere(p, head + Vector3(0, 0.02, 0), 0.018), Mat.FLOWER_YELLOW if v == 0 else Mat.CAP, -1, VoxelGrid.Mode.ADD)
-	return VoxelProp.mesh("hb_flower%d" % v, VERSION, bounds, T0, paint, color, surface_of)
-
-
-## A drift of fallen petals: a flat, ragged clump of 1-voxel flecks.
-func _drift_mesh(v: int) -> ArrayMesh:
-	var bounds := AABB(Vector3(-1.2, -0.05, -1.2), Vector3(2.4, 0.15, 2.4))
-	var paint := func(g: VoxelGrid) -> void:
-		g.paint(bounds, func(p: Vector3) -> float:
-			var r := Vector2(p.x * (1.0 + 0.4 * v), p.z).length()
-			return maxf(r - 1.0 - 0.15 * sin(atan2(p.z, p.x) * 5.0 + v), absf(p.y) - T0 * 0.5), Mat.BLOSSOM_LIGHT)
-		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
-			var r := Vector2(p.x, p.z).length()
-			return VoxelSdf.hash3(c, 91 + v) < smoothstep(0.3, 1.1, r) * 0.85, Mat.EMPTY, [Mat.BLOSSOM_LIGHT])
-		g.paint_surface(bounds, func(_p: Vector3, c: Vector3i) -> bool:
-			return VoxelSdf.hash3(c, 93) < 0.35, Mat.BLOSSOM, [Mat.BLOSSOM_LIGHT])
-	return VoxelProp.mesh("hb_drift%d" % v, VERSION, bounds, T0, paint, color, surface_of)
+	return _mesh("hb_flower%d" % v, bounds, T0, paint)
 
 
 func _stone_mesh(v: int, cell := T1 * 0.5) -> ArrayMesh:
@@ -708,17 +701,21 @@ func _stone_mesh(v: int, cell := T1 * 0.5) -> ArrayMesh:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 700 + v
 	var paint := func(g: VoxelGrid) -> void:
+		rng.seed = 700 + v
 		var hx := rng.randf_range(0.3, 0.5)
-		var hy := rng.randf_range(0.18, 0.32)
+		var hy := rng.randf_range(0.12, 0.22)
 		var hz := rng.randf_range(0.25, 0.45)
+		# A weathered grey stone: darker sides, a paler worn top.
 		g.paint(bounds, func(p: Vector3) -> float:
-			return VoxelSdf.box(p, Vector3(0, hy * 0.6, 0), Vector3(hx, hy, hz), 0.08), Mat.STONE)
+			return VoxelSdf.box(p, Vector3(0, hy * 0.5, 0), Vector3(hx, hy, hz), 0.12), Mat.STONE_DARK)
+		g.paint_surface(bounds, func(p: Vector3, _c: Vector3i) -> bool:
+			return p.y > hy * 1.1, Mat.STONE, [Mat.STONE_DARK])
 		# A chipped corner, moss on the north side.
 		var chip := Vector3(hx, hy * 1.4, hz)
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.sphere(p, chip, 0.18), Mat.STONE, -1, VoxelGrid.Mode.CARVE)
 		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
-			return p.z < -hz * 0.3 and VoxelSdf.hash3(c, 71) < 0.6, Mat.MOSS, [Mat.STONE])
-	return VoxelProp.mesh("hb_stone%d" % v, VERSION, bounds, cell, paint, color, surface_of)
+			return p.z < -hz * 0.3 and VoxelSdf.hash3(c, 71) < 0.6, Mat.MOSS, [Mat.STONE, Mat.STONE_DARK])
+	return _mesh("hb_stone%d" % v, bounds, cell, paint)
 
 
 # ---------------------------------------------------------------- rims and roots
@@ -749,8 +746,8 @@ func _rims_and_roots() -> void:
 			(roots[k % 3] as Array).append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.8, 1.6)),
 				Vector3(w.x, y + 0.4, w.y)))
 	for v in 3:
-		_place([_lip_mesh(v)], lips[v], "RimLips%d" % v, [90.0])
-		_place([_root_mesh(v)], roots[v], "HangingRoots%d" % v, [160.0])
+		_place(_lod(_lip_mesh.bind(v), 2.0), lips[v], "RimLips%d" % v, [24.0, 90.0])
+		_place(_lod(_root_mesh.bind(v), 2.0), roots[v], "HangingRoots%d" % v, [40.0, 140.0])
 
 
 func _lip_mesh(v: int) -> ArrayMesh:
@@ -758,6 +755,7 @@ func _lip_mesh(v: int) -> ArrayMesh:
 	rng.seed = 800 + v
 	var bounds := AABB(Vector3(-0.7, -2.2, -0.4), Vector3(1.4, 2.5, 1.2))
 	var paint := func(g: VoxelGrid) -> void:
+		rng.seed = 800 + v
 		# A slab of turf sticking out past the rim, its soil under it.
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0, -0.06, 0.1), Vector3(0.62, 0.07, 0.38)), Mat.GRASS_A)
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0, -0.3, 0.0), Vector3(0.6, 0.18, 0.3)), Mat.SOIL)
@@ -775,7 +773,7 @@ func _lip_mesh(v: int) -> ArrayMesh:
 			var b := mid + Vector3(rng.randf_range(-0.2, 0.2), -rng.randf_range(0.3, 0.9), 0.0)
 			g.paint(bounds, func(p: Vector3) -> float:
 				return minf(VoxelSdf.capsule(p, a, mid, 0.04, 0.03), VoxelSdf.capsule(p, mid, b, 0.03, 0.015)), Mat.BARK, -1, VoxelGrid.Mode.ADD)
-	return VoxelProp.mesh("hb_lip%d" % v, VERSION, bounds, T0 * 2.0, paint, color, surface_of)
+	return _mesh("hb_lip%d" % v, bounds, T0 * 2.0, paint)
 
 
 func _root_mesh(v: int) -> ArrayMesh:
@@ -783,6 +781,7 @@ func _root_mesh(v: int) -> ArrayMesh:
 	rng.seed = 850 + v
 	var bounds := AABB(Vector3(-1.2, -6.0, -1.2), Vector3(2.4, 6.6, 2.4))
 	var paint := func(g: VoxelGrid) -> void:
+		rng.seed = 850 + v
 		for k in 4:
 			var a := Vector3(rng.randf_range(-0.6, 0.6), 0.4, rng.randf_range(-0.6, 0.6))
 			var pts := [a]
@@ -794,7 +793,7 @@ func _root_mesh(v: int) -> ArrayMesh:
 				var r0 := lerpf(0.12, 0.03, float(j) / 4.0)
 				g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.capsule(p, pa, pb, r0, r0 * 0.7),
 					Mat.BARK if k % 2 == 0 else Mat.MOSS, -1, VoxelGrid.Mode.ADD)
-	return VoxelProp.mesh("hb_root%d" % v, VERSION, bounds, T1 * 0.5, paint, color, surface_of)
+	return _mesh("hb_root%d" % v, bounds, T1 * 0.5, paint)
 
 
 # ---------------------------------------------------------------- story props
@@ -851,7 +850,7 @@ func _bench_mesh() -> ArrayMesh:
 			var heart := minf(Vector2(q.x - 0.5, q.y - 0.25).length(), Vector2(q.x + 0.5, q.y - 0.25).length()) - 0.55
 			heart = minf(heart, maxf(absf(q.x) + q.y * 0.9 - 0.75, -q.y - 1.1))
 			return p.z < 0.26 and heart < 0.0, Mat.CAP, [Mat.WOOD])
-	return VoxelProp.mesh("hb_bench", VERSION, bounds, T0, paint, color, surface_of)
+	return _mesh("hb_bench", bounds, T0, paint)
 
 
 func _well_mesh() -> ArrayMesh:
@@ -872,7 +871,7 @@ func _well_mesh() -> ArrayMesh:
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.capsule(p, Vector3(-0.95, 1.9, 0), Vector3(0.95, 1.9, 0), 0.05, 0.05), Mat.WOOD)
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.capsule(p, Vector3(0, 1.9, 0), Vector3(0, 1.1, 0), 0.015, 0.015), Mat.ROPE)
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0, 1.0, 0), Vector3(0.12, 0.12, 0.12)), Mat.WOOD)
-	return VoxelProp.mesh("hb_well", VERSION, bounds, T0 * 2.0, paint, color, surface_of)
+	return _mesh("hb_well", bounds, T0 * 2.0, paint)
 
 
 func _carved_stone_mesh() -> ArrayMesh:
@@ -893,7 +892,7 @@ func _carved_stone_mesh() -> ArrayMesh:
 			return outline or mark_a or mark_b, Mat.STONE_DARK, [Mat.STONE])
 		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
 			return (p.y < 0.4 or p.z < -0.1) and VoxelSdf.hash3(c, 73) < 0.5, Mat.MOSS, [Mat.STONE])
-	return VoxelProp.mesh("hb_carved_stone", VERSION, bounds, T0 * 2.0, paint, color, surface_of)
+	return _mesh("hb_carved_stone", bounds, T0 * 2.0, paint)
 
 
 func _blanket_mesh() -> ArrayMesh:
@@ -909,7 +908,7 @@ func _blanket_mesh() -> ArrayMesh:
 			return fposmod(p.x * 25.0 + p.y * 25.0, 1.0) < 0.35, Mat.CAP, [Mat.WOOD])
 		g.paint(bounds, func(p: Vector3) -> float:
 			return VoxelSdf.torus(p, Vector3(0.6, 0.33, -0.4), Vector3(1, 0, 0), 0.16, 0.02), Mat.WOOD, -1, VoxelGrid.Mode.ADD)
-	return VoxelProp.mesh("hb_blanket", VERSION, bounds, T0, paint, color, surface_of)
+	return _mesh("hb_blanket", bounds, T0, paint)
 
 
 func _swing_mesh() -> ArrayMesh:
@@ -921,7 +920,7 @@ func _swing_mesh() -> ArrayMesh:
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(1.9, 0.58, 0), Vector3(0.2, 0.035, 0.45)), Mat.WOOD)
 		# The bough it hangs from.
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.capsule(p, Vector3(1.3, 4.35, 0), Vector3(2.5, 4.45, 0), 0.12, 0.09), Mat.BARK)
-	return VoxelProp.mesh("hb_swing", VERSION, bounds, T0 * 1.5, paint, color, surface_of)
+	return _mesh("hb_swing", bounds, T0 * 1.5, paint)
 
 
 ## A small wayside shrine: stepped plinth, two posts, a tiled roof with
@@ -953,7 +952,7 @@ func _shrine_mesh() -> ArrayMesh:
 			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(x, 0.45, 0.05), Vector3(0.04, 0.08, 0.04)), Mat.PAPER, -1, VoxelGrid.Mode.ADD)
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0.2, 0.39, 0.15), Vector3(0.05, 0.015, 0.05)), Mat.GOLD, -1, VoxelGrid.Mode.ADD)
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(0.67, 1.3, -0.22), Vector3(0.012, 0.35, 0.05)), Mat.RIBBON, -1, VoxelGrid.Mode.ADD)
-	return VoxelProp.mesh("hb_shrine", VERSION, bounds, T0 * 2.0, paint, color, surface_of)
+	return _mesh("hb_shrine", bounds, T0 * 2.0, paint)
 
 
 ## Love locks: an iron chain railing in front of the arch's pedestal, hung
@@ -985,7 +984,7 @@ func _love_locks() -> void:
 			g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.box(p, Vector3(x, y, 0), Vector3(0.045, 0.04, 0.02)), mat, -1, VoxelGrid.Mode.ADD)
 			g.paint(bounds, func(p: Vector3) -> float:
 				return VoxelSdf.torus(p, Vector3(x, y + 0.05, 0), Vector3(0, 0, 1), 0.03, 0.008), Mat.IRON, -1, VoxelGrid.Mode.ADD)
-	var m := VoxelProp.mesh("hb_love_locks", VERSION, bounds, T0, paint, color, surface_of)
+	var m := _mesh("hb_love_locks", bounds, T0, paint)
 	var at := arch_base + Vector2(0, 7.6)
 	var node := MeshInstance3D.new()
 	node.name = "LoveLocks"
@@ -1050,10 +1049,10 @@ func _bridges() -> void:
 			for u: float in [0.0, 1.0]:
 				var base: Vector3 = (deck.call(u) as Vector3) + side * 1.7 * s
 				posts.append(Transform3D(Basis(Vector3.UP, atan2(flat.x, flat.z)), base + Vector3.DOWN * 0.4))
-	_place([plank], planks, "BridgePlanks", [160.0])
-	_place([new_plank], fresh, "BridgePlankNew", [160.0])
-	_place([link], links, "BridgeRopes", [120.0])
-	_place([post], posts, "BridgePosts", [200.0])
+	_place([plank, _coarse(_plank_mesh.bind(false), 4.0)], planks, "BridgePlanks", [30.0, 180.0])
+	_place([new_plank, _coarse(_plank_mesh.bind(true), 4.0)], fresh, "BridgePlankNew", [30.0, 180.0])
+	_place([link, _coarse(_rope_mesh, 3.0)], links, "BridgeRopes", [20.0, 110.0])
+	_place([post, _coarse(_post_mesh, 4.0)], posts, "BridgePosts", [40.0, 200.0])
 	stats["bridge_instances"] = planks.size() + links.size() + posts.size()
 
 
@@ -1081,7 +1080,7 @@ func _plank_mesh(fresh: bool) -> ArrayMesh:
 				var at := Vector3(x, 0.09, z)
 				g.paint(AABB(at - Vector3.ONE * 0.06, Vector3.ONE * 0.12), func(p: Vector3) -> float:
 					return VoxelSdf.sphere(p, at, 0.04), Mat.GOLD, -1, VoxelGrid.Mode.ADD)
-	return VoxelProp.mesh("hb_plank%s" % ("_new" if fresh else ""), VERSION, bounds, T1 * 0.5, paint, color, surface_of)
+	return _mesh("hb_plank%s" % ("_new" if fresh else ""), bounds, T1 * 0.5, paint)
 
 
 func _rope_mesh() -> ArrayMesh:
@@ -1092,7 +1091,7 @@ func _rope_mesh() -> ArrayMesh:
 		# Twist: a dark spiral groove.
 		g.paint_surface(bounds, func(p: Vector3, _c: Vector3i) -> bool:
 			return fposmod(atan2(p.y, p.x) / TAU + p.z * 6.0, 1.0) < 0.3, Mat.WOOD, [Mat.ROPE])
-	return VoxelProp.mesh("hb_rope", VERSION, bounds, T0, paint, color, surface_of)
+	return _mesh("hb_rope", bounds, T0, paint)
 
 
 func _post_mesh() -> ArrayMesh:
@@ -1104,7 +1103,7 @@ func _post_mesh() -> ArrayMesh:
 		# Rope lashing near the top.
 		g.paint(bounds, func(p: Vector3) -> float:
 			return VoxelSdf.box(p, Vector3(0, 1.15, 0), Vector3(0.24, 0.12, 0.24)), Mat.ROPE, -1, VoxelGrid.Mode.ADD)
-	return VoxelProp.mesh("hb_post", VERSION, bounds, T1 * 0.5, paint, color, surface_of)
+	return _mesh("hb_post", bounds, T1 * 0.5, paint)
 
 
 # ---------------------------------------------------------------- lanterns
@@ -1113,8 +1112,8 @@ func _post_mesh() -> ArrayMesh:
 ## paper ribs; one on Lantern Rise is the pale blue replacement. Posts with a
 ## crossbar where the sim stands them.
 func _lanterns() -> void:
-	var paper: Array[ArrayMesh] = [_lantern_mesh(false)]
-	var blue: Array[ArrayMesh] = [_lantern_mesh(true)]
+	var paper: Array[ArrayMesh] = _lod(_lantern_mesh.bind(false), 4.0)
+	var blue: Array[ArrayMesh] = _lod(_lantern_mesh.bind(true), 4.0)
 	var warm: Array[Transform3D] = []
 	var odd: Array[Transform3D] = []
 	var rise := field.centres[field.index_of("Lantern Rise")]
@@ -1129,7 +1128,7 @@ func _lanterns() -> void:
 			warm.append(xf)
 	for at in arch_lanterns:
 		warm.append(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * 1.6), at))
-	var post: Array[ArrayMesh] = [_lantern_post_mesh()]
+	var post: Array[ArrayMesh] = _lod(_lantern_post_mesh, 3.0)
 	var posts: Array[Transform3D] = []
 	var fc: Vector3 = zone.get_meta("wishing_fountain").centre
 	var spots: Array[Vector2] = []
@@ -1153,9 +1152,9 @@ func _lanterns() -> void:
 		# Two lanterns hang from the crossbar's ends.
 		for side: float in [-0.6, 0.6]:
 			warm.append(Transform3D(b.scaled(Vector3.ONE * 0.5), Vector3(s.x, y, s.y) + b * Vector3(side, 2.55, 0)))
-	VoxelProp.place(self, "LanternPosts", post, [140.0], posts, 1)
-	var a := VoxelProp.place(self, "PaperLanterns", paper, [140.0], warm, 0)
-	var c := VoxelProp.place(self, "PaperLanternBlue", blue, [140.0], odd, 0)
+	VoxelProp.place(self, "LanternPosts", post, [40.0, 160.0], posts, 1)
+	var a := VoxelProp.place(self, "PaperLanterns", paper, [22.0, 160.0], warm, 0)
+	var c := VoxelProp.place(self, "PaperLanternBlue", blue, [22.0, 160.0], odd, 0)
 	for root: Node3D in [a, c]:
 		for mmi: MultiMeshInstance3D in root.get_children():
 			var base: Array[Transform3D] = []
@@ -1194,7 +1193,7 @@ func _lantern_mesh(blue: bool) -> ArrayMesh:
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.capsule(p, Vector3(0, 0.66, 0), Vector3(0, 0.8, 0), 0.02, 0.02), Mat.ROPE)
 		# Tassel.
 		g.paint(bounds, func(p: Vector3) -> float: return VoxelSdf.capsule(p, Vector3(0, -0.62, 0), Vector3(0, -0.74, 0), 0.03, 0.05), Mat.POST)
-	return VoxelProp.mesh("hb_lantern%s" % ("_blue" if blue else ""), VERSION, bounds, T0, paint, color, surface_of)
+	return _mesh("hb_lantern%s" % ("_blue" if blue else ""), bounds, T0, paint)
 
 
 func _lantern_post_mesh() -> ArrayMesh:
@@ -1211,7 +1210,7 @@ func _lantern_post_mesh() -> ArrayMesh:
 		g.paint(bounds, func(p: Vector3) -> float:
 			return minf(VoxelSdf.capsule(p, Vector3(0.6, 3.1, 0), Vector3(0.6, 2.95, 0), 0.015, 0.015),
 				VoxelSdf.capsule(p, Vector3(-0.6, 3.1, 0), Vector3(-0.6, 2.95, 0), 0.015, 0.015)), Mat.ROPE)
-	return VoxelProp.mesh("hb_lantern_post", VERSION, bounds, T1 * 0.5, paint, color, surface_of)
+	return _mesh("hb_lantern_post", bounds, T1 * 0.5, paint)
 
 
 # ---------------------------------------------------------------- fountain
@@ -1259,7 +1258,7 @@ func _fountain() -> void:
 		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool:
 			var r := Vector2(p.x, p.z).length()
 			return p.y < 0.3 and r < 5.9 and VoxelSdf.hash3(c, 53) < 0.02 + 0.12 * smoothstep(3.0, 5.8, r), Mat.GOLD, [Mat.STONE_DARK])
-	var m := VoxelProp.mesh("hb_fountain", VERSION, bounds, T1, paint, color, surface_of)
+	var m := _mesh("hb_fountain", bounds, T1, paint)
 	var node := MeshInstance3D.new()
 	node.name = "WishingFountain"
 	node.mesh = m
@@ -1388,6 +1387,9 @@ func shots() -> Array[Dictionary]:
 	var lr := field.centres[field.index_of("Lantern Rise")]
 	out.append({"name": "lantern_rise", "from": Vector3(lr.x - 40, 296, lr.y + 34), "at": Vector3(lr.x, 284, lr.y),
 		"fov": 50.0, "times": ["night", "dusk"]})
+	# Sunset over Lantern Rise from beside the arch: the sun disc, canopy rims.
+	out.append({"name": "sunset", "from": Vector3(a.x - 36, g + 6, a.y + 22), "at": Vector3(a.x + 58, g + 22, a.y + 54),
+		"fov": 55.0, "times": ["dusk"]})
 	# Under Heart Isle: the strata cone, the roots, the cloud sea.
 	out.append({"name": "underside", "from": Vector3(70, 236, 95), "at": Vector3(0, 252, 0), "fov": 55.0, "times": ["dusk"]})
 	return out
@@ -1403,14 +1405,14 @@ func flight() -> Array[Dictionary]:
 	return [
 		{"from": Vector3(46, g + 34, 130), "at": Vector3(0, g + 20, a.y), "fov": 55.0},
 		{"from": Vector3(16, g + 14, 52), "at": Vector3(0, g + 17, a.y), "fov": 55.0},
-		{"from": Vector3(2, g + 17, a.y + 10), "at": Vector3(-4, g + 16, a.y - 30), "fov": 60.0},
-		{"from": Vector3(-14, g + 15, a.y - 40), "at": Vector3(bc.x, 300, bc.y), "fov": 58.0},
-		{"from": Vector3(-62, 300, -96), "at": Vector3(bc.x, 296, bc.y), "fov": 55.0},
-		{"from": Vector3(-96, 246, -66), "at": Vector3(bc.x, 266, bc.y), "fov": 60.0},
-		{"from": Vector3(-150, 262, -10), "at": Vector3(fc.x, fc.y, fc.z), "fov": 55.0},
-		{"from": Vector3(-118, 292, 98), "at": Vector3(fc.x, fc.y + 2, fc.z), "fov": 55.0},
-		{"from": Vector3(-60, g + 6, 30), "at": Vector3(a.x + 4, g + 2, a.y + 9), "fov": 55.0},
-		{"from": Vector3(-6, g + 4, 2), "at": Vector3(a.x + 4, g + 3, a.y + 9), "fov": 55.0},
+		{"from": Vector3(0, g + 22, a.y + 4), "at": Vector3(-4, g + 20, a.y - 30), "fov": 60.0},
+		{"from": Vector3(-8, g + 20, a.y - 36), "at": Vector3(bc.x, 300, bc.y), "fov": 58.0},
+		{"from": Vector3(-50, 316, -66), "at": Vector3(bc.x, 296, bc.y), "fov": 55.0},
+		{"from": Vector3(-78, 250, -40), "at": Vector3(bc.x, 262, bc.y), "fov": 60.0},
+		{"from": Vector3(-200, 286, 20), "at": Vector3(fc.x, fc.y, fc.z), "fov": 55.0},
+		{"from": Vector3(-112, 296, 104), "at": Vector3(fc.x, fc.y + 2, fc.z), "fov": 55.0},
+		{"from": Vector3(-60, g + 7, 30), "at": Vector3(a.x + 4, g + 2, a.y + 9), "fov": 55.0},
+		{"from": Vector3(-6, g + 5, 2), "at": Vector3(a.x + 4, g + 3, a.y + 9), "fov": 55.0},
 		{"from": Vector3(40, g + 46, 70), "at": Vector3(0, g + 12, -20), "fov": 58.0},
 	]
 

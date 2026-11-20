@@ -17,7 +17,7 @@ within 4.4 cm of the sim's surface (the QA foot check allows 5 cm).
 | File | Class | What it is |
 |---|---|---|
 | `voxel_zone.gd` | `VoxelZone` | Base class of a zone. Override `build()`, `ground_at()`, `shots()`, `flight()`; optionally `presets()`, `cloud_sea()`, `flight_kael()`, `animate(t)`. Holds `stats` (for the perf report) and `lantern_materials` (driven per preset). Defines the cell ladder `T0`–`T3`. |
-| `voxel_heightfield.gd` | `VoxelHeightfield` | Terrain as columns of cells. Greedy chunk meshing (64×64 columns per chunk, so each chunk is frustum-culled on its own). Baked AO and painted detail go in a per-column colour texture. Per-voxel noise and bevels come from the shader. |
+| `voxel_heightfield.gd` | `VoxelHeightfield` | Terrain as columns of cells. Greedy chunk meshing (about 32 m chunks, at least 32 columns: one draw call and one frustum test each). Baked AO and painted detail go in a per-column colour texture. Per-voxel noise and bevels come from the shader. |
 | `voxel_terrain.gdshader` | | Reads each pixel's cell from the world position: column colour, ±5% per-cell noise, bevel highlight and tilt on convex edges, step AO at concave feet, grass lip → soil → rock on walls, strata slabs on undersides. |
 | `voxel_prop.gd` | `VoxelProp` | Static voxel meshes from the character kit's `VoxelGrid` + `VoxelMesher` (cavity AO, corner AO, bevels), cached on disk. Tiled MultiMesh placement with LOD tiers. |
 | `voxel_stage.gd` | `VoxelStage` | Sky, sun with soft 2-split shadows, rim, ambient, fog, cloud sea. Value presets `day` / `dusk` / `night`. |
@@ -47,7 +47,7 @@ hf.bake_step_ao(0.3, 2)                               # optional: stepped fields
 var mat := ShaderMaterial.new()
 mat.shader = preload("res://game/world/voxel_zone_kit/voxel_terrain.gdshader")
 hf.bind(mat)                                          # cell, origin, colour and level textures
-var node := hf.build(self, mat, "IsleTop")            # one MeshInstance3D per 64x64 chunk
+var node := hf.build(self, mat, "IsleTop")            # one MeshInstance3D per ~32 m chunk
 ```
 
 - **Stepped fields** (undersides, terraces): shown faces are merged into the biggest
@@ -81,7 +81,7 @@ var m := VoxelProp.mesh("my_rock", VERSION, bounds, VoxelZone.T1, paint, color, 
 # The same design at several cells (LOD tiers, finest first). If the paint closure
 # uses an RNG, reseed it inside the closure so every tier gets the same shape.
 var tiers := VoxelProp.tiers("my_tree", VERSION, bounds, [VoxelZone.T1, VoxelZone.T1 * 2, VoxelZone.T2], paint, color, surface_of)
-# Place: tiled MultiMeshes (VoxelProp.TILE = 24 m). Each tier ends at its range
+# Place: tiled MultiMeshes (VoxelProp.TILE = 48 m, 16 m for scatter whose first range is under 40 m). Each tier ends at its range
 # (0 = never); only the first `shadow_tiers` tiers cast shadows.
 VoxelProp.place(self, "Trees", tiers, [32.0, 110.0, 0.0], transforms, 2)
 VoxelProp.place(self, "Tufts", [tuft], [30.0], tuft_transforms, 0)
@@ -144,6 +144,7 @@ xvfb-run -a -s "-screen 0 1920x1080x24" godot --path . --disable-vsync --resolut
 | `heroes` | every shot at each of its `times` |
 | `flythrough` | `--fps` (30) × `--seconds` (20) JPG frames to `<out>/frames`, then `ffmpeg` → `<out>/<zone>_flythrough.mp4` (H.264, CRF 18). `--from=N` resumes at frame N (earlier frames are stepped but not rendered). |
 | `all` | heroes, then the fly-through |
+| `preview` | draft, then the fly-through (use a small `--size` and `--fps=2` to check the path) |
 | `--size=WxH` | output size (default 1920x1080, the published minimum) |
 | `--shots=a,b` | only these stills |
 | `--kael=<scene>` / `--kael=none` | the character for scale (default voxel Kael) |

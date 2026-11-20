@@ -85,9 +85,12 @@ void fragment() {
 	vec2 g = (p.xz - field_origin) / cell;
 	ivec2 col = clamp(ivec2(floor(g)), ivec2(0), field_size - 1);
 	int cy = int(floor(p.y / cell));
-	float noise = hash3(ivec3(col.x, cy, col.y)) * 2.0 - 1.0;
 	vec4 texel = texelFetch(colour_tex, col, 0);
 	float level = level_of(col);
+	// Shown faces hash their column's level, not the pixel's height: on a
+	// smooth top the height crosses cell boundaries and would draw contour rings.
+	int noise_y = abs(n.y) > 0.5 ? int(level) : cy;
+	float noise = hash3(ivec3(col.x, noise_y, col.y)) * 2.0 - 1.0;
 	vec3 albedo;
 	vec3 tilt = vec3(0.0);
 	float edge = 0.0;

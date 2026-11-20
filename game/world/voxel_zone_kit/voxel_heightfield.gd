@@ -1,7 +1,7 @@
 class_name VoxelHeightfield
 extends RefCounted
 ## Island-scale voxel terrain as columns of cells on a square grid: each column
-## spans [hidden, shown] in whole cells. Meshed per CHUNK x CHUNK chunk with
+## spans [hidden, shown] in whole cells. Meshed per ~32 m chunk with
 ## greedy 2D merging (coplanar shown faces become rectangles, walls become
 ## runs), while the per-cell look survives in two textures the voxel terrain
 ## shader reads cell by cell:
@@ -13,7 +13,10 @@ extends RefCounted
 ## A smooth top (`smooth_height`) follows a height function exactly, meshed as
 ## a quadtree of quads (big where the whole block exists), walls only at the rim.
 
-const CHUNK := 64
+## Chunk side in world metres (at least MIN_CHUNK cells): one draw call and
+## one frustum-cull test each.
+const CHUNK_METRES := 32.0
+const MIN_CHUNK := 32
 const NONE := -2147483648
 ## Quadtree block sizes (cells) for a smooth top, biggest first.
 const SMOOTH_BLOCKS: Array[int] = [32, 8, 2, 1]
@@ -25,6 +28,8 @@ var down := false
 var shown := PackedInt32Array()  # per column, in cells; NONE = no column
 var hidden := PackedInt32Array()
 var colours := PackedByteArray()  # RGBA8 per column
+## Columns per chunk side.
+var chunk := MIN_CHUNK
 ## Smooth top: height(x, z) -> world y. The visible lawn equals it exactly, so
 ## feet placed with the same function stand on the mesh.
 var smooth_height: Callable
@@ -40,6 +45,7 @@ func _init(cell_size: float, world_min: Vector2, world_max: Vector2, is_down := 
 	hidden.resize(size.x * size.y)
 	hidden.fill(NONE)
 	colours.resize(size.x * size.y * 4)
+	chunk = maxi(MIN_CHUNK, ceili(CHUNK_METRES / cell))
 
 
 func index(x: int, z: int) -> int:
@@ -133,9 +139,9 @@ func build(parent: Node3D, material: Material, node_name: String, visibility_end
 	var root := Node3D.new()
 	root.name = node_name
 	parent.add_child(root)
-	for cz in ceili(float(size.y) / CHUNK):
-		for cx in ceili(float(size.x) / CHUNK):
-			var mesh := chunk_mesh(cx * CHUNK, cz * CHUNK)
+	for cz in ceili(float(size.y) / chunk):
+		for cx in ceili(float(size.x) / chunk):
+			var mesh := chunk_mesh(cx * chunk, cz * chunk)
 			if mesh == null:
 				continue
 			var mi := MeshInstance3D.new()
@@ -159,8 +165,8 @@ static func count_quads(root: Node3D) -> int:
 func chunk_mesh(x0: int, z0: int) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
-	var x1 := mini(x0 + CHUNK, size.x)
-	var z1 := mini(z0 + CHUNK, size.y)
+	var x1 := mini(x0 + chunk, size.x)
+	var z1 := mini(z0 + chunk, size.y)
 	if smooth_height.is_valid() and not down:
 		_smooth_top(verts, normals, x0, z0, x1, z1)
 	else:

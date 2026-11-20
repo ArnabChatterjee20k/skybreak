@@ -2,10 +2,10 @@ extends SceneTree
 ## Look-dev renders of a voxel zone: hero stills at each time of day with voxel
 ## Kael for scale, and a fly-through video.
 ##   godot --path . --disable-vsync -s res://game/world/voxel_zone_kit/zone_capture.gd -- <out dir>
-##       draft|heroes|flythrough|all [--zone=<VoxelZone script>] [--time=dusk|day|night]
+##       draft|heroes|flythrough|all|preview [--zone=<VoxelZone script>] [--time=dusk|day|night]
 ##       [--kael=<scene>] [--fps=30] [--seconds=20] [--size=1920x1080] [--from=<frame>] [--shots=a,b]
 ## draft: every shot at one time (--time, default dusk); heroes: every shot at
-## the times it lists. Stills are PNG at --size through a SubViewport; the
+## the times it lists; preview: draft, then the fly-through. Stills are PNG at --size through a SubViewport; the
 ## fly-through writes JPG frames to <out>/frames and, if ffmpeg is on PATH,
 ## encodes <out>/<zone>_flythrough.mp4 (H.264, yuv420p). Each still prints
 ## the GPU time, primitives and draw calls of its frame.
@@ -59,9 +59,9 @@ func _run(what: String) -> void:
 	_spawn_kael(_args.get_option("kael", DEFAULT_KAEL))
 	for i in 20:
 		await _step()
-	if what in ["draft", "heroes", "all"]:
-		await _stills(what == "draft")
-	if what in ["flythrough", "all"]:
+	if what in ["draft", "heroes", "all", "preview"]:
+		await _stills(what in ["draft", "preview"])
+	if what in ["flythrough", "all", "preview"]:
 		await _flythrough()
 	quit()
 
@@ -165,11 +165,16 @@ func _flythrough() -> void:
 		var fov := lerpf(float(pts[floori(u)].get("fov", 55.0)), float(pts[mini(floori(u) + 1, pts.size() - 1)].get("fov", 55.0)),
 			u - floorf(u))
 		_look(from, at, fov)
-		# Advance the world by one video frame (two 60 Hz steps at 30 fps).
+		# Advance the world by one video frame (two 60 Hz steps at 30 fps),
+		# drawing only the last step: the frame that is saved.
 		var sub := maxi(1, roundi(60.0 / fps))
+		var keep := f >= start
 		for s in sub:
+			var last := s == sub - 1
+			_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if last and keep \
+				else SubViewport.UPDATE_DISABLED
 			await _step(1.0 / (fps * sub))
-		if f < start:
+		if not keep:
 			continue
 		await RenderingServer.frame_post_draw
 		_viewport.get_texture().get_image().save_jpg(dir.path_join("f%05d.jpg" % f), 0.94)

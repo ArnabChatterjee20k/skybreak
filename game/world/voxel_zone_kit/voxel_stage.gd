@@ -27,16 +27,16 @@ const PRESETS := {
 		"sun_size": 0.022, "moon": false, "stars": 0.0,
 		"rim_color": Color("#fff0f2"), "rim_energy": 0.35,
 		"ambient_color": Color("#b9bdd2"), "ambient_energy": 0.55,
-		"fog_color": Color("#e4e8ee"), "fog_density": 0.0009, "exposure": 0.95, "lantern": 0.4,
+		"fog_color": Color("#e4e8ee"), "fog_density": 0.0009, "exposure": 0.95, "lantern": 0.25,
 	},
 	"dusk": {
 		"sky_top": Color("#6f7cc0"), "sky_horizon": Color("#f6c27a"), "sky_below": Color("#f3ece6"),
-		"cloud": Color("#fff2dc"), "cloud_shadow": Color("#a99ac0"), "cloud_cover": 0.45,
+		"cloud": Color("#fff4e4"), "cloud_shadow": Color("#c4bfcc"), "cloud_cover": 0.45,
 		"sun_dir": Vector3(-0.88, -0.2, -0.42), "sun_color": Color("#ffd6a8"), "sun_energy": 2.5,
 		"sun_size": 0.04, "moon": false, "stars": 0.0,
 		"rim_color": Color("#ffc9a0"), "rim_energy": 0.55,
 		"ambient_color": Color("#a99cba"), "ambient_energy": 0.5,
-		"fog_color": Color("#ebe0d6"), "fog_density": 0.0011, "exposure": 1.0, "lantern": 1.0,
+		"fog_color": Color("#ebe0d6"), "fog_density": 0.0011, "exposure": 1.0, "lantern": 0.6,
 	},
 	"night": {
 		"sky_top": Color("#131a3a"), "sky_horizon": Color("#3c3f6a"), "sky_below": Color("#2e3150"),
@@ -45,7 +45,7 @@ const PRESETS := {
 		"sun_size": 0.0, "moon": true, "stars": 0.8,
 		"rim_color": Color("#b4c0ff"), "rim_energy": 0.6,
 		"ambient_color": Color("#3a4070"), "ambient_energy": 0.55,
-		"fog_color": Color("#2c3050"), "fog_density": 0.0012, "exposure": 1.15, "lantern": 1.5,
+		"fog_color": Color("#2c3050"), "fog_density": 0.0012, "exposure": 1.15, "lantern": 1.1,
 	},
 }
 
@@ -88,6 +88,7 @@ func setup(zone_presets: Dictionary = PRESETS, sea := {}) -> void:
 	env.fog_mode = Environment.FOG_MODE_EXPONENTIAL
 	env.fog_aerial_perspective = 0.3
 	env.fog_sun_scatter = 0.2
+	env.fog_sky_affect = 0.2
 	env.adjustment_enabled = true
 	env.adjustment_contrast = 1.06
 	env.adjustment_saturation = 1.02
