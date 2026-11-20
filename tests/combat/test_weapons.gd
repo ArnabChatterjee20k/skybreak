@@ -594,3 +594,19 @@ func test_longer_bot_matches_land_every_weapon_event() -> void:
 
 func _reach(move: MoveData) -> float:
 	return move.hitbox_offsets[0].length() + move.hitbox_lengths[0] * 0.5 + move.hitbox_radii[0]
+
+
+func test_two_legends_holding_the_same_weapon_keep_their_own_grab_and_push_block() -> void:
+	var first := MoveSet.new()
+	first.grab = MoveData.new()
+	first.push_block = MoveData.new()
+	var second := MoveSet.new()
+	second.grab = MoveData.new()
+	second.push_block = MoveData.new()
+	var armed_first := WeaponMoves.move_set(K.STORM_BLADE, first)
+	var armed_second := WeaponMoves.move_set(K.STORM_BLADE, second)
+	assert_same(armed_first.grab, first.grab)
+	assert_same(armed_first.push_block, first.push_block)
+	assert_same(armed_second.grab, second.grab, "not the first caller's grab")
+	assert_same(armed_second.push_block, second.push_block, "not the first caller's push-block")
+	assert_same(WeaponMoves.move_set(K.STORM_BLADE, first), armed_first, "still cached per legend")

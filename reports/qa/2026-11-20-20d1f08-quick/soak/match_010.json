@@ -1,0 +1,75 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 5
+		},
+		"breaker": {
+			"7": 6,
+			"8": 2,
+			"10": 2,
+			"20": 1
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"8": 4
+		},
+		"light_1": {
+			"3": 2,
+			"4": 5,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 8,
+			"8": 3,
+			"9": 4
+		},
+		"light_2": {
+			"3": 10,
+			"4": 5,
+			"5": 3
+		},
+		"light_3": {
+			"3": 9,
+			"4": 5,
+			"8": 3
+		}
+	},
+	"id": "110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523",
+	"kos": 2,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		3,
+		5,
+		2,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 110,
+	"sim_ms_per_tick": 1.67938708333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00365124875679612,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.983065103559966,
+		"foot_slide_cm_per_frame": 0.0434609086642991,
+		"foot_slide_frames": 558,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.43493666666667,
+	"violations": [],
+	"wall_seconds": 21.949,
+	"zone": "frozen_peaks"
+}

@@ -61,13 +61,25 @@ func upcoming() -> Array:
 func _draw() -> void:
 	if _clash == null:
 		return
+	# Drawn in MatchHud's 1920x1080 design space, styled like the HUD (T-UI1).
 	var view := get_viewport_rect().size
-	var origin := Vector2((view.x - LANE_SIZE.x) * 0.5, view.y * 0.76)
+	var scale_factor := MatchHud.design_scale(view)
+	var design := view / scale_factor
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * scale_factor)
+	var origin := Vector2((design.x - LANE_SIZE.x) * 0.5, design.y * 0.76)
 	var lane := Rect2(origin, LANE_SIZE)
-	draw_rect(lane, Color(0.05, 0.06, 0.1, 0.72))
+	var font := MenuTheme.font()
+	# Header chip: gold title.
+	var header := Rect2(origin + Vector2(0, -48), Vector2(LANE_SIZE.x, 40))
+	draw_style_box(MenuTheme.box(Color(MenuTheme.PANEL, 0.92), MenuTheme.GOLD, 3), header)
+	_text(font, header.position + Vector2(24, 30), "BEAM CLASH!", 26, MenuTheme.GOLD, 8)
+	_text(MenuTheme.font(false), header.position + Vector2(LANE_SIZE.x - 24, 28), "hit the keys on the line", 18,
+		MenuTheme.TEXT, 5, HORIZONTAL_ALIGNMENT_RIGHT)
+	draw_style_box(MenuTheme.box(Color(MenuTheme.PANEL, 0.9), MenuTheme.INK, 4), lane)
 	var hit_x := origin.x + 70.0
-	draw_line(Vector2(hit_x, origin.y - 6), Vector2(hit_x, origin.y + LANE_SIZE.y + 6), Color.WHITE, 4.0)
-	var font := get_theme_default_font()
+	var lean := MenuTheme.SKEW * (LANE_SIZE.y + 12.0) * 0.5
+	draw_line(Vector2(hit_x + lean, origin.y - 6), Vector2(hit_x - lean, origin.y + LANE_SIZE.y + 6), MenuTheme.INK, 10.0, true)
+	draw_line(Vector2(hit_x + lean, origin.y - 6), Vector2(hit_x - lean, origin.y + LANE_SIZE.y + 6), MenuTheme.GOLD, 5.0, true)
 	var span := LANE_SIZE.x - 90.0
 	for k in _clash.beat_ticks.size():
 		var until := _clash.beat_ticks[k] - _tick
@@ -80,19 +92,31 @@ func _draw() -> void:
 		var color: Color = KEY_COLORS.get(button, Color.WHITE)
 		if done:
 			color = color.darkened(0.6)
-		draw_circle(centre, 24.0, color)
-		draw_arc(centre, 24.0, 0.0, TAU, 32, Color.WHITE, 3.0)
+		draw_circle(centre, 25.0, MenuTheme.INK)
+		draw_circle(centre, 21.0, color)
 		var letter := letter_for(button)
-		draw_string(font, centre + Vector2(-24, 11), letter, HORIZONTAL_ALIGNMENT_CENTER, 48, 30 if letter.length() == 1 else 16,
-			Color(0.05, 0.05, 0.08))
-	# Push bar: your side fills from the left.
-	var bar := Rect2(origin + Vector2(0, LANE_SIZE.y + 12), Vector2(LANE_SIZE.x, 14))
-	draw_rect(bar, Color(0.2, 0.2, 0.25, 0.8))
+		var letter_size := 30 if letter.length() == 1 else 15
+		_text(font, centre + Vector2(1, letter_size * 0.36), letter, letter_size, MenuTheme.INK, 0, HORIZONTAL_ALIGNMENT_CENTER)
+	# Push bar: your side (gold) fills from the left against the rival (hot).
+	var bar := Rect2(origin + Vector2(0, LANE_SIZE.y + 14), Vector2(LANE_SIZE.x, 16))
 	var mine := float(_clash.push if _side == 0 else -_clash.push)
 	var share := clampf(0.5 + mine / 200.0, 0.0, 1.0)
-	draw_rect(Rect2(bar.position, Vector2(bar.size.x * share, bar.size.y)), Color(1.0, 0.7, 0.3))
-	draw_line(bar.position + Vector2(bar.size.x * 0.5, -3), bar.position + Vector2(bar.size.x * 0.5, 17),
-		Color.WHITE, 2.0)
-	draw_rect(Rect2(origin + Vector2(0, -34), Vector2(LANE_SIZE.x, 30)), Color(0.05, 0.06, 0.1, 0.72))
-	draw_string(font, origin + Vector2(10, -11), "BEAM CLASH: hit the keys on the line", HORIZONTAL_ALIGNMENT_LEFT,
-		-1, 22, Color(1.0, 0.9, 0.6))
+	_slant(bar.grow(2.0), MenuTheme.INK)
+	_slant(bar, MenuTheme.HOT)
+	_slant(Rect2(bar.position, Vector2(bar.size.x * share, bar.size.y)), MenuTheme.GOLD)
+	var mid := bar.position + Vector2(bar.size.x * 0.5, 0)
+	draw_line(mid + Vector2(2, -4), mid + Vector2(-2, bar.size.y + 4), MenuTheme.TEXT, 3.0, true)
+	draw_set_transform(Vector2.ZERO)
+
+
+func _slant(rect: Rect2, color: Color) -> void:
+	draw_colored_polygon(MatchHud.slant_points(rect), color)
+
+
+func _text(font: Font, at: Vector2, text: String, font_size: int, color: Color, outline: int,
+		align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
+	var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var x := at.x - (width / 2.0 if align == HORIZONTAL_ALIGNMENT_CENTER else (width if align == HORIZONTAL_ALIGNMENT_RIGHT else 0.0))
+	if outline > 0:
+		draw_string_outline(font, Vector2(x, at.y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline, MenuTheme.INK)
+	draw_string(font, Vector2(x, at.y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)

@@ -206,6 +206,10 @@ static func effects_for(event: Dictionary, zone: StringName) -> Array[StringName
 			found.append(&"anime_burst")
 		E.GUARD_BREAK:
 			found.append(&"guard_shatter")
+		E.COMBO_BREAKER:
+			found.append_array(EscapeVfx.BREAKER_EFFECTS)
+		E.AIR_TECH, E.TECH_ROLL:
+			found.append_array(EscapeVfx.tech_effects(event))
 		E.KO:
 			found.append(&"ko_burst")
 			if zone == &"stormfall_city":
@@ -219,7 +223,8 @@ static func effects_for(event: Dictionary, zone: StringName) -> Array[StringName
 	return found
 
 
-## Screen overlay an event earns (ImpactFrameGate.earns): &"lines" (guard break), &"ko" or &"".
+## Screen overlay an event earns (ImpactFrameGate.earns): &"lines" (guard break), &"ko",
+## &"breaker" (combo breaker) or &"".
 ## react() still plays at most one per ImpactFrameGate.COOLDOWN_TICKS.
 static func screen_for(event: Dictionary, combo_hits: int = 0) -> StringName:
 	if not ImpactFrameGate.earns(event, combo_hits):
@@ -229,6 +234,8 @@ static func screen_for(event: Dictionary, combo_hits: int = 0) -> StringName:
 			return &"ko"
 		E.GUARD_BREAK:
 			return &"lines"
+		E.COMBO_BREAKER:
+			return &"breaker"
 	return &""
 
 
@@ -280,6 +287,13 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 		match kind:
 			&"guard_shatter", &"petals", &"sparkles":
 				spawn(kind, spark, Color.TRANSPARENT, size)
+			&"breaker_ring":
+				spawn(&"breaker_ring", where, color.lerp(Color.WHITE, 0.5), EscapeVfx.BREAKER_RING_SCALE,
+					_facing_camera(where))
+			&"tech_ghost":
+				spawn(&"afterimage", where, color.lerp(Color.WHITE, 0.5), 1.1)
+			&"ko_dome":
+				spawn(kind, where, color.lerp(Color.WHITE, 0.5))
 			&"ko_burst":
 				spawn(kind, spark, color.lerp(Color.WHITE, 0.4), size)
 			&"lightning":
@@ -294,6 +308,9 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 	match overlay:
 		&"lines":
 			_screen.burst_lines(center, Color(1.0, 0.85, 0.85), 0.3)
+		&"breaker":
+			# One short flash during the breaker's hitstop; the ring is the only shape.
+			_screen.flash(2, 0.25)
 		&"ko":
 			# The one KO beat (#121): a single impact frame centred on the contact, no flash or grade.
 			_screen.impact(color, center, KO_IMPACT_FRAMES)

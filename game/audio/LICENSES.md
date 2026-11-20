@@ -50,6 +50,11 @@ Every file under `game/audio/sfx/` is synthesised from scratch by `game/audio/so
 | `sfx/combat/tech_2.ogg` | `tech` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
 | `sfx/combat/counter_hit_1.ogg` | `counter_hit` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
 | `sfx/combat/counter_hit_2.ogg` | `counter_hit` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
+| `sfx/combat/combo_breaker_1.ogg` | `combo_breaker` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
+| `sfx/combat/combo_breaker_2.ogg` | `combo_breaker` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
+| `sfx/combat/air_tech_1.ogg` | `air_tech` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
+| `sfx/combat/air_tech_2.ogg` | `air_tech` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
+| `sfx/combat/air_tech_3.ogg` | `air_tech` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
 | `sfx/combat/ko.ogg` | `ko_boom` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
 | `sfx/combat/ko_tail.ogg` | `ko_tail` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |
 | `sfx/combat/combo_tick.ogg` | `combo_tick` | game/audio/source/sounds.py | CC0 1.0 | Skybreak contributors |

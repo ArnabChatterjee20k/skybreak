@@ -33,6 +33,9 @@ const EVENT_CUES := {
 	CombatSim.EventType.GRAB_TECH: &"tech",
 	CombatSim.EventType.PUSH_BLOCK: &"push_block",
 	CombatSim.EventType.ARMOR: &"armor_hit",
+	CombatSim.EventType.COMBO_BREAKER: &"combo_breaker",
+	CombatSim.EventType.AIR_TECH: &"air_tech",
+	CombatSim.EventType.TECH_ROLL: &"air_tech",
 	CombatSim.EventType.PERFECT_DODGE: &"perfect_dodge",
 }
 const KNOCKBACK_CUES := {
@@ -114,6 +117,9 @@ static func cues_for_event(event: Dictionary) -> Array[Dictionary]:
 		out.append(_request(hit_cue(hitstop, counter, event.get("knockback_type", 0)), at, params))
 		if counter:
 			out.append(_request(&"counter_hit", at))
+	elif type == CombatSim.EventType.AIR_TECH and event.get("caught", false):
+		# The chaser read the tech: a counter sting instead of the escape zip.
+		out.append(_request(&"counter_hit", at))
 	elif EVENT_CUES.has(type):
 		out.append(_request(EVENT_CUES[type], at, params))
 	elif type == CombatSim.EventType.SPECIAL_START:

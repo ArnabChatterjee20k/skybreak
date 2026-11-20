@@ -111,6 +111,7 @@ func _ready() -> void:
 		match_hud.names.append(fighter_views[i].display_name)
 		match_hud.team_colors.append(Color(fighter_views[i].energy_color, 1.0))
 		match_hud.is_ai.append(drivers[i] != null)
+		match_hud.portraits.append(_hud_portrait(fighter_views[i].character_id))
 	match_hud.teams = teams
 	match_hud.player = player
 	$Hud.add_child(match_hud)
@@ -238,7 +239,7 @@ func _start_prewarm() -> void:
 
 func _physics_process(_delta: float) -> void:
 	step_tick()
-	Engine.time_scale = match_flow.time_scale()
+	Engine.time_scale = match_flow.time_scale() * combat_feedback.time_scale()
 
 
 func _exit_tree() -> void:
@@ -247,6 +248,16 @@ func _exit_tree() -> void:
 
 func _process(delta: float) -> void:
 	present_frame(Engine.get_physics_interpolation_fraction(), delta)
+
+
+## A legend's head shot for the HUD portrait tile, rendered once like the
+## character-select cards; the container itself stays invisible.
+func _hud_portrait(id: StringName) -> Texture2D:
+	var shot := LegendTurntable.new(id, false, true, Vector2i(156, 232))
+	shot.stretch = false
+	shot.self_modulate = Color.TRANSPARENT
+	$Hud.add_child(shot)
+	return shot.viewport.get_texture()
 
 
 ## Advances the sim one tick: keyboard for the player, drivers for AI slots.

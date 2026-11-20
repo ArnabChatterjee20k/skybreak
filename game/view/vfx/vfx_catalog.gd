@@ -6,7 +6,7 @@ extends RefCounted
 const CAPACITY := {
 	&"anime_burst": 4, &"guard_shatter": 2, &"ko_burst": 1, &"lightning": 2,
 	&"petals": 4, &"sparkles": 4, &"blast_impact": 6, &"aura_flare": 2,
-	&"sonic_ring": 3, &"afterimage": 14, &"vanish_burst": 4, &"landing_dust": 4,
+	&"sonic_ring": 3, &"breaker_ring": 2, &"afterimage": 14, &"vanish_burst": 4, &"landing_dust": 4,
 	&"ki_blast": 24, &"ki_beam": 6,
 	&"smear_fist": 4, &"smear_gauntlets": 4, &"smear_blade": 4, &"smear_lance": 4,
 	&"smear_hammer": 3, &"smear_chakram": 3, &"smear_scythe": 3,
@@ -105,6 +105,11 @@ static func _fill(effect: VfxEffect, kind: StringName) -> void:
 			var inner := effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(3.2, 3.2)))
 			inner.position = Vector3(0.0, 0.0, -1.2)
 			effect.add_sprite(&"flash", 1.6)
+		&"breaker_ring":
+			# Combo breaker: one clean camera-facing shockwave ring, gone in under 0.25 s.
+			effect.lifetime = 0.22
+			effect.default_color = Color(0.9, 0.95, 1.0)
+			effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(3.0, 3.0)))
 		&"afterimage":
 			effect.lifetime = 0.28
 			effect.default_color = WARM

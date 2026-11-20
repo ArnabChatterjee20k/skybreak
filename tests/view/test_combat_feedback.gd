@@ -23,10 +23,22 @@ func test_heavy_hit_gets_a_heavy_spark_and_more_shake() -> void:
 
 func test_every_event_type_shows_something() -> void:
 	for type in E.values():
-		if type == E.KO:
-			continue # #121: its one burst is MatchVfx's ko_burst (test_match_vfx).
+		if type == E.KO or type == E.COMBO_BREAKER:
+			continue # #121: one burst each, MatchVfx's (ko_burst, breaker_ring).
 		assert_false(CombatFeedback.plan_for(_event(type)).effects.is_empty(), E.find_key(type))
 	assert_true(MatchVfx.effects_for(_event(E.KO), &"").has(&"ko_burst"), "KO shows its burst")
+	assert_true(MatchVfx.effects_for(_event(E.COMBO_BREAKER), &"").has(&"breaker_ring"), "the breaker shows its ring")
+
+
+func test_the_combo_breaker_is_one_beat_a_single_ring_plus_shake() -> void:
+	var plan := CombatFeedback.plan_for(_event(E.COMBO_BREAKER, 8))
+	assert_eq(plan.effects, [], "art bible §7: nothing stacks on the breaker ring")
+	assert_gt(plan.shake, 0.0, "the breaker still shakes the camera")
+	assert_eq(MatchVfx.effects_for(_event(E.COMBO_BREAKER), &""), [&"breaker_ring"] as Array[StringName],
+		"exactly one shape: the ring")
+	var ring := VfxCatalog.build(&"breaker_ring")
+	assert_lt(ring.lifetime, 0.25, "art bible §7: hits clear in under 0.25 s")
+	ring.free()
 
 
 func test_blocks_are_tinted_and_smaller_than_hits() -> void:

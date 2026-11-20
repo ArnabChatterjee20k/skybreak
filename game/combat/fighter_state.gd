@@ -22,6 +22,7 @@ enum State {
 	THROWING, ## Holding grab_partner before throwing it.
 	KO_FALL, ## Knocked out: no flight, falls with its knockback and bounces off the floor once.
 	KO_DOWN, ## Knocked out and lying on the floor until the next round; cannot be hit.
+	ESCAPING, ## Combo breaker, air tech, tech roll, or blown away by one, for stun_ticks; escapes.kind says which.
 }
 
 ## Part of the current move, derived from move_tick.
@@ -180,6 +181,8 @@ var combo_starter_percent: int = 100
 
 # Powers and gadgets (T-D26).
 var powers := FighterPowers.new()
+# Escape tools (T-DEF3).
+var escapes := FighterEscapes.new()
 
 # Dodge (T-DEF2).
 var dodge := FighterDodge.new()
@@ -218,6 +221,8 @@ func enter_state(new_state: State) -> void:
 		combo_starter_percent = 100
 	if new_state != State.KO_FALL and new_state != State.KO_DOWN:
 		ko_bounced = false
+	if new_state != State.ESCAPING:
+		escapes.kind = FighterEscapes.Kind.NONE
 	clear_pushback()
 
 
@@ -232,6 +237,8 @@ func begin_move(new_move: MoveData) -> void:
 	enter_state(State.ATTACKING)
 	_clear_attack()
 	move = new_move
+	# Wakeup and breaker intangibility never carries into an attack.
+	escapes.intangible_ticks = 0
 
 
 ## Id of the move being performed, empty when not attacking.
@@ -318,9 +325,10 @@ func is_upper_body(point: Vector3) -> bool:
 	return point.y > position.y
 
 
-## False while knocked down, knocked out or vanished: hits pass through.
+## False while knocked down, knocked out, vanished or intangible (escapes): hits pass through.
 func can_be_hit() -> bool:
-	return state != State.KNOCKDOWN and state != State.VANISHING and not is_knocked_out()
+	return state != State.KNOCKDOWN and state != State.VANISHING and not is_knocked_out() \
+		and escapes.intangible_ticks == 0
 
 
 ## True while hits do not interrupt the current move (armor).
@@ -391,7 +399,7 @@ func state_values() -> Array:
 		pushback_velocity, pushback_ticks, pushback_from,
 		last_slot, heat, overheated, draw_ticks, pin_ticks, pinned,
 		tether_partner, tether_ticks, tether_length, combo_starter_percent,
-	] + powers.state_values() + dodge.state_values()
+	] + powers.state_values() + escapes.state_values() + dodge.state_values()
 
 
 ## Weapon in hand (Weapon.Kind), NONE when unarmed.

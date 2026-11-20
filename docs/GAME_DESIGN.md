@@ -164,12 +164,12 @@ The camera is a gameplay system, not a presentation detail. Rules:
 | Tool | How | Beats | Loses to | Cost |
 |---|---|---|---|---|
 | Block | Hold `E` | Strikes, blasts | Grabs, Breaker heavy, guard depletion | Guard meter |
-| **Perfect block** | Tap `E` 0–6 f before a hit lands | Strikes (attacker gets +16 recovery = free punish), ki blasts (**reflected**) | Grabs, delayed attacks (frame traps) | Nothing; mistiming means a 20 f lockout on the next perfect-block attempt (anti-mash) |
+| **Perfect block** | A fresh press of `E` within 6 f of a hit (0–5 f before it lands; an early held press only blocks) | Strikes (attacker gets +16 recovery = free punish), ki blasts (**reflected**) | Grabs, delayed attacks (frame traps) | Nothing; mistiming means a 20 f lockout on the next perfect-block attempt (anti-mash) |
 | Grab tech | Press `F` within 10 f of being grabbed | Grabs | — | — |
 | **Dodge** (T-DEF2) | Tap `Shift` (+ direction) | Strikes, grabs and projectiles during its i-frames | Anything that meets its recovery; **grabs counter-hit the recovery and can't be teched** | Free; chain and cooldown rules below |
 | **Sidestep** | Locked, tap `Shift` + `A`/`D` | Straight attacks, shots, grabs (70° arc round the target, ignores the orbit cap) | **Sweep** (tracks sidesteps through i-frames), grabs on the recovery | Free |
 | Vanish counter | `Shift+E` while blocking or in the first 6 f of hitstun | Strings, smash | Opponent's counter-vanish or **Sense** (§5.5) | 25 / 40 ki |
-| Combo breaker | `X` in hitstun | Any combo | Nothing (guaranteed escape), but it's expensive | 1 burst stock |
+| Combo breaker | `X` in hitstun: 8 f freeze and burst ring, attacker blown out to 5.5 m, breaker intangible for 20 f (its 12 f burst pose first; attacking ends it) | Any combo | Nothing (guaranteed escape), but it's expensive and has a 5 s cooldown | 1 burst stock |
 | Push-block | Heavy while blocking | Pressure strings (pushes them to mid range) | — | 10 guard |
 
 **Dodge frames** (60 Hz ticks, frame 1 = the press; all in `DodgeTuning`):
@@ -206,6 +206,7 @@ After a Smash/Blowback sends the opponent flying:
 - **Attacker:** press Dash within 20 f to **chase** (auto-homing rush). While chasing, choose a follow-up direction: over (spike), under (launcher) or straight (smash).
 - **Defender:** press Dash + direction within the **tech window** (frames 12–24 of the flight) to recover in that direction.
 - If the defender techs in the direction the attacker chased, the attacker connects. If not, the defender escapes and gets +8 frame advantage.
+- Numbers (T-DEF3, `EscapeTuning`): the chase costs 15 ki and homes on a point 1.8 m above (Space, over), below (Ctrl, under) or at the target (straight), so its way is visible; it tails the target until the tech window closes. A tech moves 4 m over 14 f, intangible for the first 8 f, once per knockback (blowback, launch, sweep, a spike before its bounce). A caught tech stays in hitstun 18 f longer. Lights without knockback cannot be teched.
 - Knockback into a **wall** gives a wall-splat (30 f, a free follow-up, no tech). Knockback into a **destructible** gives +150 damage, the rock shatters, and the fighter keeps flying (no splat).
 
 ### 5.7 Knockdown and wakeup (okizeme)
@@ -215,7 +216,7 @@ On knockdown, the defender picks:
 - **Neutral wakeup** (do nothing; up after 40 f)
 - **Delayed wakeup** (hold descend; up after 70 f, which messes with the attacker's timing)
 
-Every wakeup has 6 f of invincibility, then is vulnerable. The attacker reads it and sets up a strike, a grab or a bait.
+Every wakeup has 6 f of invincibility, then is vulnerable. The attacker reads it and sets up a strike, a grab or a bait. The roll covers 3.5 m in 18 f; neutral and delayed wakeups count from landing (T-DEF3). Attacking out of a wakeup ends its invincibility (no invincible reversals).
 
 ### 5.8 Ki blasts and beams: zoning that can be beaten
 
@@ -250,7 +251,8 @@ Every wakeup has 6 f of invincibility, then is vulnerable. The attacker reads it
 | Light hit | 4 f | none | small white spark |
 | Heavy hit | 8 f | 0.15 (directional) | orange spark, impact ring |
 | Counter-hit (hit during their startup) | +4 f | +50% | "COUNTER" text pop, red flash |
-| Perfect block | 10 f | 0.1 | blue flash, bright "tink" sound, slight time-slow (0.8× for 6 f) |
+| Perfect block | 10 f | 0.1 | blue flash, bright "tink" sound, slight time-slow (0.8× for 6 f, view only: `Engine.time_scale`, the sim never changes speed) |
+| Combo breaker | 8 f | 0.55 | one shockwave ring in the breaker's colour (about 1.2x, under 0.25 s) and a 2-frame flash in its hitstop (rationed with K.O. and guard break), deep boom + ring sound, shove pose |
 | Guard break | 14 f | 0.3 | glass-shatter sound, guard bar shards |
 | Wall-splat | 10 f | 0.35 | wall cracks decal, dust |
 | Round-ending hit | 20 f, then 0.3× slow-mo for 1.2 s | 0.5 | camera orbits the impact, white impact frame (1 frame of inverted colors) |
