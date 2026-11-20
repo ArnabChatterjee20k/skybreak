@@ -42,7 +42,7 @@ void fragment() {
 	int code = int(base_col.a * 255.0);
 	vec3 n = normalize(world_n);
 	float cell = max(face.z, 0.01);
-	int sd = int(round(face.w * 977.0)) + int(round(dot(n, vec3(1.0, 7.0, 13.0)) * 3.0));
+	int sd = int(floor(face.w + 0.5));
 	ivec2 cc = ivec2(floor(local_uv / cell));
 	float noise = hash3(ivec3(cc, sd)) * 2.0 - 1.0;
 	vec3 albedo = to_linear(base_col.rgb);

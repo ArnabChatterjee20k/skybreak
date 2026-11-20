@@ -29,7 +29,7 @@ const CONCRETE_DARK := Color("#34363E")
 const BRICK := Color("#6A4A40")
 const STONE := Color("#7A7266")
 const STEEL := Color("#4A4442")
-const RUST := Color("#6A4A38")
+const RUST := Color("#6A5040")
 const MAGENTA := Color("#FF3CA8")
 const WARM_WHITE := Color("#F4E6CE")
 const WINDOW := Color("#E8C890")
@@ -262,7 +262,10 @@ func _ground_mesh(o: Vector2, step: float) -> ArrayMesh:
 			var p10 := Vector3(o.x + (i + 1) * step, hts[j * (n + 1) + i + 1], o.y + j * step)
 			var p01 := Vector3(o.x + i * step, hts[(j + 1) * (n + 1) + i], o.y + (j + 1) * step)
 			var p11 := Vector3(o.x + (i + 1) * step, hts[(j + 1) * (n + 1) + i + 1], o.y + (j + 1) * step)
-			for tri: Array in [[p00, p10, p11], [p00, p11, p01]]:
+			# A fan around the cell's bilinear centre: four times closer to the
+			# sim's bilinear floor than a single diagonal on the canal slopes.
+			var pc := (p00 + p10 + p01 + p11) * 0.25
+			for tri: Array in [[p00, p10, pc], [p10, p11, pc], [p11, p01, pc], [p01, p00, pc]]:
 				var nn := ((tri[2] as Vector3) - (tri[0] as Vector3)).cross((tri[1] as Vector3) - (tri[0] as Vector3)).normalized()
 				for v: Vector3 in tri:
 					verts.append(v)
@@ -373,18 +376,46 @@ func _building(b: CityBlocks, frame: Transform3D, size: Vector3, base: Vector3, 
 		_bx(b, frame, Vector3(0, (body_top + top) * 0.5, 0), Vector3(iw, top - body_top, id), wall, code, cell,
 			CityBlocks.ALL, seed_v + 0.5)
 		_cornice(b, frame, iw, id, top, trim, near)
-	if absf(frame.basis.get_euler().x) + absf(frame.basis.get_euler().z) > 0.001:
+	var leaning := absf(frame.basis.get_euler().x) + absf(frame.basis.get_euler().z) > 0.001
+	if leaning:
 		# A leaning building: a dark crack line just above its foot.
 		_bx(b, frame, Vector3(0, 2.2, 0), Vector3(w + 0.12, 0.3, d + 0.12), Color("#1c1d22"), CityBlocks.Code.CONCRETE, T1)
 	if not near:
 		return
 	_shop_fronts(b, frame, w, d, base)
+	if not leaning:
+		_sills(b, frame, w, d, lower_top, code == CityBlocks.Code.BRICK)
 	if _h(base, 13) < 0.45 and lower_top > 14.0:
 		_fire_escape(b, frame, w, d, lower_top, base)
 	if _h(base, 14) < 0.5 and lower_top > 10.0:
 		_balconies(b, frame, w, d, lower_top, base)
 	_roof_clutter(b, frame, (w - 4.0 * float(setback) * 2.0) if setback else w, d if not setback else d - 8.0,
 		top if setback or not broken else lower_top, base)
+
+
+## Real sills and hoods under and over the shader's windows on the three
+## storeys above the shop floor (relief where fighters fight); the bays match
+## city_block.gdshader exactly (3 m bays, 4 x 5 T2-cell windows, sill at 0.7 m).
+func _sills(b: CityBlocks, frame: Transform3D, w: float, d: float, top: float, brick: bool) -> void:
+	var col := Color("#6a6a70") if not brick else Color("#7a6a60")
+	for side in 4:
+		var along := w if side < 2 else d
+		var out := (d if side < 2 else w) * 0.5
+		var nb := floorf((along - 1.0) / 3.0)
+		if nb < 1.0:
+			continue
+		var margin := (along - nb * 3.0) * 0.5
+		for si in range(2, 5):
+			var y := si * STOREY + 0.7
+			if y + 2.0 > top - 1.2:
+				break
+			for k in int(nb):
+				# _side's u and the face's own u (CityBlocks) agree on every side.
+				var u := margin + 3.0 * k + 1.4 - along * 0.5
+				_bx(b, frame, _side(side, u, out + 0.12) + Vector3(0, y - 0.09, 0), _side_size(side, 1.75, 0.3) + Vector3(0, 0.18, 0),
+					col, CityBlocks.Code.CONCRETE, T1)
+				_bx(b, frame, _side(side, u, out + 0.08) + Vector3(0, y + 1.75 + 0.09, 0), _side_size(side, 1.75, 0.2) + Vector3(0, 0.18, 0),
+					col * 0.85, CityBlocks.Code.CONCRETE, T1)
 
 
 func _cornice(b: CityBlocks, frame: Transform3D, w: float, d: float, y: float, trim: Color, near: bool) -> void:
@@ -1269,6 +1300,9 @@ func animate(t: float) -> void:
 	_flash.light_energy = 3.0 * k
 	_bolt.visible = k > 0.0
 	if stage != null:
+		# Moonlight through cloud: a small source. The kit's wide soft-shadow
+		# penumbra speckles (PCSS noise) on the city's many small near faces.
+		stage.sun.light_angular_distance = 0.25
 		var sky: ShaderMaterial = stage.get("_sky_mat")
 		var p := stage.current
 		if sky != null and not p.is_empty():
@@ -1309,7 +1343,7 @@ func presets() -> Dictionary:
 		"sun_size": 0.0, "moon": false, "stars": 0.0,
 		"rim_color": Color("#D8E4FF"), "rim_energy": 1.6,
 		"ambient_color": Color("#6a7080"), "ambient_energy": 0.75,
-		"fog_color": Color("#7a8084"), "fog_density": 0.0036, "exposure": 1.0, "lantern": 0.7,
+		"fog_color": Color("#7a8084"), "fog_density": 0.0026, "exposure": 1.0, "lantern": 0.7,
 	}
 	p.dusk = {
 		"sky_top": Color("#3c3a50"), "sky_horizon": Color("#c8a49a"), "sky_below": Color("#6a5a60"),
@@ -1318,7 +1352,7 @@ func presets() -> Dictionary:
 		"sun_size": 0.03, "moon": false, "stars": 0.0,
 		"rim_color": Color("#ffd8c0"), "rim_energy": 1.2,
 		"ambient_color": Color("#5a5062"), "ambient_energy": 0.6,
-		"fog_color": Color("#7a6c72"), "fog_density": 0.0032, "exposure": 1.05, "lantern": 0.9,
+		"fog_color": Color("#7a6c72"), "fog_density": 0.0024, "exposure": 1.05, "lantern": 0.9,
 	}
 	var flash: Dictionary = p.night.duplicate()
 	flash["flash"] = 1.0
@@ -1340,7 +1374,9 @@ func shots() -> Array[Dictionary]:
 		"fov": 58.0, "kael": [Vector2(kx + 1.2, kz - 9.0), PI * 0.95], "times": all})
 	# The canal and the half-sunk bus, from the embankment.
 	var bus: Vector3 = story.get("bus", Vector3(-74, 6, 480))
-	out.append({"name": "canal_bus", "from": bus + Vector3(13.0, 4.5, -15.0), "at": bus + Vector3(-1.0, -0.5, 1.0), "fov": 50.0,
+	var cz := _canal_z(bus.x + 20.0)
+	out.append({"name": "canal_bus", "from": Vector3(bus.x + 20.0, ground_at(bus.x + 20.0, cz) + 1.7, cz - 3.0),
+		"at": Vector3(bus.x - 2.0, bus.y + 1.5, bus.z - 2.0), "fov": 55.0,
 		"times": ["night"]})
 	# The Old Tower's stopped clock.
 	var clock: Vector3 = stats.get("clock_centre", Vector3(-198, 120, 282))
@@ -1399,8 +1435,8 @@ func flight() -> Array[Dictionary]:
 		{"from": gd + Vector3(14, 6, 16), "at": gd, "fov": 56.0},
 		{"from": gd + Vector3(-8, 20, 30), "at": spire + Vector3(0, 10, 0), "fov": 56.0},
 		{"from": spire + Vector3(50, -20, -70), "at": spire + Vector3(0, 30, 0), "fov": 56.0},
-		{"from": spire + Vector3(55, top - spire.y - 30.0, 20), "at": Vector3(spire.x, top - 10.0, spire.z), "fov": 56.0},
-		{"from": spire + Vector3(0, top - spire.y - 10.0, 60), "at": Vector3(spire.x, top, spire.z), "fov": 58.0},
+		{"from": spire + Vector3(55, top - spire.y - 25.0, 20), "at": Vector3(spire.x, top - 30.0, spire.z), "fov": 56.0},
+		{"from": spire + Vector3(0, top - spire.y + 4.0, 60), "at": Vector3(spire.x, top - 45.0, spire.z), "fov": 58.0},
 		{"from": spire + Vector3(-40, top - spire.y + 20.0, 30), "at": Vector3(spire.x + 40.0, g + 30.0, spire.z - 200.0), "fov": 60.0},
 	]
 

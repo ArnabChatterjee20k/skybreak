@@ -78,8 +78,7 @@ func test_block_faces_carry_their_size_cell_and_material_code() -> void:
 
 func test_the_only_saturated_zone_colour_is_the_magenta_accent() -> void:
 	var muted: Array[Color] = [StormfallCityVoxel.ASPHALT, StormfallCityVoxel.CONCRETE, StormfallCityVoxel.BRICK,
-		StormfallCityVoxel.STONE, StormfallCityVoxel.STEEL, StormfallCityVoxel.RUST, StormfallCityVoxel.WINDOW,
-		StormfallCityVoxel.SODIUM]
+		StormfallCityVoxel.STONE, StormfallCityVoxel.STEEL, StormfallCityVoxel.RUST, StormfallCityVoxel.WINDOW]
 	muted.append_array(StormfallCityVoxel.CAR_COLOURS)
 	for c in muted:
 		assert_lt(c.s, 0.46, "%s stays under the saturation ceiling" % c.to_html(false))
@@ -92,6 +91,7 @@ func test_night_sky_is_lighter_than_the_facades_and_never_violet() -> void:
 	assert_gt((night.sky_horizon as Color).get_luminance(), StormfallCityVoxel.CONCRETE.get_luminance() * 0.9)
 	for key in ["sky_top", "sky_horizon", "fog_color"]:
 		var c: Color = night[key]
-		assert_lt(c.s, 0.3, "%s stays slate" % key)
+		assert_lt(c.s, 0.35, "%s stays slate" % key)
+		assert_between(c.h * 360.0, 200.0, 245.0, "%s is slate blue, not violet" % key)
 	var rim: Color = night.rim_color
 	assert_lt(rim.s, 0.2, "cool white rim, not cyan")

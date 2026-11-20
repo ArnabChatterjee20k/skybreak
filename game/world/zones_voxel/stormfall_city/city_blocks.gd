@@ -79,7 +79,9 @@ func add(xf: Transform3D, color: Color, code: int, cell: float, faces := ALL, se
 			# UV: along the face (m) and height above the building base (for window storeys).
 			_uv.append(Vector2((local[k] as Vector2).x, p.y - base_y))
 			_uv2.append(local[k])
-			_custom.append_array([w, h, cell, seed_value])
+			# An integer seed per face (with its index: a tilted normal can't pick a
+			# stable hash); the shader rounds it, so interpolation can't flip it.
+			_custom.append_array([w, h, cell, float(floori(seed_value * 977.0) * 8 + f)])
 
 
 ## The merged mesh (null if empty).

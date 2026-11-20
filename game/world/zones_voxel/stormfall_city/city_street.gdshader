@@ -86,7 +86,7 @@ void fragment() {
 		float age = fract(clock * 0.9 + ph);
 		float r = length(rp);
 		float ring = exp(-pow((r - age * 0.6) * 22.0, 2.0)) * (1.0 - age);
-		nrm = normalize(n + vec3(rp.x, 0.0, rp.y) * ring * 1.8);
+		nrm = normalize(n + vec3(rp.x, 0.0, rp.y) * ring * 0.6);
 		col *= 1.0 + ring * 0.4;
 		amount = 0.0;
 	} else if (n.y < 0.86) {
