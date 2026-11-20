@@ -221,6 +221,9 @@ func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 		elif me.lock_on_target != _target:
 			plan.target_switch = 1
 	var distance := to_target.length()
+	if me.state in [_S.IDLE, _S.MOVING, _S.FLYING, _S.FALLING, _S.CHARGING, _S.BLOCKING] \
+			and _ki_game.answer_beams(self, sim, me, plan):
+		return
 	match me.state:
 		_S.GRABBED:
 			_tech(me, plan)
@@ -520,8 +523,6 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 		_fight_height(sim, me, target, plan, false)
 		plan.move = Vector2(0, -1) if _edge_gap < 0.8 else Vector2.ZERO
 		_keep_apart(sim, me, target, plan)
-		return
-	if _ki_game.answer_beams(self, sim, me, plan):
 		return
 	var shot := _projectile_ticks(sim, me)
 	if shot <= 14:

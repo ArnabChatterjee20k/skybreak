@@ -11,7 +11,9 @@ const _S := FighterState.State
 ## Per level 1..5. Weight of the ki zoning plan in neutral at range.
 const ZONE_WEIGHT: Array[float] = [0.25, 0.4, 0.55, 0.65, 0.75]
 ## Fewest ticks between two tap blasts while zoning.
-const BLAST_GAP_TICKS: Array[int] = [70, 45, 32, 24, 18]
+const BLAST_GAP_TICKS: Array[int] = [90, 60, 45, 36, 30]
+## Ki kept back from tap blasts (display units), so beams stay affordable.
+const KI_RESERVE: Array[int] = [0, 15, 25, 35, 40]
 ## Chance a zoning shot is a charged blast (held Q).
 const CHARGED_CHANCE: Array[float] = [0.0, 0.08, 0.14, 0.2, 0.25]
 ## Chance per zoning tick to start a beam when it has the ki.
@@ -37,10 +39,12 @@ var _beam_answer: int = 0 # 0 none, 1 block, 2 sidestep
 var _clash_beat: int = -1
 var _clash_press_tick: int = -1
 var _clash_button: int = 0
+## Holding back blasts (and charging at range) until a beam is affordable.
+var _saving: bool = false
 
 
 func snapshot_values() -> Array:
-	return [_hold_q, _last_blast, _beam_key, _beam_answer, _clash_beat, _clash_press_tick, _clash_button]
+	return [_hold_q, _last_blast, _beam_key, _beam_answer, _clash_beat, _clash_press_tick, _clash_button, _saving]
 
 
 func restore_values(values: Array) -> void:
@@ -48,6 +52,7 @@ func restore_values(values: Array) -> void:
 		return
 	_hold_q = values[0]; _last_blast = values[1]; _beam_key = values[2]; _beam_answer = values[3]
 	_clash_beat = values[4]; _clash_press_tick = values[5]; _clash_button = values[6]
+	_saving = values[7] if values.size() > 7 else false
 
 
 ## Score for the ki zoning plan, 0 when it makes no sense.
@@ -79,12 +84,28 @@ func zone(ai: FighterAI, sim: CombatSim, me: FighterState, target: FighterState,
 			and distance < kit.beam_range * 0.9 and target_busy and ai.rng.randf() < BEAM_CHANCE[level]:
 		plan.held_actions |= _A.SPECIAL_1
 		return
+	# Below the reserve it saves up for a beam (charging when safely far), then zones again.
+	if KI_RESERVE[level] > 0 and kit.beam != null:
+		if me.ki < KI_RESERVE[level] * unit:
+			_saving = true
+		elif me.ki >= (kit.beam.ki_cost + 15) * unit:
+			_saving = false
+	if _saving:
+		if distance > ZONE_NEAR + 4.0 and not target_busy_close(target, distance):
+			plan.held_actions |= _A.CHARGE
+			plan.move = Vector2.ZERO
+		return
 	if now - _last_blast < BLAST_GAP_TICKS[level] or me.ki < kit.blast.ki_cost * unit:
 		return
 	_last_blast = now
 	plan.held_actions |= _A.KI_BLAST
 	if me.ki >= (kit.charged.ki_cost + 10) * unit and ai.rng.randf() < CHARGED_CHANCE[level]:
 		_hold_q = kit.charged.startup_ticks + 1
+
+
+## True when the target is close enough and coming: charging now would be punished.
+static func target_busy_close(target: FighterState, distance: float) -> bool:
+	return target.state == _S.DASHING and target.dash_kind == FighterState.DashKind.RUSH or distance < 8.0
 
 
 ## A seen whiff at beam range: fire a beam into the recovery.
@@ -162,6 +183,17 @@ func answer_beams(ai: FighterAI, sim: CombatSim, me: FighterState, plan: Fighter
 			_beam_key = key
 			_beam_answer = 2 if ai.rng.randf() < SIDESTEP_CHANCE[level] else 1
 		var until_fire := other.move.startup_ticks - other.move_tick
+		var gap := to_me.length()
+		if gap < 6.0:
+			# Up close the tell is a free hit: close in and strike the startup if there is time, else guard.
+			if until_fire > 6 and me.state != _S.BLOCKING:
+				if gap > 1.8:
+					plan.move = Vector2(0, 1)
+				elif ai.may_attack(me):
+					plan.held_actions |= _A.LIGHT
+				return true
+			plan.held_actions |= _A.BLOCK
+			return true
 		if _beam_answer == 2 and until_fire <= sim.ki_tuning.beam_aim_lock_ticks and until_fire > 0 \
 				and me.state != _S.DASHING and me.ki >= 10 * FighterState.METER_UNIT:
 			plan.held_actions |= _A.DASH
