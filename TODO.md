@@ -11,6 +11,14 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   test), keyboard/mouse bindings, debug overlay (fps, frame time), GUT, CI,
   `AGENTS.md`. Remaining: CI green on GitHub.
 
+- LOOKDEV-VF [desktop] Verdant Falls voxel look v1 (`game/world/zones_voxel/verdant_falls/`, branch
+  `lookdev/zone-verdant_falls`, report `reports/lookdev/verdant_falls/`). Waiting on the owner's
+  draft-stills gate. Open for v2:
+  - greedy-merged static prop meshes (grove 3 M tris / 890 draws vs 1.2 M / 250; web not met)
+  - basalt columns with real joints and moss ledges; a falls curtain with thickness and spray
+  - darker near moss (L* 45-55), canopy outlines that aren't discs, night stills, the readability strip
+  - the render benchmark on the GTX 1650
+
 - LOOKDEV-HB [desktop] Heartbloom voxel look v2 + the voxel zone kit (`game/world/voxel_zone_kit/`,
   branch `lookdev/heartbloom-zone`, report `reports/lookdev/heartbloom/v2/`). Waiting on the owner's
   draft-stills gate. Open for v3:
