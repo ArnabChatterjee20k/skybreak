@@ -11,6 +11,8 @@ const ASCEND := &"ascend"
 const DESCEND := &"descend"
 const TARGET_NEXT := &"target_next"
 const TARGET_PREVIOUS := &"target_previous"
+## Shows or hides the on-screen control hints (a UI action, not a fighter one).
+const TOGGLE_HINTS := &"toggle_hints"
 
 ## InputMap action name for each FighterInput.Action.
 const FIGHTER_ACTIONS := {
@@ -42,7 +44,8 @@ const DEFAULT_KEYS := {
 	MOVE_LEFT: [KEY_A],
 	MOVE_RIGHT: [KEY_D],
 	ASCEND: [KEY_SPACE],
-	DESCEND: [KEY_CTRL],
+	# C, not Ctrl: Ctrl+W closes a browser tab (T-UX1). Ctrl stays a desktop alternate.
+	DESCEND: [KEY_C],
 	&"fighter_block": [KEY_E],
 	&"fighter_dash": [KEY_SHIFT],
 	&"fighter_grab": [KEY_F],
@@ -57,11 +60,17 @@ const DEFAULT_KEYS := {
 	&"fighter_lock_toggle": [KEY_TAB],
 	# Weapons (T-D14): G picks up, or throws with nothing in reach; the wheel stays target switch.
 	&"fighter_pickup": [KEY_G],
-	# C quick-swaps to the last weapon (§5.11); next moves to B.
-	&"fighter_quick_swap": [KEY_C],
+	# Y quick-swaps to the last weapon (§5.11); C is descend since T-UX1.
+	&"fighter_quick_swap": [KEY_Y],
 	&"fighter_weapon_next": [KEY_B],
 	&"fighter_weapon_previous": [KEY_Z],
 	&"fighter_throw": [KEY_V],
+	TOGGLE_HINTS: [KEY_H],
+}
+
+## Extra keys only off the web, where Ctrl+key would trigger browser shortcuts.
+const DESKTOP_ALTERNATE_KEYS := {
+	DESCEND: [KEY_CTRL],
 }
 
 const DEFAULT_MOUSE_BUTTONS := {
@@ -79,7 +88,7 @@ static func install_defaults() -> void:
 		if InputMap.has_action(action_name):
 			continue
 		InputMap.add_action(action_name)
-		for keycode in DEFAULT_KEYS.get(action_name, []):
+		for keycode in default_keys(action_name):
 			var key_event := InputEventKey.new()
 			key_event.physical_keycode = keycode
 			InputMap.action_add_event(action_name, key_event)
@@ -89,10 +98,23 @@ static func install_defaults() -> void:
 			InputMap.action_add_event(action_name, mouse_event)
 
 
+## Default keys of one action on this platform (no Ctrl alternate on the web).
+static func default_keys(action_name: StringName, web: bool = OS.has_feature("web")) -> Array:
+	var keys: Array = DEFAULT_KEYS.get(action_name, []).duplicate()
+	if not web:
+		keys.append_array(DESKTOP_ALTERNATE_KEYS.get(action_name, []))
+	return keys
+
+
+## Keys a player may not bind on this platform: modifiers that make browser shortcuts.
+static func is_blocked_key(keycode: Key, web: bool = OS.has_feature("web")) -> bool:
+	return web and keycode in [KEY_CTRL, KEY_META, KEY_ALT]
+
+
 static func _all_action_names() -> Array[StringName]:
 	var names: Array[StringName] = [
 		MOVE_FORWARD, MOVE_BACK, MOVE_LEFT, MOVE_RIGHT,
-		ASCEND, DESCEND, TARGET_NEXT, TARGET_PREVIOUS,
+		ASCEND, DESCEND, TARGET_NEXT, TARGET_PREVIOUS, TOGGLE_HINTS,
 	]
 	for action_name in FIGHTER_ACTIONS.values():
 		names.append(action_name)

@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="FighterStats" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="FighterStats" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/combat/fighter_stats.gd" id="1_stats"]
 [ext_resource type="Resource" path="res://game/combat/moves/lyra/lyra_move_set.tres" id="2_moves"]
+[ext_resource type="Resource" path="res://game/combat/ki/kits/lyra_ki_kit.tres" id="3_ki"]
 
 [resource]
 script = ExtResource("1_stats")
@@ -15,3 +16,4 @@ pushbox_radius = 0.42
 pushbox_height = 1.75
 mass = 0.8
 move_set = ExtResource("2_moves")
+ki_kit = ExtResource("3_ki")

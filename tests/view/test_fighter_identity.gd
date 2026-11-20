@@ -83,6 +83,22 @@ func test_height_marker_shows_only_when_airborne() -> void:
 	assert_true(marker.visible)
 
 
+func test_ground_marker_has_no_line_up_to_the_fighter() -> void:
+	var marker := HeightMarker.new()
+	add_child_autofree(marker)
+	marker.update(Vector3(0, 41.0, 0))
+	for child in marker.get_children():
+		var mesh := child as MeshInstance3D
+		var top := mesh.position.y + mesh.get_aabb().size.y * mesh.scale.y / 2.0
+		assert_lt(top, -40.0 + 2.0, "%s stays within 2 m of the ground" % mesh.name)
+
+
+func test_ground_marker_widens_and_fades_with_height() -> void:
+	assert_lt(HeightMarker.disc_radius(1.0), HeightMarker.disc_radius(30.0))
+	assert_gt(HeightMarker.disc_alpha(1.0), HeightMarker.disc_alpha(30.0))
+	assert_almost_eq(HeightMarker.disc_radius(500.0), HeightMarker.RADIUS_HIGH, 0.001, "capped")
+
+
 func test_feet_height_measures_from_the_feet() -> void:
 	assert_almost_eq(HeightMarker.feet_height(Vector3(0, 12, 0), 0.0), 11.0, 0.001)
 	assert_almost_eq(HeightMarker.feet_height(Vector3(0, 12, 0), 2.0), 9.0, 0.001)

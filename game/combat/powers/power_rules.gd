@@ -224,7 +224,7 @@ static func _explode(sim: CombatSim, bomb: Gadget) -> void:
 			"type": _E.HIT, "attacker": bomb.owner, "target": index, "move": Power.bomb_move(),
 			"yaw": DetMath.atan2(-away.x, -away.z), "pitch": 0.0, "side": 1, "position": points[1],
 		}
-		if target.is_invincible_to(true):
+		if target.is_invincible_to(true) or DodgeRules.evades(sim, target, null):
 			continue
 		if sim._blocks(target, bomb.position):
 			sim._apply_block(contact, true)
