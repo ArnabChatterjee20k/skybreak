@@ -502,7 +502,7 @@ func _torso_cracks(g: VoxelGrid) -> void:
 		var is_front: bool = entry[1] == front
 		var bounds := AABB(Vector3(lo.x - 0.04, lo.y - 0.04, 0.0 if is_front else -0.3), Vector3(hi.x - lo.x + 0.08,
 			hi.y - lo.y + 0.08, 0.36 if is_front else 0.3))
-		crack(g, bounds, tsdf, pts, 2, entry[1], Tag.TORSO)
+		crack(g, bounds, tsdf, pts, 2, entry[1], Tag.TORSO, 0.55)
 
 
 func _belt_and_straps(g: VoxelGrid) -> void:
@@ -750,15 +750,15 @@ func build_arm(side: float) -> VoxelGrid:
 				Mat.RIVET, tag, ADD)
 	# Fist: a stone palm block with an iron back plate.
 	var palm := Vector3(0.975 * side, y, -0.003)
-	g.paint(box_of(palm, Vector3(0.08, 0.09, 0.15)), func(p: Vector3):
-		return VoxelSdf.box(p, palm, Vector3(0.062, 0.078, 0.127), 0.018), Mat.STONE, gtag)
-	var plate := palm + Vector3(-0.005 * side, 0.08, 0.0)
+	g.paint(box_of(palm, Vector3(0.08, 0.1, 0.16)), func(p: Vector3):
+		return VoxelSdf.box(p, palm, Vector3(0.064, 0.086, 0.14), 0.018), Mat.STONE, gtag)
+	var plate := palm + Vector3(-0.005 * side, 0.088, 0.0)
 	g.paint(box_of(plate, Vector3(0.07, 0.02, 0.13)), func(p: Vector3):
 		var q := p - plate
 		var bevel := 0.006 if absf(q.y) > 0.002 else 0.0
-		return maxf(maxf(absf(q.x) - 0.052 + bevel, absf(q.z) - 0.112 + bevel), absf(q.y) - 0.0075), Mat.IRON, gtag)
+		return maxf(maxf(absf(q.x) - 0.052 + bevel, absf(q.z) - 0.124 + bevel), absf(q.y) - 0.0075), Mat.IRON, gtag)
 	for corner: Vector2 in [Vector2(-1, -1), Vector2(-1, 1), Vector2(1, -1), Vector2(1, 1)]:
-		var at := plate + Vector3(corner.x * 0.038, 0.01, corner.y * 0.095)
+		var at := plate + Vector3(corner.x * 0.038, 0.01, corner.y * 0.105)
 		g.paint(box_of(at, Vector3(0.012, 0.012, 0.012)), func(p: Vector3): return VoxelSdf.sphere(p, at, FINE_CELL * 0.75),
 			Mat.RIVET, gtag, ADD)
 	# Wrist cuff: a thick iron ring where the stone meets the hand.
@@ -769,7 +769,7 @@ func build_arm(side: float) -> VoxelGrid:
 	# Fingers: thick planar stone blocks, one per segment with a dark seam at
 	# each joint, a forged iron knuckle plate on each first segment (flat face,
 	# bevelled edges, hammer-peened dents).
-	var zs := [0.09, 0.03, -0.03, -0.088]
+	var zs := [0.1, 0.034, -0.032, -0.097]
 	for f in 4:
 		var chain := PackedVector3Array()
 		for part: String in ["Proximal", "Intermediate", "Distal"]:
@@ -780,8 +780,8 @@ func build_arm(side: float) -> VoxelGrid:
 			chain[i] += Vector3(0, 0, dz)
 		chain[0] -= Vector3(0.02 * side, 0, 0)
 		var ftag := FINGER_BASE + (0 if side > 0 else 4) + f
-		var hy := 0.048 if f < 3 else 0.04
-		var hz := 0.027 if f < 3 else 0.024
+		var hy := 0.054 if f < 3 else 0.046
+		var hz := 0.031 if f < 3 else 0.027
 		for i in 3:
 			var a := chain[i]
 			var b := chain[i + 1]
@@ -809,11 +809,11 @@ func build_arm(side: float) -> VoxelGrid:
 			return -1.0 if VoxelSdf.hash3(cc, 61 + f) < 0.16 else 1.0, 0, -1, CARVE)
 	# Thumb: modelled tucked along the palm's front edge, rigid with the hand.
 	var thumb_tag := Tag.THUMB_L if side > 0 else Tag.THUMB_R
-	var t0 := Vector3(0.935 * side, y - 0.02, 0.135)
-	var t1 := Vector3(1.04 * side, y - 0.03, 0.142)
+	var t0 := Vector3(0.935 * side, y - 0.024, 0.15)
+	var t1 := Vector3(1.045 * side, y - 0.034, 0.158)
 	var tc := (t0 + t1) * 0.5
 	g.paint(box_of(tc, Vector3(0.075, 0.05, 0.05)), func(p: Vector3):
-		return VoxelSdf.box(p, tc, Vector3(0.055, 0.032, 0.03), 0.012), Mat.STONE, thumb_tag)
+		return VoxelSdf.box(p, tc, Vector3(0.058, 0.036, 0.033), 0.012), Mat.STONE, thumb_tag)
 	g.paint(box_of(tc, Vector3(0.075, 0.05, 0.05)), func(p: Vector3):
 		return -1.0 if absf(p.x - (tc.x + 0.012 * side)) < FINE_CELL * 0.5 else 1.0, Mat.STONE_DARK, thumb_tag, PAINT)
 	return g
