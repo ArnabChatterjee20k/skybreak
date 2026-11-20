@@ -1,0 +1,72 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 9
+		},
+		"light_1": {
+			"3": 6,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 9,
+			"9": 2
+		},
+		"light_2": {
+			"3": 11,
+			"5": 2
+		},
+		"light_3": {
+			"3": 9,
+			"8": 2,
+			"20": 1
+		},
+		"light_4": {
+			"4": 1
+		}
+	},
+	"id": "103:frozen_peaks:1v1:vexa,brann:44",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 103,
+	"sim_ms_per_tick": 0.636035833333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0109225483611226,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.00885633574279,
+		"foot_slide_cm_per_frame": 0.105244356665812,
+		"foot_slide_frames": 472,
+		"foot_slide_skipped_frames": 1,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.77651375,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +5.4 cm off the visible ground (IDLE, clip turn_step)",
+			"fighter": 1,
+			"first_tick": 2152,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2152,
+			"worst_value": 0.0539837763299147
+		}
+	],
+	"wall_seconds": 19.973,
+	"zone": "frozen_peaks"
+}

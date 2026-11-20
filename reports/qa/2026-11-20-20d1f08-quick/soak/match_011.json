@@ -1,0 +1,77 @@
+{
+	"hitstops": {
+		"breaker": {
+			"10": 1
+		},
+		"launcher": {
+			"8": 6
+		},
+		"light_1": {
+			"4": 9,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 1,
+			"8": 4
+		},
+		"light_2": {
+			"3": 1,
+			"4": 9,
+			"5": 1,
+			"20": 1
+		},
+		"light_3": {
+			"4": 8,
+			"5": 1,
+			"8": 1
+		},
+		"light_4": {
+			"6": 2
+		},
+		"repeater/projectile": {
+			"1": 112
+		},
+		"repeater/projectile+counter": {
+			"5": 3
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "111:verdant_falls:2v2:lyra,kael,vexa,brann:4432",
+	"kos": 1,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4,
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 111,
+	"sim_ms_per_tick": 2.04011375,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0109012294560671,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.08429702603852,
+		"foot_slide_cm_per_frame": 0.00184950074141533,
+		"foot_slide_frames": 561,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.988526037069726,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.60735125,
+	"violations": [],
+	"wall_seconds": 24.092,
+	"zone": "verdant_falls"
+}

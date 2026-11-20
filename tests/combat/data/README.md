@@ -72,3 +72,13 @@ log it here.
     fighter 2 taps Shift with a direction: a `DODGE` (DIRECTIONAL) event, where
     before it started the old step. Identical before that tick.
   - `bot_match`: unchanged (the AI only rushes, never taps a non-rush Shift).
+- **T-DEF3 (escape tools)**, on the merge of `main` (68f6429, after T-DEF2 and T-KI1): re-blessed.
+  Both sequences match main's goldens up to the first escape the scripted inputs trigger (intended):
+  - `free_for_all`: first differs at index 170 (sim tick 171). Fighter 3, in knockback
+    hitstun inside the air-tech window, has a buffered Dash press and now air-techs
+    (AIR_TECH) instead of flying out the rest of its knockback.
+  - `bot_match`: first differs at index 3318 (sim tick 3319). Fighter 1 lands
+    from a spike holding ascend inside the 10-tick window and tech-rolls
+    (TECH_ROLL) instead of lying for 40 ticks.
+  `tools/diag/det_check.gd` total changes from main's `3d78e5d8c28bc699` (the escape fields
+  are hashed from tick 0).

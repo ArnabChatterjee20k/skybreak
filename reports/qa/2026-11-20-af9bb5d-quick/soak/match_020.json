@@ -1,0 +1,83 @@
+{
+	"hitstops": {
+		"breaker+counter": {
+			"12": 1
+		},
+		"hammer/light_1+counter": {
+			"11": 3
+		},
+		"hammer/light_2": {
+			"10": 4
+		},
+		"launcher": {
+			"7": 5,
+			"8": 5,
+			"9": 2
+		},
+		"light_1": {
+			"3": 3,
+			"4": 7
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 3,
+			"9": 2
+		},
+		"light_2": {
+			"3": 6,
+			"4": 9,
+			"5": 2
+		},
+		"light_3": {
+			"3": 4,
+			"4": 11,
+			"5": 2,
+			"8": 2
+		},
+		"light_4": {
+			"6": 1
+		},
+		"smash+counter": {
+			"14": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "120:heartbloom_gardens:2v2:brann,lyra,kael,vexa:5245",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		2,
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 120,
+	"sim_ms_per_tick": 1.45436083333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0105083826929331,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.04607708427693,
+		"foot_slide_cm_per_frame": 0.00128302166825398,
+		"foot_slide_frames": 559,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.95405819295559,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.22755833333333,
+	"violations": [],
+	"wall_seconds": 22.123,
+	"zone": "heartbloom_gardens"
+}

@@ -239,7 +239,7 @@ func _start_prewarm() -> void:
 
 func _physics_process(_delta: float) -> void:
 	step_tick()
-	Engine.time_scale = match_flow.time_scale()
+	Engine.time_scale = match_flow.time_scale() * combat_feedback.time_scale()
 
 
 func _exit_tree() -> void:

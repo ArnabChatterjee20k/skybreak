@@ -1,8 +1,9 @@
 class_name ImpactFrameGate
 extends RefCounted
-## Decides when a screen-wide moment (K.O. flash, guard-break burst lines) is earned and
-## rations them: only a K.O. or a guard break earns one (GAME_DESIGN hit-feedback table;
-## counters get their text pop and spark), and at most one plays per COOLDOWN_TICKS.
+## Decides when a screen-wide moment (K.O. flash, guard-break burst lines, combo-breaker
+## burst) is earned and rations them: only a K.O., a guard break or a combo breaker earns one
+## (GAME_DESIGN hit-feedback table; counters get their text pop and spark), and at most one
+## plays per COOLDOWN_TICKS.
 
 const E := CombatSim.EventType
 ## Sim ticks (3 s) between two screen-wide impact moments.
@@ -14,7 +15,7 @@ var _last_fired := -COOLDOWN_TICKS
 
 ## Whether an event deserves a screen-wide moment at all; combo_hits is the target's count.
 static func earns(event: Dictionary, _combo_hits: int = 0) -> bool:
-	return event.get("type", -1) in [E.KO, E.GUARD_BREAK]
+	return event.get("type", -1) in [E.KO, E.GUARD_BREAK, E.COMBO_BREAKER]
 
 
 ## Moves the clock one sim tick on.

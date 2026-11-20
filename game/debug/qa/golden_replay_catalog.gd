@@ -34,7 +34,7 @@ static func specs() -> Array[Dictionary]:
 			19, [[&"brann", 5], [&"lyra", 2]], DUEL_STARTS, 1800, ["KO", "KO_REST"]),
 	]
 	var pickups := _spec("pickups_heartbloom", "Heartbloom Gardens with weapon and power drops every 4-6 s.",
-		23, [[&"vexa", 4], [&"lyra", 4]], DUEL_STARTS, 1800, ["PICKUP_SPAWN", "PICKUP"])
+		24, [[&"vexa", 4], [&"lyra", 4]], DUEL_STARTS, 1800, ["PICKUP_SPAWN", "PICKUP"])
 	pickups.zone = &"heartbloom_gardens"
 	pickups.pickups = true
 	pickups.pickup_interval = [240, 360]

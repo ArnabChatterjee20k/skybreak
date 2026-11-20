@@ -1,0 +1,81 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1
+		},
+		"lance/light_1": {
+			"4": 5
+		},
+		"lance/light_1+counter": {
+			"8": 4
+		},
+		"lance/light_2": {
+			"4": 8,
+			"20": 1
+		},
+		"lance/light_3": {
+			"7": 8
+		},
+		"light_1": {
+			"3": 2,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 1,
+			"9": 2
+		},
+		"light_2": {
+			"3": 2,
+			"5": 3
+		},
+		"light_3": {
+			"5": 2,
+			"8": 3
+		}
+	},
+	"id": "118:verdant_falls:1v1:brann,lyra:24",
+	"kos": 1,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "KO",
+	"rounds_started": 1,
+	"seed": 118,
+	"sim_ms_per_tick": 0.62329625,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0110269589349627,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.891034214164677,
+		"foot_slide_cm_per_frame": 0.000968153022508237,
+		"foot_slide_frames": 280,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 0.750312630262609
+	},
+	"view_ms_per_frame": 0.6830925,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "RightUpperArm turned 1.21 rad in one frame (HITSTUN, move , clip hit_light)",
+			"fighter": 1,
+			"first_tick": 1413,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "lance",
+			"worst_tick": 1413,
+			"worst_value": 1.20649290084839
+		}
+	],
+	"wall_seconds": 18.054,
+	"zone": "verdant_falls"
+}

@@ -181,10 +181,11 @@ func test_blocking_pauses_guard_regeneration() -> void:
 # Perfect block
 
 func test_a_block_tap_perfect_blocks_on_every_tick_of_the_window_and_not_after() -> void:
-	for offset in _tuning.perfect_block_window_ticks + 1:
+	# The window is 6 ticks counting the press tick: 0-5 ticks before the hit (T-DEF3 S3).
+	for offset in _tuning.perfect_block_window_ticks:
 		assert_eq(_light_against_tap(offset), Event.PERFECT_BLOCK, "tap %d ticks before the hit" % offset)
-	var late := _tuning.perfect_block_window_ticks + 1
-	assert_eq(_light_against_tap(late), Event.HIT, "a tap 7 ticks early has passed")
+	var late := _tuning.perfect_block_window_ticks
+	assert_eq(_light_against_tap(late), Event.HIT, "a tap 6 ticks early has passed")
 	assert_eq(_light_against_tap(late, true), Event.BLOCK, "holding still blocks normally")
 
 
@@ -257,7 +258,7 @@ func test_a_missed_tap_locks_out_perfect_blocks_for_20_ticks() -> void:
 	_start()
 	_tick(30)
 	_tap(1, BLOCK)
-	_tick(_tuning.perfect_block_window_ticks)
+	_tick(_tuning.perfect_block_window_ticks - 1)
 	assert_true(_fighter(1).perfect_block_armed, "window still open on its last tick")
 	_tick()
 	assert_false(_fighter(1).perfect_block_armed)
@@ -277,7 +278,7 @@ func test_a_block_during_the_lockout_still_blocks_normally() -> void:
 	_start()
 	_tick(30)
 	_tap(1, BLOCK)
-	_tick(_tuning.perfect_block_window_ticks + 1)
+	_tick(_tuning.perfect_block_window_ticks)
 	assert_gt(_fighter(1).perfect_block_lockout, 0)
 	_held[1] = BLOCK
 	_tap(0, LIGHT)

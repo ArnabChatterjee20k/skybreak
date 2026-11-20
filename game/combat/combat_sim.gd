@@ -13,6 +13,7 @@ const DEFAULT_TUNING := preload("res://game/combat/default_movement_tuning.tres"
 const DEFAULT_METER_TUNING := preload("res://game/combat/default_meter_tuning.tres")
 const DEFAULT_FIGHTER_STATS := preload("res://game/combat/default_fighter_stats.tres")
 const DEFAULT_HIT_TUNING := preload("res://game/combat/default_hit_tuning.tres")
+const DEFAULT_ESCAPE_TUNING := preload("res://game/combat/escapes/default_escape_tuning.tres")
 const DEFAULT_DODGE_TUNING := preload("res://game/combat/default_dodge_tuning.tres")
 const DEFAULT_KI_TUNING := preload("res://game/combat/ki/default_ki_tuning.tres")
 
@@ -72,6 +73,12 @@ enum EventType {
 	BEAM_CLASH, ## fighter's and target's beams met at position: clash id.
 	CLASH_BEAT, ## fighter pressed in clash id: beat index (-1 off-beat) and push gain.
 	CLASH_END, ## Clash id ended: winner (-1 even), push.
+	# Escapes (T-DEF3). Entries: {type, fighter, attacker (= fighter), target, position, way, caught}.
+	COMBO_BREAKER, ## fighter burst out of a combo; target is the first opponent blown away (or -1).
+	AIR_TECH, ## fighter teched out of knockback (way); caught: a chaser (target) read it.
+	CHASE, ## fighter chased its knocked-back target (way: over, under, straight).
+	TECH_ROLL, ## fighter rolled out of a knockdown.
+	WAKEUP, ## fighter got up from a knockdown; delayed: it held descend.
 }
 
 const _DASH := FighterInput.Action.DASH
@@ -107,7 +114,7 @@ const _FACING_LOCKED_STATES: Array[FighterState.State] = [
 	FighterState.State.ATTACKING, FighterState.State.HITSTUN,
 	FighterState.State.BLOCKSTUN, FighterState.State.KNOCKDOWN,
 	FighterState.State.GRABBED, FighterState.State.THROWING,
-	FighterState.State.KO_FALL, FighterState.State.KO_DOWN,
+	FighterState.State.KO_FALL, FighterState.State.KO_DOWN, FighterState.State.ESCAPING,
 ]
 ## States that cannot block even with blocking set.
 const _NO_BLOCK_STATES: Array[FighterState.State] = [
@@ -161,6 +168,8 @@ var tuning: MovementTuning
 var meter_tuning: MeterTuning
 ## Hit constants (scaling, stun, hitstop, knockback). Configuration, like tuning.
 var hit_tuning: HitTuning
+## Escape tools (combo breaker, air tech, chase, wakeups). Configuration, not hashed.
+var escape_tuning: EscapeTuning = DEFAULT_ESCAPE_TUNING as EscapeTuning
 ## Dodge constants (T-DEF2). Configuration, like tuning.
 var dodge_tuning: DodgeTuning = DEFAULT_DODGE_TUNING as DodgeTuning
 ## What happened this tick, for the view (every EventType), in the order it was
@@ -507,6 +516,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		return
 	var state_before := fighter.state
 	var start_y := fighter.position.y
+	EscapeRules.count(fighter)
 	_record_presses(fighter, input)
 	_update_lock_on(index, input)
 	_count_weapon_timers(fighter)
@@ -550,6 +560,8 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 			_move_ko_falling(fighter)
 		FighterState.State.KO_DOWN:
 			_move_ko_down(fighter)
+		FighterState.State.ESCAPING:
+			EscapeRules.move(self, fighter)
 	# Haste stretches this tick's travel without changing the stored velocity.
 	var speed := PowerRules.speed_percent(fighter) / 100.0
 	var from := fighter.position
@@ -613,7 +625,9 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 		FighterState.State.ATTACKING:
 			_advance_attack(index, input)
 			return
-		FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN:
+		FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN, FighterState.State.ESCAPING:
+			if EscapeRules.step(self, index, input):
+				return
 			if fighter.state_ticks >= fighter.stun_ticks:
 				_enter_free_state(fighter)
 			return
@@ -660,8 +674,8 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 		FighterState.DashKind.RUSH:
 			var target := fighter.lock_on_target
 			if target < 0 or fighter.state_ticks >= tuning.rush_max_ticks \
-					or fighter.position.distance_to(fighters[target].position) \
-					<= tuning.rush_stop_distance + _RUSH_ARRIVAL_MARGIN:
+					or (fighter.position.distance_to(fighters[target].position) \
+					<= tuning.rush_stop_distance + _RUSH_ARRIVAL_MARGIN and not EscapeRules.tailing(self, fighter)):
 				# Braked to its stop point in front of the target, ready for a follow-up.
 				fighter.velocity = Vector3.ZERO
 				_end_dash(fighter)
@@ -675,6 +689,8 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 ## A dodge can turn into a vanish only while the Shift+E chord is still being pressed.
 func _start_buffered_action(index: int, input: FighterInput, wish: Vector3) -> void:
 	var fighter := fighters[index]
+	if EscapeRules.try_chase(self, index, input):
+		return
 	var free := _is_free(fighter)
 	var dashing := fighter.state == FighterState.State.DASHING \
 		and (fighter.dash_kind != FighterState.DashKind.DODGE or fighter.state_ticks < INPUT_BUFFER_TICKS)
@@ -718,7 +734,8 @@ func _track_block_press(index: int, input: FighterInput, state_before: FighterSt
 	fighter.perfect_block_lockout = maxi(fighter.perfect_block_lockout - 1, 0)
 	if fighter.perfect_block_armed:
 		fighter.perfect_block_ticks += 1
-		if fighter.perfect_block_ticks > hit_tuning.perfect_block_window_ticks:
+		# A fresh press covers exactly the window, counting its own tick (S3: no early held press).
+		if fighter.perfect_block_ticks >= hit_tuning.perfect_block_window_ticks:
 			_miss_perfect_block(fighter)
 	if not input.is_pressed(_BLOCK) or fighter.state == FighterState.State.VANISHING \
 			or state_before not in _PERFECT_BLOCK_STATES or _opponent_vanishing(index):
@@ -1016,6 +1033,10 @@ func _move_on_ground(fighter: FighterState, input: FighterInput, wish: Vector3) 
 	var rate := tuning.ground_acceleration if wish != Vector3.ZERO else tuning.ground_deceleration
 	var planar := Vector3(fighter.velocity.x, 0.0, fighter.velocity.z)
 	fighter.velocity = planar.move_toward(wish * tuning.ground_speed, rate * TICK_SECONDS)
+	var downhill := _steep_downhill(fighter)
+	if downhill != Vector3.ZERO:
+		# Too steep to stand on (landed on a cliff face): slide down it.
+		fighter.velocity = downhill * tuning.ground_speed
 	if ground_height.is_valid() and fighter.position.y > _stand_height(fighter) + _LEDGE_DROP:
 		# Walked off a ledge (an island rim): fall.
 		fighter.enter_state(FighterState.State.FALLING)
@@ -1063,7 +1084,8 @@ func _move_dashing(index: int, input: FighterInput, wish: Vector3) -> void:
 				fighter.dash_direction = steer
 			fighter.velocity = fighter.dash_direction * tuning.sustained_dash_speed
 		FighterState.DashKind.RUSH:
-			var to_target := fighters[fighter.lock_on_target].position - fighter.position
+			var to_target := fighters[fighter.lock_on_target].position + EscapeRules.chase_offset(self, fighter) \
+				- fighter.position
 			if to_target != Vector3.ZERO:
 				fighter.dash_direction = to_target.normalized()
 			var room := maxf(to_target.length() - tuning.rush_stop_distance, 0.0)
@@ -1306,6 +1328,7 @@ func _reset_fighter(fighter: FighterState, start: Vector3) -> void:
 	fighter.tether_length = 0.0
 	fighter.combo_starter_percent = 100
 	fighter.powers = FighterPowers.new()
+	fighter.escapes.reset()
 	fighter.dodge = FighterDodge.new()
 	fighter.dodge.air_left = dodge_tuning.air_dodges
 
@@ -1460,6 +1483,7 @@ func _apply_hit(contact: Dictionary, from_projectile: bool = false) -> void:
 		_enter_stun(target, FighterState.State.HITSTUN, decayed_hitstun(move, combo_hit))
 		target.knockback_type = knockback
 		target.spike_bounced = false
+		EscapeRules.on_hit(self, attacker_index, target_index, knockback, from_projectile)
 		target.velocity = _air_knockback_guarded(attacker, target, move, _knockback_velocity(contact))
 		if not from_projectile:
 			_start_pushback(target_index, attacker_index, hit_tuning.hit_pushback_distance)
@@ -1786,18 +1810,50 @@ func _clamp_to_arena(fighter: FighterState) -> void:
 ## (a cliff, which the 2 m ground grid bakes as a ramp) stops it like a wall
 ## instead of lifting it up the face (QA-12c).
 func _stop_at_cliff(fighter: FighterState, from: Vector3) -> void:
+	var travel := Vector3(fighter.position.x - from.x, 0.0, fighter.position.z - from.z)
+	if travel == Vector3.ZERO:
+		return
 	var stand := _stand_height(fighter)
 	var climb := stand - from.y
-	if climb <= _STEP_UP or fighter.position.y >= stand:
-		return
-	var planar_sq := (fighter.position.x - from.x) * (fighter.position.x - from.x) \
-		+ (fighter.position.z - from.z) * (fighter.position.z - from.z)
-	if climb * climb <= planar_sq * _MAX_CLIMB_SLOPE * _MAX_CLIMB_SLOPE:
+	var max_sq := _MAX_CLIMB_SLOPE * _MAX_CLIMB_SLOPE
+	var blocked := false
+	if climb > _FLOOR_EPSILON and fighter.position.y < stand:
+		# The face itself must be walkable too, or walking across it at an angle (or in tiny steps) climbs it.
+		blocked = not ((climb <= _STEP_UP or climb * climb <= travel.length_squared() * max_sq) \
+			and _ground_slope_sq(fighter) <= max_sq)
+	if not blocked:
+		# Stop a foot's reach short of a face, so the leading foot never stands inside it.
+		var ahead := fighter.position + travel.normalized() * _FOOT_REACH - Vector3.UP * _FIGHTER_HALF_HEIGHT
+		blocked = _ground_at(ahead) - (stand - tuning.ground_height) > _MAX_CLIMB_SLOPE * _FOOT_REACH + _STEP_UP
+	if not blocked:
 		return
 	fighter.position.x = from.x
 	fighter.position.z = from.z
 	fighter.velocity.x = 0.0
 	fighter.velocity.z = 0.0
+
+
+## Squared steepness (rise over run) of the ground under a fighter, from samples _SLOPE_PROBE apart.
+func _ground_slope_sq(fighter: FighterState) -> float:
+	return _ground_gradient(fighter).length_squared()
+
+
+## Ground rise per metre along x and z under a fighter (zero on the flat floor).
+func _ground_gradient(fighter: FighterState) -> Vector3:
+	if not ground_height.is_valid():
+		return Vector3.ZERO
+	var at := fighter.position - Vector3.UP * _FIGHTER_HALF_HEIGHT
+	var dx := _ground_at(at + Vector3(_SLOPE_PROBE, 0.0, 0.0)) - _ground_at(at - Vector3(_SLOPE_PROBE, 0.0, 0.0))
+	var dz := _ground_at(at + Vector3(0.0, 0.0, _SLOPE_PROBE)) - _ground_at(at - Vector3(0.0, 0.0, _SLOPE_PROBE))
+	return Vector3(dx, 0.0, dz) / (2.0 * _SLOPE_PROBE)
+
+
+## Unit planar direction down the ground under a fighter when it is too steep to stand on, else zero.
+func _steep_downhill(fighter: FighterState) -> Vector3:
+	var gradient := _ground_gradient(fighter)
+	if gradient.length_squared() <= _MAX_CLIMB_SLOPE * _MAX_CLIMB_SLOPE:
+		return Vector3.ZERO
+	return -gradient.normalized()
 
 
 ## Puts a fighter moved from outside its own step (a pushbox) back inside the
@@ -2092,6 +2148,10 @@ const _LEDGE_DROP := 0.75
 const _STEP_UP := 0.05
 ## Steepest ground a fighter walks up, as rise over run (tan 60 degrees).
 const _MAX_CLIMB_SLOPE := 1.7320508
+## Half the distance between the ground samples that measure a slope.
+const _SLOPE_PROBE := 0.25
+## How far ahead of the capsule centre the leading foot reaches.
+const _FOOT_REACH := 0.4
 ## Positions are 32-bit; a floor this close counts as touching.
 const _FLOOR_EPSILON := 0.001
 ## States a smitten fighter drifts in.

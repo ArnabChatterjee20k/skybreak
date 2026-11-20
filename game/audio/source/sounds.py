@@ -129,6 +129,26 @@ def tech(rng, v):
 	return fade(mix(clap, zing, at(clap * 0.6, 0.05)))
 
 
+def combo_breaker(rng, v):
+	# T-DEF3: a short inhale, then a sub boom, a bright energy ring and a shockwave whoosh outward.
+	dur = 1.1
+	inhale = sweep_bp(noise(rng, 0.12), 3000, 600, 2.0) * env_swell(0.12, 0.95, 1.2) * 0.4
+	boom = thump(rng, v, 0.9, 110, 30)
+	ring = bell(1046.5 * (1.0 + 0.02 * v), 0.9, 0.35, ((1, 1.0), (1.5, 0.5), (2.0, 0.35), (3.0, 0.15)))
+	wave = sweep_bp(noise(rng, 0.7), 200, 4000, 1.6, 0.7) * env_exp(0.7, 0.22)
+	shards = mix(*[at(bell(2400 + 2400 * rng.random(), 0.25, 0.06), 0.02 + 0.12 * rng.random()) for _ in range(8)])
+	body = mix(boom, 0.45 * ring, 0.7 * wave, 0.25 * shards)
+	return fade(reverb_tail(rng, mix(inhale, at(body, 0.1)), 0.7, 0.25)[: int(SR * dur)], 0.002, 0.15)
+
+
+def air_tech(rng, v):
+	# T-DEF3: an air tech or tech roll: a tight clap and a rising zip, then an air flip.
+	clap = bp(noise(rng, 0.06), 1500, 7000) * env_exp(0.06, 0.012)
+	zip_ = tone(glide(700 + 60 * v, 2400, 0.16, 1.4), 0.16) * env_exp(0.16, 0.05) * 0.3
+	flip = sweep_bp(noise(rng, 0.28), 900, 5000, 2.4, 0.6) * env_swell(0.28, 0.35) * 0.6
+	return fade(mix(clap, zip_, at(flip, 0.03)))
+
+
 def counter_hit(rng, v):
 	sting = mix(tone(1320, 0.4), 0.6 * tone(1980, 0.4), 0.3 * tone(2640, 0.4)) * env_exp(0.4, 0.09)
 	sizzle = hp(noise(rng, 0.25), 4000) * env_exp(0.25, 0.05)
@@ -641,6 +661,8 @@ CUES = [
 	Cue("throw", "combat", throw, 2, max_voices=2, priority=70),
 	Cue("tech", "combat", tech, 2, max_voices=2, priority=65),
 	Cue("counter_hit", "combat", counter_hit, 2, max_voices=2, priority=80),
+	Cue("combo_breaker", "combat", combo_breaker, 2, max_voices=1, priority=90, pitch=(0.98, 1.02), duck_db=-6.0, duck_seconds=0.5),
+	Cue("air_tech", "combat", air_tech, 3, max_voices=2, priority=65),
 	Cue("ko", "combat", ko_boom, 1, max_voices=1, priority=100, cooldown=0.5, layers=["ko_tail"], duck_db=-12.0, duck_seconds=1.6),
 	Cue("ko_tail", "combat", ko_tail, 1, max_voices=1, priority=95, positional=False),
 	Cue("combo_tick", "combat", combo_tick, 1, bus="UI", positional=False, max_voices=2, priority=50, pitch=(1.0, 1.0), volume_jitter_db=0.0),
