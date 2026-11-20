@@ -96,6 +96,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## Backlog
 
+- QA-19 [desktop] Bug (T-D30e): `test_four_armed_fighters_of_layers_fit_the_cpu_budget` fails on
+  `main` (66b15ce) in the Linux cloud container: weapon holds cost 2.17-2.66 ms per frame for 4
+  armed fighters against the 2.0 ms budget. Profile the clearance solver (24 passes) on the dev PC.
+
 - QA-18 [desktop] Godot 4.7.2 text-to-binary export conversion drops `Packed*Array` values in
   `ZoneData` .tres; re-enable `editor/export/convert_text_resources_to_binary` once fixed
   upstream (smaller pck, faster load).
