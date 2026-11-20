@@ -156,7 +156,7 @@ static func entries_for(use_gamepad: bool) -> Array:
 		["LMB", "Light"],
 		["RMB", "Heavy"],
 		[_key(&"fighter_block"), "Block"],
-		[_key(&"fighter_dash"), "Dash"],
+		[_key(&"fighter_dash"), "Dodge / dash"],
 		[_key(&"fighter_ki_blast"), "Ki blast"],
 		[_key(&"fighter_lock_toggle"), "Lock on"],
 		[_key(InputBindings.TOGGLE_HINTS), "Hide"],
@@ -168,7 +168,7 @@ static func gamepad_entries() -> Array:
 	var actions := [
 		[InputBindings.ASCEND, "Fly up"], [InputBindings.DESCEND, "Fly down"],
 		[&"fighter_light", "Light"], [&"fighter_heavy", "Heavy"], [&"fighter_block", "Block"],
-		[&"fighter_dash", "Dash"], [&"fighter_ki_blast", "Ki blast"], [&"fighter_lock_toggle", "Lock on"],
+		[&"fighter_dash", "Dodge / dash"], [&"fighter_ki_blast", "Ki blast"], [&"fighter_lock_toggle", "Lock on"],
 	]
 	var entries := []
 	for pair: Array in actions:
