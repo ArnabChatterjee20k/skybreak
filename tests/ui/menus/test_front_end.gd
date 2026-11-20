@@ -136,6 +136,22 @@ func test_ffa_seats_can_be_humans_or_ais_on_teams() -> void:
 	assert_eq(config.fighters[2].team, 3)
 
 
+func test_every_zone_card_shows_its_whole_name() -> void:
+	front.go(&"zone_select")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var zones := front.screens[&"zone_select"] as ZoneSelect
+	for id: StringName in zones.cards:
+		var card: Button = zones.cards[id]
+		for child in card.get_children():
+			if child is Label:
+				var label := child as Label
+				var font := label.get_theme_font(&"font")
+				var size := label.get_theme_font_size(&"font_size")
+				var width := font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+				assert_lte(width, label.size.x, "%s fits its card at %d px" % [label.text, size])
+
+
 func test_zone_select_offers_all_seven_zones_with_art() -> void:
 	var zones := front.screens[&"zone_select"] as ZoneSelect
 	assert_eq(zones.cards.size(), 7)
