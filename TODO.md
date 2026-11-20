@@ -12,6 +12,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `AGENTS.md`. Remaining: CI green on GitHub.
 
 ## In review
+- polish batch 3 [desktop] (`claude/polish-batch-3`): media-2 flaws. Lyra UNARMED (#78 follow-up) is
+  the design-correct auto-throw of an emptied 12-arrow Ki Bow (regression test added); KO drops its
+  burst lines and post-KO trails/rings/smears; Ember Rift lava fissures around the spawns
+  (`zone_ember_rift` re-blessed); 1v1 drops land 8-16 m out. Open: re-bless the flat-floor bot-match
+  golden (drifts at tick 241, the first duel drop) and golden replays, full GUT, QA quick.
 
 - T-D35 [desktop] #107 Heartbloom: the sim floor matches the drawn island outline (`ZoneGround`
   25 cm outline mask, 0.25 m inset); falls/dives/vanish anchors can no longer pass through an
@@ -94,6 +99,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+- PB3-1 [developer] AI pickup interest: in 14 seeded 60 s duels a level-3 AI picks up a weapon in
+  only ~half, even with the drop 4-9 m away (PRESSURE outscores PICKUP up close, `fighter_ai.gd`
+  `_choose_plan`). Raise the duel pickup weight so a typical duel shows a weapon.
 
 - QA-13 [desktop] Landing frame: the first IDLE frame after flight can dip a sole up to 34 cm
   under the floor (vexa `fight_idle`, `1623:heartbloom_gardens:2v2:lyra,kael,vexa,brann:3235`
