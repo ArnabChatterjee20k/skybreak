@@ -12,7 +12,7 @@ extends RefCounted
 
 const FLOOR_SHADER := preload("res://game/world/zones_voxel/shattered_mesa/mesa_floor.gdshader")
 const ROCK_SHADER := preload("res://game/world/zones_voxel/shattered_mesa/mesa_rock.gdshader")
-const VERSION := 6
+const VERSION := 8
 const CACHE := "user://voxel_zone_cache/shattered_mesa_v%d/" % VERSION
 ## Floor cells whose corners differ by more than this (m) are cliff, not floor.
 const STEEP := 1.1
@@ -289,8 +289,15 @@ func _rock_field(node: Node3D, key: String, cell: float, lo: Vector2, hi: Vector
 				var h := height(w.x, w.y) - 0.06
 				var top := floori(h / band) * band_cells
 				var foot := h - 14.0
+				var crest := h
 				for d: Vector2 in [Vector2(-4, 0), Vector2(4, 0), Vector2(0, -4), Vector2(0, 4)]:
-					foot = minf(foot, height(w.x + d.x * step, w.y + d.y * step) - 3.0)
+					var o := height(w.x + d.x * step, w.y + d.y * step)
+					foot = minf(foot, o - 3.0)
+					crest = maxf(crest, o)
+				# Low relief (a lone steep bump in the floor): snap to the cell, not the band,
+				# so the rock doesn't sit in a pit under the floor's skirts.
+				if crest - (foot + 3.0) < 4.0:
+					top = floori(h / cell)
 				hf.set_column(x, z, roundi(top), floori(foot / cell), white)
 		hf.bake_step_ao(0.4, 2 if cell < 1.0 else 1)
 		hf.bind(mat)
@@ -389,8 +396,8 @@ func _macro_texture() -> ImageTexture:
 				var dn := dune.get_noise_2d(w.x * 0.8 + w.y * 0.3, w.y * 0.6 - w.x * 0.2)
 				c = sand.lerp(crest, clampf(dn * 1.6, 0.0, 1.0)).lerp(trough, clampf(-dn * 1.2, 0.0, 0.6))
 				var wn := absf(wash.get_noise_2d(w.x, w.y))
-				if wn < 0.035 and d > 8.0:
-					var k := 1.0 - wn / 0.035
+				if wn < 0.06 and d > 8.0:
+					var k := 1.0 - wn / 0.06
 					c = c.lerp(crest, k * 0.6)
 					a = 1.0 if k > 0.45 else 0.0
 					if k < 0.45:
@@ -402,9 +409,9 @@ func _macro_texture() -> ImageTexture:
 				c = c.lerp(drift, clampf(pn * 0.6, 0.0, 0.3))
 			else:
 				# High treads: caprock with sand pockets; edges polished lighter.
-				c = cap.lerp(cap_light, clampf(pn + 0.3, 0.0, 1.0) * 0.6)
+				c = cap.lerp(cap_light, clampf(pn + 0.3, 0.0, 1.0) * 0.3)
 				var pocket := clampf((patch.get_noise_2d(w.x * 1.6 + 70.0, w.y * 1.6) - 0.15) * 2.0, 0.0, 1.0)
-				c = c.lerp(drift, pocket * 0.5)
+				c = c.lerp(drift, pocket * 0.35)
 				if d < 4.0:
 					c = c.lerp(cap_light * 1.12, (1.0 - d / 4.0) * 0.4)
 				var blend := clampf((h - 30.0) / 6.0, 0.0, 1.0)

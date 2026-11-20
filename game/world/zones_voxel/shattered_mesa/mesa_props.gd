@@ -5,9 +5,9 @@ extends RefCounted
 ## scrub, talus, dead trees and the story props are visual-only and stay off
 ## the open floor lines (low, or beside landmarks).
 
-const VERSION := 5
+const VERSION := 6
 enum Mat { NONE, LIGHT, DARK, PALE, CAP, LICHEN, SAND, SAGE, SAGE_DARK, WOOD, CANVAS, ROPE, IRON, BRASS,
-	GLOW, LEDGER, VARNISH, GLYPH, WATER, BUCKET }
+	GLOW, LEDGER, VARNISH, GLYPH, WATER, BUCKET, POLE }
 const COLORS := {
 	Mat.LIGHT: Color("#C88C70"), Mat.DARK: Color("#9A5440"), Mat.PALE: Color("#D4A88C"),
 	Mat.CAP: Color("#6E5E54"), Mat.LICHEN: Color("#B4D23C"), Mat.SAND: Color("#E2D2B4"),
@@ -15,7 +15,7 @@ const COLORS := {
 	Mat.CANVAS: Color("#B4A488"), Mat.ROPE: Color("#9A8466"), Mat.IRON: Color("#4A4642"),
 	Mat.BRASS: Color("#9C8450"), Mat.GLOW: Color("#ffd89a"), Mat.LEDGER: Color("#5A3E30"),
 	Mat.VARNISH: Color("#4A3428"), Mat.GLYPH: Color("#E0C0A4"), Mat.WATER: Color("#3a4a50"),
-	Mat.BUCKET: Color("#7a7a74"),
+	Mat.BUCKET: Color("#7a7a74"), Mat.POLE: Color("#7E6C58"),
 }
 ## Hoodoo variants: (height, base radius) in metres.
 const HOODOOS := [Vector2(30, 4.5), Vector2(38, 5.0), Vector2(46, 5.5), Vector2(54, 6.0), Vector2(62, 6.5),
@@ -110,7 +110,7 @@ func surface_of(mat: int) -> int:
 			return VoxelProp.Surf.GLOW
 		Mat.WATER:
 			return VoxelProp.Surf.WATER
-		Mat.WOOD:
+		Mat.WOOD, Mat.POLE:
 			return VoxelProp.Surf.BARK
 		Mat.SAGE, Mat.SAGE_DARK, Mat.CANVAS:
 			return VoxelProp.Surf.PETAL
@@ -197,7 +197,7 @@ func _red_arch() -> void:
 			# Chipped corners: a few cells knocked out per band edge.
 			g.paint(AABB(lo, hi - lo), func(p: Vector3) -> float:
 				var e := minf(minf(p.x - lo.x, hi.x - p.x), minf(p.z - lo.z, hi.z - p.z))
-				return -1.0 if e < 0.4 and VoxelSdf.hash3(Vector3i((p / 1.05).floor()), 13) < 0.16 else 1.0,
+				return -1.0 if e < 0.4 and VoxelSdf.hash3(Vector3i((p / 1.05).floor()), 13) < 0.07 else 1.0,
 				0, -1, VoxelGrid.Mode.CARVE)
 		_lichen(g, AABB(Vector3(x0 - 4, 0, -leg_d - 3), Vector3(x1 - x0 + 8, leg_top + 4, 2 * leg_d + 6)), 0.05)
 	var paint_span := func(g: VoxelGrid) -> void:
@@ -227,7 +227,7 @@ func _red_arch() -> void:
 				return maxf(VoxelSdf.box(p, c, h + Vector3(0, 0, dz)), p.y - (y1 - dip)), mat)
 			g.paint(AABB(lo, hi - lo), func(p: Vector3) -> float:
 				var e := minf(minf(p.x - lo.x, hi.x - p.x), minf(p.z - lo.z, hi.z - p.z))
-				return -1.0 if e < 0.4 and VoxelSdf.hash3(Vector3i((p / 1.05).floor()), 17) < 0.16 else 1.0,
+				return -1.0 if e < 0.4 and VoxelSdf.hash3(Vector3i((p / 1.05).floor()), 17) < 0.07 else 1.0,
 				0, -1, VoxelGrid.Mode.CARVE)
 		_lichen(g, AABB(Vector3(-0.56 * sx, span_lo - 4, -span_d - 2), Vector3(1.12 * sx, span_hi - span_lo + 6,
 			2 * span_d + 4)), 0.05)
@@ -336,8 +336,13 @@ func _hoodoos() -> void:
 		var basis := xf.basis * Basis.from_scale(Vector3(1.0 / (2.0 * hv.y), 1.0 / hv.x, 1.0 / (2.0 * hv.y)))
 		var base := xf.origin - xf.basis.y * 0.5
 		(lists[pick] as Array[Transform3D]).append(Transform3D(basis, base))
-		# Hero: a mid-size hoodoo near the field's centre.
-		var d := Vector2(base.x, base.z).distance_to(Vector2(560, 640)) + absf(h - 45.0)
+		# Hero: a mid-size hoodoo in the south-west cluster on open ground.
+		var d := Vector2(base.x, base.z).distance_to(Vector2(470, 760)) * 0.5 + absf(h - 48.0) * 2.0
+		var g0 := ground(base.x, base.z)
+		for k in 12:
+			var o := Vector2.from_angle(k * TAU / 12.0) * 34.0
+			if absf(ground(base.x + o.x, base.z + o.y) - g0) > 3.0:
+				d += 1000.0
 		if d < best:
 			best = d
 			hoodoo_hero = Transform3D(basis, base)
@@ -357,7 +362,7 @@ func _hoodoos() -> void:
 ## The destructible's "after" state: a hoodoo broken into drums across a dry
 ## wash, its cap lying upside down a few metres away.
 func _fallen_hoodoo() -> void:
-	var at := _find_floor(Vector2(610, 690), 40.0, 14.0)
+	var at := _find_floor(Vector2(520, 700), 50.0, 12.0)
 	var dir := Vector2(0.8, -0.6)
 	var paint := func(g: VoxelGrid) -> void:
 		var x := -9.0
@@ -576,7 +581,7 @@ func _find_floor(want: Vector2, reach: float, clear: float) -> Vector2:
 		for o: Vector2 in [Vector2(clear, 0), Vector2(-clear, 0), Vector2(0, clear), Vector2(0, -clear)]:
 			if absf(ground(p.x + o.x, p.y + o.y) - g) > 0.8:
 				flat = false
-		if flat and not _near_spawn(p, 14.0) and d < best_d:
+		if flat and g < 26.0 and not _near_spawn(p, 14.0) and d < best_d:
 			best_d = d
 			best = p
 	return best
@@ -618,19 +623,31 @@ func _camp() -> void:
 	var lean := func(g: VoxelGrid) -> void:
 		for x: float in [-1.4, 1.4]:
 			g.paint(AABB(Vector3(x - 0.1, 0, 0.9), Vector3(0.2, 2.0, 0.2)), func(p: Vector3) -> float:
-				return VoxelSdf.box(p, Vector3(x, 0.95, 1.0), Vector3(0.05, 0.95, 0.05)), Mat.WOOD)
+				return VoxelSdf.box(p, Vector3(x, 0.95, 1.0), Vector3(0.05, 0.95, 0.05)), Mat.POLE)
 		g.paint(AABB(Vector3(-1.7, 1.8, 0.85), Vector3(3.4, 0.3, 0.3)), func(p: Vector3) -> float:
-			return VoxelSdf.box(p, Vector3(0, 1.9, 1.0), Vector3(1.65, 0.05, 0.05)), Mat.WOOD)
-		g.paint(AABB(Vector3(-1.6, 0, -1.2), Vector3(3.2, 2.0, 2.3)), func(p: Vector3) -> float:
-			var t := (p.z + 1.1) / 2.1
-			var y := t * 1.88 + 0.04 * sin(p.x * 3.0)
-			return maxf(absf(p.y - y) - 0.09, maxf(absf(p.x) - 1.55, absf(t - 0.5) - 0.5)), Mat.CANVAS)
-		g.paint_surface(AABB(Vector3(-1.6, 0, -1.2), Vector3(3.2, 2.0, 2.3)), func(p: Vector3, c: Vector3i) -> bool:
-			return fposmod(p.x + 1.55, 1.03) < 0.03, Mat.ROPE, [Mat.CANVAS])
+			return VoxelSdf.box(p, Vector3(0, 1.9, 1.0), Vector3(1.65, 0.05, 0.05)), Mat.POLE)
+		# The canvas in planar panels: a roof stepping down in three flat
+		# courses from the ridge to the back, then a back wall to the ground.
+		for k in 3:
+			var z0 := 1.05 - k * 0.62
+			var y := 1.9 - k * 0.32
+			g.paint(AABB(Vector3(-1.6, y - 0.2, z0 - 0.7), Vector3(3.2, 0.4, 0.8)), func(p: Vector3) -> float:
+				return VoxelSdf.box(p, Vector3(0, y + 0.04, z0 - 0.31), Vector3(1.58, 0.045, 0.33)), Mat.CANVAS)
+		g.paint(AABB(Vector3(-1.6, 0, -0.9), Vector3(3.2, 1.3, 0.3)), func(p: Vector3) -> float:
+			return VoxelSdf.box(p, Vector3(0, 0.62, -0.78), Vector3(1.58, 0.62, 0.045)), Mat.CANVAS)
+		# Seams and the hem.
+		g.paint_surface(AABB(Vector3(-1.7, 0, -1.2), Vector3(3.4, 2.1, 2.4)), func(p: Vector3, c: Vector3i) -> bool:
+			return absf(absf(p.x) - 0.52) < 0.025 or absf(p.x) > 1.54, Mat.ROPE, [Mat.CANVAS])
+		# Guy ropes to pegs at the front corners.
+		for x: float in [-1.4, 1.4]:
+			var a := Vector3(x, 1.9, 1.0)
+			var b := Vector3(x * 1.15, 0.0, 1.55)
+			g.paint(AABB(a.min(b) - Vector3.ONE * 0.1, (b - a).abs() + Vector3.ONE * 0.2), func(p: Vector3) -> float:
+				return VoxelSdf.capsule(p, a, b, 0.012, 0.012), Mat.ROPE)
 		# A bedroll under it.
 		g.paint(AABB(Vector3(-1, 0, -0.6), Vector3(2, 0.3, 1)), func(p: Vector3) -> float:
 			return VoxelSdf.box(p, Vector3(-0.2, 0.1, -0.1), Vector3(0.8, 0.1, 0.32), 0.05), Mat.ROPE)
-	var lm := _mesh("camp_leanto", AABB(Vector3(-1.8, -0.05, -1.3), Vector3(3.6, 2.2, 2.6)), cell, lean)
+	var lm := _mesh("camp_leanto", AABB(Vector3(-1.8, -0.05, -1.3), Vector3(3.6, 2.2, 3.0)), cell, lean)
 	var site := best + to_arch.orthogonal() * 2.8 - to_arch * 1.2
 	_single(lm, site, yaw + PI, -0.02)
 	# Theodolite on a tripod at T0, looking at the arch.
@@ -639,7 +656,7 @@ func _camp() -> void:
 			var a := float(k) * TAU / 3.0
 			var foot := Vector3(cos(a) * 0.42, 0, sin(a) * 0.42)
 			g.paint(AABB(Vector3(-0.5, 0, -0.5), Vector3(1, 1.32, 1)), func(p: Vector3) -> float:
-				return VoxelSdf.capsule(p, foot, Vector3(0, 1.3, 0), 0.022, 0.018), Mat.WOOD)
+				return VoxelSdf.capsule(p, foot, Vector3(0, 1.3, 0), 0.022, 0.018), Mat.POLE)
 		g.paint(AABB(Vector3(-0.12, 1.28, -0.12), Vector3(0.24, 0.08, 0.24)), func(p: Vector3) -> float:
 			return VoxelSdf.cylinder(p, Vector3(0, 1.28, 0), Vector3(0, 1.34, 0), 0.1, 0.1), Mat.BRASS)
 		g.paint(AABB(Vector3(-0.08, 1.34, -0.08), Vector3(0.16, 0.2, 0.16)), func(p: Vector3) -> float:

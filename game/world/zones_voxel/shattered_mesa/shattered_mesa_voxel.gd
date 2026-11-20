@@ -102,24 +102,35 @@ func shots() -> Array[Dictionary]:
 	from.y = ground_at(from.x, from.z) + 3.0
 	out.append({"name": "red_arch", "from": from, "at": arch + Vector3(0, 30, 0) + side * 4.0, "fov": 62.0,
 		"kael": [k, atan2(f.x, f.z)], "times": all})
-	# The hoodoo field from the floor, Kael beside a hoodoo.
+	# The hoodoo field from the floor, Kael beside a hoodoo, the cluster behind.
 	var hd: Transform3D = props.hoodoo_hero
 	var hp := Vector2(hd.origin.x, hd.origin.z)
-	var away := (hp - Vector2(560, 700)).normalized()
-	var kh := hp + away.rotated(0.9) * (props.hoodoo_hero_r + 3.0)
-	var hcam := kh + away.rotated(0.9) * 16.0 + away.rotated(2.4) * 9.0
-	var hfrom := _clear(Vector3(hcam.x, 0, hcam.y), Vector3(kh.x, 0, kh.y), 2.4)
+	var away := (hp - Vector2(470, 760)).normalized()
+	var kh := hp + away.rotated(0.35) * (props.hoodoo_hero_r + 2.5)
+	var hcam := hp + away.rotated(0.55) * (props.hoodoo_hero_r + 19.0)
+	var hfrom := _clear(Vector3(hcam.x, 0, hcam.y), Vector3(hp.x, 0, hp.y), 1.9)
 	out.append({"name": "hoodoo_field", "from": hfrom,
-		"at": Vector3(kh.x, ground_at(kh.x, kh.y) + 9.0, kh.y) - Vector3(away.x, 0, away.y) * 8.0, "fov": 60.0,
-		"kael": [kh, atan2(away.rotated(0.9).x, away.rotated(0.9).y)], "times": ["day", "dusk"]})
-	# The Anvil Mesa's top: the surveyor's camp, Kael beside it, the arch beyond.
+		"at": Vector3(hp.x, ground_at(hp.x, hp.y) + 11.0, hp.y) - Vector3(away.x, 0, away.y) * 12.0, "fov": 62.0,
+		"kael": [kh, atan2(hfrom.x - kh.x, hfrom.z - kh.y) + 0.4], "times": ["day", "dusk"]})
+	# The Anvil Mesa's top: the surveyor's camp, Kael beside it, looking toward the arch.
 	var camp: Vector3 = props.camp_at
 	var to_arch := (Vector2(arch.x, arch.z) - Vector2(camp.x, camp.z)).normalized()
-	var cam2 := Vector2(camp.x, camp.z) - to_arch * 7.5 + to_arch.orthogonal() * 3.5
-	var kc := Vector2(camp.x, camp.z) + to_arch.orthogonal() * -2.6 + to_arch * 1.5
-	out.append({"name": "anvil_camp", "from": Vector3(cam2.x, camp.y + 2.4, cam2.y),
-		"at": Vector3(camp.x, camp.y + 0.6, camp.z) + Vector3(to_arch.x, 0, to_arch.y) * 6.0, "fov": 60.0,
-		"kael": [kc, atan2(to_arch.x, to_arch.y)], "times": ["day", "dusk"]})
+	var cam2 := Vector2(camp.x, camp.z) - to_arch * 8.0 + to_arch.orthogonal() * 2.0
+	var kc := Vector2(camp.x, camp.z) - to_arch * 3.6 + to_arch.orthogonal() * 0.6
+	out.append({"name": "anvil_camp", "from": Vector3(cam2.x, camp.y + 1.7, cam2.y),
+		"at": Vector3(camp.x, camp.y + 1.0, camp.z) + Vector3(to_arch.x, 0, to_arch.y) * 1.0 + Vector3(to_arch.orthogonal().x, 0, to_arch.orthogonal().y) * 1.2, "fov": 55.0,
+		"kael": [kc, atan2(-to_arch.x, -to_arch.y) + 0.5], "times": ["day", "dusk", "night"]})
+	# Story corners: the petroglyph boulder, the well, the fallen hoodoo.
+	var pg: Vector3 = get_meta("petroglyphs")
+	var pf: Vector3 = get_meta("petroglyph_face")
+	out.append({"name": "petroglyphs", "from": pg + pf * 5.2 + Vector3(0, 1.5, 0) + Vector3(-pf.z, 0, pf.x) * 1.2,
+		"at": pg + Vector3(0, 1.0, 0), "fov": 50.0, "times": ["day"]})
+	var wl: Vector3 = get_meta("well")
+	out.append({"name": "well", "from": wl + Vector3(4.6, 2.3, 3.8), "at": wl + Vector3(0, 0.5, 0), "fov": 50.0,
+		"kael": [Vector2(wl.x - 2.2, wl.z + 2.3), PI * 0.2], "times": ["day"]})
+	var fh: Vector3 = get_meta("fallen_hoodoo")
+	out.append({"name": "fallen_hoodoo", "from": fh + Vector3(-6, 4.5, 18), "at": fh + Vector3(4, 1.5, 0), "fov": 55.0,
+		"times": ["day"]})
 	# Overview from above the plateau: the Great Mesa, the Anvil, the arch, the field.
 	out.append({"name": "overview", "from": Vector3(900, 230, 820), "at": Vector3(560, 40, 470), "fov": 55.0,
 		"times": all})
@@ -172,6 +183,8 @@ func flight() -> Array[Dictionary]:
 		var at: Vector3 = (ahead + nxt) * 0.5 + Vector3(0, -2.0, 0)
 		if i >= 5 and i <= 7:
 			at = gap - f * 60.0
+		elif i >= 8 and i <= 10:
+			at.y = minf(at.y, out[i].from.y - 4.0)
 		elif i == 11 or i == 12:
 			at = camp + Vector3(0, 1, 0)
 		elif i >= 13:

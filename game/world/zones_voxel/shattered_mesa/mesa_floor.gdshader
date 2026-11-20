@@ -11,7 +11,7 @@ uniform sampler2D macro_tex : filter_linear, source_color;
 uniform vec2 macro_origin;
 uniform vec2 macro_size;
 uniform float cell = 0.088;
-uniform float floor_gain = 0.74;
+uniform float floor_gain = 0.64;
 uniform vec3 pebble : source_color = vec3(0.6, 0.45, 0.37);
 uniform vec3 crack : source_color = vec3(0.62, 0.52, 0.42);
 
@@ -23,6 +23,38 @@ void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_n = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	skirt = UV;
+}
+
+vec2 v_point(vec2 cell_id) {
+	return cell_id + vec2(s_hash(ivec3(ivec2(cell_id), 31)), s_hash(ivec3(ivec2(cell_id), 37))) * 0.8 + 0.1;
+}
+
+// Distance from p to the nearest Voronoi edge (F2 - F1), in cells.
+float voronoi_edge(vec2 p) {
+	vec2 b = floor(p);
+	float f1 = 9.0;
+	float f2 = 9.0;
+	for (int j = -1; j <= 1; j++) {
+		for (int i = -1; i <= 1; i++) {
+			float d = length(v_point(b + vec2(float(i), float(j))) - p);
+			if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) { f2 = d; }
+		}
+	}
+	return f2 - f1;
+}
+
+vec2 voronoi_id(vec2 p) {
+	vec2 b = floor(p);
+	float f1 = 9.0;
+	vec2 id = b;
+	for (int j = -1; j <= 1; j++) {
+		for (int i = -1; i <= 1; i++) {
+			vec2 c = b + vec2(float(i), float(j));
+			float d = length(v_point(c) - p);
+			if (d < f1) { f1 = d; id = c; }
+		}
+	}
+	return id;
 }
 
 void fragment() {
@@ -60,20 +92,32 @@ void fragment() {
 		} else if (pb > 0.996) {
 			albedo *= 1.1;
 		}
-		// Mud cracks in dry washes: polygon edges on a jittered 0.7 m grid.
+		// Mud cracks in dry washes: cell edges of a jittered 0.8 m Voronoi (F2 - F1).
 		if (m.a > 0.5) {
-			vec2 q = world_pos.xz / 0.7;
-			vec2 qi = floor(q);
-			vec2 f = fract(q) + (vec2(s_hash(ivec3(ivec2(qi), 1)), s_hash(ivec3(ivec2(qi), 2))) - 0.5) * 0.3;
-			float e = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y));
-			if (e < 0.09) {
-				albedo = mix(albedo, s_linear(crack), 0.6);
+			float e = voronoi_edge((floor(world_pos.xz / cell) + 0.5) * cell / 0.8);
+			if (e < 0.08) {
+				albedo = mix(albedo, s_linear(crack), 0.4);
 			} else {
-				albedo *= 1.04;
+				albedo *= 1.0 + 0.04 * s_hash(ivec3(ivec2(floor(world_pos.xz / 0.8)), 3));
+			}
+		}
+		// Caprock on high treads: fractured into 2.5 m slabs with dark joints,
+		// each slab its own tone.
+		float hard = smoothstep(30.0, 34.0, world_pos.y);
+		if (hard > 0.0) {
+			vec2 q = (floor(world_pos.xz / cell) + 0.5) * cell / 2.5;
+			float e2 = voronoi_edge(q);
+			vec2 id = voronoi_id(q);
+			float tone = s_hash(ivec3(ivec2(id * 7.0), 13));
+			albedo *= mix(1.0, 0.9 + 0.2 * tone, hard);
+			if (e2 < 0.035) {
+				albedo *= mix(1.0, 0.62, hard);
+			} else if (e2 < 0.07) {
+				albedo *= mix(1.0, 1.08, hard);
 			}
 		}
 		// Lichen spots on high caprock (the accent, rare).
-		if (world_pos.y > 34.0 && s_hash(ivec3(c.x / 4, 9, c.y / 4)) < 0.012 && h < 0.3) {
+		if (world_pos.y > 34.0 && s_hash(ivec3(c.x / 4, 9, c.y / 4)) < 0.008 && h < 0.3) {
 			albedo = mix(albedo, s_linear(lichen), 0.6);
 		}
 	}
