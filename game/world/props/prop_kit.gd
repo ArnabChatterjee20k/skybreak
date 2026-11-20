@@ -47,12 +47,13 @@ func is_clear(x: float, z: float, radius: float) -> bool:
 	return true
 
 
-func material(key: String, color: Color, params: Dictionary = {}) -> ShaderMaterial:
+func material(key: String, color: Color, params: Dictionary = {}, shader: Shader = PROP_SHADER) -> ShaderMaterial:
 	if materials.has(key):
 		return materials[key]
 	var m := ShaderMaterial.new()
-	m.shader = PROP_SHADER
-	m.set_shader_parameter("albedo_color", color)
+	m.shader = shader
+	if shader == PROP_SHADER:
+		m.set_shader_parameter("albedo_color", color)
 	for p in params:
 		m.set_shader_parameter(p, params[p])
 	if params.has("windows") or params.has("night_emission"):

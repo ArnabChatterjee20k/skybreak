@@ -37,7 +37,11 @@ float hash12(vec2 p) {
 void fragment() {
 	vec3 col = albedo_color.rgb * COLOR.rgb;
 	if (strata > 0.0) {
-		float band = step(0.5, fract(world_pos.y / strata_spacing));
+		// Antialiased bands that fade to their average before they would alias into stripes.
+		float y = world_pos.y / strata_spacing;
+		float w = max(fwidth(y), 1e-4);
+		float band = clamp((abs(fract(y) - 0.5) - 0.25) / w + 0.5, 0.0, 1.0);
+		band = mix(band, 0.5, smoothstep(0.12, 0.3, w));
 		col *= mix(1.0, 0.8 + 0.2 * band, strata);
 	}
 	vec3 glow = emission_color.rgb * (emission_strength + night_emission * night) * mix(vec3(1.0), COLOR.rgb, step(0.001, night_emission));
