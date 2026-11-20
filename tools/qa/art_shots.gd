@@ -212,30 +212,26 @@ func _ko() -> void:
 	await _free(level)
 
 
-## Ki projectiles (gauntlets, bow) and the beam effect, Stormfall City at night.
+## Sim ki (T-KI1): a tap blast and a full-ki beam, Stormfall City at night.
 func _ki() -> void:
 	var level := await _level(&"stormfall_city", [&"lyra", &"vexa"])
+	level.sim.pickups_enabled = false
 	await _step(level, 2, 0)
-	_place(level, 9.0, 0.0)
+	_place(level, 12.0, 0.0)
 	await _step(level, 30, 0)
-	for kind: Weapon.Kind in [Weapon.Kind.KI_GAUNTLETS, Weapon.Kind.KI_BOW]:
-		var f := level.sim.fighters[0]
-		f.weapons[0] = kind
-		f.ammo[0] = Weapon.full_ammo(kind)
-		f.active_slot = 0
-		await _step(level, 20, 0)
-		var at := level.sim.current_tick
-		for k in 3:
-			_script["%d:%d" % [0, at + k * 12]] = FighterInput.Action.LIGHT
-		for n in 4:
-			await _step(level, 6)
-			await _shot("ki_%s_%d" % [String(Weapon.Kind.find_key(kind)).to_lower(), n])
-		await _step(level, 40, 0)
-	var a := level.sim.fighters[0].position
-	var b := level.sim.fighters[1].position
-	level.combat_feedback.vfx.play_beam(a + Vector3.UP * 0.3, b, Color(0.35, 0.8, 1.0), 0.4, 1.5, false)
+	var at := level.sim.current_tick
+	_script["0:%d" % at] = FighterInput.Action.KI_BLAST
 	for n in 4:
-		await _step(level, 12)
+		await _step(level, 4)
+		await _shot("ki_blast_%d" % n)
+	await _step(level, 60, 0)
+	_place(level, 16.0, 0.0)
+	level.sim.fighters[0].ki = 100 * FighterState.METER_UNIT
+	await _step(level, 4, 0)
+	at = level.sim.current_tick
+	_script["0:%d" % at] = FighterInput.Action.SPECIAL_1
+	for n in 6:
+		await _step(level, 6)
 		await _shot("ki_beam_%d" % n)
 	await _free(level)
 
