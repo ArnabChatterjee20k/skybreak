@@ -336,7 +336,10 @@ func test_the_state_hash_ignores_ki_while_nothing_ki_is_alive() -> void:
 func _ki_match(seed_value: int, ticks: int, after_tick := Callable()) -> Dictionary:
 	var sim := CombatSim.new(seed_value)
 	sim.add_fighter(Vector3(0, 1, 12), EngagementBand.stats_for(&"lyra"))
-	sim.add_fighter(Vector3(0, 1, -12), EngagementBand.stats_for(&"kael"))
+	# Kael without his special kit (T-SP1): this duel measures ki zoning, not Comet Drive rushes.
+	var kael := EngagementBand.stats_for(&"kael").duplicate() as FighterStats
+	kael.special_kit = null
+	sim.add_fighter(Vector3(0, 1, -12), kael)
 	sim.lock_everyone_onto_nearest()
 	var driver := AIDriver.for_sim(sim, [
 		{"character": &"lyra", "team": 0, "is_ai": true, "ai_level": 5},
