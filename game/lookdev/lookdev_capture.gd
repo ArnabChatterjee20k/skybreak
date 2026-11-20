@@ -1,13 +1,22 @@
 extends SceneTree
-## Look-dev renders of voxel Kael on the neutral stage (docs/lookdev/kael.md).
-##   godot --path . -s res://game/lookdev/kael_lookdev_capture.gd -- <out dir> [quick|turntable|closeups|spin|idle|compare|all]
-## Needs a GPU (not headless); renders at 1920x1080 offscreen. spin and
-## idle write numbered PNG frames for ffmpeg.
+## Look-dev stills and clips of a character on the neutral stage
+## (.claude/skills/voxel-character-lookdev/SKILL.md, step 3).
+##   godot --path . --disable-vsync -s res://game/lookdev/lookdev_capture.gd -- <out dir>
+##       [quick|turntable|closeups|spin|idle|compare|all]
+##       --scene=res://game/characters/<name>_voxel/<name>_voxel.tscn
+##       [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0]
+## Needs a GPU (not headless); renders at exactly 1920x1080 through a
+## SubViewport. spin and idle write numbered PNG frames (30 fps) for ffmpeg;
+## compare renders the old scene at the same angles (skipped without --compare).
 
-const VOXEL := "res://game/characters/kael_voxel/kael_voxel.tscn"
-const CHUNKY := "res://game/characters/kael_chunky/kael_chunky.tscn"
+const USAGE := "lookdev_capture.gd -- <out dir> [mode] --scene=<character scene> [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0]"
 const CLIP_FPS := 30
-const GAUNTLET_YAW := 0.0
+
+var _scene := ""
+var _compare := ""
+## The signature-part close-up: this hand bone, the figure turned by hand_yaw.
+var _hand_bone := &"RightHand"
+var _hand_yaw_deg := 0.0
 
 var _out := ""
 ## Renders go through a fixed-size viewport so stills and clips are exactly
@@ -20,9 +29,15 @@ var _fighter := FighterState.new()
 
 
 func _initialize() -> void:
-	var args := OS.get_cmdline_user_args()
-	_out = args[0]
-	var what := args[1] if args.size() > 1 else "quick"
+	var args := LookdevArgs.parse()
+	_out = args.pos(0)
+	var what := args.pos(1, "quick")
+	_scene = args.need("scene", USAGE)
+	_compare = args.get_option("compare")
+	_hand_bone = StringName(args.get_option("hand", "RightHand"))
+	_hand_yaw_deg = float(args.get_option("hand-yaw", "0"))
+	if _scene == "" or _out == "":
+		return
 	DirAccess.make_dir_recursive_absolute(_out)
 	_viewport = SubViewport.new()
 	_viewport.size = Vector2i(1920, 1080)
@@ -64,8 +79,8 @@ func _advance(ticks: int, delta := 1.0 / 60.0) -> void:
 
 func _run(what: String) -> void:
 	var started := Time.get_ticks_msec()
-	await _spawn(VOXEL)
-	print("voxel kael built and posed in %d ms" % (Time.get_ticks_msec() - started))
+	await _spawn(_scene)
+	print("%s built and posed in %d ms" % [_scene.get_file(), Time.get_ticks_msec() - started])
 	if what in ["quick"]:
 		for yaw: float in [0.0, 35.0, 90.0, 180.0]:
 			await _full(yaw, "quick_%03d" % int(yaw))
@@ -93,10 +108,10 @@ func _run(what: String) -> void:
 		for i in CLIP_FPS * 6:
 			await _advance(2)
 			await _save("idle/f_%04d" % i)
-	if what in ["compare", "all"]:
+	if what in ["compare", "all"] and _compare != "":
 		for yaw: float in [0.0, 35.0, 180.0]:
 			await _full(yaw, "compare_voxel_%03d" % int(yaw))
-		await _spawn(CHUNKY)
+		await _spawn(_compare)
 		for yaw: float in [0.0, 35.0, 180.0]:
 			await _full(yaw, "compare_chunky_%03d" % int(yaw))
 	quit()
@@ -119,9 +134,10 @@ func _head(name: String) -> void:
 
 
 func _hand(name: String) -> void:
-	_pivot.rotation.y = deg_to_rad(GAUNTLET_YAW)
+	_pivot.rotation.y = deg_to_rad(_hand_yaw_deg)
 	await _advance(1)
-	var hand := _bone_position(&"RightHand").lerp(_bone_position(&"RightLowerArm"), 0.25)
+	var forearm := StringName(String(_hand_bone).replace("Hand", "LowerArm"))
+	var hand := _bone_position(_hand_bone).lerp(_bone_position(forearm), 0.25)
 	_stage.camera.fov = 24.0
 	_stage.frame(hand, 0.42, 0.8, -8.0, 0.0)
 	await _save(name)

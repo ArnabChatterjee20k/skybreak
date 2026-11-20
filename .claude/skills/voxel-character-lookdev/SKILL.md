@@ -36,12 +36,12 @@ Copy the structure of `docs/lookdev/kael.md`:
 - **Lighting stack, deliverables and acceptance** (below).
 
 ## Step 2: Build in code (reuse Kael's pipeline)
-The code lives in `game/characters/kael_voxel/`. Generalise it rather than forking it:
+The shared code lives in `game/characters/voxel_kit/` (read its `README.md`: API, how to add a character, rules learned on Kael). Voxel Kael (`game/characters/kael_voxel/`) is the worked example. Extend the kit; don't fork it:
 - `voxel_sdf.gd`: SDF primitives (box with rounding, capsule, ellipsoid, cylinder, torus, smooth_union, hash3).
 - `voxel_grid.gd`: `paint(bounds, sdf, mat, tag, mode)` with FILL, ADD, CARVE and PAINT, plus `paint_surface` for decals, stitches and emblems, plus `smooth` to clean up single-voxel noise.
 - `voxel_mesher.gd`: one face per open voxel side, skinned to the skeleton. It handles per-voxel colour variation, cavity AO from a blurred occupancy field, corner AO and convex-edge flags.
 - `voxel_figure.gdshader`: corner AO and a bevel highlight on voxel edges. **Keep the varyings clamped**, because MSAA extrapolation on edge-on faces made HDR fireflies that bloom turned into white blobs.
-- `kael_voxel_design.gd`: the design itself, with `Mat` and `Tag` enums, a `COLORS` table, parts painted in the skeleton's rest pose, and rig tags deciding the skin weights.
+- `voxel_design.gd` (`VoxelDesign`), the base class each character extends, plus `voxel_body.gd`, which swaps the built mesh onto the rig. Kael's `kael_voxel_design.gd` is the example design: with `Mat` and `Tag` enums, a `COLORS` table, parts painted in the skeleton's rest pose, and rig tags deciding the skin weights.
 
 How to build:
 - **Rig to the existing humanoid skeleton** so the current clips drive it. Give each rigid part one tag. Give each finger its own tag so a face never blends two fingers, and keep thumbs rigid with the hand unless the clips are authored for them.
@@ -58,12 +58,12 @@ Use `game/lookdev/lookdev_stage.gd`. Its lighting stack is half the quality, so 
 5. A subtle rim light.
 6. A mid-grey endless cyclorama, with the camera clamped so the edge never shows.
 
-Capture at exactly 1920×1080 through a SubViewport, like `kael_lookdev_capture.gd` does. Stills use the small cyclorama; a huge one makes the PCSS contact shadow speckled. Only reels set `LookdevStage.large = true`. The deliverables go to a GitHub pre-release `lookdev-<name>-v<N>`:
+Capture at exactly 1920×1080 through a SubViewport, with `game/lookdev/lookdev_capture.gd --scene=...`. Stills use the small cyclorama; a huge one makes the PCSS contact shadow speckled. Only reels set `LookdevStage.large = true`. The deliverables go to a GitHub pre-release `lookdev-<name>-v<N>`:
 - an 8-angle turntable (every 45°) plus a contact sheet
 - close-ups of the head and the signature part (hand, weapon)
 - `old | new` and `vN-1 | vN` side-by-sides
 - a 6 s spin and an idle loop (mp4)
-- **a moving reel** (`<name>_moves_vN.mp4`, 45–60 s at 1080p60; script pattern in `kael_moves_reel.gd`), with a caption per move and 3–5 s per segment:
+- **a moving reel** (`<name>_moves_vN.mp4`, 45–60 s at 1080p60; `game/lookdev/moves_reel.gd --scene=... --moves=...`), with a caption per move and 3–5 s per segment:
   1. idle, walk, run (3/4 follow and a side view)
   2. jump and land, take-off, hover, flight, a flight dash, descend
   3. shooting: a ki volley that travels to the target with an impact; a beam charge and fire, **framed close enough to judge the pose**

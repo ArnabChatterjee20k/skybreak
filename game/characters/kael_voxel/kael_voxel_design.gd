@@ -1,7 +1,8 @@
 class_name KaelVoxelDesign
-extends RefCounted
-## Voxel Kael (look-dev v1, docs/lookdev/kael.md), built in code on the
-## existing humanoid skeleton's rest pose (T-pose, +Z front, his left = +X).
+extends VoxelDesign
+## Voxel Kael (docs/lookdev/kael.md), the first client of the voxel kit
+## (game/characters/voxel_kit/README.md), built in code on the existing
+## humanoid skeleton's rest pose (T-pose, +Z front, his left = +X).
 ## Three kinds of grid: the body at ~1/82 of his height, and the head and both
 ## gauntlets at twice that density. Each painted part carries a rig tag that
 ## decides its skin weights (see weights()).
@@ -24,7 +25,6 @@ enum Tag {
 ## (index, middle, ring, little), so a face never blends two fingers.
 const FINGER_BASE := 32
 const FINGERS: Array[String] = ["Index", "Middle", "Ring", "Little"]
-enum Surf { CLOTH, METAL, GLASS, SKIN, GLOW, HAIR }
 
 const COLORS := {
 	Mat.COAT: Color(0.11, 0.33, 0.36), Mat.COAT_DARK: Color(0.07, 0.21, 0.24),
@@ -46,23 +46,15 @@ const COLORS := {
 	Mat.LID: Color(0.16, 0.11, 0.10), Mat.SKIN_SHADE: Color(0.86, 0.64, 0.54),
 }
 
-const FILL := VoxelGrid.Mode.FILL
-const ADD := VoxelGrid.Mode.ADD
-const CARVE := VoxelGrid.Mode.CARVE
-const PAINT := VoxelGrid.Mode.PAINT
-
-var bones := {}  # name -> index
-var rest := {}  # name -> rest position (skeleton space)
+func build_grids() -> Array[VoxelGrid]:
+	return [build_body(), build_head(), build_gauntlet(1.0), build_gauntlet(-1.0)]
 
 
-func _init(skeleton: Skeleton3D) -> void:
-	for i in skeleton.get_bone_count():
-		var bone_name := StringName(skeleton.get_bone_name(i))
-		bones[bone_name] = i
-		rest[bone_name] = skeleton.get_bone_global_rest(i).origin
+func soft_materials() -> Array:
+	return [Mat.COAT, Mat.TUNIC, Mat.PANTS, Mat.SCARF, Mat.BOOT, Mat.HAIR, Mat.SKIN, Mat.GLOVE, Mat.LAPEL]
 
 
-static func surface_of(mat: int) -> int:
+func surface_of(mat: int) -> int:
 	match mat:
 		Mat.TRIM, Mat.BRASS, Mat.RIVET, Mat.EMBLEM, Mat.ENGRAVE, Mat.BUCKLE_DARK:
 			return Surf.METAL
@@ -80,7 +72,7 @@ static func surface_of(mat: int) -> int:
 ## Per-voxel colour: base, a few % value noise and a slight hue drift per
 ## cell, cavity darkening (cool-tinted on hair), lighter worn edges on exposed
 ## spots of leather, brass and the scarf.
-static func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exposure: float) -> Color:
+func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exposure: float) -> Color:
 	var base: Color = COLORS.get(mat, Color.MAGENTA)
 	var noise := VoxelSdf.hash3(c, mat) * 2.0 - 1.0
 	var drift := VoxelSdf.hash3(c, mat + 31) * 2.0 - 1.0
@@ -766,68 +758,3 @@ func _finger_w(p: Vector3, w: Dictionary, prefix: String, best: String) -> void:
 		names.append(StringName(prefix + best + part))
 	pts.append(pts[3] + (pts[3] - pts[2]) * 1.2)
 	_chain_w(p, w, pts, names)
-
-
-## Blends between keyed bones along x (keys ascending: [x, bone name]).
-static func _piecewise(x: float, keys: Array, w: Dictionary, smooth: bool) -> void:
-	var add := func(bone: String, amount: float) -> void:
-		var b := StringName(bone)
-		w[b] = w.get(b, 0.0) + amount
-	if x <= keys[0][0]:
-		add.call(keys[0][1], 1.0)
-		return
-	for i in keys.size() - 1:
-		if x <= keys[i + 1][0]:
-			var t: float = (x - keys[i][0]) / (keys[i + 1][0] - keys[i][0])
-			if smooth:
-				t = smoothstep(0.0, 1.0, t)
-			add.call(keys[i][1], 1.0 - t)
-			add.call(keys[i + 1][1], t)
-			return
-	add.call(keys[-1][1], 1.0)
-
-
-## Points p0..pn with bone i owning segment i; blends half-way at each joint.
-static func _chain_w(p: Vector3, w: Dictionary, pts: PackedVector3Array, names: Array) -> void:
-	var best := 0
-	var best_f := 0.0
-	var best_d := INF
-	for i in pts.size() - 1:
-		var ab := pts[i + 1] - pts[i]
-		var f := clampf((p - pts[i]).dot(ab) / ab.dot(ab), 0.0, 1.0)
-		var d := p.distance_squared_to(pts[i] + ab * f)
-		if d < best_d:
-			best_d = d
-			best = i
-			best_f = f
-	best = mini(best, names.size() - 1)
-	var next := 0.0
-	var prev := 0.0
-	if best_f > 0.7 and best + 1 < names.size():
-		next = 0.5 * (best_f - 0.7) / 0.3
-		w[names[best + 1]] = w.get(names[best + 1], 0.0) + next
-	if best_f < 0.3 and best > 0:
-		prev = 0.5 * (0.3 - best_f) / 0.3
-		w[names[best - 1]] = w.get(names[best - 1], 0.0) + prev
-	w[names[best]] = w.get(names[best], 0.0) + 1.0 - next - prev
-
-
-static func _add(w: Dictionary, bone: StringName, amount: float) -> void:
-	if amount > 0.0001:
-		w[bone] = w.get(bone, 0.0) + amount
-
-
-func _pack(w: Dictionary) -> Array:
-	var pairs := []
-	for b: StringName in w:
-		pairs.append([w[b], bones[b]])
-	pairs.sort_custom(func(a, b): return a[0] > b[0])
-	var ids := PackedInt32Array([0, 0, 0, 0])
-	var ws := PackedFloat32Array([0, 0, 0, 0])
-	var total := 0.0
-	for i in mini(4, pairs.size()):
-		total += pairs[i][0]
-	for i in mini(4, pairs.size()):
-		ids[i] = pairs[i][1]
-		ws[i] = pairs[i][0] / total
-	return [ids, ws]

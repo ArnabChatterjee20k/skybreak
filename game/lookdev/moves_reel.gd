@@ -1,9 +1,12 @@
 extends SceneTree
-## Moves reel of voxel Kael on the look-dev stage (docs/lookdev/kael.md), with a
-## grey target dummy (the old chunky Kael) so the hits read.
-##   godot --path . --disable-vsync -s res://game/lookdev/kael_moves_reel.gd -- <out dir> [full|poses]
+## Moves reel of a character on the look-dev stage, against a grey target
+## dummy so the hits read (.claude/skills/voxel-character-lookdev/SKILL.md).
+##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat]
+##       --scene=<character scene> --moves=res://game/combat/moves/<name>/
+##       [--dummy=<scene>] [--stats=<FighterStats .tres>] [--energy=#ff9e40]
 ## Writes numbered JPG frames (f_00000.jpg...) for ffmpeg at 60 fps; "poses"
-## writes one still per procedural pose instead. Needs a GPU.
+## writes one still per procedural pose, "combat" only the melee segments.
+## Needs a GPU. --stats sets the pushbox spacing (default FighterStats').
 ##
 ## Everything here is look-dev only: the sim is faked (positions, states and
 ## move ticks are scripted per segment and fed to CharacterView.apply_state,
@@ -11,16 +14,13 @@ extends SceneTree
 ## hover, crossed guard, ki shot, kick, jump crouch, a big flinch) are layered
 ## over the clips by LookdevPoseOverride. Neither the sim nor the clips change.
 
-const VOXEL := "res://game/characters/kael_voxel/kael_voxel.tscn"
-const DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
-const MOVES := "res://game/combat/moves/kael/"
+const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb]"
+## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
+const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
 const STAND := 1.0  # FighterState.stand_height: the body's height when standing
 const GRAVITY := 22.0
-const KI_COLOR := Color(1.0, 0.62, 0.25)
 const S := FighterState.State
-## FighterStats.pushbox_radius: fighters' centres never come closer than twice this.
-const PUSHBOX_RADIUS := 0.5
 ## Body capsule (hips to head) the strikes stop at, from the measured voxel
 ## silhouette (waist radius ~0.2-0.3 m); plus the striking fist or boot's own radius.
 const BODY_RADIUS := 0.24
@@ -135,11 +135,18 @@ class Actor:
 
 
 var _out := ""
+var _scene := ""
+var _dummy_scene := DEFAULT_DUMMY
+var MOVES := ""
+## FighterStats.pushbox_radius: fighters' centres never come closer than twice this.
+var PUSHBOX_RADIUS := 0.5
+## Ki / energy colour of the character's shots and beam.
+var KI_COLOR := Color(1.0, 0.62, 0.25)
 var _frame := 0
 var _viewport: SubViewport
 var _stage: LookdevStage
 var _caption: Label
-var _kael := Actor.new()
+var _hero := Actor.new()
 var _dummy := Actor.new()
 var _hitstop := 0
 var _record := true
@@ -156,9 +163,22 @@ var _kicking := false
 
 
 func _initialize() -> void:
-	var args := OS.get_cmdline_user_args()
-	_out = args[0]
-	var what := args[1] if args.size() > 1 else "full"
+	var args := LookdevArgs.parse()
+	_out = args.pos(0)
+	var what := args.pos(1, "full")
+	_scene = args.need("scene", USAGE)
+	MOVES = args.need("moves", USAGE)
+	if _scene == "" or MOVES == "" or _out == "":
+		return
+	if not MOVES.ends_with("/"):
+		MOVES += "/"
+	_dummy_scene = args.get_option("dummy", DEFAULT_DUMMY)
+	if args.options.has("stats"):
+		PUSHBOX_RADIUS = (load(args.get_option("stats")) as FighterStats).pushbox_radius
+	else:
+		PUSHBOX_RADIUS = FighterStats.new().pushbox_radius
+	if args.options.has("energy"):
+		KI_COLOR = Color.html(args.get_option("energy"))
 	DirAccess.make_dir_recursive_absolute(_out)
 	_viewport = SubViewport.new()
 	_viewport.size = Vector2i(1920, 1080)
@@ -194,8 +214,8 @@ func _spawn(actor: Actor, scene: String) -> void:
 
 
 func _run(what: String) -> void:
-	_spawn(_kael, VOXEL)
-	_spawn(_dummy, DUMMY)
+	_spawn(_hero, _scene)
+	_spawn(_dummy, _dummy_scene)
 	_dummy.material = StandardMaterial3D.new()
 	_dummy.material.albedo_color = Color(0.56, 0.57, 0.6)
 	_dummy.material.roughness = 0.75
@@ -243,22 +263,22 @@ func _run(what: String) -> void:
 
 # ---------------------------------------------------------------- segments
 
-func _reset_kael(at := Vector3.ZERO, yaw := PI) -> void:
-	_kael.f.position = Vector3(at.x, STAND, at.z)
-	_kael.f.velocity = Vector3.ZERO
-	_kael.f.facing_yaw = yaw
-	_kael.f.blocking = false
-	_kael.f.enter_state(S.IDLE)
-	_kael.pose.weight = 0.0
-	_kael.pose_target = 0.0
+func _reset_hero(at := Vector3.ZERO, yaw := PI) -> void:
+	_hero.f.position = Vector3(at.x, STAND, at.z)
+	_hero.f.velocity = Vector3.ZERO
+	_hero.f.facing_yaw = yaw
+	_hero.f.blocking = false
+	_hero.f.enter_state(S.IDLE)
+	_hero.pose.weight = 0.0
+	_hero.pose_target = 0.0
 	_cam_snap = true
 
 
 ## Dummy facing Kael, distance in front of him.
 func _place_dummy(distance: float) -> void:
 	_dummy.body.visible = true
-	_dummy.f.position = _kael.f.position + _kael.forward() * distance
-	_dummy.f.facing_yaw = _kael.f.facing_yaw + PI
+	_dummy.f.position = _hero.f.position + _hero.forward() * distance
+	_dummy.f.facing_yaw = _hero.f.facing_yaw + PI
 	_dummy.f.velocity = Vector3.ZERO
 	_dummy.f.enter_state(S.IDLE)
 	_dummy.pose.weight = 0.0
@@ -278,9 +298,9 @@ func _wait(ticks: int) -> void:
 func _idle(caption: String, seconds: float) -> void:
 	_caption.text = caption
 	_cam_mode = "follow"
-	if _kael.f.state != S.IDLE:
-		_kael.f.enter_state(S.IDLE)
-	_kael.f.velocity = Vector3.ZERO
+	if _hero.f.state != S.IDLE:
+		_hero.f.enter_state(S.IDLE)
+	_hero.f.velocity = Vector3.ZERO
 	await _wait(int(seconds * 60))
 
 
@@ -291,13 +311,13 @@ func _locomotion(caption: String, speed: float, seconds: float) -> void:
 	_cam_mode = "follow"
 	var centre := Vector3(0, 0, 2.2)
 	var radius := 3.4
-	var angle := atan2(_kael.f.position.z - centre.z, _kael.f.position.x - centre.x)
-	if absf(Vector2(_kael.f.position.x - centre.x, _kael.f.position.z - centre.z).length() - radius) > 0.2:
-		_reset_kael(centre + Vector3(0, 0, -radius), PI * 0.5)
+	var angle := atan2(_hero.f.position.z - centre.z, _hero.f.position.x - centre.x)
+	if absf(Vector2(_hero.f.position.x - centre.x, _hero.f.position.z - centre.z).length() - radius) > 0.2:
+		_reset_hero(centre + Vector3(0, 0, -radius), PI * 0.5)
 		angle = -PI * 0.5
-	if _kael.f.state != S.MOVING:
-		_kael.f.enter_state(S.MOVING)
-	var v0 := Vector2(_kael.f.velocity.x, _kael.f.velocity.z).length()
+	if _hero.f.state != S.MOVING:
+		_hero.f.enter_state(S.MOVING)
+	var v0 := Vector2(_hero.f.velocity.x, _hero.f.velocity.z).length()
 	var ticks := int(seconds * 60)
 	for i in ticks:
 		if i == ticks / 2:
@@ -306,58 +326,58 @@ func _locomotion(caption: String, speed: float, seconds: float) -> void:
 		angle -= v * DT / radius
 		var pos := centre + Vector3(cos(angle), 0, sin(angle)) * radius
 		var tangent := Vector3(sin(angle), 0, -cos(angle))
-		_kael.f.velocity = tangent * v
-		_kael.f.position = Vector3(pos.x, STAND, pos.z)
-		_kael.f.facing_yaw = atan2(-tangent.x, -tangent.z)
+		_hero.f.velocity = tangent * v
+		_hero.f.position = Vector3(pos.x, STAND, pos.z)
+		_hero.f.facing_yaw = atan2(-tangent.x, -tangent.z)
 		await _tick()
 
 
 func _jump() -> void:
 	_caption.text = "Jump & land"
 	_cam_mode = "follow"
-	_reset_kael(Vector3.ZERO, PI)
+	_reset_hero(Vector3.ZERO, PI)
 	await _wait(10)
 	for k in 2:
 		# Anticipation: sink into a crouch.
-		_set_pose(_kael, CROUCH_AIMS, CROUCH_TURNS, true, 1.0, 0.2)
+		_set_pose(_hero, CROUCH_AIMS, CROUCH_TURNS, true, 1.0, 0.2)
 		await _wait(12)
 		# Launch: tuck in the air.
-		_kael.f.enter_state(S.FALLING)
-		_kael.f.velocity = Vector3(0, 9.5, 0.6)
-		_set_pose(_kael, TUCK_AIMS, {}, false, 0.85, 0.12)
+		_hero.f.enter_state(S.FALLING)
+		_hero.f.velocity = Vector3(0, 9.5, 0.6)
+		_set_pose(_hero, TUCK_AIMS, {}, false, 0.85, 0.12)
 		while true:
-			_kael.f.velocity.y -= GRAVITY * DT
-			_kael.f.position += _kael.f.velocity * DT
-			if _kael.f.velocity.y < -3.0:
-				_kael.pose_target = 0.0
-			if _kael.f.position.y <= STAND:
-				_kael.f.position.y = STAND
+			_hero.f.velocity.y -= GRAVITY * DT
+			_hero.f.position += _hero.f.velocity * DT
+			if _hero.f.velocity.y < -3.0:
+				_hero.pose_target = 0.0
+			if _hero.f.position.y <= STAND:
+				_hero.f.position.y = STAND
 				break
 			await _tick()
 		# Landing squash, then up.
-		_kael.f.velocity = Vector3.ZERO
-		_kael.f.enter_state(S.IDLE)
-		_set_pose(_kael, CROUCH_AIMS, CROUCH_TURNS, true, 1.0, 0.45)
+		_hero.f.velocity = Vector3.ZERO
+		_hero.f.enter_state(S.IDLE)
+		_set_pose(_hero, CROUCH_AIMS, CROUCH_TURNS, true, 1.0, 0.45)
 		await _wait(8)
-		_kael.pose_target = 0.0
-		_kael.pose_rate = 0.06
+		_hero.pose_target = 0.0
+		_hero.pose_rate = 0.06
 		await _wait(22)
 
 
 func _takeoff_and_hover() -> void:
 	_caption.text = "Take off  /  hover"
 	_cam_mode = "follow"
-	_set_pose(_kael, CROUCH_AIMS, CROUCH_TURNS, true, 0.8, 0.2)
+	_set_pose(_hero, CROUCH_AIMS, CROUCH_TURNS, true, 0.8, 0.2)
 	await _wait(10)
-	_kael.f.enter_state(S.FLYING)
-	_set_pose(_kael, HOVER_AIMS, HOVER_TURNS, false, 1.0, 0.07)
-	var base := _kael.f.position.y
+	_hero.f.enter_state(S.FLYING)
+	_set_pose(_hero, HOVER_AIMS, HOVER_TURNS, false, 1.0, 0.07)
+	var base := _hero.f.position.y
 	for i in 210:
 		var t := i * DT
 		var rise := minf(t / 0.8, 1.0)
 		var y := base + 1.4 * (1.0 - pow(1.0 - rise, 3.0)) + sin(t * 2.6) * 0.06
-		_kael.f.velocity = Vector3(0, (y - _kael.f.position.y) / DT, 0)
-		_kael.f.position.y = y
+		_hero.f.velocity = Vector3(0, (y - _hero.f.position.y) / DT, 0)
+		_hero.f.position.y = y
 		await _tick()
 
 
@@ -365,14 +385,14 @@ func _takeoff_and_hover() -> void:
 func _flight() -> void:
 	_caption.text = "Flight"
 	_cam_mode = "close"
-	_kael.pose_target = 0.0
-	_kael.pose_rate = 0.05
+	_hero.pose_target = 0.0
+	_hero.pose_rate = 0.05
 	var centre := Vector3(0, 0, 2.6)
 	var radius := 3.6
-	var angle := atan2(_kael.f.position.z - centre.z, _kael.f.position.x - centre.x)
+	var angle := atan2(_hero.f.position.z - centre.z, _hero.f.position.x - centre.x)
 	var start := centre + Vector3(cos(angle), 0, sin(angle)) * radius
-	var from := _kael.f.position
-	var y0 := _kael.f.position.y
+	var from := _hero.f.position
+	var y0 := _hero.f.position.y
 	for i in 210:
 		var v := lerpf(2.0, 11.0, minf(i / 50.0, 1.0))
 		angle -= v * DT / radius
@@ -382,9 +402,9 @@ func _flight() -> void:
 		var next := Vector3(pos.x, y, pos.z)
 		if i < 20:
 			next = from.lerp(next, i / 20.0)
-		_kael.f.velocity = (next - _kael.f.position) / DT
-		_kael.f.position = next
-		_kael.f.facing_yaw = atan2(-tangent.x, -tangent.z)
+		_hero.f.velocity = (next - _hero.f.position) / DT
+		_hero.f.position = next
+		_hero.f.facing_yaw = atan2(-tangent.x, -tangent.z)
 		await _tick()
 
 
@@ -392,48 +412,48 @@ func _flight() -> void:
 func _flight_dash() -> void:
 	_caption.text = "Flight dash"
 	_cam_mode = "dash"
-	var y := _kael.f.position.y
-	_kael.f.position = Vector3(-14.0, y, 2.0)
-	_kael.f.facing_yaw = -PI * 0.5  # heading +X
+	var y := _hero.f.position.y
+	_hero.f.position = Vector3(-14.0, y, 2.0)
+	_hero.f.facing_yaw = -PI * 0.5  # heading +X
 	_cam_snap = true
-	_kael.f.enter_state(S.DASHING)
-	_kael.f.dash_kind = FighterState.DashKind.SUSTAINED
-	_kael.f.dash_direction = Vector3.RIGHT
+	_hero.f.enter_state(S.DASHING)
+	_hero.f.dash_kind = FighterState.DashKind.SUSTAINED
+	_hero.f.dash_direction = Vector3.RIGHT
 	for i in 100:
 		var v := lerpf(8.0, 26.0, minf(i / 15.0, 1.0)) if i < 80 else lerpf(26.0, 4.0, (i - 80) / 20.0)
-		_kael.f.velocity = Vector3(v, 0, 0)
-		_kael.f.position += _kael.f.velocity * DT
+		_hero.f.velocity = Vector3(v, 0, 0)
+		_hero.f.position += _hero.f.velocity * DT
 		if i % 5 == 0 and i < 80:
 			_afterimage(Color(1.0, 0.7, 0.35, 0.18))
 		await _tick()
-	_kael.f.dash_kind = FighterState.DashKind.NONE
-	_kael.f.enter_state(S.FLYING)
+	_hero.f.dash_kind = FighterState.DashKind.NONE
+	_hero.f.enter_state(S.FLYING)
 	await _wait(20)
 
 
 func _descend() -> void:
 	_caption.text = "Descend & land"
 	_cam_mode = "follow"
-	_kael.f.enter_state(S.FALLING)
-	_kael.f.velocity = Vector3(1.5, 0, 0)
-	while _kael.f.position.y > STAND:
-		_kael.f.velocity.y -= GRAVITY * 0.6 * DT
-		_kael.f.position += _kael.f.velocity * DT
+	_hero.f.enter_state(S.FALLING)
+	_hero.f.velocity = Vector3(1.5, 0, 0)
+	while _hero.f.position.y > STAND:
+		_hero.f.velocity.y -= GRAVITY * 0.6 * DT
+		_hero.f.position += _hero.f.velocity * DT
 		await _tick()
-	_kael.f.position.y = STAND
-	_kael.f.velocity = Vector3.ZERO
-	_kael.f.enter_state(S.IDLE)
-	_set_pose(_kael, CROUCH_AIMS, CROUCH_TURNS, true, 1.0, 0.4)
+	_hero.f.position.y = STAND
+	_hero.f.velocity = Vector3.ZERO
+	_hero.f.enter_state(S.IDLE)
+	_set_pose(_hero, CROUCH_AIMS, CROUCH_TURNS, true, 1.0, 0.4)
 	await _wait(9)
-	_kael.pose_target = 0.0
-	_kael.pose_rate = 0.05
+	_hero.pose_target = 0.0
+	_hero.pose_rate = 0.05
 	await _wait(40)
 
 
 ## Four ki shots, alternating hands; each orb flies ~1.4 s to the dummy and pops.
 func _ki_volley() -> void:
 	_caption.text = "Ki blast volley"
-	_reset_kael(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
+	_reset_hero(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
 	_place_dummy(5.5)
 	_cam_mode = "shoulder"
 	_cam_snap = true
@@ -442,20 +462,20 @@ func _ki_volley() -> void:
 		var right := k % 2 == 0
 		var aims := SHOT_AIMS if right else _mirror(SHOT_AIMS)
 		var turns := SHOT_TURNS if right else _mirror(SHOT_TURNS, true)
-		_set_pose(_kael, aims, turns, false, 1.0, 0.25)
+		_set_pose(_hero, aims, turns, false, 1.0, 0.25)
 		await _wait(6)
-		var hand := _kael.bone(&"RightHand" if right else &"LeftHand")
+		var hand := _hero.bone(&"RightHand" if right else &"LeftHand")
 		var orb := _glow_orb(0.09)
-		orb.global_position = hand + _kael.forward() * 0.12
+		orb.global_position = hand + _hero.forward() * 0.12
 		_flash_at(orb.global_position, 0.12, 6)
 		_shots.append({"node": orb, "speed": 3.9})
 		# Recoil, then back to the shot pose.
-		_set_pose(_kael, RECOIL_AIMS if right else _mirror(RECOIL_AIMS), turns, false, 1.0, 0.5)
+		_set_pose(_hero, RECOIL_AIMS if right else _mirror(RECOIL_AIMS), turns, false, 1.0, 0.5)
 		await _wait(7)
-		_set_pose(_kael, aims, turns, false, 1.0, 0.2)
+		_set_pose(_hero, aims, turns, false, 1.0, 0.2)
 		await _wait(15)
-	_kael.pose_target = 0.0
-	_kael.pose_rate = 0.08
+	_hero.pose_target = 0.0
+	_hero.pose_rate = 0.08
 	while not _shots.is_empty():
 		await _tick()
 	await _wait(30)
@@ -464,10 +484,10 @@ func _ki_volley() -> void:
 
 func _beam() -> void:
 	_caption.text = "Beam charge"
-	_reset_kael(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
+	_reset_hero(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
 	_place_dummy(5.0)
 	_cam_mode = "close"
-	_kael.f.enter_state(S.CHARGING)
+	_hero.f.enter_state(S.CHARGING)
 	var orb := _glow_orb(0.04)
 	for t in 150:
 		orb.global_position = _hands_point()
@@ -476,9 +496,9 @@ func _beam() -> void:
 	_caption.text = "Beam fire"
 	_cam_mode = "shoulder"
 	_cam_snap = true
-	_kael.f.enter_state(S.IDLE)
-	_set_pose(_kael, BEAM_AIMS, BEAM_TURNS, false, 1.0, 0.3)
-	var forward := _kael.forward()
+	_hero.f.enter_state(S.IDLE)
+	_set_pose(_hero, BEAM_AIMS, BEAM_TURNS, false, 1.0, 0.3)
+	var forward := _hero.forward()
 	var beam := _beam_mesh()
 	var impact := _glow_orb(0.18)
 	for t in 200:
@@ -502,7 +522,7 @@ func _beam() -> void:
 			if t % 12 == 0:
 				_hit(_dummy, 0.35, 2, false)
 		if t == 180:
-			_kael.pose_target = 0.0
+			_hero.pose_target = 0.0
 			_caption.text = ""
 		await _tick()
 	_clear_fx()
@@ -512,29 +532,29 @@ func _beam() -> void:
 ## Kael's own moves against the dummy, played `loops` times.
 func _strikes(caption: String, ids: Array, loops: int) -> void:
 	_caption.text = caption
-	_reset_kael(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
+	_reset_hero(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
 	_place_dummy(PUSHBOX_RADIUS * 2.0)
 	_cam_mode = "pair"
 	await _wait(15)
 	for loop in loops:
 		for k in ids.size():
 			var move: MoveData = load(MOVES + ids[k] + ".tres")
-			await _perform(_kael, move, k == ids.size() - 1)
-		_kael.f.enter_state(S.IDLE)
+			await _perform(_hero, move, k == ids.size() - 1)
+		_hero.f.enter_state(S.IDLE)
 		await _wait(24)
-		_dummy.f.position = _kael.f.position + _kael.forward() * PUSHBOX_RADIUS * 2.0
+		_dummy.f.position = _hero.f.position + _hero.forward() * PUSHBOX_RADIUS * 2.0
 		_dummy.f.enter_state(S.IDLE)
 
 
 func _heavy_launcher() -> void:
 	_caption.text = "Heavy  /  launcher"
-	_reset_kael(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
+	_reset_hero(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
 	_place_dummy(PUSHBOX_RADIUS * 2.0)
 	_cam_mode = "pair"
 	await _wait(15)
-	await _perform(_kael, load(MOVES + "smash.tres"), false)
-	await _perform(_kael, load(MOVES + "launcher.tres"), true)
-	_kael.f.enter_state(S.IDLE)
+	await _perform(_hero, load(MOVES + "smash.tres"), false)
+	await _perform(_hero, load(MOVES + "launcher.tres"), true)
+	_hero.f.enter_state(S.IDLE)
 	# The dummy is airborne from the launcher: let it come down and get up.
 	while _dummy.f.state in [S.HITSTUN, S.FALLING]:
 		await _tick()
@@ -544,39 +564,39 @@ func _heavy_launcher() -> void:
 ## A standing front kick: chamber, snap out, retract (procedural, no clip).
 func _kick() -> void:
 	_caption.text = "Front kick"
-	_reset_kael(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
+	_reset_hero(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
 	_place_dummy(PUSHBOX_RADIUS * 2.0 + 0.1)
 	_cam_mode = "pair"
 	await _wait(15)
 	for k in 2:
-		_set_pose(_kael, KICK_CHAMBER, KICK_TURNS, false, 1.0, 0.18)
+		_set_pose(_hero, KICK_CHAMBER, KICK_TURNS, false, 1.0, 0.18)
 		await _wait(9)
-		_kael.pose.set_pose(KICK_EXTEND, KICK_TURNS, false)
-		_kael.pose.weight = 1.0
+		_hero.pose.set_pose(KICK_EXTEND, KICK_TURNS, false)
+		_hero.pose.weight = 1.0
 		_kicking = true
-		_kael.striking = true
-		_kael.landed = false
-		_kael.f.position += _kael.forward() * 0.1
+		_hero.striking = true
+		_hero.landed = false
+		_hero.f.position += _hero.forward() * 0.1
 		await _wait(5)
-		if not _kael.landed:
-			_kael.landed = true
+		if not _hero.landed:
+			_hero.landed = true
 			_hit(_dummy, 1.0, 6, false)
 		await _wait(7)
 		_kicking = false
-		_kael.striking = false
-		_kael.pose.set_pose(KICK_CHAMBER, KICK_TURNS, false)
+		_hero.striking = false
+		_hero.pose.set_pose(KICK_CHAMBER, KICK_TURNS, false)
 		await _wait(6)
-		_kael.pose_target = 0.0
-		_kael.pose_rate = 0.12
+		_hero.pose_target = 0.0
+		_hero.pose_rate = 0.12
 		await _wait(26)
-		_dummy.f.position = _kael.f.position + _kael.forward() * (PUSHBOX_RADIUS * 2.0 + 0.1)
+		_dummy.f.position = _hero.f.position + _hero.forward() * (PUSHBOX_RADIUS * 2.0 + 0.1)
 		_dummy.f.enter_state(S.IDLE)
 
 
 ## The dummy swings; Kael dodges aside (afterimage) and comes back.
 func _dodge() -> void:
 	_caption.text = "Dodge"
-	_reset_kael(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
+	_reset_hero(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
 	_place_dummy(1.5)
 	_cam_mode = "pair"
 	await _wait(15)
@@ -584,69 +604,69 @@ func _dodge() -> void:
 		var side := 1.0 if k == 0 else -1.0
 		_dummy.f.begin_move(load(MOVES + "smash.tres"))
 		await _wait(5)
-		var dir := Basis(Vector3.UP, _kael.f.facing_yaw) * Vector3.RIGHT * side
-		_kael.f.enter_state(S.DASHING)
-		_kael.f.dash_kind = FighterState.DashKind.DODGE
-		_kael.f.dash_direction = dir
+		var dir := Basis(Vector3.UP, _hero.f.facing_yaw) * Vector3.RIGHT * side
+		_hero.f.enter_state(S.DASHING)
+		_hero.f.dash_kind = FighterState.DashKind.DODGE
+		_hero.f.dash_direction = dir
 		for i in 20:
-			_kael.f.velocity = dir * 8.0 * (1.0 - i / 20.0)
-			_kael.f.position += _kael.f.velocity * DT
+			_hero.f.velocity = dir * 8.0 * (1.0 - i / 20.0)
+			_hero.f.position += _hero.f.velocity * DT
 			if i % 3 == 0:
 				_afterimage(Color(0.45, 0.75, 1.0, 0.22))
 			await _tick()
-		_kael.f.velocity = Vector3.ZERO
-		_kael.f.dash_kind = FighterState.DashKind.NONE
-		_kael.f.enter_state(S.IDLE)
+		_hero.f.velocity = Vector3.ZERO
+		_hero.f.dash_kind = FighterState.DashKind.NONE
+		_hero.f.enter_state(S.IDLE)
 		while _dummy.f.state == S.ATTACKING:
 			await _tick()
 		await _wait(10)
 		# Step back in.
-		_kael.f.enter_state(S.MOVING)
+		_hero.f.enter_state(S.MOVING)
 		var back := _dummy.f.position + _dummy.forward() * 1.5
-		var from := _kael.f.position
+		var from := _hero.f.position
 		for i in 24:
 			var next := from.lerp(back, smoothstep(0.0, 1.0, i / 23.0))
-			_kael.f.velocity = (next - _kael.f.position) / DT
-			_kael.f.position = next
+			_hero.f.velocity = (next - _hero.f.position) / DT
+			_hero.f.position = next
 			await _tick()
-		_kael.f.velocity = Vector3.ZERO
-		_kael.f.enter_state(S.IDLE)
+		_hero.f.velocity = Vector3.ZERO
+		_hero.f.enter_state(S.IDLE)
 		await _wait(10)
 
 
 ## Kael holds a crossed-forearm guard through the dummy's 3-hit string.
 func _guard() -> void:
 	_caption.text = "Guard"
-	_reset_kael(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
+	_reset_hero(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
 	_place_dummy(PUSHBOX_RADIUS * 2.0)
 	_cam_mode = "pair"
 	await _wait(10)
-	_kael.f.enter_state(S.BLOCKING)
-	_kael.f.blocking = true
-	_set_pose(_kael, GUARD_AIMS, GUARD_TURNS, false, 1.0, 0.2)
+	_hero.f.enter_state(S.BLOCKING)
+	_hero.f.blocking = true
+	_set_pose(_hero, GUARD_AIMS, GUARD_TURNS, false, 1.0, 0.2)
 	await _wait(16)
 	for id: String in ["light_1", "light_2", "light_3", "smash"]:
 		await _perform(_dummy, load(MOVES + id + ".tres"), id == "smash")
 	_dummy.f.enter_state(S.IDLE)
 	await _wait(20)
-	_kael.f.blocking = false
-	_kael.f.enter_state(S.IDLE)
-	_kael.pose_target = 0.0
-	_kael.pose_rate = 0.08
+	_hero.f.blocking = false
+	_hero.f.enter_state(S.IDLE)
+	_hero.pose_target = 0.0
+	_hero.pose_rate = 0.08
 	await _wait(20)
 
 
 ## The dummy lands a heavy; Kael is knocked down and gets back up.
 func _knockdown() -> void:
 	_caption.text = "Hit react  /  knockdown"
-	_reset_kael(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
+	_reset_hero(Vector3.ZERO, -PI * 0.5)  # fighting along X: side-on to the camera
 	_place_dummy(PUSHBOX_RADIUS * 2.0)
 	_cam_mode = "pair"
 	await _wait(15)
 	await _perform(_dummy, load(MOVES + "light_2.tres"), true)
 	await _wait(10)
 	await _perform(_dummy, load(MOVES + "smash.tres"), true)
-	while _kael.f.state != S.IDLE:
+	while _hero.f.state != S.IDLE:
 		await _tick()
 	await _wait(20)
 
@@ -654,7 +674,7 @@ func _knockdown() -> void:
 func _outro() -> void:
 	_caption.text = "Idle"
 	_hide_dummy()
-	_reset_kael(Vector3.ZERO, PI)
+	_reset_hero(Vector3.ZERO, PI)
 	_cam_mode = "orbit"
 	_cam_yaw = -70.0
 	await _wait(270)
@@ -673,9 +693,9 @@ func _pose_stills() -> void:
 	for key: String in poses:
 		var p: Array = poses[key]
 		_caption.text = key
-		_kael.pose.set_pose(p[0], p[1], p[2])
-		_kael.pose.weight = 1.0
-		_kael.pose_target = 1.0
+		_hero.pose.set_pose(p[0], p[1], p[2])
+		_hero.pose.weight = 1.0
+		_hero.pose_target = 1.0
 		for yaw: float in [35.0, 90.0]:
 			_cam_yaw = yaw
 			await _tick(false)
@@ -719,7 +739,7 @@ func _perform(actor: Actor, move: MoveData, to_the_end: bool) -> void:
 ## strength 1 is a normal hit; knock launches (BLOWBACK/LAUNCH) or floors it.
 func _hit(target: Actor, strength: float, hitstop: int, guarded: bool, move: MoveData = null) -> void:
 	var at := target.bone(&"Chest")
-	var attacker := _kael if target == _dummy else _dummy
+	var attacker := _hero if target == _dummy else _dummy
 	var away := (target.f.position - attacker.f.position)
 	away.y = 0.0
 	away = away.normalized() if away.length() > 0.01 else -target.forward()
@@ -773,7 +793,7 @@ func _react(actor: Actor) -> void:
 					return
 				f.velocity.y = 0.0
 			if f.state_ticks >= f.stun_ticks and not airborne:
-				if f.knockback_type == MoveData.KnockbackType.BLOWBACK and actor == _kael:
+				if f.knockback_type == MoveData.KnockbackType.BLOWBACK and actor == _hero:
 					f.enter_state(S.KNOCKDOWN)
 					f.stun_ticks = 130
 					return
@@ -787,7 +807,9 @@ func _react(actor: Actor) -> void:
 
 # ---------------------------------------------------------------- effects
 
-func _glow_material(energy: float, color := KI_COLOR) -> StandardMaterial3D:
+func _glow_material(energy: float, color := Color.TRANSPARENT) -> StandardMaterial3D:
+	if color.a == 0.0:
+		color = KI_COLOR
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.albedo_color = Color(1.0, 0.94, 0.82)
@@ -828,7 +850,9 @@ func _glow_orb(radius: float) -> MeshInstance3D:
 
 
 ## A short expanding, fading glow sphere (muzzle flash, hit pop, block spark).
-func _flash_at(at: Vector3, radius: float, life: int, color := KI_COLOR) -> void:
+func _flash_at(at: Vector3, radius: float, life: int, color := Color.TRANSPARENT) -> void:
+	if color.a == 0.0:
+		color = KI_COLOR
 	var node := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = radius
@@ -883,7 +907,7 @@ func _beam_mesh() -> MeshInstance3D:
 func _afterimage(color: Color) -> void:
 	var ghost := Node3D.new()
 	_stage.add_child(ghost)
-	for node in _kael.view.model.find_children("*", "MeshInstance3D", true, false):
+	for node in _hero.view.model.find_children("*", "MeshInstance3D", true, false):
 		var mi := node as MeshInstance3D
 		if mi.mesh == null or not mi.visible or mi.skin == null:
 			continue
@@ -916,7 +940,7 @@ func _clear_fx() -> void:
 
 
 func _hands_point() -> Vector3:
-	return (_kael.bone(&"LeftHand") + _kael.bone(&"RightHand")) * 0.5 + _kael.forward() * 0.14
+	return (_hero.bone(&"LeftHand") + _hero.bone(&"RightHand")) * 0.5 + _hero.forward() * 0.14
 
 
 func _update_fx() -> void:
@@ -968,7 +992,7 @@ func _tick(record := true) -> void:
 	var frozen := _hitstop > 0
 	if frozen:
 		_hitstop -= 1
-	for actor: Actor in [_kael, _dummy]:
+	for actor: Actor in [_hero, _dummy]:
 		var f := actor.f
 		f.hitstop_ticks = 1 if frozen else 0
 		if not frozen:
@@ -990,7 +1014,7 @@ func _tick(record := true) -> void:
 			actor.pose.weight = move_toward(actor.pose.weight, actor.pose_target, actor.pose_rate)
 	if not frozen:
 		_pushboxes()
-	for actor: Actor in [_kael, _dummy]:
+	for actor: Actor in [_hero, _dummy]:
 		var f := actor.f
 		actor.body.position = f.position
 		actor.body.rotation.y = f.facing_yaw
@@ -1001,8 +1025,8 @@ func _tick(record := true) -> void:
 			actor.material.emission_energy_multiplier = actor.flash * 1.6
 	_contacts()
 	var shadow := _stage.contact_shadow
-	shadow.position = Vector3(_kael.f.position.x, 0.002, _kael.f.position.z + 0.02)
-	shadow.visible = _kael.f.position.y < STAND + 0.35
+	shadow.position = Vector3(_hero.f.position.x, 0.002, _hero.f.position.z + 0.02)
+	shadow.visible = _hero.f.position.y < STAND + 0.35
 	_update_fx()
 	_camera()
 	if record:
@@ -1018,7 +1042,7 @@ func _whiff_fallback(attacker: Actor) -> void:
 	var f := attacker.f
 	if attacker.landed or f.move_tick != f.move.recovery_start_tick() - 1:
 		return
-	var target := _dummy if attacker == _kael else _kael
+	var target := _dummy if attacker == _hero else _hero
 	var reach := target.f.position - f.position
 	reach.y = 0.0
 	if not target.body.visible or reach.length() > 1.5 or target.f.state in [S.DASHING, S.KNOCKDOWN]:
@@ -1031,9 +1055,9 @@ func _whiff_fallback(attacker: Actor) -> void:
 ## The sim's pushboxes: two grounded fighters' centres stay 2 x pushbox_radius
 ## apart; an overlap pushes both back equally (same mass).
 func _pushboxes() -> void:
-	if not (_kael.body.visible and _dummy.body.visible):
+	if not (_hero.body.visible and _dummy.body.visible):
 		return
-	var a := _kael.f
+	var a := _hero.f
 	var b := _dummy.f
 	if absf(a.position.y - b.position.y) > 1.2:
 		return
@@ -1042,7 +1066,7 @@ func _pushboxes() -> void:
 	var reach := PUSHBOX_RADIUS * 2.0
 	if gap >= reach:
 		return
-	var dir := d / gap if gap > 0.001 else _kael.forward()
+	var dir := d / gap if gap > 0.001 else _hero.forward()
 	var push := (reach - gap) * 0.5
 	a.position -= dir * push
 	b.position += dir * push
@@ -1053,9 +1077,9 @@ func _pushboxes() -> void:
 ## first touch lands the hit (hitstop, flash, pop) and any overlap pushes the
 ## target back, so a fist never sinks into the body.
 func _contacts() -> void:
-	if not (_kael.body.visible and _dummy.body.visible):
+	if not (_hero.body.visible and _dummy.body.visible):
 		return
-	for pair: Array in [[_kael, _dummy], [_dummy, _kael]]:
+	for pair: Array in [[_hero, _dummy], [_dummy, _hero]]:
 		var att: Actor = pair[0]
 		var def: Actor = pair[1]
 		if not att.striking or def.f.state in [S.DASHING, S.KNOCKDOWN]:
@@ -1100,10 +1124,10 @@ func _strike_points(actor: Actor) -> PackedVector3Array:
 
 
 func _camera() -> void:
-	var k := _kael.f.position
+	var k := _hero.f.position
 	var target := Vector3(k.x, k.y - STAND + 0.95, k.z)
 	var height := 2.1
-	var yaw_goal := rad_to_deg(_kael.f.facing_yaw - PI) + 32.0
+	var yaw_goal := rad_to_deg(_hero.f.facing_yaw - PI) + 32.0
 	var pitch := -6.0
 	match _cam_mode:
 		"still":
@@ -1112,10 +1136,10 @@ func _camera() -> void:
 			yaw_goal = _cam_yaw
 			_cam_snap = true
 		"side":
-			yaw_goal = rad_to_deg(_kael.f.facing_yaw - PI) + 85.0
+			yaw_goal = rad_to_deg(_hero.f.facing_yaw - PI) + 85.0
 		"close":
 			height = 1.6
-			yaw_goal = rad_to_deg(_kael.f.facing_yaw - PI) + 50.0
+			yaw_goal = rad_to_deg(_hero.f.facing_yaw - PI) + 50.0
 		"dash":
 			height = 2.2
 			yaw_goal = 10.0
@@ -1131,8 +1155,8 @@ func _camera() -> void:
 				height = 2.3
 		"shoulder":
 			# Behind and right of Kael, looking past him at the dummy.
-			var fwd := _kael.forward()
-			var right := Basis(Vector3.UP, _kael.f.facing_yaw) * Vector3.RIGHT
+			var fwd := _hero.forward()
+			var right := Basis(Vector3.UP, _hero.f.facing_yaw) * Vector3.RIGHT
 			var ground := Vector3(k.x, 0.0, k.z)
 			var eye := ground + Vector3(0, 1.55, 0) - fwd * 3.6 + right * 1.5
 			var look := ground + fwd * 2.4 + Vector3(0, 0.9, 0)
