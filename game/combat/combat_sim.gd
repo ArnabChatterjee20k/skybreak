@@ -14,6 +14,7 @@ const DEFAULT_METER_TUNING := preload("res://game/combat/default_meter_tuning.tr
 const DEFAULT_FIGHTER_STATS := preload("res://game/combat/default_fighter_stats.tres")
 const DEFAULT_HIT_TUNING := preload("res://game/combat/default_hit_tuning.tres")
 const DEFAULT_DODGE_TUNING := preload("res://game/combat/default_dodge_tuning.tres")
+const DEFAULT_KI_TUNING := preload("res://game/combat/ki/default_ki_tuning.tres")
 
 ## What an entry in events reports.
 enum EventType {
@@ -61,6 +62,16 @@ enum EventType {
 	# Dodge (T-DEF2).
 	DODGE, ## fighter started a dodge: {type, fighter, position, kind (FighterDodge.Kind), side, stale, direction}.
 	PERFECT_DODGE, ## target perfect-dodged attacker's move_id: hit entry plus ki (paid) and projectile.
+	# Ki (T-KI1, KiRules). Entries: {type, fighter, attacker, position, move_id, tick} plus the extras named.
+	KI_FIRE, ## fighter fired a ki blast id (shot: KiRules.Shot).
+	KI_CHARGE, ## fighter held Q through the tap's startup: the charged blast is coming.
+	KI_ABSORB, ## Ki blast id was soaked by fighter's dash (or eaten by a beam, fighter -1).
+	BEAM_START, ## fighter started a beam (move_id): the tell.
+	BEAM_FIRE, ## fighter's beam id fired along direction.
+	BEAM_END, ## fighter's beam id ended at position (whiff: touched nobody).
+	BEAM_CLASH, ## fighter's and target's beams met at position: clash id.
+	CLASH_BEAT, ## fighter pressed in clash id: beat index (-1 off-beat) and push gain.
+	CLASH_END, ## Clash id ended: winner (-1 even), push.
 }
 
 const _DASH := FighterInput.Action.DASH
@@ -180,6 +191,10 @@ var last_spawn_kind: Weapon.Kind = Weapon.Kind.NONE
 var spawn_count: int = 0
 ## Thrown and placed gadgets (bombs, mines, decoys), T-D26.
 var gadgets: Array[Gadget] = []
+## Ki beams in flight and beam clashes (T-KI1, KiRules).
+var beams: Array[KiBeam] = []
+var beam_clashes: Array[BeamClash] = []
+var ki_tuning: KiTuning = DEFAULT_KI_TUNING as KiTuning
 
 
 func _init(seed_value: int = 0, movement_tuning: MovementTuning = null,
@@ -230,6 +245,7 @@ func tick(inputs: Array[FighterInput]) -> void:
 	if not round_over:
 		_resolve_hits(frozen)
 	_step_projectiles()
+	KiRules.step(self)
 	WeaponEffects.step_pins(self)
 	WeaponEffects.step_tethers(self)
 	PowerRules.step(self)
@@ -251,6 +267,7 @@ func start_round(round_spawn_points: Array[Vector3] = []) -> void:
 	projectiles = []
 	gadgets = []
 	pickups = []
+	KiRules.reset(self)
 	next_spawn_tick = -1
 	last_spawn_kind = Weapon.Kind.NONE
 	for index in fighters.size():
@@ -293,6 +310,7 @@ func _canonicalize_zeros() -> void:
 	for pickup in pickups:
 		pickup.position = DetMath.canon(pickup.position)
 		pickup.fall_speed += 0.0
+	KiRules.canonicalize(self)
 
 
 ## Hash of everything that defines the sim state; equal hashes mean equal states.
@@ -308,6 +326,7 @@ func state_hash() -> int:
 		parts.append_array(projectile.state_values())
 	for gadget in gadgets:
 		parts.append_array(gadget.state_values())
+	parts.append_array(KiRules.state_values(self))
 	return hash(var_to_bytes(parts))
 
 
@@ -499,6 +518,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		_start_block(index, input)
 		_start_grab(index)
 		_start_attack(index, input, wish)
+		KiRules.start(self, index, input)
 		_start_charging(index)
 	_track_block_press(index, input, state_before)
 	match fighter.state:
@@ -870,6 +890,9 @@ func _advance_attack(index: int, input: FighterInput) -> void:
 	var fighter := fighters[index]
 	if fighter.holding_charge:
 		_hold_charge(fighter, input)
+		return
+	if KiRules.is_ki_move(fighter, fighter.move):
+		KiRules.advance(self, index, input)
 		return
 	fighter.move_tick += 1
 	var move := fighter.move
@@ -2427,6 +2450,7 @@ func _step_projectiles() -> void:
 		projectile.age += 1
 		if projectile.effect == Weapon.Effect.DISC and WeaponEffects.steer_disc(self, projectile):
 			continue
+		KiRules.steer(self, projectile)
 		projectile.velocity.y -= projectile.gravity * TICK_SECONDS
 		projectile.position += projectile.velocity * TICK_SECONDS
 		projectile.ticks_left -= 1
@@ -2467,6 +2491,8 @@ func _projectile_contact(projectile: Projectile, from: Vector3) -> bool:
 			events.append(_weapon_event(EventType.BULLET_ABSORB, target_index, points[1], projectile.weapon,
 				projectile.id))
 			return true
+		if KiRules.absorbs(self, target_index, projectile, points[1]):
+			return true
 		var travel := projectile.velocity
 		var contact := {
 			"type": EventType.HIT, "attacker": projectile.owner, "target": target_index,
@@ -2489,6 +2515,7 @@ func _projectile_contact(projectile: Projectile, from: Vector3) -> bool:
 				projectile.returning = true
 				projectile.hit_mask |= 1 << target_index
 				return false
+			KiRules.reflected(projectile, projectile.owner)
 			projectile.owner = target_index
 			projectile.velocity = -projectile.velocity
 			projectile.position = from

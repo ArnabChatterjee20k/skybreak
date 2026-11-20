@@ -10,6 +10,12 @@ const RELEASE_SECONDS := 0.25
 var charge_time := 0.6
 var sustain_time := 1.2
 var clashing := false
+## Body thickness and charge orb size multipliers (KiLayer sets them from the sim).
+var width_scale := 1.0
+var charge_scale := 1.0
+## When true the body waits for drive() after the charge (a sim beam fires it).
+var wait_for_drive := false
+var _driven := false
 
 var _from := Vector3.ZERO
 var _to := Vector3.ZERO
@@ -50,6 +56,10 @@ func fire(from: Vector3, to: Vector3, color: Color, charge: float, sustain: floa
 	lifetime = charge_time + sustain_time + RELEASE_SECONDS
 	_from = from
 	_to = to
+	width_scale = 1.0
+	charge_scale = 1.0
+	wait_for_drive = false
+	_driven = false
 	play_at(from, color)
 	_light.light_color = Color(color, 1.0) if color.a > 0.0 else default_color
 	_place_body(0.0)
@@ -60,8 +70,24 @@ func set_end(to: Vector3) -> void:
 	_to = to
 
 
+## Follows a sim beam this frame: fires now if still charging, stays lit until release().
+func drive(from: Vector3, to: Vector3, clash: bool) -> void:
+	_from = from
+	_to = to
+	clashing = clash
+	_driven = true
+	charge_time = minf(charge_time, _age)
+	lifetime = _age + 30.0
+
+
+## Thins out and ends over RELEASE_SECONDS.
+func release() -> void:
+	wait_for_drive = false
+	lifetime = minf(lifetime, _age + RELEASE_SECONDS)
+
+
 func _advanced(_delta: float) -> void:
-	var firing := _age >= charge_time
+	var firing := _age >= charge_time and (_driven or not wait_for_drive)
 	var t := _age - charge_time
 	var width := 0.0
 	if firing:
@@ -72,7 +98,7 @@ func _advanced(_delta: float) -> void:
 	_place_body(width)
 	var charge := clampf(_age / maxf(charge_time, 0.001), 0.0, 1.0) if not firing else 1.0
 	var pulse := 1.0 + 0.12 * sin(_age * 40.0)
-	var hand := (0.35 + 0.65 * charge) * pulse * (1.0 if not firing else maxf(width, 0.0) * 0.9)
+	var hand := (0.35 + 0.65 * charge) * pulse * (1.0 if not firing else maxf(width, 0.0) * 0.9) * charge_scale
 	_charge.scale = Vector3.ONE * hand
 	_charge_glow.scale = Vector3.ONE * hand
 	_motes.emitting = not firing
@@ -87,7 +113,7 @@ func _place_body(width: float) -> void:
 	var side := Vector3.UP if absf(axis.y) < 0.99 else Vector3.RIGHT
 	var x := side.cross(axis).normalized()
 	var z := x.cross(axis)
-	var visible_width := maxf(width, 0.0)
+	var visible_width := maxf(width, 0.0) * width_scale
 	var to_local := global_transform.affine_inverse()
 	var beam_basis := Basis(x * BEAM_RADIUS * visible_width, axis * length, z * BEAM_RADIUS * visible_width)
 	_body.visible = visible_width > 0.01

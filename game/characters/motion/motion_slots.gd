@@ -11,6 +11,9 @@ const MOVES := {
 	&"rising": &"rising", &"spike": &"spike", &"sweep": &"sweep_low", &"push_block": &"push_block",
 	&"charged_smash_1": &"charged_smash_1", &"charged_smash_2": &"charged_smash_2",
 	&"charged_smash_3": &"charged_smash_3", &"grab": &"grab",
+	# Ki (T-KI1): the two-handed palm thrust reads as pushing energy out; beams hold it.
+	&"ki_blast": &"push_block", &"charged_blast": &"push_block", &"beam": &"push_block",
+	&"beam_ultimate": &"push_block",
 }
 ## Ground speed (m/s) between walking and running; below IDLE_SPEED the fighter stands.
 const WALK_RUN_SPEED := 5.5

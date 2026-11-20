@@ -314,6 +314,17 @@ def main():
         if "image" in r:
             md.append("\n   ![%s](%s)%s" % (r["check"], r["image"], " [2 s clip](%s)" % r["clip"] if "clip" in r else ""))
         md.append("")
+    md.append("## Ki usage by the AI (T-KI1)\n")
+    kinds = ["blasts", "charged", "beams", "ultimates", "clashes", "reflects", "soaks", "beam_whiffs", "ki_hits"]
+    totals = {k: sum(m.get("ki", {}).get(k, 0) for m in matches) for k in kinds}
+    minutes = sum(m["ticks"] * len(m["legends"]) for m in matches) / 3600.0
+    md.append("| " + " | ".join(kinds) + " |\n|" + "---|" * len(kinds))
+    md.append("| " + " | ".join(str(totals[k]) for k in kinds) + " |")
+    if minutes > 0:
+        md.append("\nPer fighter-minute (%.1f fighter-minutes): blasts %.2f, charged %.2f, beams %.2f, clashes %.2f.\n" % (
+            minutes, totals["blasts"] / minutes, totals["charged"] / minutes, totals["beams"] / minutes,
+            totals["clashes"] / minutes))
+    md.append("")
     md.append("## Scenario library\n")
     if scenarios:
         md.append("%d tests: %d passing, %d failing, %d pending (strict mode: known issues fail).\n" % (
