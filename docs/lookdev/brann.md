@@ -65,7 +65,8 @@ Brann and Kael are the two warm legends. They stay apart by value (Brann's red i
 
 ## Voxel spec
 - **Body cell 2.2 cm** (1/93 of 2.05 m), the same cell as Kael so the voxels match side by side. His bulk means many more voxels: build the boulders and fists as their own grids.
-- **Fine cell 1.1 cm** on the head and beard, the fists and knuckle plates, and the buckle.
+- **Head cell about 8.5 mm** (Kael v2) for the face, brow and beard, so they read smoothly.
+- **Fine cell 1.1 cm** on the braid, the fists and knuckle plates, and the buckle.
 - **Colour noise:** ±3% value on stone and apron panels, up to ±6% on moss, iron and leather straps. Darker in cracks, the apron folds and under the boulders; lighter on wear (knuckle faces, toe caps, boulder edges, the apron's lap).
 
 ## Lighting stack

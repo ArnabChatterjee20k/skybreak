@@ -66,7 +66,8 @@ Lyra's navy (~230°, low saturation, dark) and Kael's teal coat (~185°, mid val
 
 ## Voxel spec
 - **Body cell 2.2 cm** (1/77 of 1.70 m), the same cell as Kael.
-- **Fine cell 1.1 cm** on the head and hat (brim, crown, charm, star lights), hands and bracers, the rings and the clasp.
+- **Head cell about 8.5 mm** (Kael v2) for the face, skull and hair, so they read smoothly.
+- **Fine cell 1.1 cm** on the hat (brim, crown, charm, star lights), hands and bracers, the rings and the clasp.
 - **Colour noise:** ±2–3% value on the robe, cape and brim; up to ±6% on leather, brass and the stole. Darker in the brim's underside and the cape folds; lighter on wear (stole edges, boot toes, ring edges, scroll-case caps).
 
 ## Lighting stack

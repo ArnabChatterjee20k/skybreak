@@ -67,7 +67,8 @@ No two accents are within 40° except Brann and Kael, who are split by value (Br
 
 ## Voxel spec
 - **Body cell 2.2 cm** (1/78 of 1.72 m), the same cell as Kael so voxels read the same size side by side.
-- **Fine cell 1.1 cm** on the head, hood and ear points, visor, hands and knuckle wraps, and the chakram.
+- **Head cell about 8.5 mm** (Kael v2) for the face, skull and fringe, so they read smoothly.
+- **Fine cell 1.1 cm** on the hood and ear points, visor, hands and knuckle wraps, and the chakram.
 - **Colour noise:** ±2–3% value on the jacket and hood panels, up to ±6% on wraps, boots and the chakram. Darker in the hood interior and tatter folds; lighter on worn spots (knee pads, knuckle wraps, toe split, the chakram edge).
 
 ## Lighting stack
@@ -97,7 +98,7 @@ Kael's stack unchanged (crevice AO, soft key and contact shadow, fill/bounce, vo
 | Jacket front and back, collar | planar panels with a fold ridge at the side seams, hard hem | `TORSO` (Hips → Chest → UpperChest by height, like Kael) |
 | Bodysuit, leggings | profile slices (like `coat_profile`) per limb | `TORSO`, `LEG_L/R` |
 | Mantle tatters | 6 planar triangles, each 2 voxels thick with a centre fold ridge; bevelled tips | new `MANTLE`: UpperChest, blended to Left/RightShoulder by `x` (outer tatters 60% shoulder) so a raised arm lifts them |
-| Hood dome | curve at the fine cell (head grid) | `HEAD`; the back panel and rim blend Head → Neck → UpperChest so head turns don't open a gap |
+| Hood dome | curve at the fine cell (its own grid around the head grid) | `HEAD`; the back panel and rim blend Head → Neck → UpperChest so head turns don't open a gap |
 | Ear points | tapered capsule chains at the fine cell, one fold ridge | new `EARS`: rigid `Head` in v1 (a spring offset in the view is a later option) |
 | Visor | curved plate at the fine cell, slits carved, hinge tabs as boxes with rivets | `HEAD` |
 | Fringe lock | 3 bent locks (`_lock` pattern) | `HEAD` |
