@@ -49,6 +49,8 @@ func _soak(out_dir: String) -> void:
 	var specs := QaMatchSpec.full_matrix() if full else QaMatchSpec.quick_matrix()
 	if _args.has("only"):
 		specs = [QaMatchSpec.parse(_args.only)]
+	if _args.has("zone"):
+		specs = specs.filter(func(spec: QaMatchSpec) -> bool: return spec.zone == StringName(_args.zone))
 	var shard := (_args.get("shard", "0/1") as String).split("/")
 	var index := int(shard[0])
 	var count := int(shard[1])
