@@ -100,8 +100,10 @@ func test_contact_shadow_adds_a_team_ring_only_when_airborne() -> void:
 	var material := shadows.disc(0).material_override as ShaderMaterial
 	shadows.place(0, 0.0, 0.0, 10.0, 10.0, _flat)
 	assert_eq(material.get_shader_parameter("ring_strength"), 0.0, "no ring while standing")
-	shadows.place(0, 0.0, 0.0, 10.0 + ContactShadows.RING_ABOVE + ContactShadows.RING_FADE_IN, 10.0, _flat)
-	assert_almost_eq(float(material.get_shader_parameter("ring_strength")), ContactShadows.RING_STRENGTH, 0.001)
+	var height := ContactShadows.RING_ABOVE + ContactShadows.RING_FADE_IN
+	shadows.place(0, 0.0, 0.0, 10.0 + height, 10.0, _flat)
+	assert_almost_eq(float(material.get_shader_parameter("ring_strength")), ContactShadows.ring_strength(height), 0.001)
+	assert_gt(ContactShadows.ring_strength(height), 0.8, "fully in")
 	assert_eq(material.get_shader_parameter("ring_color"), Color.RED)
 
 

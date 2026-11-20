@@ -26,10 +26,16 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   outlines, fog only on the far backdrop, a contact shadow under each fighter, re-tuned
   palettes. Open: ART1-a Frozen Peaks snow still reads blue-lilac under Filmic (white = 1);
   ART1-b a tonemap pass (Filmic white / AgX) would need a fighter look review.
-  Merged with main 372bccd: the contact shadow is now the one ground marker (dark disc plus a
-  team-colour rim when airborne; `HeightMarker` keeps only the drop line). ART1-c #122 T-UX1
-  rewrites `HeightMarker` into its own ground disc: on merge, fold its look into
-  `ContactShadows` instead of drawing a second disc.
+  Merged with main 26019b8 (ART1-c done): `ContactShadows` is the one ground marker per fighter
+  (dark disc plus a team-colour rim from 0.4 m that widens and quiets with height, #122's look);
+  `HeightMarker` keeps only #122's faint 3-dash tick above 3 m, no disc and no drop line.
+- T-UX1 [desktop] Controls and readability (owner feedback "how to get to the ground"): descend
+  moves from Left Ctrl to `C` (Ctrl stays a desktop-only alternate, never on the web; Ctrl/Cmd/Alt
+  rebinds refused on the web), quick-swap moves from `C` to `Y`; double-tap `C` dives until landing
+  (input side, no sim change); in-match controls strip (`H`, on for the first 5 matches, then
+  remembered) with a "fly down" prompt after 3 s hovering; ground disc + short dashed tick replace
+  the drop lines; compact FFA/2v2 plates, slot tags on duplicate legends, no weapon box unarmed.
+  Follow-ups: gamepad bindings (none exist yet: the strip says so on a pad).
 - T-D36 [desktop] Playable web build: exports kept as text resources (Godot 4.7.2's binary
   conversion emptied zone spawn points, so every exported match crashed), webrtc-native left
   out of the Web preset, no Quit on web, `tools/web/match_smoke_test.js` (menu -> vs AI, 30 s).

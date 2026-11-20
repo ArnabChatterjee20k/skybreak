@@ -18,7 +18,9 @@ All 14 visual goldens re-blessed with `bless_goldens.sh --visual` on the merged 
 - Ground marker: #125's contact shadow and the T-118 `HeightMarker` ring both drew
   under an airborne fighter. They are now one marker: `ContactShadows` draws the soft
   dark disc and, once the feet are above `HeightMarker.SHOW_ABOVE`, a team-colour rim;
-  `HeightMarker` keeps only its drop line.
+  `HeightMarker` keeps only its drop line. After merging #122 (T-UX1, main 26019b8)
+  the drop line is gone too: `HeightMarker` draws only #122's faint 3-dash tick above
+  3 m, and the rim starts at 0.4 m and quiets with height (`ContactShadows.ring_strength`).
 
 ## Re-bless for #89 polish batch 2 (merge of main 3466207 into `claude/polish-batch-2`)
 
