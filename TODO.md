@@ -13,6 +13,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-D36 [desktop] Playable web build: exports kept as text resources (Godot 4.7.2's binary
+  conversion emptied zone spawn points, so every exported match crashed), webrtc-native left
+  out of the Web preset, no Quit on web, `tools/web/match_smoke_test.js` (menu -> vs AI, 30 s).
+  Build on the `web-build` branch; deploy to Appwrite Sites from the Mac. Duo's Appwrite
+  traffic from the browser is unverified (CORS: add the site as a Web platform if needed).
 - T-D30e [desktop] Weapon holds, view-only port of #70 (supersedes it): `WeaponGrip`, per-build
   holds, clearance solver with carry-over, KO weapon drop, bow reach, `VisualQa`; plus fixed
   one-hand hit-reaction tuck and flight hold, heavies at the side in flight, eased hold changes,
@@ -90,6 +95,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+
+- QA-18 [desktop] Godot 4.7.2 text-to-binary export conversion drops `Packed*Array` values in
+  `ZoneData` .tres; re-enable `editor/export/convert_text_resources_to_binary` once fixed
+  upstream (smaller pck, faster load).
 
 - QA-3 [developer] Bug (T-D31): `ZoneMatch` keeps teams only in its own `teams` array and never sets `sim.fighters[i].team`, so in a real 2v2 the sim treats teammates as opponents (friendly fire, the round only ends with one fighter left).
 - QA-4 [developer] Bug (T-D31): `ZoneMatch._make_driver` looks for `next_input`/`setup` on `AIDriver`, which has neither, so every AI slot in a real zone match silently falls back to `WeaponBot`; the T-D23 `FighterAI` never plays there.
