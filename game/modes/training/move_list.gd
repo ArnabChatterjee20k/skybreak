@@ -24,7 +24,7 @@ const SLOT_INPUT := {
 	&"breaker": "W + RMB",
 	&"launcher": "S + RMB",
 	&"rising": "Space + RMB",
-	&"spike": "Ctrl + RMB",
+	&"spike": "C + RMB",
 	&"sweep": "A/D + RMB",
 	&"push_block": "Block + RMB",
 	&"grab": "F",

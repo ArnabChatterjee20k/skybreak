@@ -1,0 +1,64 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 4,
+			"8": 1
+		},
+		"light_1": {
+			"3": 4,
+			"4": 2
+		},
+		"light_1+counter": {
+			"7": 2
+		},
+		"light_2": {
+			"3": 4,
+			"4": 2
+		},
+		"light_3": {
+			"3": 4,
+			"4": 2
+		},
+		"light_4": {
+			"6": 1
+		},
+		"repeater/projectile": {
+			"1": 96
+		},
+		"repeater/projectile+counter": {
+			"5": 5
+		}
+	},
+	"id": "112:ember_rift:1v1:kael,vexa:45",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 112,
+	"sim_ms_per_tick": 0.830472916666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00726778944954276,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.00434094102013,
+		"foot_slide_cm_per_frame": 0.00158523733581795,
+		"foot_slide_frames": 273,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.994217081850534,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.628604583333333,
+	"violations": [],
+	"wall_seconds": 18.137,
+	"zone": "ember_rift"
+}
