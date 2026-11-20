@@ -58,7 +58,13 @@ func input_for(index: int, _tick: int) -> FighterInput:
 				_go("beam")
 		"beam":
 			if phase_tick < 2:
-				held |= A.SPECIAL_1
+				# Key 1 is the beam only for a legend without a special kit (Lyra); Kael's beam is
+				# his ultimate on 4 since T-SP1 (key 1 is Comet Drive), so give it the burst.
+				if SpecialRules.owns_key(me, 1):
+					me.burst = maxi(me.burst, 2 * sim.meter_tuning.burst_stock_size * FighterState.METER_UNIT)
+					held |= A.ULTIMATE
+				else:
+					held |= A.SPECIAL_1
 			if not sim.beam_clashes.is_empty():
 				_go("clash")
 			elif phase_tick > 240:
