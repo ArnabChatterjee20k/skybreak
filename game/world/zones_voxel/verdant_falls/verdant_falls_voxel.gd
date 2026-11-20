@@ -13,7 +13,7 @@ extends VoxelZone
 
 const VERSION := 1
 ## Outer floor tiers sit this far under the finer tier they overlap (no seam).
-const TIER_DROP := 0.03
+const TIER_DROP := 0.05
 const TERRAIN_SHADER := preload("res://game/world/voxel_zone_kit/voxel_terrain.gdshader")
 const WATER_SHADER := preload("res://game/world/zones_voxel/verdant_falls/vf_water.gdshader")
 const FALLS_SHADER := preload("res://game/world/zones_voxel/verdant_falls/vf_falls.gdshader")
@@ -46,7 +46,7 @@ const COLORS := {
 	Mat.HEARTWOOD: Color("#B89870"), Mat.CARVE: Color("#2A221C"), Mat.PETAL_WHITE: Color("#F2EEE2"),
 }
 ## Floor tones: moss light to deep, leaf litter, blue-green ground fern.
-const FLOOR_MOSS: Array[Color] = [Color("#7A9A4A"), Color("#66863F"), Color("#567439"), Color("#43602F")]
+const FLOOR_MOSS: Array[Color] = [Color("#6E8C44"), Color("#5C7A3A"), Color("#4E6A34"), Color("#3E582C")]
 const LITTER: Array[Color] = [Color("#7C6A4A"), Color("#8E7A52"), Color("#6A5A40")]
 
 var map: TerrainHeightmap
@@ -266,8 +266,8 @@ func _floor() -> void:
 	var t2 := _t2_rect()
 	var box := _box_rect()
 	quads += _smooth_field(T1, t1, Rect2(), "FloorT1", 0.0, 0.0)
-	quads += _smooth_field(T2, t2, t1.grow(-1.0), "FloorT2", 0.0, TIER_DROP)
-	quads += _smooth_field(T3, box, t2.grow(-3.0), "FloorT3", 0.0, TIER_DROP * 2.0)
+	quads += _smooth_field(T2, t2, Rect2(), "FloorT2", 0.0, TIER_DROP)
+	quads += _smooth_field(T3, box, t2.grow(-6.0), "FloorT3", 0.0, TIER_DROP * 4.0)
 	stats["floor_quads"] = quads
 
 
@@ -402,7 +402,7 @@ func _cliff_colour(w: Vector2, top: float, steep: float, pid: Vector3i, hf: Voxe
 	var groove := absf(lx - 20.0 * sin(lz * 0.01))
 	if top > 100.0 and groove < 9.0:
 		var near_lip := smoothstep(-200.0, -160.0, lz)
-		var foam := VoxelSdf.hash3(Vector3i(x, 0, z), 51) < 0.15 + near_lip * 0.5
+		var foam := VoxelSdf.hash3(Vector3i(x, 0, z), 51) < 0.08 + near_lip * 0.3
 		return Color("#5e7a78") if not foam else COLORS[Mat.FOAM] * 0.95
 	if top > 100.0 and groove < 12.0:
 		return COLORS[Mat.STONE_DARK] * (0.9 + 0.2 * hv)
@@ -1706,8 +1706,8 @@ func shots() -> Array[Dictionary]:
 	var top := falls_quad[0].lerp(falls_quad[1], 0.5)
 	# 1. The key image: the Great Falls across the mirror lake at sunrise, Kael on the south shore.
 	var shore := _shore_point(centre.x - 4.0)
-	out.append({"name": "falls_key", "from": Vector3(shore.x + 3.0, ground_at(shore.x, shore.y) + 3.0, shore.y + 9.0),
-		"at": Vector3(top.x, 44.0, top.z), "fov": 55.0, "kael": [shore, PI], "times": ["day", "dusk"]})
+	out.append({"name": "falls_key", "from": Vector3(shore.x + 3.5, ground_at(shore.x, shore.y) + 2.6, shore.y + 8.5),
+		"at": Vector3(top.x, 38.0, top.z), "fov": 55.0, "kael": [shore, PI], "times": ["day", "dusk"]})
 	# 2. The overgrown shrine, Kael on its stair.
 	var yaw := atan2(spawns[1].x - shrine_at.x, spawns[1].y - shrine_at.y)
 	var front := shrine_at + Vector2(sin(yaw), cos(yaw)) * 2.4
@@ -1748,11 +1748,11 @@ func _shore_point(x: float) -> Vector2:
 		var z := centre.y + 60.0 + k * 0.5
 		var dry := true
 		for j in 25:
-			if ground_at(x, z + j) < 0.5:
+			if ground_at(x, z + j) < 5.0:
 				dry = false
 				break
 		if dry:
-			return Vector2(x, z + 1.5)
+			return Vector2(x, z + 2.0)
 	return Vector2(x, centre.y + 100.0)
 
 
@@ -1771,8 +1771,8 @@ func flight() -> Array[Dictionary]:
 		{"from": Vector3(foot.x + 15, 14.0, foot.z + 90), "at": Vector3(top.x, 70.0, top.z), "fov": 60.0},
 		{"from": Vector3(foot.x + 30, 60.0, foot.z + 60), "at": Vector3(top.x, 105.0, top.z), "fov": 60.0},
 		{"from": Vector3(top.x + 25, 132.0, top.z + 30), "at": Vector3(top.x, 118.0, top.z - 60), "fov": 60.0},
-		{"from": Vector3(top.x - 20, 140.0, top.z - 40), "at": Vector3(top.x + 20, 80.0, top.z + 80), "fov": 60.0},
-		{"from": Vector3(foot.x - 10, 40.0, foot.z + 40), "at": Vector3(centre.x + 40, 15.0, centre.y + 140), "fov": 60.0},
+		{"from": Vector3(top.x - 25, 136.0, top.z + 30), "at": Vector3(top.x + 10, 60.0, top.z + 130), "fov": 60.0},
+		{"from": Vector3(foot.x - 15, 38.0, foot.z + 75), "at": Vector3(centre.x + 40, 15.0, centre.y + 140), "fov": 60.0},
 		{"from": Vector3(centre.x + 30, 12.0, centre.y + 95), "at": walk, "fov": 62.0},
 		{"from": walk + Vector3(-20, -8, -25), "at": walk + Vector3(10, -4, 20), "fov": 62.0},
 		{"from": walk + Vector3(15, -12, 20), "at": sh + Vector3(0, 2, 0), "fov": 60.0},
