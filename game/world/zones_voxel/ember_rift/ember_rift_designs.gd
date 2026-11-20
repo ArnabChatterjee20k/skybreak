@@ -138,10 +138,10 @@ static func spire(v: int, cell: float) -> ArrayMesh:
 		g.paint_surface(bounds, func(p: Vector3, _c: Vector3i) -> bool:
 			var y := floorf(p.y / 2.4) * 2.4
 			var d := _prism(Vector2(p.x, p.z), radius.call(y), facets)
-			return d.x - d.y < cell * 0.9, Mat.GLINT, [Mat.OBSIDIAN])
+			return d.x - d.y < cell * 0.45 and fposmod(p.y, 2.4) > 0.6, Mat.GLINT, [Mat.OBSIDIAN])
 		g.paint_surface(AABB(Vector3(-r, h * 0.6, -r), Vector3(2 * r, h * 0.4, 2 * r)),
 			func(_p: Vector3, c: Vector3i) -> bool: return VoxelSdf.hash3(Vector3i(c.x, c.y / 4, c.z), 8) < 0.05, Mat.GLASS, [Mat.OBSIDIAN])
-	return _mesh("spire%d" % v, bounds, cell, paint)
+	return _mesh("spire_b%d" % v, bounds, cell, paint)
 
 
 # ---------------------------------------------------------------- vents

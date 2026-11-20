@@ -13,7 +13,6 @@ extends VoxelZone
 
 const TERRAIN_SHADER := preload("res://game/world/zones_voxel/ember_rift/ember_terrain.gdshader")
 const LAVA_SHADER := preload("res://game/world/zones_voxel/ember_rift/ember_lava.gdshader")
-const D := EmberRiftDesigns
 const LAVA_Y := 31.0
 ## Lava plane clip radius around the centre (WorldMap uses 215 m).
 const LAVA_CLIP := 215.0
@@ -61,6 +60,19 @@ func _init() -> void:
 
 func build() -> void:
 	var t := Time.get_ticks_msec()
+	load_sim()
+	var steps: Array[Callable] = [_story_spots, _terrain, _lava, _spires, _vents, _scatter,
+		_story_props, _plume, _geyser, _breach_fall, _particles, _lava_lights]
+	for step in steps:
+		var s := Time.get_ticks_msec()
+		step.call()
+		stats["ms_" + step.get_method().trim_prefix("_")] = Time.get_ticks_msec() - s
+	stats["ms_total"] = Time.get_ticks_msec() - t
+
+
+## Loads the sim's truth: heightmap, layout, zone data, the props builder's
+## placements and the 2 m lava-distance and slope grids.
+func load_sim() -> void:
 	hm = load(WorldMap.HEIGHTMAP_PATH)
 	layout = ZoneLayout.load_default()
 	zone = load("res://game/world/zones/ember_rift.tres")
@@ -69,13 +81,8 @@ func build() -> void:
 	for p in zone.spawn_points:
 		spawn_mid += Vector2(p.x, p.z) / zone.spawn_points.size()
 	lantern_materials.append(VoxelProp.materials()[VoxelProp.Surf.GLOW] as ShaderMaterial)
-	var steps: Array[Callable] = [_placements, _grids, _story_spots, _terrain, _lava, _spires, _vents, _scatter,
-		_story_props, _plume, _geyser, _breach_fall, _particles, _lava_lights]
-	for step in steps:
-		var s := Time.get_ticks_msec()
-		step.call()
-		stats["ms_" + step.get_method().trim_prefix("_")] = Time.get_ticks_msec() - s
-	stats["ms_total"] = Time.get_ticks_msec() - t
+	_placements()
+	_grids()
 
 
 func ground_at(x: float, z: float) -> float:
@@ -210,7 +217,7 @@ func _story_spots() -> void:
 				if a == Vector2.INF or b == Vector2.INF:
 					continue
 				var span := a.distance_to(b)
-				if span < 7.0 or span > 12.0:
+				if span < 6.0 or span > 14.0:
 					continue
 				var score := p.distance_to(spawn_mid) + absf(span - 9.0) * 4.0
 				if score < best and p.distance_to(spawn_mid) > 25.0:
@@ -239,11 +246,11 @@ func _story_spots() -> void:
 
 ## Where the ground rises back above the lava along d from p (within 9 m).
 func _bank(p: Vector2, d: Vector2) -> Vector2:
-	for k in range(2, 10):
+	for k in range(2, 12):
 		var q := p + d * k
-		if hm.ground_height_at(q.x, q.y) > 34.0 and slope_at(q.x, q.y) < 0.6:
+		if hm.ground_height_at(q.x, q.y) > 33.5:
 			var q2 := q + d * 1.5
-			return q2 if hm.ground_height_at(q2.x, q2.y) > 34.0 else Vector2.INF
+			return q2 if hm.ground_height_at(q2.x, q2.y) > 33.5 else Vector2.INF
 	return Vector2.INF
 
 
@@ -293,12 +300,10 @@ func _clear(p: Vector2, radius: float) -> bool:
 
 # ---------------------------------------------------------------- terrain
 
-func _terrain() -> void:
-	var quads := {}
-	var fine := FINE_RECT
-	# T1: smooth ash and stepped banks around the duel floor.
-	var t1s := VoxelHeightfield.new(T1, fine.position, fine.end)
-	var t1b := VoxelHeightfield.new(T1, fine.position, fine.end)
+## The T1 fields over rect: [smooth ash (on the sim surface), stepped banks].
+func fine_fields(rect: Rect2) -> Array[VoxelHeightfield]:
+	var t1s := VoxelHeightfield.new(T1, rect.position, rect.end)
+	var t1b := VoxelHeightfield.new(T1, rect.position, rect.end)
 	t1s.smooth_height = ground_at
 	var lava_floor := roundi((LAVA_Y - 1.5) / T1)
 	for z in t1s.size.y:
@@ -312,6 +317,16 @@ func _terrain() -> void:
 				t1s.set_column(x, z, roundi(h / T1), lava_floor, col)
 			else:
 				t1b.set_column(x, z, roundi(h / T1), lava_floor, col)
+	return [t1s, t1b]
+
+
+func _terrain() -> void:
+	var quads := {}
+	var fine := FINE_RECT
+	# T1: smooth ash and stepped banks around the duel floor.
+	var t1 := fine_fields(fine)
+	var t1s := t1[0]
+	var t1b := t1[1]
 	# T2: the rest of the floor (smooth), banks (stepped) and the basalt wall.
 	var lo := centre - Vector2(300, 300)
 	var hi := centre + Vector2(300, 300)
@@ -319,8 +334,8 @@ func _terrain() -> void:
 	var t2b := VoxelHeightfield.new(T2, lo, hi)
 	t2s.smooth_height = ground_at
 	var lava_floor2 := roundi((LAVA_Y - 1.5) / T2)
-	var basalt := D.COLORS[D.Mat.BASALT] as Color
-	var ash := D.COLORS[D.Mat.ASH] as Color
+	var basalt := EmberRiftDesigns.COLORS[EmberRiftDesigns.Mat.BASALT] as Color
+	var ash := EmberRiftDesigns.COLORS[EmberRiftDesigns.Mat.ASH] as Color
 	for z in t2s.size.y:
 		for x in t2s.size.x:
 			var w := t2s.centre(x, z)
@@ -342,15 +357,15 @@ func _terrain() -> void:
 				var top := shown_top(w.x, w.y)
 				var site := _basalt_site(w.x, w.y)
 				var k := VoxelSdf.hash3(Vector3i(int(site.x * 10), 1, int(site.y * 10)), 19)
-				var c := basalt.lerp(ash, 0.25 + 0.35 * k * clampf(1.6 - s, 0.0, 1.0))
-				c *= 0.92 + 0.12 * k
+				var c := basalt.lerp(ash, 0.06 + 0.16 * k * clampf(1.6 - s, 0.0, 1.0))
+				c *= 0.85 + 0.25 * k
 				c.a = clampf(1.0 - lava_distance(w.x, w.y) / 14.0, 0.0, 1.0)
 				t2b.set_column(x, z, roundi(top / T2), roundi((top - 10.0) / T2), c)
 			else:
 				t2b.set_column(x, z, roundi(h / T2), lava_floor2, _floor_colour(w, h))
 	# T3: rim crowns and outer slopes in 4.2 m blocks.
 	var t3 := VoxelHeightfield.new(T3, centre - Vector2(470, 470), centre + Vector2(470, 470))
-	var obsidian := D.COLORS[D.Mat.OBSIDIAN] as Color
+	var obsidian := EmberRiftDesigns.COLORS[EmberRiftDesigns.Mat.OBSIDIAN] as Color
 	for z in t3.size.y:
 		for x in t3.size.x:
 			var w := t3.centre(x, z)
@@ -413,8 +428,8 @@ func _floor_colour(w: Vector2, h: float) -> Color:
 	c = c.lerp(ridge, smoothstep(0.25, 0.7, drift) * 0.5)
 	c = c.lerp(Color("#857C7C"), smoothstep(-0.3, -0.7, drift) * 0.35)
 	var cell := Vector3i(floori(w.x / T1), 0, floori(w.y / T1))
-	if VoxelSdf.hash3(cell, 13) < 0.025:
-		c = Color("#5A504C")
+	if VoxelSdf.hash3(cell, 13) < 0.006:
+		c = c.lerp(Color("#5A504C"), 0.6)
 	var d := lava_distance(w.x, w.y)
 	c = c.lerp(crust, clampf(1.0 - (d - 1.0) / 3.5, 0.0, 1.0) * 0.85)
 	c = c.lerp(Color("#6E6668"), clampf((34.5 - h) / 3.0, 0.0, 1.0) * 0.5)
@@ -520,7 +535,7 @@ func _lava() -> void:
 
 func _spires() -> void:
 	var lists := []
-	for v in D.SPIRES.size():
+	for v in EmberRiftDesigns.SPIRES.size():
 		lists.append(_xfs())
 	for s in spires:
 		var base := s.origin - s.basis.y * 2.5
@@ -528,20 +543,20 @@ func _spires() -> void:
 		var h := s.basis.y.length() * EmberRiftProps.SPIRE_MESH_HEIGHT
 		var best := 0
 		var score := INF
-		for v in D.SPIRES.size():
-			var vr: float = D.SPIRES[v][0]
-			var vh: float = D.SPIRES[v][1]
+		for v in EmberRiftDesigns.SPIRES.size():
+			var vr: float = EmberRiftDesigns.SPIRES[v][0]
+			var vh: float = EmberRiftDesigns.SPIRES[v][1]
 			var e := absf(log((h / r) / (vh / vr))) + 0.4 * absf(log(r / vr))
 			if e < score:
 				score = e
 				best = v
 		var rot := s.basis.orthonormalized()
-		var vr2: float = D.SPIRES[best][0]
-		var vh2: float = D.SPIRES[best][1]
+		var vr2: float = EmberRiftDesigns.SPIRES[best][0]
+		var vh2: float = EmberRiftDesigns.SPIRES[best][1]
 		(lists[best] as Array[Transform3D]).append(Transform3D(rot * Basis.from_scale(Vector3(r / vr2, h / vh2, r / vr2)), base))
 	var quads := 0
-	for v in D.SPIRES.size():
-		var tiers: Array[ArrayMesh] = [D.spire(v, T2), D.spire(v, T2 * 2.0), D.spire(v, T3)]
+	for v in EmberRiftDesigns.SPIRES.size():
+		var tiers: Array[ArrayMesh] = [EmberRiftDesigns.spire(v, T2), EmberRiftDesigns.spire(v, T2 * 2.0), EmberRiftDesigns.spire(v, T3)]
 		VoxelProp.place(self, "Spires%d" % v, tiers, SPIRE_RANGES, lists[v], 2)
 		quads += VoxelProp.quads(tiers[0]) * (lists[v] as Array).size()
 	stats["spire_quads_near"] = quads
@@ -564,10 +579,10 @@ func _vents() -> void:
 			(crystals[k % 2] as Array[Transform3D]).append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU), Vector3(b.x + cos(a) * rr, y, b.z + sin(a) * rr)))
 	var quads := 0
 	for v in 2:
-		var tiers: Array[ArrayMesh] = [D.vent(v, T1), D.vent(v, T1 * 4.0)]
+		var tiers: Array[ArrayMesh] = [EmberRiftDesigns.vent(v, T1), EmberRiftDesigns.vent(v, T1 * 4.0)]
 		VoxelProp.place(self, "Vents%d" % v, tiers, [90.0, 0.0], lists[v], 1)
 		quads += VoxelProp.quads(tiers[0]) * (lists[v] as Array).size()
-		var one: Array[ArrayMesh] = [D.sulphur(v, T0)]
+		var one: Array[ArrayMesh] = [EmberRiftDesigns.sulphur(v, T0)]
 		VoxelProp.place(self, "Sulphur%d" % v, one, [40.0], crystals[v], 0)
 	stats["vent_quads_near"] = quads
 
@@ -593,7 +608,7 @@ func _scatter() -> void:
 			Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * s), Vector3(p.x, h - 0.15, p.y)))
 		placed += 1
 	for v in 3:
-		VoxelProp.place(self, "Pumice%d" % v, _meshes([D.boulder(v, T1), D.boulder(v, T1 * 4.0)]), PROP_RANGES, boulders[v], 1)
+		VoxelProp.place(self, "Pumice%d" % v, _meshes([EmberRiftDesigns.boulder(v, T1), EmberRiftDesigns.boulder(v, T1 * 4.0)]), PROP_RANGES, boulders[v], 1)
 	var shards: Array = [_xfs(), _xfs(), _xfs()]
 	var n := 0
 	for sp in spires:
@@ -608,7 +623,7 @@ func _scatter() -> void:
 			(shards[n % 3] as Array[Transform3D]).append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU), Vector3(p.x, h - 0.03, p.y)))
 			n += 1
 	for v in 3:
-		VoxelProp.place(self, "Shards%d" % v, _meshes([D.shard(v, T0)]), [45.0], shards[v], 0)
+		VoxelProp.place(self, "Shards%d" % v, _meshes([EmberRiftDesigns.shard(v, T0)]), [45.0], shards[v], 0)
 	# Rafts on the central pool and in channels near the duel.
 	var rafts: Array = [_xfs(), _xfs(), _xfs()]
 	n = 0
@@ -622,7 +637,7 @@ func _scatter() -> void:
 		(rafts[n % 3] as Array[Transform3D]).append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, 1, s)), Vector3(p.x, LAVA_Y + 0.02, p.y)))
 		n += 1
 	for v in 3:
-		VoxelProp.place(self, "Rafts%d" % v, _meshes([D.raft(v, T1), D.raft(v, T1 * 4.0)]), [120.0, 0.0], rafts[v], 0)
+		VoxelProp.place(self, "Rafts%d" % v, _meshes([EmberRiftDesigns.raft(v, T1), EmberRiftDesigns.raft(v, T1 * 4.0)]), [120.0, 0.0], rafts[v], 0)
 	# Survey stakes in a line from the duel floor towards the vent; the last melted.
 	var stakes: Array = [_xfs(), _xfs()]
 	var from := spawn_mid + Vector2(7.0, -14.0)
@@ -636,7 +651,7 @@ func _scatter() -> void:
 		var melted := lava_distance(p.x, p.y) < 6.0 or k >= count - 3
 		(stakes[1 if melted else 0] as Array[Transform3D]).append(Transform3D(Basis(Vector3.UP, rng.randf_range(-0.3, 0.3) + PI), Vector3(p.x, h, p.y)))
 	for v in 2:
-		VoxelProp.place(self, "Stakes%d" % v, _meshes([D.stake(v == 1)]), [55.0], stakes[v], 1)
+		VoxelProp.place(self, "Stakes%d" % v, _meshes([EmberRiftDesigns.stake(v == 1)]), [55.0], stakes[v], 1)
 	stats["boulders"] = placed
 	stats["shards"] = n
 
@@ -651,17 +666,17 @@ func _story_props() -> void:
 		var shadow := true
 		match key:
 			"shrine":
-				m = D.shrine()
+				m = EmberRiftDesigns.shrine()
 			"fallen":
-				m = D.fallen_spire()
+				m = EmberRiftDesigns.fallen_spire()
 				at.y -= 0.6
 			"tube_a", "tube_b":
-				m = D.lava_tube(T1)
+				m = EmberRiftDesigns.lava_tube(T1)
 				at.y -= 0.1
 			"bridge":
-				m = D.bridge(float(s[2]))
+				m = EmberRiftDesigns.bridge(float(s[2]))
 			"cairn":
-				m = D.cairn()
+				m = EmberRiftDesigns.cairn()
 		var mi := MeshInstance3D.new()
 		mi.name = key.capitalize().replace(" ", "")
 		mi.mesh = m
@@ -681,8 +696,8 @@ func _plume() -> void:
 	for v in 3:
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.mesh = D.puff(v)
-		mm.instance_count = 14
+		mm.mesh = EmberRiftDesigns.puff(v)
+		mm.instance_count = 24
 		var node := MultiMeshInstance3D.new()
 		node.name = "Plume%d" % v
 		node.multimesh = mm
@@ -697,11 +712,11 @@ func _place_puffs(t: float) -> void:
 		var mm := _puffs[v].multimesh
 		for k in mm.instance_count:
 			var i := k * 3 + v
-			var u := fposmod(float(i) / 42.0 + t * 0.006, 1.0)
-			var y := 40.0 + u * 330.0
+			var u := fposmod(float(i) / 72.0 + t * 0.006, 1.0)
+			var y := 36.0 + u * 330.0
 			var drift := Vector2(110.0, -85.0) * pow(u, 1.4)
-			var wob := Vector2(sin(i * 2.3) * 9.0, cos(i * 1.7) * 9.0) * (0.3 + u)
-			var s := 0.55 + u * 2.4
+			var wob := Vector2(sin(i * 2.3), cos(i * 1.7)) * (9.0 + 34.0 * u)
+			var s := 0.7 + u * 2.8
 			mm.set_instance_transform(k, Transform3D(Basis(Vector3.UP, i * 1.9).scaled(Vector3(s, s * 0.85, s)),
 				Vector3(centre.x + drift.x + wob.x, y, centre.y + drift.y + wob.y)))
 
@@ -712,7 +727,7 @@ func _geyser() -> void:
 	for v in 2:
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.mesh = D.blob(v)
+		mm.mesh = EmberRiftDesigns.blob(v)
 		mm.instance_count = 36
 		var node := MultiMeshInstance3D.new()
 		node.name = "Geyser%d" % v
@@ -858,10 +873,10 @@ func presets() -> Dictionary:
 	p.night.merge({
 		"sky_top": Color("#2A2230"), "sky_horizon": Color("#5A3A3A"), "sky_below": Color("#2A1E20"),
 		"cloud": Color("#6A4438"), "cloud_shadow": Color("#2A2028"), "cloud_cover": 0.55,
-		"sun_dir": Vector3(0.31, -0.72, 0.62), "sun_color": Color("#E89078"), "sun_energy": 0.45, "sun_size": 0.0,
+		"sun_dir": Vector3(0.31, -0.72, 0.62), "sun_color": Color("#8E94B8"), "sun_energy": 0.5, "sun_size": 0.0,
 		"moon": false, "stars": 0.12,
 		"rim_color": Color("#FFB890"), "rim_energy": 0.45,
-		"ambient_color": Color("#2A2430"), "ambient_energy": 0.75,
+		"ambient_color": Color("#2C2A38"), "ambient_energy": 0.8,
 		"fog_color": Color("#3A2A2C"), "fog_density": 0.0014, "exposure": 1.25, "lantern": 1.3, "name": "night",
 	}, true)
 	return p
@@ -869,7 +884,7 @@ func presets() -> Dictionary:
 
 ## Per-preset lava strength: [lava glow, day light on crust, bounce, lights].
 const LAVA_BY_PRESET := {
-	"day": [0.85, 1.0, 0.15, 0.5], "dusk": [1.0, 0.55, 0.45, 1.4], "night": [1.25, 0.15, 1.1, 2.6],
+	"day": [0.85, 1.0, 0.1, 0.4], "dusk": [1.0, 0.55, 0.3, 1.2], "night": [1.2, 0.15, 0.6, 2.2],
 }
 
 
@@ -880,7 +895,7 @@ func animate(t: float) -> void:
 				_stage = n
 				_stage.env.glow_intensity = 0.5
 				_stage.env.fog_height = 48.0
-				_stage.env.fog_height_density = 0.012
+				_stage.env.fog_height_density = 0.004
 	if _stage != null and _stage.current.get("name", "") != _preset:
 		_preset = _stage.current.get("name", "dusk")
 		var k: Array = LAVA_BY_PRESET.get(_preset, LAVA_BY_PRESET.dusk)
@@ -909,10 +924,10 @@ func shots() -> Array[Dictionary]:
 	var perp := to_vent.orthogonal()
 	var gcam := Vector2(vb.x, vb.z) - to_vent * 26.0 + perp * 9.0
 	var gk := Vector2(vb.x, vb.z) - to_vent * 11.0 + perp * 3.0
-	out.append({"name": "vent_plume", "from": Vector3(708, 46, -452), "at": Vector3(660, 70, -522), "fov": 58.0,
+	out.append({"name": "vent_plume", "from": Vector3(742, 88, -438), "at": Vector3(660, 62, -524), "fov": 52.0,
 		"kael": [Vector2(690, -466), PI * 0.8], "times": ["night", "dusk", "day"]})
 	out.append({"name": "geyser", "from": Vector3(gcam.x, ground_at(gcam.x, gcam.y) + 4.0, gcam.y),
-		"at": vb + Vector3(0, 9, 0), "fov": 55.0, "kael": [gk, -to_vent.angle() - PI * 0.5], "times": ["night", "dusk"]})
+		"at": vb + Vector3(0, 9, 0), "fov": 55.0, "kael": [gk, -to_vent.angle() - PI * 0.5], "times": ["night"]})
 	var notch: Vector3 = zone.landmark_positions[2]
 	var bdir := (centre - Vector2(notch.x, notch.z)).normalized()
 	var bcam := Vector2(notch.x, notch.z) + bdir * 175.0 + bdir.orthogonal() * 30.0
@@ -926,7 +941,7 @@ func shots() -> Array[Dictionary]:
 		var cam := sh + front * 9.0 + right * 4.5 + Vector3(0, 2.6, 0)
 		var k := sh + front * 3.6 + right * 1.6
 		out.append({"name": "shrine", "from": cam, "at": sh + Vector3(0, 1.2, 0) + front * 0.5, "fov": 48.0,
-			"kael": [Vector2(k.x, k.z), atan2(-front.x, -front.z) + PI + 0.5], "times": ["dusk", "night"]})
+			"kael": [Vector2(k.x, k.z), atan2(-front.x, -front.z) + PI + 0.5], "times": ["dusk"]})
 	if spots.has("bridge"):
 		var br: Vector3 = spots["bridge"][0]
 		var byaw: float = spots["bridge"][1]
@@ -937,9 +952,9 @@ func shots() -> Array[Dictionary]:
 			"fov": 52.0, "kael": [Vector2(kp.x, kp.z), byaw - PI * 0.5], "kael_y": br.y - 0.2, "times": ["dusk"]})
 	var sp := _spire_cluster()
 	out.append({"name": "spire_forest", "from": Vector3(sp.x, ground_at(sp.x, sp.z) + 1.7, sp.z),
-		"at": Vector3(sp.x, 0, sp.z) + _spire_look(sp), "fov": 62.0, "times": ["day", "dusk"]})
+		"at": Vector3(sp.x, 0, sp.z) + _spire_look(sp), "fov": 62.0, "times": ["day"]})
 	out.append({"name": "overview", "from": Vector3(660, 205, -815), "at": Vector3(655, 40, -470), "fov": 60.0,
-		"times": ["day", "dusk", "night"]})
+		"times": ["night", "day"]})
 	var sp0: Vector3 = zone.spawn_points[0]
 	out.append({"name": "kael_floor", "from": Vector3(sp0.x - 2.5, ground_at(sp0.x, sp0.z) + 3.4, sp0.z + 7.0),
 		"at": Vector3(sp0.x + 4.0, ground_at(sp0.x, sp0.z) + 2.0, sp0.z - 12.0), "fov": 62.0,
@@ -961,9 +976,17 @@ func _spire_cluster() -> Vector3:
 		if score > most and p.distance_to(centre) < 175.0:
 			most = score
 			best = s.origin
-	# Stand a few metres off the spire's foot.
-	var off := (Vector2(best.x, best.z) - centre).normalized() * -9.0
-	return Vector3(best.x + off.x, 0, best.z + off.y)
+	# Stand off the spire's foot, outside every spire.
+	for k in 16:
+		var off := Vector2.from_angle(k * TAU / 16.0) * 14.0
+		var p := Vector2(best.x, best.z) + off
+		var free := true
+		for o in spires:
+			if p.distance_to(Vector2(o.origin.x, o.origin.z)) < o.basis.x.length() * 0.5 + 4.0:
+				free = false
+		if free and hm.ground_height_at(p.x, p.y) > 33.5:
+			return Vector3(p.x, 0, p.y)
+	return Vector3(best.x + 14.0, 0, best.z)
 
 
 func _spire_look(at: Vector3) -> Vector3:

@@ -83,31 +83,29 @@ void fragment() {
 		float plate = hash12(floor(cellc / 0.7));
 		vec3 crust = mix(crust_dark, crust_color, 0.5 + 0.5 * plate);
 		col = mix(crust * (0.6 + 0.4 * day_light), core_color * pulse, seam);
-		emit = seam * min(2.0, 1.6 * glow);
-		ALBEDO = vec3(0.0);
-		EMISSION = col * mix(1.0, emit, seam);
-		return;
+		emit = seam * min(2.0, 1.3 * glow);
+		ALBEDO = col * mix(1.0, emit, seam);
+	} else {
+		// Plates drift along the flow (and away from the vent near it), as cells.
+		vec2 away = normalize(cellc - vent + vec2(0.001));
+		float near_vent = 1.0 - smoothstep(20.0, 45.0, length(cellc - vent));
+		vec2 drift = (flow + away * 0.35 * near_vent) * t;
+		vec2 p = (cellc - drift) / plate_m;
+		float e = plate_edge(p + (vec2(vnoise(cellc / 17.0), vnoise(cellc / 17.0 + 4.0)) - 0.5) * 0.8);
+		float open = vnoise(cellc / 26.0 + t * 0.02);
+		float crack = 1.0 - step(0.06 + open * 0.14, e);
+		// The central pool churns: more molten cells near the vent.
+		float churn = near_vent * step(0.55, vnoise(cellc / 3.0 + vec2(t * 0.25, -t * 0.18)));
+		float molten = max(crack, churn);
+		float plate = hash12(floor(p) + floor(cellc * 0.0));
+		float speck = hash12(cellc * 1.7);
+		vec3 crust = mix(crust_dark, crust_color, 0.35 + 0.4 * speck);
+		// Faint warm underglow on crust cells right beside a crack.
+		float warm = 1.0 - smoothstep(0.0, 0.2 + open * 0.14, e);
+		vec3 hot = mix(fall_color, core_color, 0.25 + 0.5 * vnoise(cellc * 0.4 + t * 0.5));
+		float shimmer = 0.85 + 0.15 * sin(t * 2.0 + speck * 6.28);
+		col = mix(crust * (0.5 + 0.5 * day_light) + fall_color * warm * 0.18 * glow, hot * shimmer, molten);
+		emit = mix(1.0, min(max_emission, 1.45 * glow), molten);
+		ALBEDO = col * emit;
 	}
-	// Plates drift along the flow (and away from the vent near it), as cells.
-	vec2 away = normalize(cellc - vent + vec2(0.001));
-	float near_vent = 1.0 - smoothstep(20.0, 45.0, length(cellc - vent));
-	vec2 drift = (flow + away * 0.35 * near_vent) * t;
-	vec2 p = (cellc - drift) / plate_m;
-	float e = plate_edge(p + (vec2(vnoise(cellc / 17.0), vnoise(cellc / 17.0 + 4.0)) - 0.5) * 0.8);
-	float open = vnoise(cellc / 26.0 + t * 0.02);
-	float crack = 1.0 - step(0.06 + open * 0.14, e);
-	// The central pool churns: more molten cells near the vent.
-	float churn = near_vent * step(0.55, vnoise(cellc / 3.0 + vec2(t * 0.25, -t * 0.18)));
-	float molten = max(crack, churn);
-	float plate = hash12(floor(p) + floor(cellc * 0.0));
-	float speck = hash12(cellc * 1.7);
-	vec3 crust = mix(crust_dark, crust_color, 0.35 + 0.4 * speck);
-	// Faint warm underglow on crust cells right beside a crack.
-	float warm = 1.0 - smoothstep(0.0, 0.2 + open * 0.14, e);
-	vec3 hot = mix(fall_color, core_color, 0.5 + 0.5 * vnoise(cellc * 0.4 + t * 0.5));
-	float shimmer = 0.85 + 0.15 * sin(t * 2.0 + speck * 6.28);
-	col = mix(crust * (0.5 + 0.5 * day_light) + fall_color * warm * 0.18 * glow, hot * shimmer, molten);
-	emit = mix(1.0, min(max_emission, 2.4 * glow), molten);
-	ALBEDO = vec3(0.0);
-	EMISSION = col * emit;
 }

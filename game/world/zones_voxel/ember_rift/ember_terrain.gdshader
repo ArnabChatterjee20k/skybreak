@@ -25,6 +25,7 @@ uniform vec3 bounce_color : source_color = vec3(1.0, 0.55, 0.2);
 uniform float bank_top = 40.0;
 uniform float cap_from = 128.0;
 uniform float joint_metres = 1.3;
+uniform float basalt_m = 2.45;
 uniform float noise_amount = 0.05;
 uniform float bevel_width = 0.18;
 uniform float edge_lift = 0.22;
@@ -108,13 +109,15 @@ void fragment() {
 		albedo = basalt_shadow * 0.5;
 	} else {
 		float from_top = (level * cell - world_pos.y) / cell;
-		// Joints: per column (the merged run's cell along the wall) a hashed
-		// course height, so stacked basalt reads as drums, not one extrusion.
-		vec2 along = floor(vec2(p.x + p.z, 0.0) / (cell * 3.0));
-		float course_h = joint_metres * (0.7 + 0.6 * hash3(ivec3(int(along.x), 0, 5)));
-		float fy = (world_pos.y + hash3(ivec3(int(along.x), 1, 5)) * course_h) / course_h;
-		float joint = 1.0 - smoothstep(0.0, 0.07, fract(fy));
-		float band = hash3(ivec3(int(along.x), int(floor(fy)), 3));
+		// Joints: per basalt column (the zone's staggered plan cells) a hashed
+		// drum height, so the wall reads as stacked columns, not masonry.
+		float row = floor(p.z / basalt_m);
+		float off = mod(row, 2.0) * basalt_m * 0.5;
+		ivec2 site = ivec2(int(floor((p.x + off) / basalt_m)), int(row));
+		float course_h = joint_metres * (0.7 + 0.6 * hash3(ivec3(site.x, 0, site.y)));
+		float fy = (world_pos.y + hash3(ivec3(site.x, 1, site.y)) * course_h) / course_h;
+		float joint = 1.0 - smoothstep(0.0, 0.06, fract(fy));
+		float band = hash3(ivec3(site.x, int(floor(fy)), site.y + 3));
 		vec3 rock;
 		if (world_pos.y < bank_top) {
 			rock = mix(crust_shadow, crust_color, 0.45 + 0.55 * band);
@@ -155,6 +158,6 @@ void fragment() {
 		ALBEDO = albedo * ao;
 		AO = ao;
 		AO_LIGHT_AFFECT = 0.3;
-		EMISSION = albedo * bounce_color * (bounce * bounce * bounce_energy) + vec3(1.0, 0.55, 0.15) * glow_extra * lava_glow;
+		EMISSION = albedo * bounce_color * (bounce * bounce * bounce * bounce_energy) + vec3(1.0, 0.55, 0.15) * glow_extra * lava_glow;
 	}
 }
