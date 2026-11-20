@@ -136,11 +136,3 @@ The zone's three presets (`heartbloom_gardens.tres`), with the miniature stack o
 | Lanterns, bridges, fountain, ruins | planar parts with bevelled edges; ropes as T0 chains |
 | Placement | reuse `HeartbloomProps` positions and seed so the layout and the sim stay as they are |
 | Code home | look-dev in `game/lookdev/` plus a zone variant folder; the existing world code stays untouched until the owner approves |
-
-## v2 look decisions (after the v1 review)
-The v1 draft read as one pink. v2 overrides the palette and lighting tables above where they disagree:
-- **Pink is the accent only:** blossoms, petals, ribbons, the picnic blanket and a few love locks. The sky runs lavender-blue to gold (`VoxelStage.PRESETS`). The fog is light and neutral, the cloud sea white, and the undersides grey-brown strata rock.
-- **Lawn:** a smooth T1 top (no contour rings) that lies exactly on `IslandField.surface_at`, with four grass tones in patches, clover, white and yellow flower flecks, petal drifts under the canopies and flagstone walks. On top of that: 3D grass tufts, flowers, weathered stones, edging stones, rim turf lips with dangling roots, and hanging roots under the islands.
-- **Heart Arch:** laid voussoirs in three sandstone tints, mortar joints with moss low down, a blossom vine, ribbons at the feet, a darker keystone with a gold heart in relief, two lanterns in the lobes and a love-lock chain in front.
-- **Story props:** lantern bridges (one new plank), the fountain with coins, a bench, a swing, a wayside shrine, a stone carved with initials in a heart, a well, and a picnic blanket with a basket.
-- **Code:** the shared kit is `game/world/voxel_zone_kit/` (README). Heartbloom lives in `game/world/voxel_zones/heartbloom/`.
