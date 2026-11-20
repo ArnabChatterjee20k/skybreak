@@ -14,9 +14,11 @@ uniform float emission_strength = 0.0;
 uniform float night_emission = 0.0;
 // 0 day, 1 night: windows and lanterns light up.
 uniform float night = 0.0;
-uniform vec4 shadow_tint : source_color = vec4(0.45, 0.42, 0.6, 1.0);
+uniform vec4 shadow_tint : source_color = vec4(0.6, 0.56, 0.8, 1.0);
+// Direct sun scale: with the ambient fill, lit faces land near their albedo.
+uniform float sun_scale = 0.5;
 uniform vec4 rim_color : source_color = vec4(1.0, 0.95, 0.85, 1.0);
-uniform float rim_strength = 0.25;
+uniform float rim_strength = 0.15;
 
 varying vec3 world_pos;
 varying vec3 world_normal;
@@ -61,8 +63,8 @@ void light() {
 	vec3 light_in = LIGHT_COLOR / PI;
 	if (LIGHT_IS_DIRECTIONAL) {
 		float x = n_dot_l * ATTENUATION;
-		float lit = smoothstep(0.1, 0.14, x) * 0.62 + smoothstep(0.48, 0.52, x) * 0.38;
-		DIFFUSE_LIGHT += light_in * mix(shadow_tint.rgb, vec3(1.0), lit);
+		float lit = smoothstep(0.1, 0.14, x) * 0.8 + smoothstep(0.48, 0.52, x) * 0.2;
+		DIFFUSE_LIGHT += light_in * sun_scale * mix(shadow_tint.rgb, vec3(1.0), lit);
 	} else {
 		DIFFUSE_LIGHT += light_in * smoothstep(0.1, 0.14, n_dot_l) * ATTENUATION;
 	}
