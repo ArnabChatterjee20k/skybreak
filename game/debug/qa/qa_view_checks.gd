@@ -319,7 +319,9 @@ func _check_camera(out: Array[Dictionary]) -> void:
 	var me := sim.fighters[level.player]
 	for i in sim.fighters.size():
 		var fighter := sim.fighters[i]
-		if fighter.state == FighterState.State.VANISHING:
+		# A body the view faded for a camera this close is see-through by design (T-D29).
+		if fighter.state == FighterState.State.VANISHING \
+				or level.fighter_views[i].camera_fade() >= FighterView.FADED - 0.01:
 			continue
 		var box := FlightPlaytest._screen_box(view, camera.fov, SCREEN, level.fighter_views[i].position)
 		var cover := box.intersection(Rect2(Vector2.ZERO, SCREEN)).get_area() / (SCREEN.x * SCREEN.y)
