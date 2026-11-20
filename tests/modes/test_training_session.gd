@@ -90,3 +90,11 @@ func test_input_display_merges_held_ticks() -> void:
 	assert_eq(rows[0].ticks, 2)
 	assert_eq(rows[1].text, "↑")
 	assert_eq(rows[1].ticks, 5)
+
+
+func test_the_input_history_notes_what_a_shift_tap_became() -> void:
+	_bench.move = Vector2(1, 0)
+	_bench.tap(DASH)
+	var notes := _bench.session.input_history.rows.filter(func(r: Dictionary) -> bool: return r.ticks == 0)
+	assert_eq(notes.size(), 1)
+	assert_eq(notes[0].text, "» SIDESTEP DODGE")

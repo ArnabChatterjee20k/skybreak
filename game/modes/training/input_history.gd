@@ -32,6 +32,24 @@ func add(input: FighterInput) -> void:
 		rows.pop_back()
 
 
+## A note row between inputs (ticks 0), e.g. what a Shift tap turned into (T-DEF2).
+func note(text: String) -> void:
+	rows.push_front({"text": text, "ticks": 0})
+	if rows.size() > MAX_ROWS:
+		rows.pop_back()
+
+
+## The note for a DODGE or PERFECT_DODGE event, or "" for anything else.
+static func dodge_note(event: Dictionary) -> String:
+	match event.get("type", -1):
+		CombatSim.EventType.DODGE:
+			var kind := String(FighterDodge.Kind.keys()[int(event.kind)])
+			return "» %s DODGE%s" % [kind, " (no i-frames)" if event.stale else ""]
+		CombatSim.EventType.PERFECT_DODGE:
+			return "» PERFECT DODGE%s" % (" +%d ki" % event.ki if event.ki > 0 else "")
+	return ""
+
+
 func clear() -> void:
 	rows = []
 

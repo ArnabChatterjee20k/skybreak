@@ -456,9 +456,11 @@ func test_a_custom_meter_tuning_changes_the_costs() -> void:
 
 func test_a_press_buffered_before_a_knockout_does_not_come_out_after_it() -> void:
 	_start()
+	_sim.lock_everyone_onto_nearest()
 	_fighter().ki = 0
-	_drive(1, DASH, RIGHT)
+	# A rush needs ki (a dodge is free), so it stays buffered.
+	_drive(1, DASH, Vector2(0, 1))
 	_fighter().ki = 50 * UNIT
 	_sim.apply_damage(1, 0, 20_000)
-	_drive(3, DASH, RIGHT)
+	_drive(3, DASH, Vector2(0, 1))
 	assert_ne(_fighter().state, FighterState.State.DASHING)

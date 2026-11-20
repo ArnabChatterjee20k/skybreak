@@ -16,7 +16,7 @@ const REBINDABLE := {
 	&"move_right": "Move right",
 	&"ascend": "Fly up",
 	&"descend": "Fly down",
-	&"fighter_dash": "Dash",
+	&"fighter_dash": "Dodge (tap) / dash (hold)",
 	&"fighter_block": "Block",
 	&"fighter_grab": "Grab",
 	&"fighter_ki_blast": "Ki blast",
