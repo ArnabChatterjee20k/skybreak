@@ -21,6 +21,8 @@ const ARMOR_COLOR := Color(0.75, 0.75, 0.8)
 const DUST_COLOR := Color(0.8, 0.72, 0.6)
 ## Weapon events use the gold item colour (GAME_DESIGN §5.11); the weapon layer draws the rest.
 const ITEM_COLOR := Color(1.0, 0.8, 0.3)
+## Ki blast muzzle flash (matches WeaponLayer.KI_GLOW).
+const KI_BLAST_COLOR := Color(0.45, 0.8, 1.0)
 ## Most one-shot sparks alive at once; past it, minor sparks are skipped.
 const MAX_LIVE_SPARKS := 6
 
@@ -123,6 +125,11 @@ static func plan_for(event: Dictionary) -> Dictionary:
 			plan.effects = [SPARK_LIGHT]
 			plan.color = ITEM_COLOR
 			plan.scale = 0.4
+		E.KI_BLAST:
+			# Muzzle flash where the blast leaves the hand.
+			plan.effects = [SPARK_LIGHT]
+			plan.color = KI_BLAST_COLOR
+			plan.scale = 0.6 if event.get("level", 1) >= 2 else 0.35
 		E.GADGET_EXPLODE, E.MINE_TRIGGER:
 			plan.effects = [SHOCKWAVE]
 			plan.color = ITEM_COLOR
