@@ -3,6 +3,8 @@ extends SceneTree
 ##   menu  - main menu -> character select (Kael, Vexa) -> zone select (Heartbloom)
 ##   duel  - zone_match, Kael vs Vexa, both AI, seeded; stops ~3.5 s after the first KO
 ##   ffa   - zone_match, 4 legends AI, for a fixed number of frames
+##   showcase - scripted Kael vs Lyra (ShowcaseBot): beam clash, perfect dodge,
+##           ki blasts and a charged blast: showcase <zone> <frames>
 ##   armed - zone_match 1v1, both AI, each starting with a weapon:
 ##           armed <zone> <seed> <frames> <legend_a> <WEAPON_A> <legend_b> <WEAPON_B>
 ## godot --path . --write-movie out.avi --fixed-fps 60 -s res://game/debug/media_capture.gd -- <segment> [zone] [seed] [frames]
@@ -25,6 +27,8 @@ func _run() -> void:
 			await _match(zone, seed_value, [&"kael", &"vexa"], -1)
 		"ffa":
 			await _match(zone, seed_value, [&"kael", &"vexa", &"lyra", &"brann"], frames)
+		"showcase":
+			await _showcase(zone, int(args[2]) if args.size() > 2 else 900)
 		"armed":
 			var weapons := [Weapon.Kind[args[5]], Weapon.Kind[args[7]]]
 			await _match(zone, seed_value, [StringName(args[4]), StringName(args[6])], frames, weapons)
@@ -60,7 +64,8 @@ func _menu(zone: StringName) -> void:
 func _match(zone: StringName, seed_value: int, characters: Array, frames: int, weapons: Array = []) -> void:
 	var fighters := []
 	for i in characters.size():
-		fighters.append({"character": characters[i], "team": i, "is_ai": true, "ai_level": 3})
+		fighters.append({"character": characters[i], "team": i, "is_ai": true,
+			"ai_level": int(OS.get_environment("MEDIA_AI_LEVEL")) if OS.get_environment("MEDIA_AI_LEVEL") != "" else 3})
 	var zone_match: ZoneMatch = load("res://game/levels/zone_match.tscn").instantiate()
 	zone_match.configure({"zone": zone, "fighters": fighters})
 	zone_match.sim.rng.seed = seed_value
@@ -84,3 +89,20 @@ func _match(zone: StringName, seed_value: int, characters: Array, frames: int, w
 			break
 		if f > 9000:
 			break
+
+
+func _showcase(zone: StringName, frames: int) -> void:
+	var zone_match: ZoneMatch = load("res://game/levels/zone_match.tscn").instantiate()
+	zone_match.configure({"zone": zone, "fighters": [
+		{"character": &"kael", "team": 0, "is_ai": false, "ai_level": 0},
+		{"character": &"lyra", "team": 1, "is_ai": false, "ai_level": 0}]})
+	root.add_child(zone_match)
+	var bot := ShowcaseBot.new(zone_match.sim, 4)
+	zone_match.input_override = func(i: int, tick: int) -> FighterInput:
+		return bot.input_for(i, tick)
+	var last_tick := -1
+	for f in frames:
+		await process_frame
+		if zone_match.sim.current_tick != last_tick:
+			last_tick = zone_match.sim.current_tick
+			bot.observe()
