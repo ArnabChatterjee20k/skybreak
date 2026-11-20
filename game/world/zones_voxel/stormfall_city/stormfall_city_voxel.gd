@@ -789,13 +789,16 @@ func _rubble() -> void:
 ## One accent: about a third magenta, the rest warm white, a few dead.
 func _signs() -> void:
 	var lit := 0
-	for xf in signs:
+	var all := signs.duplicate()
+	var authored := _authored_signs()
+	all.append_array(authored)
+	for xf: Transform3D in all:
 		var size := xf.basis.get_scale()
 		var rot := xf.basis.orthonormalized()
 		var c := xf.origin
 		var hk := _h(c, 60)
-		var magenta := hk < 0.36
-		var dead := hk > 0.93
+		var magenta := hk < 0.36 or xf in authored
+		var dead := hk > 0.93 and not xf in authored
 		var col := MAGENTA if magenta else WARM_WHITE
 		var code := CityBlocks.Code.PAINT if dead else (CityBlocks.Code.NEON if magenta else CityBlocks.Code.NEON_WHITE)
 		if dead:
@@ -831,6 +834,24 @@ func _signs() -> void:
 		if not dead:
 			lit += 1
 	stats["signs_lit"] = lit
+
+
+## Look-dev additions on top of the sim's signs: a magenta blade on the corner
+## building of the key street (x = -78), so the key image has its neon and
+## reflection. Placed on the real facade, 5-14 m up, off the street.
+func _authored_signs() -> Array[Transform3D]:
+	var out: Array[Transform3D] = []
+	for spot: Vector2 in [Vector2(-96.0, 436.0)]:
+		for xf in buildings:
+			var sz := xf.basis.get_scale()
+			if absf(xf.origin.x - spot.x) < sz.x * 0.5 and absf(xf.origin.z - spot.y) < sz.z * 0.5 \
+					and xf.basis.get_euler().length() < 0.001:
+				# On the east face, projecting into the street.
+				var east := xf.origin.x + sz.x * 0.5 + 0.3
+				var g := ground_at(east, spot.y)
+				out.append(PropKit.placed(Vector3(east, g + 5.5, spot.y), Vector3(0.6, 9.0, 2.0), 0.0))
+				break
+	return out
 
 
 ## Tube outline plus glyph strokes on a sign face (plane spanned by ax, ay).
@@ -878,7 +899,7 @@ func _streak(at: Vector3, out_dir: Vector3, h: float, col: Color, magenta: bool)
 	var start := at + flat * 0.4
 	var mid := Vector3(start.x, g + 0.03, start.z) + flat * length * 0.5
 	var basis := Basis(flat.cross(Vector3.UP).normalized(), Vector3.UP, -flat)
-	var width := 0.9 if magenta else 0.6
+	var width := (0.9 if magenta else 0.6) * (2.2 if h > 4.0 else 1.0)
 	_streaks.add(Transform3D(basis.orthonormalized() * Basis.from_scale(Vector3(width, 0.001, length)), mid),
 		Color(col.r, col.g, col.b) * (1.0 if magenta else 0.35), CityBlocks.Code.NEON, 1.0, 0b000100, _h(at, 62))
 
@@ -1286,7 +1307,9 @@ func animate(t: float) -> void:
 		for i in _lights.size():
 			_lights[i].visible = i < best.size()
 			if i < best.size():
-				_lights[i].global_position = best[i][1]
+				# Low over the pavement, so the wet street catches the magenta.
+				var sp: Vector3 = best[i][1]
+				_lights[i].global_position = Vector3(sp.x, minf(sp.y, ground_at(sp.x, sp.z) + 4.5), sp.z)
 	# Lightning: 2-3 frame flashes at fixed times (>= 6 s apart), or forced by the preset.
 	var stage := _stage()
 	var forced := stage != null and float(stage.current.get("flash", 0.0)) > 0.0
