@@ -97,6 +97,11 @@ var _target := Vector3.ZERO
 var _target_gliding := false
 var _clip_length := INF
 var _clip_shift := Vector3.ZERO
+var _wall_push := Vector3.ZERO
+## Terrain-wall probe around the lens (#134).
+const WALL_SAMPLES := 8
+const WALL_RADIUS := 4.0
+const WALL_MAX_PUSH := 4.0
 var _last_player := Vector3.ZERO
 const LAG_EXTRA_FOV := 10.0
 const LAG_EXTRA_BOOM := 0.25
@@ -297,7 +302,11 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	if _clear_distance(look_from, wanted) < obstacle_comfort_distance:
 		shift_goal = _best_shift(look_from, wanted)
 	_clip_shift = _clip_shift.move_toward(shift_goal, obstacle_shift_speed * delta)
-	wanted += _clip_shift
+	# Step away from a terrain wall right beside the lens (a canyon wall filling
+	# a third of the frame, #134): it is beside the boom, not on it, so the clip
+	# never sees it.
+	_wall_push = _wall_push.move_toward(_wall_push_goal(wanted), obstacle_shift_speed * delta)
+	wanted += _clip_shift + _wall_push
 	var length := look_from.distance_to(wanted)
 	if length < 0.001:
 		return wanted
@@ -309,6 +318,22 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	var position := look_from + (wanted - look_from) / length * minf(length, _clip_length)
 	position.y = maxf(position.y, obstacles.ground_at(position) + CameraObstacles.CLEARANCE)
 	return position
+
+
+## Horizontal push away from terrain rising above the camera within
+## WALL_RADIUS around it (0 when the ground nearby stays below the lens).
+func _wall_push_goal(camera: Vector3) -> Vector3:
+	var away := Vector3.ZERO
+	for k in WALL_SAMPLES:
+		var dir := Vector3.FORWARD.rotated(Vector3.UP, TAU * k / WALL_SAMPLES)
+		var at := camera + dir * WALL_RADIUS
+		# Ground at the probe higher than the lens means a wall on that side.
+		var rise := obstacles.ground_at(Vector3(at.x, camera.y + 50.0, at.z)) - (camera.y - 0.3)
+		if rise > 0.0:
+			away -= dir * minf(rise, 2.0)
+	if away.length() < 0.01:
+		return Vector3.ZERO
+	return away.normalized() * minf(away.length(), WALL_MAX_PUSH)
 
 
 ## Clear distance from look_from toward camera (terrain, props, bodies).
