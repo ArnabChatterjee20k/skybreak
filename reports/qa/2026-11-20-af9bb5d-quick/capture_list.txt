@@ -1,0 +1,6 @@
+104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243 1570 104_verdant_falls_ffa4_vexa-brann-lyra-kael_2243_t1570 3
+102:stormfall_city:2v2:kael,vexa,brann,lyra:4455 2400 102_stormfall_city_2v2_kael-vexa-brann-lyra_4455_t2400 0
+118:verdant_falls:1v1:brann,lyra:24 1413 118_verdant_falls_1v1_brann-lyra_24_t1413 1
+100:shattered_mesa:1v1:kael,vexa:54 2221 100_shattered_mesa_1v1_kael-vexa_54_t2221 0
+103:frozen_peaks:1v1:vexa,brann:44 2152 103_frozen_peaks_1v1_vexa-brann_44_t2152 1
+104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243 1276 104_verdant_falls_ffa4_vexa-brann-lyra-kael_2243_t1276 2
