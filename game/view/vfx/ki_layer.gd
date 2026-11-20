@@ -8,6 +8,9 @@ extends Node3D
 
 const E := CombatSim.EventType
 const REFLECT_COLOR := Color(0.75, 0.9, 1.0)
+## Clash start/end burst and ring scales: the ring stays about 3 m, the star about 1.5 m.
+const CLASH_BURST_SCALE := 1.4
+const CLASH_RING_SCALE := 0.6
 ## The charge orb: size at the start and at the end of the charge.
 const CHARGE_START_SCALE := 0.35
 const CHARGE_END_SCALE := 1.6
@@ -96,8 +99,9 @@ func _play(event: Dictionary) -> void:
 		E.BEAM_START:
 			_start_tell(event.fighter, event.move_id)
 		E.BEAM_CLASH, E.CLASH_END:
-			vfx.spawn(&"anime_burst", where, Color.WHITE, 2.0)
-			vfx.spawn(&"sonic_ring", where, Color.WHITE, 2.0)
+			# One compact beat at the clash point, about a fighter tall (ART_BIBLE §7).
+			vfx.spawn(&"anime_burst", where, Color.WHITE, CLASH_BURST_SCALE)
+			vfx.spawn(&"sonic_ring", where, Color.WHITE, CLASH_RING_SCALE)
 		E.CLASH_BEAT:
 			if event.get("gain", 0) > 0:
 				vfx.spawn(&"sonic_ring", where, color_of(event.fighter), 0.8)
