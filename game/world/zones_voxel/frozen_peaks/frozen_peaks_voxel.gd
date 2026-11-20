@@ -218,14 +218,14 @@ func _floor() -> void:
 				var w := hf.centre(x, z)
 				if not _is_floor(w.x, w.y):
 					continue
-				var in_hero := HERO_RECT.has_point(w)
-				if tier == 1 and in_hero:
-					continue
 				var h := ground_at(w.x, w.y)
 				var lv := roundi(h / cell)
 				var near_hero := tier == 1 and HERO_RECT.grow(1.0).has_point(w)
 				hf.set_column(x, z, lv, lv if tier == 0 or near_hero else lv - rim, _floor_colour(w, cell))
 		hf.smooth_height = ground_at
+		# Each 1 m lattice square belongs to one tier by its centre: no seam.
+		hf.owns = (func(c: Vector2) -> bool: return HERO_RECT.has_point(c)) if tier == 0 \
+			else (func(c: Vector2) -> bool: return not HERO_RECT.has_point(c))
 		var mat := _terrain_material(hf)
 		var node := hf.build(self, mat, "FloorT%d" % (tier + 1), 0.0, false)
 		quads += VoxelHeightfield.count_quads(node)
@@ -827,21 +827,23 @@ func flight() -> Array[Dictionary]:
 		var a := atan2(dirc.y, dirc.x) - k * 0.55
 		var r := 150.0 - k * 10.0
 		pts.append({"from": Vector3(crown.x + cos(a) * r, crown.y + 25.0 + k * 6.0, crown.z + sin(a) * r), "at": cr, "fov": 56.0})
-	for it in 40:
+	for it in 60:
 		var hit := _flight_hit(pts)
 		if hit < 0:
 			break
-		for k in [hit, mini(hit + 1, pts.size() - 1)]:
-			pts[k].from = (pts[k].from as Vector3) + Vector3(0, 3.0, 0)
+		for k in range(maxi(hit - 1, 0), mini(hit + 3, pts.size())):
+			pts[k].from = (pts[k].from as Vector3) + Vector3(0, 2.0 if k == hit or k == hit + 1 else 1.0, 0)
 	return pts
 
 
 ## The first control point index whose spline segment passes within 4 m of a
-## sim spire (as a vertical cylinder), or -1.
+## sim spire (as a vertical cylinder) or 2.5 m of the ground, or -1.
 func _flight_hit(pts: Array[Dictionary]) -> int:
 	for i in pts.size() - 1:
 		for s in 25:
 			var p := flight_spline(pts, i + s / 25.0)
+			if p.y < ground_at(p.x, p.z) + 2.5:
+				return i
 			for xf in sim_spires:
 				var sc := xf.basis.get_scale()
 				var base := xf.origin - xf.basis * Vector3(0, 0.5, 0)

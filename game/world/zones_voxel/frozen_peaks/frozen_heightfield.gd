@@ -8,6 +8,8 @@ extends VoxelHeightfield
 ## pixel's cell from its world position, whatever the triangles are.
 
 var lattice := 1.0
+## Which lattice squares (by world centre) this field draws; all by default.
+var owns: Callable
 
 
 func _smooth_top(verts: PackedVector3Array, normals: PackedVector3Array, x0: int, z0: int, x1: int, z1: int) -> void:
@@ -23,6 +25,8 @@ func _smooth_top(verts: PackedVector3Array, normals: PackedVector3Array, x0: int
 		for i in range(floori(wx0 / lattice - 0.5), ceili(wx1 / lattice)):
 			var cx := (i + 0.5) * lattice
 			if cx < wx0 or cx >= wx1:
+				continue
+			if owns.is_valid() and not owns.call(Vector2(cx, cz)):
 				continue
 			var col := Vector2i(floori((cx - origin.x) / cell), floori((cz - origin.y) / cell))
 			if level_at(col.x, col.y) == NONE:
