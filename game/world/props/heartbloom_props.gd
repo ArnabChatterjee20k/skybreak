@@ -8,12 +8,15 @@ const WATERFALL_SHADER := preload("res://game/world/shaders/waterfall.gdshader")
 const WATER_SHADER := preload("res://game/world/shaders/sparkle_water.gdshader")
 const GLOW_SHADER := preload("res://game/world/shaders/lantern_glow.gdshader")
 const SWIRL_SHADER := preload("res://game/world/shaders/petal_swirl.gdshader")
+const LAWN_SHADER := preload("res://game/world/shaders/island_lawn.gdshader")
 ## Own seed, so the six ground zones keep their props exactly.
 const SEED := 5151
 const SEGMENTS := 40
 const TOP_RINGS := 7
 const UNDER_RINGS := 6
 const LIP := 1.6
+## Lawn base colour; the lawn shader adds patches, tufts, petals and the stone walk.
+const LAWN := Color(0.32, 0.6, 0.34)
 ## Islands joined by rope-plank lantern bridges.
 const BRIDGES := [
 	["Heart Isle", "Wishing Isle"], ["Heart Isle", "Lantern Rise"], ["Heart Isle", "Blossom Crown"],
@@ -32,7 +35,7 @@ const LANTERN_COLORS: Array[Color] = [
 	Color(1.0, 0.36, 0.32), Color(1.0, 0.52, 0.64), Color(1.0, 0.64, 0.4), Color(1.0, 0.8, 0.4),
 ]
 const FLOWER_COLORS: Array[Color] = [
-	Color(1.0, 1.0, 0.98), Color(1.0, 0.78, 0.86), Color(0.98, 0.46, 0.68), Color(1.0, 0.86, 0.4),
+	Color(1.0, 0.92, 0.94), Color(1.0, 0.78, 0.86), Color(0.98, 0.46, 0.68), Color(1.0, 0.86, 0.4),
 ]
 ## Heart Arch: offset from the Heart Isle centre and height (m).
 const ARCH_OFFSET := Vector2(0, -26)
@@ -185,11 +188,13 @@ func _islands(parent: Node3D) -> void:
 				ring.append(field.top_point(i, TAU * float(j) / SEGMENTS, float(k) / TOP_RINGS))
 			rings.append(ring)
 		grass.set_smooth_group(0)
+		# The lawn shader reads the island centre (UV) and radius + phase (UV2).
+		grass.set_uv(c)
+		grass.set_uv2(Vector2(field.radii[i], field.phases[i]))
+		grass.set_color(LAWN)
 		for k in TOP_RINGS:
 			for j in SEGMENTS:
 				var j2 := (j + 1) % SEGMENTS
-				var shade := _grass_color(i, k, j)
-				grass.set_color(shade)
 				_tri(grass, rings[k][j], rings[k + 1][j], rings[k + 1][j2], Vector3.UP)
 				if k > 0:
 					_tri(grass, rings[k][j], rings[k + 1][j2], rings[k][j2], Vector3.UP)
@@ -200,6 +205,7 @@ func _islands(parent: Node3D) -> void:
 			var out := Vector3(rim[j].x - c.x, 0.0, rim[j].z - c.y).normalized()
 			lip.append(rim[j] + out * 0.5 + Vector3.DOWN * LIP)
 		grass.set_smooth_group(-1)
+		grass.set_uv2(Vector2.ZERO)
 		grass.set_color(Color(0.3, 0.52, 0.3))
 		for j in SEGMENTS:
 			var j2 := (j + 1) % SEGMENTS
@@ -254,18 +260,12 @@ func _islands(parent: Node3D) -> void:
 	rock.generate_normals()
 	var mesh := grass.commit()
 	rock.commit(mesh)
-	mesh.surface_set_material(0, kit.material("hb_grass", Color(1, 1, 1), {"shadow_tint": Color(0.5, 0.52, 0.66), "rim_strength": 0.12}))
+	mesh.surface_set_material(0, kit.material("hb_grass", Color(1, 1, 1), {"shadow_tint": Color(0.5, 0.52, 0.66),
+		"rim_strength": 0.12, "dome": IslandField.DOME}, LAWN_SHADER))
 	mesh.surface_set_material(1, kit.material("hb_rock", Color(1, 1, 1), {"strata": 0.15, "strata_spacing": 7.0,
 		"shadow_tint": Color(0.6, 0.44, 0.64), "rim_strength": 0.2}))
 	var node := kit.single(parent, "Islands", mesh, null, Transform3D.IDENTITY)
 	node.set_meta("islands", field.names)
-
-
-func _grass_color(i: int, k: int, j: int) -> Color:
-	# Lighter towards the middle, with a soft deterministic mottling.
-	var base := Color(0.3, 0.56, 0.38).lerp(Color(0.4, 0.64, 0.4), 1.0 - float(k) / TOP_RINGS)
-	var m := 0.5 + 0.5 * sin(float(j) * 1.7 + float(k) * 2.3 + field.phases[i] * 3.0)
-	return base * (0.94 + 0.08 * m)
 
 
 func _cloud_tufts() -> void:
