@@ -1757,18 +1757,35 @@ func _clamp_to_arena(fighter: FighterState) -> void:
 ## (a cliff, which the 2 m ground grid bakes as a ramp) stops it like a wall
 ## instead of lifting it up the face (QA-12c).
 func _stop_at_cliff(fighter: FighterState, from: Vector3) -> void:
+	var travel := Vector3(fighter.position.x - from.x, 0.0, fighter.position.z - from.z)
+	if travel == Vector3.ZERO:
+		return
 	var stand := _stand_height(fighter)
 	var climb := stand - from.y
-	if climb <= _STEP_UP or fighter.position.y >= stand:
-		return
-	var planar_sq := (fighter.position.x - from.x) * (fighter.position.x - from.x) \
-		+ (fighter.position.z - from.z) * (fighter.position.z - from.z)
-	if climb * climb <= planar_sq * _MAX_CLIMB_SLOPE * _MAX_CLIMB_SLOPE:
+	var max_sq := _MAX_CLIMB_SLOPE * _MAX_CLIMB_SLOPE
+	var blocked := false
+	if climb > _FLOOR_EPSILON and fighter.position.y < stand:
+		# The face itself must be walkable too, or walking across it at an angle (or in tiny steps) climbs it.
+		blocked = not ((climb <= _STEP_UP or climb * climb <= travel.length_squared() * max_sq) \
+			and _ground_slope_sq(fighter) <= max_sq)
+	if not blocked:
+		# Stop a foot's reach short of a face, so the leading foot never stands inside it.
+		var ahead := fighter.position + travel.normalized() * _FOOT_REACH - Vector3.UP * _FIGHTER_HALF_HEIGHT
+		blocked = _ground_at(ahead) - (stand - tuning.ground_height) > _MAX_CLIMB_SLOPE * _FOOT_REACH + _STEP_UP
+	if not blocked:
 		return
 	fighter.position.x = from.x
 	fighter.position.z = from.z
 	fighter.velocity.x = 0.0
 	fighter.velocity.z = 0.0
+
+
+## Squared steepness (rise over run) of the ground under a fighter, from samples _SLOPE_PROBE apart.
+func _ground_slope_sq(fighter: FighterState) -> float:
+	var at := fighter.position - Vector3.UP * _FIGHTER_HALF_HEIGHT
+	var dx := _ground_at(at + Vector3(_SLOPE_PROBE, 0.0, 0.0)) - _ground_at(at - Vector3(_SLOPE_PROBE, 0.0, 0.0))
+	var dz := _ground_at(at + Vector3(0.0, 0.0, _SLOPE_PROBE)) - _ground_at(at - Vector3(0.0, 0.0, _SLOPE_PROBE))
+	return (dx * dx + dz * dz) / (4.0 * _SLOPE_PROBE * _SLOPE_PROBE)
 
 
 ## Puts a fighter moved from outside its own step (a pushbox) back inside the
@@ -2061,6 +2078,10 @@ const _LEDGE_DROP := 0.75
 const _STEP_UP := 0.05
 ## Steepest ground a fighter walks up, as rise over run (tan 60 degrees).
 const _MAX_CLIMB_SLOPE := 1.7320508
+## Half the distance between the ground samples that measure a slope.
+const _SLOPE_PROBE := 0.25
+## How far ahead of the capsule centre the leading foot reaches.
+const _FOOT_REACH := 0.4
 ## Positions are 32-bit; a floor this close counts as touching.
 const _FLOOR_EPSILON := 0.001
 ## States a smitten fighter drifts in.

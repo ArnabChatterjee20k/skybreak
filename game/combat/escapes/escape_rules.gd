@@ -70,6 +70,11 @@ static func move(sim: CombatSim, fighter: FighterState) -> void:
 			sim.tuning.ground_deceleration * CombatSim.TICK_SECONDS)
 	if sim.is_on_floor(fighter) and fighter.velocity.y < 0.0:
 		fighter.velocity.y = 0.0
+	# Ground slides follow the terrain like walking; a drop past the ledge height leaves them airborne.
+	if fighter.escapes.kind != _K.AIR_TECH and fighter.velocity.y == 0.0 and sim.ground_height.is_valid():
+		var stand := sim._stand_height(fighter)
+		if fighter.position.y <= stand + CombatSim._LEDGE_DROP:
+			fighter.position.y = stand
 
 
 ## Dash right after a knockback hit chases: an auto-homing rush whose way (over with

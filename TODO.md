@@ -27,6 +27,15 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `EscapeTuning`, `EscapeAI` (per-level rates, own rng), `EscapeVfx`, two new cues.
   Follow-ups: dedicated breaker/tech clips per legend (S4, uses push_block/tech now); HUD
   "READ"/"BREAK" text pops (T-UX1 owns the HUD); gl_compatibility visual goldens not re-shot.
+  Fixed in this lane: the `pickups_heartbloom` record/replay desync (armed move sets were cached per
+  weapon with the first legend's grab/push-block); fighters creeping up >60 degree faces at an angle
+  or in tiny steps, and the leading foot standing inside a face (cliff rule checks the face's own
+  slope and looks a foot ahead); ESCAPING ground slides follow the terrain.
+  Open, [developer] camera: locked camera_on_screen dips to ~94% in the stormfall 2v2 seed 102 QA
+  match. Not escape-related (no escape state on any missed frame); the misses are a target 4-6 m
+  straight below at 5-9 m, and a target 1.1 m away while blocking. Breaker blow-out and chase rush
+  stay on screen (`tests/playtest/test_escape_camera.gd`). Tech-roll rows in the defense matrix
+  never roll: no matrix attack knocks a grounded defender down on the flat floor.
 
 - T-UX1 [desktop] Controls and readability (owner feedback "how to get to the ground"): descend
   moves from Left Ctrl to `C` (Ctrl stays a desktop-only alternate, never on the web; Ctrl/Cmd/Alt
