@@ -481,6 +481,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		_record_presses(fighter, input, false)
 		return
 	var state_before := fighter.state
+	var start_y := fighter.position.y
 	_record_presses(fighter, input)
 	_update_lock_on(index, input)
 	_count_weapon_timers(fighter)
@@ -529,6 +530,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 	fighter.velocity *= speed
 	_integrate(index)
 	fighter.velocity /= speed
+	_stop_on_skipped_island(fighter, start_y)
 	if on_floor:
 		_stop_at_cliff(fighter, from)
 	_drift_if_smitten(fighter)
@@ -1844,7 +1846,9 @@ func _move_around_target(index: int, step: Vector3) -> bool:
 func _follow_vanish_anchors() -> void:
 	for fighter in fighters:
 		if fighter.state == FighterState.State.VANISHING and fighter.vanish_anchor >= 0:
+			var from_y := fighter.position.y
 			fighter.position = fighters[fighter.vanish_anchor].position + fighter.vanish_offset
+			_stop_on_skipped_island(fighter, from_y)
 			settle(fighter)
 
 
@@ -1874,6 +1878,17 @@ func _points_at_target(index: int, direction: Vector3) -> bool:
 	if to_target == Vector3.ZERO:
 		return false
 	return direction.dot(to_target.normalized()) >= tuning.rush_alignment
+
+
+## A move that went from above an island top to more than its step-up below it (a fast
+## fall or dive, a vanish following its anchor) stops on the top instead of passing through.
+func _stop_on_skipped_island(fighter: FighterState, from_y: float) -> void:
+	if not ground_height.is_valid() or from_y <= fighter.position.y:
+		return
+	var at := fighter.position
+	var swept := _ground_at(Vector3(at.x, from_y - _FIGHTER_HALF_HEIGHT, at.z))
+	if swept > _ground_at(at - Vector3.UP * _FIGHTER_HALF_HEIGHT) and at.y < swept + tuning.ground_height:
+		fighter.position.y = swept + tuning.ground_height
 
 
 func _is_on_floor(fighter: FighterState) -> bool:

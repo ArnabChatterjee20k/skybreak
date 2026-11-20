@@ -23,6 +23,8 @@ var ground_height: Callable
 ## Floating island bodies (tops and undersides); null when the zone has none.
 var islands: IslandField
 var boxes: Array[AABB] = []
+## Other fighters' bodies this frame (set_bodies); the camera pulls in front of them too.
+var bodies: Array[AABB] = []
 var _grid: Dictionary = {}
 
 
@@ -134,6 +136,29 @@ func clear_fraction(pivot: Vector3, camera: Vector3, clearance: float = CLEARANC
 			if in_island or point.y < ground_at(point) + clearance:
 				best = minf(best, float(s - 1) / TERRAIN_SAMPLES)
 				break
+	return best
+
+
+## Replaces the fighter bodies: upright boxes of `size` centred on each of `centres`.
+func set_bodies(centres: PackedVector3Array, size: Vector3) -> void:
+	bodies.clear()
+	for centre in centres:
+		bodies.append(AABB(centre - size * 0.5, size))
+
+
+## Like clear_fraction, for the fighter bodies only; a body around the pivot is ignored.
+func body_clear_fraction(pivot: Vector3, camera: Vector3, clearance: float = CLEARANCE) -> float:
+	var length := pivot.distance_to(camera)
+	if length < 0.001:
+		return 1.0
+	var best := 1.0
+	for body in bodies:
+		var box := body.grow(clearance)
+		if box.has_point(pivot):
+			continue
+		var hit = box.intersects_segment(pivot, camera)
+		if hit != null:
+			best = minf(best, pivot.distance_to(hit) / length)
 	return best
 
 
