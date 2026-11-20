@@ -11,7 +11,7 @@ const BANDS := {
 }
 ## Stats resource of each legend, to tell which legend a sim fighter is.
 const STATS := {
-	&"kael": "res://game/combat/default_fighter_stats.tres",
+	&"kael": "res://game/combat/moves/kael/kael_fighter_stats.tres",
 	&"vexa": "res://game/combat/vexa_fighter_stats.tres",
 	&"brann": "res://game/combat/moves/brann/brann_fighter_stats.tres",
 	&"lyra": "res://game/combat/moves/lyra/lyra_fighter_stats.tres",

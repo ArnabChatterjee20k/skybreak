@@ -61,6 +61,14 @@ enum EventType {
 	# Dodge (T-DEF2).
 	DODGE, ## fighter started a dodge: {type, fighter, position, kind (FighterDodge.Kind), side, stale, direction}.
 	PERFECT_DODGE, ## target perfect-dodged attacker's move_id: hit entry plus ki (paid) and projectile.
+	# Specials (T-SP1, SpecialRules). Entries: {type, fighter, position, tick} plus the extras named.
+	SPECIAL_START, ## fighter started special slot (1-3, 4 ultimate): move_id, variant, cue (the tell).
+	SPECIAL_DENIED, ## fighter pressed special slot without the ki (or burst).
+	SPECIAL_COUNTER, ## fighter's counter stance caught attacker's strike (caught); riposte move_id.
+	SPECIAL_BLINK, ## fighter reappeared at position during move_id.
+	DECOY_SPAWN, ## fighter left an afterimage at position (yaw).
+	DECOY_BURST, ## fighter's afterimage was struck and burst at position; HIT/BLOCK follow.
+	DECOY_FADE, ## fighter's afterimage faded unstruck.
 }
 
 const _DASH := FighterInput.Action.DASH
@@ -230,6 +238,7 @@ func tick(inputs: Array[FighterInput]) -> void:
 	if not round_over:
 		_resolve_hits(frozen)
 	_step_projectiles()
+	SpecialRules.step(self)
 	WeaponEffects.step_pins(self)
 	WeaponEffects.step_tethers(self)
 	PowerRules.step(self)
@@ -293,6 +302,7 @@ func _canonicalize_zeros() -> void:
 	for pickup in pickups:
 		pickup.position = DetMath.canon(pickup.position)
 		pickup.fall_speed += 0.0
+	SpecialRules.canonicalize(self)
 
 
 ## Hash of everything that defines the sim state; equal hashes mean equal states.
@@ -397,6 +407,7 @@ func apply_damage(target_index: int, attacker_index: int, amount: int) -> void:
 		grey += target.grey_health
 	target.grey_health = 0 if target.is_knocked_out() else grey
 	target.ticks_since_hit = 0
+	SpecialRules.on_damaged(self, target_index)
 	if target.state == FighterState.State.CHARGING:
 		_enter_free_state(target)
 	_add_burst(target, dealt * meter_tuning.burst_per_1000_damage_taken / 1000)
@@ -499,6 +510,8 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		_start_block(index, input)
 		_start_grab(index)
 		_start_attack(index, input, wish)
+		# Before any other reader of keys 1/2/3/4 (ki beams): a kit's own keys are consumed here.
+		SpecialRules.start(self, index, input, wish)
 		_start_charging(index)
 	_track_block_press(index, input, state_before)
 	match fighter.state:
@@ -513,6 +526,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		FighterState.State.ATTACKING:
 			DodgeRules.track_sidestep(self, index)
 			_move_attacking(fighter)
+			SpecialRules.move(self, index)
 			WeaponEffects.move_while_firing(self, fighter, wish)
 		FighterState.State.HITSTUN:
 			_move_in_hitstun(fighter)
@@ -1285,6 +1299,7 @@ func _reset_fighter(fighter: FighterState, start: Vector3) -> void:
 	fighter.powers = FighterPowers.new()
 	fighter.dodge = FighterDodge.new()
 	fighter.dodge.air_left = dodge_tuning.air_dodges
+	SpecialRules.reset_fighter(fighter)
 
 
 ## Finds every hitbox touching an opponent this tick, then applies them in
@@ -1330,6 +1345,8 @@ func _resolve_hits(frozen: Array[bool]) -> void:
 				_apply_push_block(contact)
 			EventType.PERFECT_DODGE:
 				DodgeRules.apply_perfect(self, contact)
+			EventType.SPECIAL_COUNTER:
+				SpecialRules.apply_counter(self, contact)
 			_:
 				_apply_hit(contact)
 
@@ -1352,6 +1369,8 @@ func _find_contact(attacker_index: int, target_index: int, shapes: Array[Diction
 			return DodgeRules.evaded_contact(self, attacker_index, target_index, points[1])
 		if target.is_invincible_to(target.is_upper_body(centre)):
 			return {}
+		if SpecialRules.catches(target, attacker.move):
+			return SpecialRules.caught_contact(self, attacker_index, target_index, points[1])
 		var type := EventType.HIT
 		match attacker.move.kind:
 			MoveData.Kind.GRAB:
@@ -1420,11 +1439,12 @@ func _apply_hit(contact: Dictionary, from_projectile: bool = false) -> void:
 	var percent := Weapon.RANGED_COMBO_PERCENT if from_projectile else 100
 	if continuing:
 		percent = target.combo_starter_percent
-	var damage := scaled_damage(move, combo_hit) * percent / 100
+	var damage := SpecialRules.boosted_damage(self, attacker_index, scaled_damage(move, combo_hit) * percent / 100)
 	var combo_damage := target.combo_damage if continuing else 0
 	apply_damage(target_index, attacker_index, damage)
 	if not from_projectile:
 		register_contact(attacker_index, false)
+	SpecialRules.on_hit_landed(self, attacker_index)
 	add_landed_hit_ki(attacker_index)
 	_add_ki(attacker, move.ki_gain * _UNIT)
 	_add_burst(attacker, move.burst_gain * _UNIT)

@@ -34,6 +34,9 @@ const KI := Color(0.35, 0.8, 1.0)
 const GUARD := Color(0.95, 0.8, 0.3)
 const GUARD_LOW := Color(0.95, 0.35, 0.2)
 const BANNER := Color(1.0, 0.85, 0.25)
+## Kael's Momentum pips and Vexa's afterimage marker.
+const MOMENTUM := Color(1.0, 0.62, 0.22)
+const AFTERIMAGE := Color(0.72, 0.38, 1.0)
 
 ## Set by the arena.
 var sim: CombatSim
@@ -145,6 +148,42 @@ func _draw_plate(index: int, rect: Rect2) -> void:
 	for s in sim.meter_tuning.burst_max_stocks:
 		var stock_x := inner_x + inner_w - 8.0 - s * 18.0 if right_side else inner_x + 8.0 + s * 18.0
 		draw_circle(Vector2(stock_x, rect.position.y + 120), 6, team if s < stocks else INK)
+	_draw_mechanic(fighter, inner_x, inner_w, rect.position.y + 120, right_side,
+		sim.meter_tuning.burst_max_stocks * 18.0 + 14.0)
+
+
+## Legend mechanic pips beside the burst stocks (T-SP1): Kael's Momentum, Vexa's afterimage.
+func _draw_mechanic(fighter: FighterState, inner_x: float, inner_w: float, y: float, right_side: bool,
+		offset: float) -> void:
+	var kit := SpecialRules.kit_of(fighter)
+	if kit == null:
+		return
+	var font := ThemeDB.fallback_font
+	var start := inner_x + inner_w - offset if right_side else inner_x + offset
+	var step := -9.0 if right_side else 9.0
+	match kit.mechanic:
+		SpecialKit.Mechanic.MOMENTUM:
+			var lit := momentum_pips(fighter)
+			for p in kit.momentum_max_stacks:
+				var at := Vector2(start + p * step, y)
+				var pip := PackedVector2Array([at + Vector2(0, -6), at + Vector2(4, 0), at + Vector2(0, 6), at + Vector2(-4, 0)])
+				draw_colored_polygon(pip, MOMENTUM if p < lit else INK)
+			if lit > 0:
+				var label_x := start + kit.momentum_max_stacks * step + (step * 0.5)
+				_text(font, Vector2(label_x, y + 6), "+%d%%" % SpecialRules.momentum_percent(fighter), 16,
+					MOMENTUM, HORIZONTAL_ALIGNMENT_RIGHT if right_side else HORIZONTAL_ALIGNMENT_LEFT)
+		SpecialKit.Mechanic.AFTERIMAGE:
+			var live := fighter.specials.has_decoy()
+			draw_circle(Vector2(start, y), 6, AFTERIMAGE if live else INK)
+			draw_arc(Vector2(start + step * 1.3, y), 6, 0.0, TAU, 16, AFTERIMAGE if live else INK, 2.0)
+
+
+## Lit Momentum pips (one per consecutive landed hit, up to the kit's cap); 0 for other legends.
+static func momentum_pips(fighter: FighterState) -> int:
+	var kit := SpecialRules.kit_of(fighter)
+	if kit == null or kit.mechanic != SpecialKit.Mechanic.MOMENTUM:
+		return 0
+	return mini(fighter.specials.momentum, kit.momentum_max_stacks)
 
 
 func _draw_weapon(fighter: FighterState, team: Color, inner_x: float, inner_w: float, rect: Rect2,

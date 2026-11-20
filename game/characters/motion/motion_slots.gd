@@ -11,6 +11,11 @@ const MOVES := {
 	&"rising": &"rising", &"spike": &"spike", &"sweep": &"sweep_low", &"push_block": &"push_block",
 	&"charged_smash_1": &"charged_smash_1", &"charged_smash_2": &"charged_smash_2",
 	&"charged_smash_3": &"charged_smash_3", &"grab": &"grab",
+	# Specials (T-SP1): each borrows the take whose silhouette reads as its tell, retimed onto its phases.
+	&"kael_comet_drive": &"charged_smash_2", &"kael_comet_drive_rise": &"rising",
+	&"kael_comet_drive_dive": &"spike", &"kael_gale_counter": &"push_block", &"kael_gale_riposte": &"smash",
+	&"kael_skyfall": &"spike", &"vexa_shade_flicker": &"breaker", &"vexa_mirage_step": &"sweep_low",
+	&"vexa_razor_waltz": &"charged_smash_1",
 }
 ## Ground speed (m/s) between walking and running; below IDLE_SPEED the fighter stands.
 const WALK_RUN_SPEED := 5.5

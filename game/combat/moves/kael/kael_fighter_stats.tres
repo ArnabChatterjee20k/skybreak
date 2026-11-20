@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FighterStats" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/combat/fighter_stats.gd" id="1_stats"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/kael_move_set.tres" id="2_moves"]
+[ext_resource type="Resource" path="res://game/combat/specials/kits/kael_special_kit.tres" id="3_kit"]
+
+[resource]
+script = ExtResource("1_stats")
+max_health = 10000
+guard_max = 100
+vanish_counter_ki_cost = 25
+second_vanish_counter_ki_cost = 40
+hurtbox_radius = 0.5
+hurtbox_height = 2.0
+move_set = ExtResource("2_moves")
+special_kit = ExtResource("3_kit")

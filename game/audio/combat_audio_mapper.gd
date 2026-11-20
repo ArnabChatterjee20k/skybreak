@@ -64,6 +64,19 @@ const KI_CUES := {
 	&"blast_fire": &"ki_blast_fire", &"blast_impact": &"ki_blast_impact",
 	&"beam_fire": &"beam_fire", &"beam_clash": &"beam_clash",
 }
+## Specials (T-SP1) -> cue; SPECIAL_START plays its SpecialMove.tell_cue (event "cue").
+const SPECIAL_CUES := {
+	CombatSim.EventType.SPECIAL_COUNTER: &"perfect_block",
+	CombatSim.EventType.SPECIAL_BLINK: &"vanish_in",
+	CombatSim.EventType.DECOY_SPAWN: &"vanish_out",
+	CombatSim.EventType.DECOY_BURST: &"ki_blast_impact",
+	CombatSim.EventType.DECOY_FADE: &"vanish_in",
+	CombatSim.EventType.SPECIAL_DENIED: &"ui_back",
+}
+## Tell cues the special kits use (SpecialMove.tell_cue); the banks must have them.
+const SPECIAL_TELL_CUES: Array[StringName] = [
+	&"rush_whoosh", &"perfect_block", &"power_up_burst", &"vanish_out", &"dodge", &"whoosh_heavy",
+]
 const KI_LOOPS := {&"beam_charge": &"beam_charge_loop", &"beam": &"beam_loop"}
 ## Menu and round flow -> cue.
 const UI_CUES := {
@@ -103,6 +116,12 @@ static func cues_for_event(event: Dictionary) -> Array[Dictionary]:
 			out.append(_request(&"counter_hit", at))
 	elif EVENT_CUES.has(type):
 		out.append(_request(EVENT_CUES[type], at, params))
+	elif type == CombatSim.EventType.SPECIAL_START:
+		out.append(_request(event.get("cue", &"power_up_burst"), at))
+	elif SPECIAL_CUES.has(type):
+		out.append(_request(SPECIAL_CUES[type], at))
+		if type == CombatSim.EventType.SPECIAL_COUNTER:
+			out.append(_request(&"counter_hit", at))
 	if type != CombatSim.EventType.KO and KNOCKBACK_CUES.has(event.get("knockback_type", 0)):
 		out.append(_request(KNOCKBACK_CUES[event.knockback_type], at))
 	return out
@@ -128,7 +147,8 @@ static func referenced_cues() -> Array[StringName]:
 	var out: Array[StringName] = []
 	out.append_array(STATE_CUES)
 	out.append_array(LOOP_CUES)
-	for table: Dictionary in [EVENT_CUES, KNOCKBACK_CUES, PICKUP_CUES, KI_CUES, KI_LOOPS, UI_CUES]:
+	out.append_array(SPECIAL_TELL_CUES)
+	for table: Dictionary in [EVENT_CUES, KNOCKBACK_CUES, PICKUP_CUES, KI_CUES, KI_LOOPS, UI_CUES, SPECIAL_CUES]:
 		for cue: StringName in table.values():
 			out.append(cue)
 	for actions: Dictionary in WEAPON_CUES.values():

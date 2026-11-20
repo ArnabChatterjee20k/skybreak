@@ -23,3 +23,5 @@ extends Resource
 @export var mass: float = 1.0
 ## Which move each attack input performs.
 @export var move_set: MoveSet
+## Specials on keys 1/2/3, unique mechanic, ultimate and transform hooks (T-SP1); null for none.
+@export var special_kit: SpecialKit
