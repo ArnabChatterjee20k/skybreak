@@ -1,7 +1,7 @@
 extends SceneTree
 ## Moves reel of a character on the look-dev stage, against a grey target
 ## dummy so the hits read (.claude/skills/voxel-character-lookdev/SKILL.md).
-##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat]
+##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots]
 ##       --scene=<character scene> --moves=res://game/combat/moves/<name>/
 ##       [--dummy=<scene>] [--stats=<FighterStats .tres>] [--energy=#ff9e40]
 ## Writes numbered JPG frames (f_00000.jpg...) for ffmpeg at 60 fps; "poses"
@@ -14,7 +14,7 @@ extends SceneTree
 ## hover, crossed guard, ki shot, kick, jump crouch, a big flinch) are layered
 ## over the clips by LookdevPoseOverride. Neither the sim nor the clips change.
 
-const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
+const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
 ## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
 const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
@@ -235,6 +235,15 @@ func _run(what: String) -> void:
 		await _tick(false)
 	if what == "poses":
 		await _pose_stills()
+		quit()
+		return
+	if what == "shots":  # the shooting segments alone; same frames as in "full"
+		var first := _frame
+		await _ki_volley()
+		print("ki volley frames: %d" % (_frame - first))
+		first = _frame
+		await _beam()
+		print("beam frames: %d" % (_frame - first))
 		quit()
 		return
 	if what == "combat":
@@ -1164,7 +1173,9 @@ func _camera() -> void:
 			var fwd := _hero.forward()
 			var right := Basis(Vector3.UP, _hero.f.facing_yaw) * Vector3.RIGHT
 			var ground := Vector3(k.x, 0.0, k.z)
-			var eye := ground + Vector3(0, 1.55, 0) - fwd * 3.6 + right * 1.5
+			# Wider heroes (bigger pushbox) push the camera out and up so they don't hide the shot.
+			var bulk := maxf(PUSHBOX_RADIUS / 0.5 - 1.0, 0.0)
+			var eye := ground + Vector3(0, 1.55 + bulk * 2.0, 0) - fwd * (3.6 + bulk * 2.5) + right * (1.5 + bulk * 4.0)
 			var look := ground + fwd * 2.4 + Vector3(0, 0.9, 0)
 			_stage.camera.global_position = eye
 			_stage.camera.look_at(look, Vector3.UP)
