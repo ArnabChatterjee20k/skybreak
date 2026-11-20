@@ -12,6 +12,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `AGENTS.md`. Remaining: CI green on GitHub.
 
 ## In review
+- polish batch 3 [desktop] (`claude/polish-batch-3`): media-2 flaws. Lyra UNARMED (#78 follow-up) is
+  the design-correct auto-throw of an emptied 12-arrow Ki Bow (regression test added); KO drops its
+  burst lines and post-KO trails/rings/smears; Ember Rift lava fissures around the spawns
+  (`zone_ember_rift` re-blessed); 1v1 drops land 8-16 m out (`pickups_heartbloom` replay and the
+  flat-floor `bot_match` re-blessed at the first drop). Open: 4 Heartbloom character shots fail the
+  visual tiles (6-7%) because the duel drop's telegraph pillar is now in frame; owner to decide
+  whether to re-bless them.
 
 - T-UX1 [desktop] Controls and readability (owner feedback "how to get to the ground"): descend
   moves from Left Ctrl to `C` (Ctrl stays a desktop-only alternate, never on the web; Ctrl/Cmd/Alt
@@ -106,6 +113,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+- PB3-1 [developer] AI pickup interest: in 14 seeded 60 s duels a level-3 AI picks up a weapon in
+  only ~half, even with the drop 4-9 m away (PRESSURE outscores PICKUP up close, `fighter_ai.gd`
+  `_choose_plan`). Raise the duel pickup weight so a typical duel shows a weapon.
 
 - QA-18 [desktop] Godot 4.7.2 text-to-binary export conversion drops `Packed*Array` values in
   `ZoneData` .tres; re-enable `editor/export/convert_text_resources_to_binary` once fixed
