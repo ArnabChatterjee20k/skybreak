@@ -43,10 +43,19 @@ xvfb-run -a -s "-screen 0 1920x1080x24" godot --path . --disable-vsync --resolut
 ## Stills (`ember_rift_v1_*.jpg`, 1920×1080)
 Heroes: `vent_plume_night` (key), `geyser_night` (Kael for scale), `breach_night`, plus `vent_plume_dusk/day`,
 `breach_dusk`, `shrine_dusk` (Kael), `bridge_dusk` (Kael), `overview_day/night`, `kael_floor_day/dusk/night`
-(gameplay-ish camera at spawn 1), `spire_forest_day`.
+(gameplay-ish camera at spawn 1); `ember_rift_v1_contact_sheet.jpg`. The spire-forest still was rendered but not
+published (it frames one spire too close).
 
 ## Fly-through
-`ember_rift_flythrough_v1.mp4`: see the status line at the end of this file.
+`ember_rift_flythrough_v1.mp4`: **1920×1080, 30 fps, 20 s (600 frames)**, night, H.264 CRF 21 (27 MB). Down
+over the north rim, across the floor and spires, low to the vent pool, around the plume, past the erupting geyser
+by the spawns, across the duel floor and out along the Rim Breach lava fall. The task asked 720p; the skill's
+1080p30 minimum overrides it. Rendered as two halves (frames 0–299 and 300–599, `--from=300`, same clock); the
+seam was checked frame by frame.
+
+## Verify
+Fresh `rm -rf .godot`, `--headless --import`, full GUT: **1546 tests, 0 failing**, 11 pending (all pre-existing:
+renderer-only and QA known issues). `tests/world/test_ember_rift_voxel.gd`: 6/6.
 
 ## Mesh budget (lavapipe counts per still)
 | Shot | Visible tris | Draws | Shadow tris | Shadow draws |
@@ -72,16 +81,17 @@ only, T3 spires past 60 m, no prop shadows, half particles). Not measured: run `
 on the dev PC.
 
 ## Self-critique, ranked
-1. **Plume** reads as a stack of separate flat discs (a "rock tower" up close), not a billowing column, and it
-   isn't lit amber from below at night. Needs overlapping, varied puffs and an emissive underside term.
+1. **Plume** is now a billowing column of T3 puffs (fixed from the v1 draft's stacked discs), but up close it reads
+   as heavy, solid rock-like lumps, and it isn't lit amber from below at night. It needs an emissive underside term
+   and softer edges.
 2. **Overview night and dusk turn single-hue** (warm brown floor, wall, outer slopes and fog). The wall
    and outer slopes are big, featureless, dark dune-like planes from far away; the T3 outer slopes have no detail.
 3. **Day ash is too bright** (near-white, L* ~85 against the sheet's 45–62) and the dusk floor goes orange.
 4. **Fissure strips** read as flat decals with a thin seam on a dark frame, not crust plates in the T1 shell.
 5. **Geyser column** is a straight yellow stack of blobs; no telegraph, no falling droplets readable; too bright.
 6. **Banks** (T1 stepped crust) show a diagonal herringbone pattern and lava-bounce orange; heavy (125 k quads).
-7. **Spire forest still** frames one spire close up; it doesn't show the forest. Spire facets are good, but
-   their colour leans mauve in day light.
+7. **Spire forest still** is missing (the camera framed one spire too close). Spire colour leans mauve in day light.
+   The fly-through ends with the Breach fall cut off sharply against the T3 rim blocks.
 8. Bridge shot: the bridge is small and off-centre; the shrine's braziers' coals are tiny.
 9. Missing from the sheet's deliverables: readability strip (four legends, Brann vs lava), dusk/day for
    every key image, contact sheet, render benchmark before/after, heat shimmer, lava light falloff on spires.
