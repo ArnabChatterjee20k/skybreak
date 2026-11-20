@@ -18,7 +18,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   hold 14 f = charged 20 ki at f22, dash absorbs taps, perfect block reflects), drawn by
   `WeaponLayer`, heard via `ki_blast_fire`/`ki_blast_impact`. Weapon pickup/switch/throw/fire
   events now reach audio. Audit (`tests/combat/controls_audit.gd`, wasm via
-  `tools/web/controls_audit_web.sh`): every §3 control OK for all 4 legends except UX-1..UX-4.
+  `tools/web/controls_audit_web.sh`, see UX-6): every §3 control OK for all 4 legends except UX-1..UX-4.
   Web: the canvas already cancels every preventable default; the shell adds Keyboard Lock in
   fullscreen for Ctrl+W/T/N/Tab.
 
@@ -115,6 +115,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   and Ctrl+Tab are browser-reserved on Windows/Linux and cannot be cancelled by the page
   outside fullscreen (T-UX2 adds Keyboard Lock in fullscreen). On a Mac, Ctrl+click is a
   right click. T-UX1 moves descend off Ctrl, which removes these.
+- UX-6 [desktop] T-UX2 web follow-ups: (a) `tools/web/controls_audit_web.sh` traps with
+  "remainder by zero" (an integer `% 0` reaching native code in the release wasm) right after
+  the audit main loop instantiates the front end, so the in-browser audit table is not
+  produced yet; the real build's front end shows no page errors. (b) On the real web build,
+  `Enter` on Choose Your Legend did not move on in a keyboard-only drive (headless Chromium),
+  so the scripted browser repro could not reach a match without clicks.
 
 - QA-13 [desktop] Landing frame: the first IDLE frame after flight can dip a sole up to 34 cm
   under the floor (vexa `fight_idle`, `1623:heartbloom_gardens:2v2:lyra,kael,vexa,brann:3235`
