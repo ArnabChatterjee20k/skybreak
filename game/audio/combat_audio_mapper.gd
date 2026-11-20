@@ -38,7 +38,7 @@ const KNOCKBACK_CUES := {
 	MoveData.KnockbackType.LAUNCH: &"launcher",
 	MoveData.KnockbackType.WALL_SPLAT: &"wall_splat",
 }
-## Weapon type -> action -> cue (§5.11). Used once the sim emits weapon events.
+## Weapon type -> action -> cue (§5.11).
 const WEAPON_CUES := {
 	&"ki_gauntlets": {&"swing": &"gauntlets_swing"},
 	&"storm_blade": {&"swing": &"blade_swing"},
@@ -57,6 +57,16 @@ const WEAPON_CUES := {
 const PICKUP_CUES := {
 	&"telegraph": &"sky_drop_whistle", &"spawn": &"pickup_spawn", &"pickup": &"pickup",
 	&"switch": &"weapon_switch", &"throw": &"weapon_throw",
+}
+## Sim weapon events -> PICKUP_CUES key.
+const PICKUP_EVENTS := {
+	CombatSim.EventType.PICKUP_SPAWN: &"telegraph", CombatSim.EventType.PICKUP: &"pickup",
+	CombatSim.EventType.WEAPON_SWITCH: &"switch", CombatSim.EventType.WEAPON_THROW: &"throw",
+}
+## Sim weapon events -> WEAPON_CUES action for the event's weapon.
+const WEAPON_EVENTS := {
+	CombatSim.EventType.FIRE: &"fire", CombatSim.EventType.BOW_DRAW: &"draw",
+	CombatSim.EventType.OVERHEAT: &"overheat", CombatSim.EventType.TETHER: &"tether",
 }
 ## Ki attacks (§5.8) -> cue; beams also use the beam loops.
 const KI_CUES := {
@@ -102,6 +112,14 @@ static func cues_for_event(event: Dictionary) -> Array[Dictionary]:
 			out.append(_request(&"counter_hit", at))
 	elif EVENT_CUES.has(type):
 		out.append(_request(EVENT_CUES[type], at, params))
+	elif PICKUP_EVENTS.has(type):
+		out.append(_request(PICKUP_CUES[PICKUP_EVENTS[type]], at))
+	elif WEAPON_EVENTS.has(type):
+		# WEAPON_CUES is keyed by the Weapon.Kind name in lower case.
+		var kind := String(Weapon.Kind.find_key(event.get("weapon", Weapon.Kind.NONE))).to_lower()
+		var cue := weapon_cue(StringName(kind), WEAPON_EVENTS[type])
+		if cue != &"":
+			out.append(_request(cue, at))
 	elif type == CombatSim.EventType.KI_BLAST:
 		out.append(_request(KI_CUES[&"blast_fire"], at))
 	elif type == CombatSim.EventType.PROJECTILE_HIT and event.get("weapon", -1) == Weapon.Kind.NONE:

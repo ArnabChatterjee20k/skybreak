@@ -67,17 +67,17 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 | **Block** | `E` (hold) | **Tap** just before a hit = perfect block (§5.4) |
 | **Dash** | `Left Shift` + direction | Tap = short step. Hold = sustained flight-dash. Toward the target while locked = rush dash |
 | Grab | `F` | Beats block. Loses to strikes |
-| Pick up / throw item | `G` | Tap near an item to pick it up. Tap while holding a weapon to throw it at the target |
-| Ki blast | `Q` | Tap = rapid shot. Hold = charged blast |
+| Pick up / throw item | `G` / `V` | Tap `G` near an item to pick it up; with nothing in reach it throws the held weapon at the target. `V` always throws |
+| Ki blast | `Q` | Tap = rapid shot. Hold (14 f) = charged blast |
 | Charge ki | `R` (hold) | Fast ki gain, but you're vulnerable |
 | Specials 1 / 2 / 3 | `1` `2` `3` | Character-specific (cost ki) |
 | Ultimate | `4` | Costs burst. Cinematic on hit |
 | Transform | `T` | Costs burst. Drains ki over time |
 | **Vanish** | `Shift + E` | While blocking or in the first frames of hitstun = vanish counter (§5.5) |
 | Combo breaker | `X` | While in hitstun. Costs 1 burst stock |
-| Lock-on toggle | `Middle Mouse` | |
-| Switch target | `Tab` | For later multi-opponent modes |
-| Cycle weapons | `Mouse Wheel` | Unarmed → slot 1 → slot 2 (wraps) |
+| Lock-on toggle | `Middle Mouse` or `Tab` | |
+| Switch target | `Mouse Wheel` | Multi-opponent modes |
+| Cycle weapons | `B` / `Z` | Next / previous: Unarmed → slot 1 → slot 2 → slot 3 (wraps) |
 | Quick-swap weapon | `C` | Toggles between the current and the last-used weapon |
 | Camera | Mouse movement | Free orbit when unlocked; small offset orbit when locked (§4) |
 | Pause / menu | `Esc` | |

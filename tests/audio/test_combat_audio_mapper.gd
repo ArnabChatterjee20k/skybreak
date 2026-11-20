@@ -119,3 +119,32 @@ func test_two_mappers_fed_the_same_match_ask_for_the_same_sounds() -> void:
 		logs.append(log)
 	assert_eq(logs[0], logs[1])
 	assert_gt(str(logs[0]).count("hit_"), 0, "the scripted match landed hits")
+
+
+func _weapon_event(type: Event, weapon: Weapon.Kind) -> Dictionary:
+	return {"type": type, "fighter": 0, "position": Vector3.ZERO, "weapon": weapon, "id": 1}
+
+
+func test_ki_blasts_sound_when_fired_and_when_they_land() -> void:
+	assert_eq(_cues(CombatAudioMapper.cues_for_event(_weapon_event(Event.KI_BLAST, Weapon.Kind.NONE))),
+		[&"ki_blast_fire"])
+	assert_eq(_cues(CombatAudioMapper.cues_for_event(_weapon_event(Event.PROJECTILE_HIT, Weapon.Kind.NONE))),
+		[&"ki_blast_impact"])
+	assert_eq(_cues(CombatAudioMapper.cues_for_event(_weapon_event(Event.PROJECTILE_HIT, Weapon.Kind.ARC_REVOLVER))),
+		[], "a bullet hit sounds through its HIT/BLOCK event only")
+
+
+func test_pickups_switches_throws_and_shots_have_their_cues() -> void:
+	var expected := {
+		Event.PICKUP_SPAWN: [&"sky_drop_whistle"], Event.PICKUP: [&"pickup"],
+		Event.WEAPON_SWITCH: [&"weapon_switch"], Event.WEAPON_THROW: [&"weapon_throw"],
+	}
+	for type: Event in expected:
+		assert_eq(_cues(CombatAudioMapper.cues_for_event(_weapon_event(type, Weapon.Kind.STORM_BLADE))),
+			expected[type], Event.find_key(type))
+	assert_eq(_cues(CombatAudioMapper.cues_for_event(_weapon_event(Event.FIRE, Weapon.Kind.ARC_REVOLVER))),
+		[&"revolver_fire"])
+	assert_eq(_cues(CombatAudioMapper.cues_for_event(_weapon_event(Event.FIRE, Weapon.Kind.HEARTSTRING_BOW))),
+		[&"heartstring_release"])
+	assert_eq(_cues(CombatAudioMapper.cues_for_event(_weapon_event(Event.OVERHEAT, Weapon.Kind.STORM_REPEATER))),
+		[&"repeater_overheat"])

@@ -13,6 +13,15 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-UX2 [desktop] Controls audit. Ki blast fixed: the sim never read `KI_BLAST`, so Q did
+  nothing; ki blasts are now moves that spawn sim projectiles (`KiBlasts`: tap 4 ki at f8,
+  hold 14 f = charged 20 ki at f22, dash absorbs taps, perfect block reflects), drawn by
+  `WeaponLayer`, heard via `ki_blast_fire`/`ki_blast_impact`. Weapon pickup/switch/throw/fire
+  events now reach audio. Audit (`tests/combat/controls_audit.gd`, wasm via
+  `tools/web/controls_audit_web.sh`): every §3 control OK for all 4 legends except UX-1..UX-4.
+  Web: the canvas already cancels every preventable default; the shell adds Keyboard Lock in
+  fullscreen for Ctrl+W/T/N/Tab.
+
 - T-D35 [desktop] #107 Heartbloom: the sim floor matches the drawn island outline (`ZoneGround`
   25 cm outline mask, 0.25 m inset); falls/dives/vanish anchors can no longer pass through an
   island top (`CombatSim._stop_on_skipped_island`); the camera pulls in front of other fighters;
@@ -94,6 +103,18 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+
+- UX-1 [desktop] Specials 1/2/3 (`1` `2` `3`, §3/§6) are documented but not implemented: the
+  bits reach `FighterInput`, the sim never reads them (T-UX2 audit, all 4 legends).
+- UX-2 [desktop] Ultimate (`4`) and Transform (`T`, §5.9) are not implemented in the sim.
+- UX-3 [desktop] Combo breaker (`X` in hitstun, 1 burst stock) is not implemented in the sim.
+- UX-4 [desktop] Ki blast follow-ups: the AI never fires them (`FighterAI` and `WeaponBot`
+  ignore `KI_BLAST`; adding it re-blesses the golden replays), Lyra's "best ki blasts" and
+  homing in Starlight, a muzzle flash, a tutorial/training lesson (T-129).
+- UX-5 [developer] Web: with descend on Left Ctrl, Ctrl+W (descend + forward), Ctrl+T, Ctrl+N
+  and Ctrl+Tab are browser-reserved on Windows/Linux and cannot be cancelled by the page
+  outside fullscreen (T-UX2 adds Keyboard Lock in fullscreen). On a Mac, Ctrl+click is a
+  right click. T-UX1 moves descend off Ctrl, which removes these.
 
 - QA-13 [desktop] Landing frame: the first IDLE frame after flight can dip a sole up to 34 cm
   under the floor (vexa `fight_idle`, `1623:heartbloom_gardens:2v2:lyra,kael,vexa,brann:3235`
