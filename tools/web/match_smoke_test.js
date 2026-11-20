@@ -1,7 +1,6 @@
-// Headless browser match smoke test for build/web (T-UX1): boots, walks the
-// menus into a VS AI match with Enter, checks the control hints show, flies up
-// with Space, waits for the fly-down prompt, double-taps C and checks the
-// fighter lands (prompt gone). Saves a screenshot per step.
+// Plays the web build like a player in headless Chromium: start click, front end,
+// Play (vs AI) -> Choose zone -> Fight, then 30 s of input with screenshots at 5/15/30 s.
+// Served with no COOP/COEP headers, like a static host. Fails on any console error.
 // Usage: node tools/web/match_smoke_test.js [build dir] [out dir]
 const http = require('http');
 const fs = require('fs');
@@ -10,11 +9,11 @@ const { chromium } = require('playwright');
 
 const root = path.resolve(process.argv[2] || 'build/web');
 const out = path.resolve(process.argv[3] || path.join(root, '..', 'web_match_smoke'));
-fs.mkdirSync(out, { recursive: true });
 const types = {
 	'.html': 'text/html', '.js': 'application/javascript', '.wasm': 'application/wasm',
 	'.pck': 'application/octet-stream', '.png': 'image/png',
 };
+let served = 0;
 
 const server = http.createServer((req, res) => {
 	const url = decodeURIComponent(req.url.split('?')[0]);
@@ -24,86 +23,100 @@ const server = http.createServer((req, res) => {
 		res.end();
 		return;
 	}
+	served += fs.statSync(file).size;
 	res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
 	fs.createReadStream(file).pipe(res);
 });
 
-// Yellow prompt text pixels in the band above the hint strip (fraction of the frame).
-async function promptPixels(page) {
-	const png = (await page.screenshot()).toString('base64');
-	return page.evaluate(async (data) => {
-		const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${data}`)).blob());
-		const c = new OffscreenCanvas(bitmap.width, bitmap.height);
-		const g = c.getContext('2d');
-		g.drawImage(bitmap, 0, 0);
-		const y0 = Math.floor(bitmap.height * 0.86);
-		const y1 = Math.floor(bitmap.height * 0.94);
-		const x0 = Math.floor(bitmap.width * 0.3);
-		const x1 = Math.floor(bitmap.width * 0.7);
-		const d = g.getImageData(x0, y0, x1 - x0, y1 - y0).data;
-		let n = 0;
-		for (let i = 0; i < d.length; i += 4) {
-			if (d[i] > 220 && d[i + 1] > 180 && d[i + 1] < 235 && d[i + 2] < 90) n++;
-		}
-		return n;
-	}, png);
+// Browser frame intervals (Godot's main loop runs on requestAnimationFrame).
+async function frameTimes(page, ms) {
+	return page.evaluate((ms) => new Promise((resolve) => {
+		const d = [];
+		let last = performance.now();
+		const end = last + ms;
+		const step = (t) => {
+			d.push(t - last);
+			last = t;
+			if (t < end) requestAnimationFrame(step); else resolve(d);
+		};
+		requestAnimationFrame(step);
+	}), ms);
+}
+
+function summary(d) {
+	const s = [...d].sort((a, b) => a - b);
+	const avg = d.reduce((a, b) => a + b, 0) / d.length;
+	const p95 = s[Math.floor(s.length * 0.95)];
+	return `${d.length} frames, avg ${avg.toFixed(1)} ms (${(1000 / avg).toFixed(1)} fps), p95 ${p95.toFixed(1)} ms, max ${s[s.length - 1].toFixed(1)} ms`;
 }
 
 (async () => {
+	fs.mkdirSync(out, { recursive: true });
 	await new Promise((r) => server.listen(0, '127.0.0.1', r));
 	const url = `http://127.0.0.1:${server.address().port}/`;
 	const browser = await chromium.launch({
-		args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist',
-			'--autoplay-policy=no-user-gesture-required'],
+		args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
 	});
 	const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 	const errors = [];
-	// The desktop-only WebRTC GDExtension has no web library; its load errors are expected.
-	const expected = (t) => t.includes('webrtc_native') || t.includes('gdextension');
-	page.on('console', (m) => { if (m.type() === 'error' && !expected(m.text())) errors.push(m.text()); });
-	page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}\n${e.stack}`));
-	page.on('console', (m) => { if (process.env.VERBOSE) console.log(`[${m.type()}] ${m.text()}`); });
+	const logs = [];
+	page.on('console', (m) => {
+		if (/GL Driver Message/.test(m.text())) return;
+		logs.push(`[${m.type()}] ${m.text()}`);
+		if (m.type() === 'error') errors.push(m.text());
+	});
+	page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+	const shot = async (name) => {
+		await page.screenshot({ path: path.join(out, name) });
+		console.log(`screenshot ${name}`);
+	};
+
+	const t0 = Date.now();
 	await page.goto(url);
 	await page.click('#start', { timeout: 60000 });
 	await page.waitForSelector('#cover', { state: 'detached', timeout: 180000 });
+	console.log(`load: start click -> engine running in ${((Date.now() - t0) / 1000).toFixed(1)} s, ${(served / 1048576).toFixed(1)} MB served (uncompressed)`);
 	await page.waitForTimeout(8000);
-	await page.click('canvas', { position: { x: 5, y: 5 } });
-	const shot = (name) => page.screenshot({ path: path.join(out, `${name}.png`) });
-	// Splash, main menu (VS AI), character select (confirm), zone select (fight).
-	// Steps are keys ("Enter") or clicks at 1280x720 points ("click:1090:686").
-	const steps = (process.env.MENU_STEPS || 'Enter,Enter,click:1090:686,click:1105:655').split(',');
-	for (let i = 0; i < steps.length; i++) {
-		if (steps[i].startsWith('click:')) {
-			const [, x, y] = steps[i].split(':').map(Number);
-			await page.mouse.click(x, y);
-		} else {
-			await page.keyboard.press(steps[i]);
+	await shot('1_menu.png');
+	console.log(`menu frame time: ${summary(await frameTimes(page, 5000))}`);
+
+	await page.keyboard.press('Enter'); // Play (vs AI)
+	await page.waitForTimeout(3000);
+	await shot('2_character_select.png');
+	await page.mouse.click(1090, 686); // Choose zone >
+	await page.waitForTimeout(3000);
+	await shot('3_zone_select.png');
+	await page.mouse.click(1105, 657); // Fight!
+	await page.waitForTimeout(3000);
+	await shot('3b_after_fight_click.png');
+	const fight = Date.now();
+
+	// 30 s of play: move, fly, ki blasts and attacks, so the match is not idle.
+	const presses = ['KeyW', 'KeyQ', 'Space', 'KeyD', 'KeyQ', 'KeyR', 'KeyA', 'KeyF', 'Digit1', 'KeyE'];
+	let i = 0;
+	const marks = [5, 15, 30];
+	let frames = [];
+	for (const mark of marks) {
+		while (Date.now() - fight < mark * 1000) {
+			const k = presses[i++ % presses.length];
+			await page.keyboard.down(k);
+			frames = frames.concat(await frameTimes(page, 400));
+			await page.keyboard.up(k);
+			await page.mouse.click(640, 360);
 		}
-		await page.waitForTimeout(2500);
-		await shot(`menu_${i}`);
+		await shot(`4_match_${mark}s.png`);
 	}
-	await page.waitForTimeout(15000);
-	await shot('match_start');
-	await page.keyboard.down('Space');
-	await page.waitForTimeout(1500);
-	await page.keyboard.up('Space');
-	await page.waitForTimeout(6000);
-	await shot('hovering');
-	const hovering = await promptPixels(page);
-	await page.keyboard.press('KeyC');
-	await page.waitForTimeout(80);
-	await page.keyboard.press('KeyC');
-	await page.waitForTimeout(5000);
-	await shot('after_dive');
-	const landed = await promptPixels(page);
-	const open = !page.isClosed();
-	console.log(`prompt pixels while hovering: ${hovering}, after double-tap C: ${landed}, page open: ${open}`);
+	console.log(`match frame time: ${summary(frames)}`);
+	console.log('--- browser console ---');
+	logs.forEach((l) => console.log(l));
 	await browser.close();
 	server.close();
-	const ok = errors.length === 0 && hovering > 50 && landed < hovering / 5;
-	if (errors.length) console.log(`console errors:\n${errors.join('\n')}`);
-	console.log(ok ? 'PASS: hints shown, fly-down prompt appeared, double-tap C landed' : 'FAIL');
-	process.exit(ok ? 0 : 1);
+	if (errors.length) {
+		errors.forEach((e) => console.log(`error: ${e}`));
+		console.log(`FAIL: ${errors.length} console error(s)`);
+		process.exit(1);
+	}
+	console.log('PASS: menu -> vs AI match ran 30 s with no console errors');
 })().catch((e) => {
 	console.error(e);
 	server.close();

@@ -9,6 +9,7 @@ no server code, no COOP/COEP headers needed (single-threaded export).
 ```sh
 tools/web/build_web.sh                 # needs Godot 4.7.2 as `godot` (or GODOT=...)
 node tools/web/smoke_test.js build/web build/web_smoke.png   # needs `npm i playwright`
+node tools/web/match_smoke_test.js build/web build/web_match_smoke   # menu -> vs AI match, 30 s
 ```
 
 `build_web.sh` downloads the official 4.7.2 export templates once, checks their
@@ -54,5 +55,8 @@ flags. Never commit API keys or `appwrite.json` with secrets.
 - After the click the arena loads and music plays (the click unlocks audio).
 - DevTools: `index.wasm` served as `application/wasm`, transfer compressed
   (`content-encoding: gzip` or `br`), no console errors.
+- Duo (online) uses the browser's own WebRTC. If DevTools shows CORS errors on
+  `sgp.cloud.appwrite.io`, add the site's hostname as a **Web platform** in the
+  Appwrite project (Overview -> Platforms).
 - If the upload is refused for size, check the plan's deployment size limit:
   the uncompressed build is about 76 MB (39.5 MB gzip), `index.pck` alone ~40 MB.
