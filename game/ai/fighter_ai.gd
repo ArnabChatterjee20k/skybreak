@@ -391,6 +391,13 @@ func _continue_attack(sim: CombatSim, me: FighterState, target: FighterState,
 				_tap(plan, _A.LIGHT)
 	if not me.contact_hit:
 		return
+	# A confirmed heavy cancels into a special now and then (T-SP1).
+	if move.cancel_level == MoveData.CancelLevel.HEAVY and _hold_left == 0:
+		var special := AISpecials.ender(sim, fighter_index, me.position.distance_to(target.position),
+			profile.level, rng)
+		if special != 0:
+			_tap(plan, AISpecials.action_for(special))
+			return
 	# Ender: heavy cancel at the end of the string.
 	if _stacked_on(me, target):
 		return
@@ -499,6 +506,11 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 		return
 	# Seen attacks and shots.
 	var threat := _threat_ticks(sim, me)
+	if threat < 99 and _may_attack(me):
+		var answer := AISpecials.answer(sim, fighter_index, distance, threat, profile.level, rng)
+		if answer != 0:
+			_tap(plan, AISpecials.action_for(answer))
+			return
 	if threat < 99 and _guard(me, threat, plan):
 		return
 	if _in_others_juggle(sim, _target):
@@ -525,6 +537,11 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 	# Whiff punish.
 	if _punish(sim, me, target, distance, light_reach, plan):
 		return
+	if _may_attack(me) and _is_free(me):
+		var opener := AISpecials.neutral(sim, fighter_index, target, distance, profile.level, rng)
+		if opener != 0:
+			_tap(plan, AISpecials.action_for(opener))
+			return
 	_neutral(sim, me, target, distance, light_reach, plan)
 
 

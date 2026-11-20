@@ -106,6 +106,13 @@ static func plan_for(event: Dictionary) -> Dictionary:
 			plan.effects = [PERFECT_BLOCK, READ_POP]
 			plan.color = PERFECT_DODGE_COLOR
 			plan.shake = 0.1
+		E.SPECIAL_COUNTER:
+			plan.effects = [PERFECT_BLOCK, READ_POP]
+			plan.shake = 0.2
+		E.DECOY_BURST:
+			plan.effects = [SHOCKWAVE]
+			plan.scale = 0.8
+			plan.shake = 0.3
 		E.GUARD_BREAK:
 			plan.effects = [GUARD_BREAK]
 			plan.shake = 0.6

@@ -57,6 +57,8 @@ var _screen: VfxScreen
 var _trails: Array[FlightTrail] = []
 var _prev_state := PackedInt32Array()
 var _prev_phase := PackedInt32Array()
+## Special tells, trails and Vexa's decoy ghost (T-SP1).
+var specials := SpecialVfx.new()
 var _prev_position := PackedVector3Array()
 var _prev_velocity := PackedVector3Array()
 var _sonic_ready := PackedInt32Array()
@@ -83,6 +85,7 @@ func react(events: Array[Dictionary]) -> void:
 		_play_event(event, zone)
 		if event.get("type", -1) == CombatSim.EventType.PERFECT_DODGE:
 			_play_perfect_dodge(event)
+	specials.react(self, sim, events)
 	if sim != null:
 		_watch_fighters()
 
