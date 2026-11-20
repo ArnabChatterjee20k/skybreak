@@ -141,6 +141,7 @@ const THROWN_HIT := [500, 30, 14, 6, MoveData.KnockbackType.BLOWBACK, Vector3(0,
 
 const _HEAVY_SLOTS: Array[String] = ["smash", "breaker", "launcher", "rising", "spike", "sweep"]
 
+## Armed move sets by unarmed MoveSet, then by weapon kind: push-block and grab stay each legend's own.
 static var _sets: Dictionary = {}
 static var _projectiles: Dictionary = {}
 static var _thrown: MoveData
@@ -154,8 +155,9 @@ static var _disc_throw: MoveData
 
 ## The MoveSet a fighter uses while holding kind. Push-block and grab stay unarmed.
 static func move_set(kind: Weapon.Kind, unarmed: MoveSet) -> MoveSet:
-	if _sets.has(kind):
-		return _sets[kind]
+	var by_kind: Dictionary = _sets.get(unarmed, {})
+	if by_kind.has(kind):
+		return by_kind[kind]
 	var moves := MoveSet.new()
 	var prefix := String(Weapon.weapon_name(kind))
 	if Weapon.is_melee(kind):
@@ -182,7 +184,8 @@ static func move_set(kind: Weapon.Kind, unarmed: MoveSet) -> MoveSet:
 			moves.set(slot, _build("%s/bash" % prefix, BASH, MoveData.CancelLevel.HEAVY))
 	moves.push_block = unarmed.push_block
 	moves.grab = unarmed.grab
-	_sets[kind] = moves
+	by_kind[kind] = moves
+	_sets[unarmed] = by_kind
 	return moves
 
 
