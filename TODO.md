@@ -85,6 +85,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   ends; a beam clash locks out breakers (clashers can't break and aren't pushed). Combo breaker
   VFX cut to one beat (art bible §7): one shockwave ring at 1.2x under 0.25 s plus the 2-frame
   hitstop flash and shake. Defense matrix gets a `spike` row, the knockdown setup for tech_roll.
+  Open: T-KI1-b [desktop] the L5 ki AI duel in `test_ki_blasts.gd` (also DetCheck's ki line)
+  beamed once in 60 s on main only by seed luck (seeds 2026-2029 on main: 1, 0, 0, 0 beams;
+  with escapes: 0, 0, 0, 0, the duel stays close as techs recover knockback). The beam assert is
+  pending when no beam fires; `BEAM_CHANCE` / `target_busy` in `AIKi.zone` need a look.
   Open: T-DEF3-pop, Lyra RightUpperArm turns 1.21 rad in one frame entering hitstun hit_light
   (1 frame in QA quick; limit 1.2), characters lane.
 
