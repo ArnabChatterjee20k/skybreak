@@ -18,6 +18,8 @@ const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat] --scene=<characte
 ## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
 const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
+## Camera target follow rate per frame.
+const CAM_FOLLOW := 0.12
 const STAND := 1.0  # FighterState.stand_height: the body's height when standing
 const GRAVITY := 22.0
 const S := FighterState.State
@@ -456,9 +458,9 @@ func _descend() -> void:
 ## Four ki shots, alternating hands; each orb flies ~1.4 s to the dummy and pops.
 func _ki_volley() -> void:
 	_caption.text = "Ki blast volley"
-	_reset_hero(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
+	_reset_hero(Vector3(-2.75, 0, 2.0), -PI * 0.5)  # side-on, facing +X: the camera sees her front
 	_place_dummy(5.5)
-	_cam_mode = "shoulder"
+	_cam_mode = "range"
 	_cam_snap = true
 	await _wait(25)
 	for k in 4:
@@ -487,7 +489,7 @@ func _ki_volley() -> void:
 
 func _beam() -> void:
 	_caption.text = "Beam charge"
-	_reset_hero(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
+	_reset_hero(Vector3(-2.5, 0, 2.0), -PI * 0.5)  # side-on, facing +X: the charge faces the camera
 	_place_dummy(5.0)
 	_cam_mode = "close"
 	_hero.f.enter_state(S.CHARGING)
@@ -497,7 +499,7 @@ func _beam() -> void:
 		orb.scale = Vector3.ONE * (1.0 + t / 150.0 * 2.4 + 0.2 * sin(t * 0.7))
 		await _tick()
 	_caption.text = "Beam fire"
-	_cam_mode = "shoulder"
+	_cam_mode = "range"
 	_cam_snap = true
 	_hero.f.enter_state(S.IDLE)
 	_set_pose(_hero, BEAM_AIMS, BEAM_TURNS, false, 1.0, 0.3)
@@ -1170,12 +1172,15 @@ func _camera() -> void:
 		"orbit":
 			yaw_goal = _cam_yaw + 0.18
 			_cam_yaw = yaw_goal
+	# Lead a moving hero by the follow lag, so fast flight and dashes stay in frame.
+	if _cam_mode in ["follow", "side", "close", "dash"]:
+		target += _hero.f.velocity * DT * (1.0 - CAM_FOLLOW) / CAM_FOLLOW
 	if _cam_snap:
 		_cam_target = target
 		_cam_height = height
 		_cam_yaw = yaw_goal
 		_cam_snap = false
-	_cam_target = _cam_target.lerp(target, 0.12)
+	_cam_target = _cam_target.lerp(target, CAM_FOLLOW)
 	_cam_height = lerpf(_cam_height, height, 0.06)
 	_cam_yaw = rad_to_deg(lerp_angle(deg_to_rad(_cam_yaw), deg_to_rad(yaw_goal), 0.06))
 	# Stay on the open side of the cyclorama (the back wall is at -Z).
