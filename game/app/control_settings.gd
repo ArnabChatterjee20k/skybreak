@@ -16,7 +16,7 @@ const REBINDABLE := {
 	&"move_right": "Move right",
 	&"ascend": "Fly up",
 	&"descend": "Fly down",
-	&"fighter_dash": "Dash",
+	&"fighter_dash": "Dodge (tap) / dash (hold)",
 	&"fighter_block": "Block",
 	&"fighter_grab": "Grab",
 	&"fighter_ki_blast": "Ki blast",
@@ -44,9 +44,13 @@ func mouse_sensitivity() -> float:
 
 
 ## Rebinds `action` to one key, replacing its keyboard keys (mouse buttons stay).
-func rebind(action: StringName, keycode: Key) -> void:
+## Keys that make browser shortcuts on the web (Ctrl, Cmd, Alt) are refused.
+func rebind(action: StringName, keycode: Key) -> bool:
+	if InputBindings.is_blocked_key(keycode):
+		return false
 	key_overrides[action] = keycode
 	_apply_key(action, keycode)
+	return true
 
 
 ## Puts every action back on its InputBindings default.
@@ -60,7 +64,8 @@ func reset_bindings() -> void:
 
 func apply_bindings() -> void:
 	for action: StringName in key_overrides:
-		_apply_key(action, key_overrides[action])
+		if not InputBindings.is_blocked_key(key_overrides[action]):
+			_apply_key(action, key_overrides[action])
 
 
 ## The key label shown for an action, e.g. "W" or "Shift".

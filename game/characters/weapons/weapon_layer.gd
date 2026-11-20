@@ -215,6 +215,8 @@ func _make_pickup(kind: Weapon.Kind, power := Power.Kind.NONE) -> Node3D:
 func _present_projectiles(blend: float) -> void:
 	var alive := {}
 	for projectile in sim.projectiles:
+		if projectile.ki != 0:
+			continue # Ki shots are drawn by KiLayer (T-KI1).
 		alive[projectile.id] = true
 		var node: Node3D = _projectile_nodes.get(projectile.id)
 		if node == null:

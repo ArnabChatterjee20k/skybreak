@@ -28,7 +28,7 @@ static func _move_fly_lock_on() -> TutorialLesson:
 		return Vector2(moved.x, moved.z).length() >= 5.0)
 	lesson.step("Hold [Space] to fly up high.", func(s: TutorialSession) -> bool:
 		return s.height_of(s.player()) >= 6.0)
-	lesson.step("Hold [Ctrl] to come back down and land.", func(s: TutorialSession) -> bool:
+	lesson.step("Hold [C] to fly down and land (double-tap [C] to dive).", func(s: TutorialSession) -> bool:
 		return s.player().state in [State.IDLE, State.MOVING])
 	lesson.step("Press [Tab] to lock on to the dummy.", func(s: TutorialSession) -> bool:
 		return s.player().lock_on_target == D)
@@ -64,7 +64,7 @@ static func _air_combo() -> TutorialLesson:
 		return s.count(Event.HIT, P, D, s.player_move_ids(&"launcher")) > 0)
 	lesson.step("Chase it! Fly up with [Space] and hit it in the air.", func(s: TutorialSession) -> bool:
 		return s.count(Event.HIT, P, D) > 0 and s.height_of(s.dummy()) >= 2.0, "", Mode.FLY)
-	lesson.step("Hold [Ctrl] and press [RMB] to spike it down.", func(s: TutorialSession) -> bool:
+	lesson.step("Hold [C] and press [RMB] to spike it down.", func(s: TutorialSession) -> bool:
 		return s.count(Event.HIT, P, D, s.player_move_ids(&"spike")) > 0, "", Mode.FLY)
 	return lesson
 
@@ -93,11 +93,11 @@ static func _grab_and_tech() -> TutorialLesson:
 
 
 static func _dash_and_vanish() -> TutorialLesson:
-	var lesson := TutorialLesson.new(&"dash", "Dash and vanish",
-		"Speed wins fights. Dashes cost a little ki.")
+	var lesson := TutorialLesson.new(&"dash", "Dodge, dash and vanish",
+		"Tap Shift to dodge (free, but whiffs are punishable). Rushes and vanishes cost ki.")
 	lesson.setup = func(s: TutorialSession) -> void:
 		s.place_dummy(12.0)
-	lesson.step("Hold [A] or [D] and press [Shift] to dash aside.", func(s: TutorialSession) -> bool:
+	lesson.step("Hold [A] or [D] and tap [Shift] to sidestep round the dummy.", func(s: TutorialSession) -> bool:
 		return s.player().state == State.DASHING \
 			and s.player().dash_kind != FighterState.DashKind.RUSH)
 	lesson.step("Hold [W] and press [Shift] to rush at the dummy.", func(s: TutorialSession) -> bool:

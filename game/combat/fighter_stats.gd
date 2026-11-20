@@ -23,3 +23,5 @@ extends Resource
 @export var mass: float = 1.0
 ## Which move each attack input performs.
 @export var move_set: MoveSet
+## Ki blasts and beams (T-KI1); null uses Kael's.
+@export var ki_kit: KiKit

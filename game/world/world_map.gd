@@ -100,7 +100,7 @@ func spawn_points(zone_id: StringName) -> Array[Vector3]:
 	var data := zone(zone_id)
 	if data == null:
 		return out
-	for p in data.spawn_points:
+	for p in data.fighter_spawns():
 		out.append(Vector3(p.x, maxf(p.y, ground_height_at(p.x, p.z) + SPAWN_CLEARANCE), p.z))
 	return out
 

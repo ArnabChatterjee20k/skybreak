@@ -98,6 +98,11 @@ var ground_height: Callable
 var _feet: PackedInt32Array = []
 ## Other skeleton modifiers stepped by the frame time (e.g. Kael's ScarfLag).
 var _frame_modifiers: Array[SkeletonModifier3D] = []
+## The model's own transform, which the dodge pose (T-DEF2) is applied on top of.
+var _model_rest := Transform3D.IDENTITY
+## Frames rendered since the last sim tick, as a share of a tick (for the dodge pose).
+var _sub_tick := 0.0
+var _seen_tick := -1
 
 
 func _ready() -> void:
@@ -107,6 +112,7 @@ func _ready() -> void:
 	add_child(_player)
 	_player.root_node = _player.get_path_to(model)
 	_player.add_animation_library(LIBRARY_NAME, clips.library)
+	_model_rest = model.transform
 	for node in model.find_children("*", "MeshInstance3D", true, false):
 		_meshes.append(node as MeshInstance3D)
 	if clips.motion != null:
@@ -167,6 +173,7 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 		restarted = false
 	_state = fighter.state
 	_state_ticks = fighter.state_ticks
+	_apply_dodge_pose(fighter, delta)
 	if layers != null:
 		_update_layers(fighter, delta)
 	if fighter.state == FighterState.State.ATTACKING and fighter.move != null:
@@ -180,6 +187,19 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 	if clip != _clip or (restarted and not _loops(clip)):
 		_play(clip, clips.blend_time)
 	_player.advance(delta)
+
+
+## Leans, banks or twists the model through a dodge (DodgePose); the rest pose otherwise.
+func _apply_dodge_pose(fighter: FighterState, delta: float) -> void:
+	if fighter.state_ticks != _seen_tick:
+		_seen_tick = fighter.state_ticks
+		_sub_tick = 0.0
+	else:
+		_sub_tick = minf(_sub_tick + delta / TICK_SECONDS, 1.0)
+	var local := to_model(fighter.dash_direction, fighter.facing_yaw)
+	var dodge_profile := profile if profile != null else clips.motion_profile
+	model.transform = _model_rest * DodgePose.offset(fighter, _sub_tick, dodge_profile, local,
+		not is_airborne(fighter))
 
 
 ## Tints the toon rim toward the fighter's energy colour; alpha is the blend.
@@ -507,7 +527,8 @@ func _update_layers(fighter: FighterState, delta: float) -> void:
 		layers.burst(1.0)
 	_airborne = airborne
 	layers.velocity = local
-	layers.crouch = 0.0 if airborne or fighter.state == FighterState.State.KNOCKDOWN else profile.crouch
+	layers.crouch = 0.0 if airborne or fighter.state == FighterState.State.KNOCKDOWN \
+		else profile.crouch + DodgePose.crouch(fighter, _sub_tick, profile)
 	layers.flying = airborne and _bracing == &"" and fighter.state in [FighterState.State.FLYING,
 		FighterState.State.DASHING, FighterState.State.VANISHING]
 	layers.foot_ik = not airborne and fighter.state != FighterState.State.KNOCKDOWN

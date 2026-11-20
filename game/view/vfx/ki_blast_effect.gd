@@ -42,6 +42,19 @@ func launch(from: Vector3, direction: Vector3, color: Color, seconds: float, spe
 	_set_layers(true)
 
 
+## Keeps it in flight (the sim moves it) at a size, until impact_now() or stop().
+func hold_flight(size: float) -> void:
+	flight_time = _age + 10.0
+	lifetime = flight_time + IMPACT_SECONDS
+	scale = Vector3.ONE * size
+
+
+## Ends the flight here with the impact burst.
+func impact_now() -> void:
+	flight_time = minf(flight_time, _age)
+	lifetime = flight_time + IMPACT_SECONDS
+
+
 ## Where the blast is now.
 func head() -> Vector3:
 	return global_position

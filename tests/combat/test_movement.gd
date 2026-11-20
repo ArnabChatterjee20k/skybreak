@@ -153,13 +153,15 @@ func test_ascend_while_falling_takes_back_flight() -> void:
 
 # Dash
 
-func test_tapping_dash_steps_exactly_the_dash_step_distance() -> void:
+func test_tapping_dash_dodges_the_directional_distance_and_lasts_its_frames() -> void:
 	_start([Vector3.ZERO])
+	var dodge := _sim.dodge_tuning
+	var total := dodge.directional_startup_ticks + dodge.directional_invuln_ticks + dodge.directional_recovery_ticks
 	_drive(1, DASH, RIGHT)
-	assert_eq(_fighter().dash_kind, FighterState.DashKind.STEP)
-	_drive(_tuning.dash_step_ticks - 1)
-	assert_eq(_fighter().state, FighterState.State.DASHING, "step lasts dash_step_ticks")
-	assert_almost_eq(_fighter().position.x, _tuning.dash_step_distance, EPSILON)
+	assert_eq(_fighter().dash_kind, FighterState.DashKind.DODGE)
+	_drive(total - 1)
+	assert_eq(_fighter().state, FighterState.State.DASHING, "the dodge lasts its frames")
+	assert_almost_eq(_fighter().position.x, dodge.directional_distance, EPSILON)
 	_drive(1)
 	assert_ne(_fighter().state, FighterState.State.DASHING)
 
@@ -173,7 +175,8 @@ func test_holding_dash_turns_the_step_into_a_sustained_dash() -> void:
 
 func test_releasing_a_sustained_dash_returns_to_flight() -> void:
 	_start([Vector3(0, 50, 0)])
-	_drive(_tuning.dash_step_ticks + 5, DASH, RIGHT)
+	# Held past the dodge's last frame: a dash grown out of a dodge keeps its frames.
+	_drive(40, DASH, RIGHT)
 	_drive(1)
 	assert_eq(_fighter().state, FighterState.State.FLYING)
 	assert_eq(_fighter().dash_kind, FighterState.DashKind.NONE)
@@ -203,26 +206,28 @@ func test_dashing_toward_the_lock_on_target_rushes_and_stops_in_front_of_it() ->
 	assert_eq(_fighter().velocity, Vector3.ZERO, "stops dead, ready for a follow-up")
 
 
-func test_a_neutral_dash_while_locked_on_rushes_the_target() -> void:
+func test_a_neutral_dash_tap_while_locked_on_is_a_spot_dodge() -> void:
 	_start([Vector3.ZERO, Vector3(30, 0, 0)])
 	_drive(1, LOCK)
 	_drive(1)
 	_drive(1, DASH)
-	assert_eq(_fighter().dash_kind, FighterState.DashKind.RUSH)
+	assert_eq(_fighter().dash_kind, FighterState.DashKind.DODGE)
+	assert_eq(_fighter().dodge.kind, FighterDodge.Kind.SPOT)
 
 
-func test_dashing_away_from_the_lock_on_target_is_a_plain_step() -> void:
+func test_dashing_away_from_the_lock_on_target_is_a_directional_dodge() -> void:
 	_start([Vector3.ZERO, Vector3(0, 0, -60)])
 	_drive(1, LOCK)
 	_drive(1)
 	_drive(1, DASH, BACK)
-	assert_eq(_fighter().dash_kind, FighterState.DashKind.STEP)
+	assert_eq(_fighter().dash_kind, FighterState.DashKind.DODGE)
+	assert_eq(_fighter().dodge.kind, FighterDodge.Kind.DIRECTIONAL)
 
 
 func test_dashing_without_a_lock_on_is_never_a_rush() -> void:
 	_start([Vector3.ZERO, Vector3(0, 0, -60)])
 	_drive(1, DASH, FORWARD)
-	assert_eq(_fighter().dash_kind, FighterState.DashKind.STEP)
+	assert_eq(_fighter().dash_kind, FighterState.DashKind.DODGE)
 
 
 # Vanish step
@@ -404,19 +409,22 @@ func test_a_locked_dash_away_goes_straight_back_along_the_line_from_the_target()
 	assert_lt(sideways, 0.01, "sideways drift %.1f m over %.0f m" % [sideways, away.z])
 
 
-func test_a_locked_back_step_goes_straight_back() -> void:
+func test_a_locked_back_dodge_goes_straight_back() -> void:
 	_start_locked_pair()
 	_drive_locked(1, DASH, BACK, 0.4)
-	_drive_locked(_tuning.dash_step_ticks - 1, 0, Vector2.ZERO, 0.4)
+	_drive_locked(20, 0, Vector2.ZERO, 0.4)
 	assert_almost_eq(_fighter().position.x, 0.0, EPSILON)
-	assert_almost_eq(_gap(), 12.0 + _tuning.dash_step_distance, 0.01)
+	assert_almost_eq(_gap(), 12.0 + _sim.dodge_tuning.directional_distance, 0.01)
 
 
-func test_a_locked_side_step_curves_around_the_target() -> void:
+func test_a_locked_sidestep_curves_around_the_target_by_its_arc() -> void:
 	_start_locked_pair()
 	_drive_locked(1, DASH, RIGHT)
-	_drive_locked(_tuning.dash_step_ticks - 1, 0, Vector2.ZERO)
+	_drive_locked(20, 0, Vector2.ZERO)
 	assert_almost_eq(_gap(), 12.0, 0.01)
+	var offset := _fighter().position - _sim.fighters[1].position
+	var turned := rad_to_deg(Vector2(offset.z, offset.x).angle())
+	assert_almost_eq(absf(turned), _sim.dodge_tuning.sidestep_arc_degrees, 0.5, "past the orbit cap")
 
 
 func test_the_rush_brakes_over_rush_brake_ticks_instead_of_stopping_dead() -> void:

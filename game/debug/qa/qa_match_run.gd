@@ -22,6 +22,9 @@ var view_usec := 0
 ## move id -> {hitstop -> count}
 var hitstops := {}
 var pending_overlap := false
+## Ki attacks the AIs used (T-KI1): kind -> count.
+var ki_usage := {"blasts": 0, "charged": 0, "beams": 0, "ultimates": 0, "clashes": 0, "reflects": 0,
+	"soaks": 0, "beam_whiffs": 0, "ki_hits": 0}
 
 var _phase := -1
 
@@ -65,6 +68,7 @@ func advance() -> void:
 	_record_all(QaSimChecks.check_tick(sim))
 	_record_all(QaSimChecks.check_overlap(sim))
 	for event: Dictionary in sim.events:
+		_count_ki(event)
 		if event.type == CombatSim.EventType.KO:
 			kos += 1
 		if event.type in [CombatSim.EventType.HIT, CombatSim.EventType.COUNTER] and event.has("hitstop"):
@@ -100,9 +104,32 @@ func result() -> Dictionary:
 		"view_ms_per_frame": view_usec / 1000.0 / maxf(tick, 1),
 		"view": view_checks.metrics() if check_view else {},
 		"hitstops": hitstops,
+		"ki": ki_usage,
 		"overlap_pending": pending_overlap,
 		"violations": list,
 	}
+
+
+func _count_ki(event: Dictionary) -> void:
+	var E := CombatSim.EventType
+	match event.type:
+		E.KI_FIRE:
+			ki_usage[&"charged" if event.get("shot", 0) == KiRules.Shot.CHARGED else &"blasts"] += 1
+		E.BEAM_START:
+			ki_usage[&"ultimates" if event.move_id == &"beam_ultimate" else &"beams"] += 1
+		E.BEAM_CLASH:
+			ki_usage.clashes += 1
+		E.KI_ABSORB:
+			ki_usage.soaks += 1
+		E.BEAM_END:
+			if event.get("whiff", false):
+				ki_usage.beam_whiffs += 1
+		E.PROJECTILE_HIT:
+			if event.get("weapon", -1) == Weapon.Kind.NONE and event.get("reflected", false):
+				ki_usage.reflects += 1
+		E.HIT, E.COUNTER:
+			if String(event.get("move_id", "")) in ["ki_blast", "charged_blast", "beam", "beam_ultimate"]:
+				ki_usage.ki_hits += 1
 
 
 func _record_all(found: Array[Dictionary]) -> void:

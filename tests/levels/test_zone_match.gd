@@ -99,6 +99,25 @@ func test_rounds_get_cues_music_zone_and_spawn_points() -> void:
 	assert_eq(zone_match.match_flow.spawn_points, zone_match.spawn_positions(), "rounds restart on the zone spawns")
 
 
+func test_a_zone_without_spawn_points_still_places_every_fighter() -> void:
+	# A web export once emptied the zones' spawn points; `side % points.size()` then trapped the wasm (T-WEB2).
+	var zone_match := _match({"zone": &"ember_rift", "fighters": [
+		{"character": &"kael", "team": 0}, {"character": &"vexa", "team": 1, "is_ai": true},
+		{"character": &"kael", "team": 1, "is_ai": true},
+	]})
+	var layout := zone_match.world.layout
+	var i := layout.index_of(&"ember_rift")
+	var emptied := layout.zones[i].duplicate() as ZoneData
+	emptied.spawn_points = PackedVector3Array()
+	layout.zones[i] = emptied
+	var starts := zone_match.spawn_positions()
+	assert_eq(starts.size(), 3)
+	for at in starts:
+		assert_true(at.is_finite(), "finite start %s" % at)
+	assert_gt(starts[0].distance_to(starts[1]), 30.0, "rival teams start apart")
+	assert_true(zone_match.world.spawn_points(&"ember_rift").size() == 2, "the world map falls back too")
+
+
 func test_the_camera_knows_the_zone_obstacles() -> void:
 	var zone_match := _match({"zone": &"stormfall_city"})
 	assert_not_null(zone_match.camera.obstacles)
