@@ -114,6 +114,7 @@ func _init(index: int, level: int = 3, seed_value: int = 0) -> void:
 	fighter_index = index
 	rng.seed = seed_value
 	profile = AIProfile.for_level(level, rng)
+	_ki_game.rng.seed = seed_value ^ 0x4B49
 
 
 ## The rng seed of the AI in slot for a match with sim_seed.
@@ -185,7 +186,6 @@ func restore(saved: Dictionary) -> void:
 	_edge_gap = v[26]; _perfect_streak = v[27]; _target_air_ticks = v[28]; legend = v[29]
 	profile.spacing = v[30]
 	_last_hitter = (v[31] as PackedInt32Array).duplicate() if v.size() > 31 else PackedInt32Array()
-	_ki_game = AIKi.new()
 	if v.size() > 32:
 		_ki_game.restore_values(v[32])
 
@@ -245,7 +245,8 @@ func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 				plan.move = Vector2(0, 1)
 			return
 		_S.CHARGING:
-			if me.ki < 85 * FighterState.METER_UNIT and distance > 9.0 and _plan == Plan.CHARGE:
+			var saving := _plan == Plan.KI_ZONE and _ki_game.saving()
+			if me.ki < 85 * FighterState.METER_UNIT and distance > 9.0 and (_plan == Plan.CHARGE or saving):
 				plan.held_actions |= _A.CHARGE
 			return
 	_act_free(sim, me, target, distance, plan)
@@ -687,7 +688,7 @@ func _neutral(sim: CombatSim, me: FighterState, target: FighterState, distance: 
 			_zone(me, distance, plan)
 		Plan.KI_ZONE:
 			_ki_game.zone(self, sim, me, target, distance, plan, _ticks)
-			if distance < AIKi.ZONE_NEAR - 3.0:
+			if distance < 3.0:
 				_plan_left = 0
 	if _plan != Plan.PICKUP and (plan.held_actions & (_A.DASH | _A.GRAB)) == 0:
 		_keep_apart(sim, me, target, plan)
@@ -720,7 +721,9 @@ func _choose_plan(sim: CombatSim, me: FighterState, target: FighterState, distan
 	for i in scores.size():
 		if scores[i] <= 0.0:
 			continue
-		var score := scores[i] + rng.randf() * noise
+		# The ki plan rolls on its own stream, so adding it left the other plans' rolls unchanged.
+		var roll := _ki_game.rng.randf() if i == Plan.KI_ZONE else rng.randf()
+		var score := scores[i] + roll * noise
 		if score > best_score:
 			best = i
 			best_score = score

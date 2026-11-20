@@ -3,17 +3,17 @@ extends RefCounted
 ## The AI's ki game (T-KI1): zoning with tap and charged blasts at range,
 ## occasional beams (always with their tell), beam whiff punishes, reading a
 ## beam's tell (sidestep after its aim locks, or block) and the beam clash
-## beats. FighterAI owns one and calls it; all randomness from FighterAI.rng.
+## beats. FighterAI owns one and calls it; all randomness from its own seeded rng.
 
 const _A := FighterInput.Action
 const _S := FighterState.State
 
 ## Per level 1..5. Weight of the ki zoning plan in neutral at range.
-const ZONE_WEIGHT: Array[float] = [0.25, 0.4, 0.55, 0.65, 0.75]
+const ZONE_WEIGHT: Array[float] = [0.15, 0.25, 0.35, 0.42, 0.5]
 ## Fewest ticks between two tap blasts while zoning.
 const BLAST_GAP_TICKS: Array[int] = [90, 60, 45, 36, 30]
 ## Ki kept back from tap blasts (display units), so beams stay affordable.
-const KI_RESERVE: Array[int] = [0, 15, 25, 35, 40]
+const KI_RESERVE: Array[int] = [0, 15, 20, 25, 30]
 ## Chance a zoning shot is a charged blast (held Q).
 const CHARGED_CHANCE: Array[float] = [0.0, 0.08, 0.14, 0.2, 0.25]
 ## Chance per zoning tick to start a beam when it has the ki.
@@ -28,10 +28,14 @@ const CLASH_ACCURACY: Array[float] = [0.3, 0.5, 0.65, 0.8, 0.9]
 const CLASH_SLOP: Array[int] = [4, 3, 2, 1, 1]
 ## Legends' liking for ki zoning (GAME_DESIGN §6: Lyra is the zoner, Brann the brawler).
 const LEGEND_TASTE := {&"lyra": 1.8, &"kael": 1.0, &"vexa": 0.8, &"brann": 0.5}
+## Legends at or above this taste make their own zoning room.
+const ZONER_TASTE := 1.5
 ## Ki zoning distance band (m).
 const ZONE_NEAR := 10.0
 const ZONE_FAR := 26.0
 
+## Its own stream, so ki choices never shift FighterAI's other rolls.
+var rng := RandomNumberGenerator.new()
 var _hold_q: int = 0
 var _last_blast: int = -1000
 var _beam_key: int = -1
@@ -44,7 +48,8 @@ var _saving: bool = false
 
 
 func snapshot_values() -> Array:
-	return [_hold_q, _last_blast, _beam_key, _beam_answer, _clash_beat, _clash_press_tick, _clash_button, _saving]
+	return [_hold_q, _last_blast, _beam_key, _beam_answer, _clash_beat, _clash_press_tick, _clash_button, _saving,
+		rng.state]
 
 
 func restore_values(values: Array) -> void:
@@ -53,16 +58,27 @@ func restore_values(values: Array) -> void:
 	_hold_q = values[0]; _last_blast = values[1]; _beam_key = values[2]; _beam_answer = values[3]
 	_clash_beat = values[4]; _clash_press_tick = values[5]; _clash_button = values[6]
 	_saving = values[7] if values.size() > 7 else false
+	if values.size() > 8:
+		rng.state = values[8]
+
+
+func saving() -> bool:
+	return _saving
 
 
 ## Score for the ki zoning plan, 0 when it makes no sense.
 static func zone_score(ai: FighterAI, me: FighterState, distance: float) -> float:
 	var kit := KiRules.kit_of(me)
-	if distance < ZONE_NEAR - 2.0 or me.ki < kit.blast.ki_cost * 3 * FighterState.METER_UNIT \
-			or Weapon.is_ranged(me.held_weapon()):
+	var taste: float = LEGEND_TASTE.get(ai.legend, 1.0)
+	# A zoner backs off to make room for blasts; the others zone only when the fight is already far.
+	var zoner := taste >= ZONER_TASTE
+	var near := 3.0 if zoner else ZONE_NEAR + 3.0
+	if distance < near or me.ki < kit.blast.ki_cost * 3 * FighterState.METER_UNIT \
+			or me.held_weapon() != Weapon.Kind.NONE:
 		return 0.0
 	var level := ai.profile.level - 1
-	return ZONE_WEIGHT[level] * float(LEGEND_TASTE.get(ai.legend, 1.0)) + (0.2 if distance > 18.0 else 0.0)
+	var score := ZONE_WEIGHT[level] * taste + (0.2 if distance > 18.0 else 0.0)
+	return score * (0.6 if distance < ZONE_NEAR else 1.0)
 
 
 ## Neutral at range: keep the band, strafe, fire blasts, sometimes a charged one or a beam.
@@ -81,17 +97,17 @@ func zone(ai: FighterAI, sim: CombatSim, me: FighterState, target: FighterState,
 	var unit := FighterState.METER_UNIT
 	var target_busy := target.state in [_S.ATTACKING, _S.CHARGING, _S.GUARD_BROKEN] or not target.blocking
 	if kit.beam != null and me.ki >= (kit.beam.ki_cost + 10) * unit and distance > ZONE_NEAR \
-			and distance < kit.beam_range * 0.9 and target_busy and ai.rng.randf() < BEAM_CHANCE[level]:
+			and distance < kit.beam_range * 0.9 and target_busy and rng.randf() < BEAM_CHANCE[level]:
 		plan.held_actions |= _A.SPECIAL_1
 		return
 	# Below the reserve it saves up for a beam (charging when safely far), then zones again.
 	if KI_RESERVE[level] > 0 and kit.beam != null:
 		if me.ki < KI_RESERVE[level] * unit:
 			_saving = true
-		elif me.ki >= (kit.beam.ki_cost + 15) * unit:
+		elif me.ki >= (kit.beam.ki_cost + 10) * unit:
 			_saving = false
 	if _saving:
-		if distance > ZONE_NEAR + 4.0 and not target_busy_close(target, distance):
+		if distance > ZONE_NEAR and not target_busy_close(target, distance):
 			plan.held_actions |= _A.CHARGE
 			plan.move = Vector2.ZERO
 		return
@@ -99,7 +115,7 @@ func zone(ai: FighterAI, sim: CombatSim, me: FighterState, target: FighterState,
 		return
 	_last_blast = now
 	plan.held_actions |= _A.KI_BLAST
-	if me.ki >= (kit.charged.ki_cost + 10) * unit and ai.rng.randf() < CHARGED_CHANCE[level]:
+	if me.ki >= (kit.charged.ki_cost + 10) * unit and rng.randf() < CHARGED_CHANCE[level]:
 		_hold_q = kit.charged.startup_ticks + 1
 
 
@@ -116,7 +132,7 @@ func punish(ai: FighterAI, me: FighterState, target: FighterState, distance: flo
 			or me.ki < kit.beam.ki_cost * FighterState.METER_UNIT:
 		return false
 	var left := target.move_total_ticks() - target.move_tick
-	if left < kit.beam.startup_ticks + 4 or ai.rng.randf() >= BEAM_PUNISH_CHANCE[ai.profile.level - 1] * 0.1:
+	if left < kit.beam.startup_ticks + 4 or rng.randf() >= BEAM_PUNISH_CHANCE[ai.profile.level - 1] * 0.1:
 		return false
 	plan.held_actions |= _A.SPECIAL_1
 	return true
@@ -146,10 +162,10 @@ func _play_clash(ai: FighterAI, sim: CombatSim, me: FighterState, clash: BeamCla
 		if k != _clash_beat and until >= 0 and until <= 8:
 			_clash_beat = k
 			_clash_press_tick = -1
-			if ai.rng.randf() < CLASH_ACCURACY[level]:
-				_clash_press_tick = clash.beat_ticks[k] + ai.rng.randi_range(-CLASH_SLOP[level], CLASH_SLOP[level])
+			if rng.randf() < CLASH_ACCURACY[level]:
+				_clash_press_tick = clash.beat_ticks[k] + rng.randi_range(-CLASH_SLOP[level], CLASH_SLOP[level])
 				_clash_button = clash.beat_buttons[k]
-			elif ai.rng.randf() < 0.5:
+			elif rng.randf() < 0.5:
 				# A fumble: right time, wrong key.
 				_clash_press_tick = clash.beat_ticks[k]
 				_clash_button = KiRules.BEAT_BUTTONS[(KiRules.BEAT_BUTTONS.find(clash.beat_buttons[k]) + 1) % 4]
@@ -181,7 +197,7 @@ func answer_beams(ai: FighterAI, sim: CombatSim, me: FighterState, plan: Fighter
 		var key := j * 1048576 + (sim.current_tick - other.move_tick)
 		if key != _beam_key:
 			_beam_key = key
-			_beam_answer = 2 if ai.rng.randf() < SIDESTEP_CHANCE[level] else 1
+			_beam_answer = 2 if rng.randf() < SIDESTEP_CHANCE[level] else 1
 		var until_fire := other.move.startup_ticks - other.move_tick
 		var gap := to_me.length()
 		if gap < 6.0:

@@ -7,16 +7,18 @@ const E := CombatSim.EventType
 const LYRA := preload("res://game/combat/moves/lyra/lyra_fighter_stats.tres")
 
 
-## Ki event counts for one AI (fighter 0, legend stats) against an idle dummy 18 m away.
+## Ki event counts for one AI (fighter 0, legend stats) kept at range (12 m or more) from an idle dummy.
 func _zoning(level: int, stats: FighterStats, ticks := 1800, seed_value := 31) -> Dictionary:
 	var sim := CombatSim.new(seed_value)
-	sim.add_fighter(Vector3(0, 1, 9), stats)
-	sim.add_fighter(Vector3(0, 1, -9))
+	sim.add_fighter(Vector3(0, 1, 7), stats)
+	sim.add_fighter(Vector3(0, 1, -7))
 	sim.lock_everyone_onto_nearest()
 	var ai := FighterAI.new(0, level, FighterAI.seed_for(seed_value, 0))
 	var counts := {"blasts": 0, "charged": 0, "beams": 0}
 	for _tick in ticks:
-		sim.fighters[1].position = Vector3(0, 1, -9)
+		sim.fighters[1].position = Vector3(0, 1, -7)
+		if sim.fighters[0].position.distance_to(sim.fighters[1].position) < 12.0:
+			sim.fighters[0].position = Vector3(0, 1, 7)
 		sim.fighters[1].health = sim.fighters[1].stats.max_health * FighterState.METER_UNIT
 		var inputs: Array[FighterInput] = [ai.next_input(sim), FighterInput.new()]
 		sim.tick(inputs)
@@ -32,7 +34,7 @@ func _zoning(level: int, stats: FighterStats, ticks := 1800, seed_value := 31) -
 
 func test_a_level_5_lyra_zones_with_blasts_charged_shots_and_beams() -> void:
 	var counts := _zoning(5, LYRA, 3600)
-	gut.p("L5 Lyra over 60 s at 18 m: %s" % counts)
+	gut.p("L5 Lyra over 60 s at 12-14 m: %s" % counts)
 	assert_gt(counts.blasts, 20, "zones with blasts")
 	assert_gt(counts.charged, 0, "some charged blasts")
 	assert_gt(counts.beams, 0, "an occasional beam")

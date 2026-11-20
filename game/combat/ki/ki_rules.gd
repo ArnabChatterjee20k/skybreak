@@ -283,40 +283,51 @@ static func _beam_eats_blasts(sim: CombatSim, beam: KiBeam) -> void:
 
 static func _beam_contacts(sim: CombatSim, beam: KiBeam) -> void:
 	var owner := sim.fighters[beam.owner]
-	var blocking_any := false
+	# Every body the rays touch, nearest first: the first one hit or guarding stops the beam.
+	var touched: Array[Dictionary] = []
 	for target_index in sim.fighters.size():
 		var target := sim.fighters[target_index]
 		if target_index == beam.owner or target.team == owner.team or not target.can_be_hit() \
 				or (beam.hit_mask & (1 << target_index)) != 0:
 			continue
 		var body := target.hurtbox()
-		var touch := PackedVector3Array()
 		var rays := beam.rays()
 		for r in rays.size():
-			var reach := beam.radius if r == 0 else beam.split_radius
-			reach += body.radius
+			var reach: float = (beam.radius if r == 0 else beam.split_radius) + float(body.radius)
 			var points := CombatSim._closest_points(rays[r][0], rays[r][1], body.start, body.end)
 			if points[0].distance_squared_to(points[1]) <= reach * reach:
-				touch = points
+				if not target.is_invincible_to(target.is_upper_body(points[0])):
+					touched.append({"target": target_index, "points": points, "radius": body.radius,
+						"along": beam.origin.distance_to(points[0])})
 				break
-		if touch.is_empty() or target.is_invincible_to(target.is_upper_body(touch[0])):
-			continue
+	touched.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return a.along < b.along or (a.along == b.along and a.target < b.target))
+	var blocking_any := false
+	for found in touched:
+		var target_index: int = found.target
+		var target := sim.fighters[target_index]
+		var points: PackedVector3Array = found.points
+		var radius: float = found.radius
 		var contact := {
 			"type": CombatSim.EventType.HIT, "attacker": beam.owner, "target": target_index, "move": beam.move,
 			"yaw": DetMath.atan2(-beam.direction.x, -beam.direction.z), "pitch": 0.0, "side": 1,
-			"position": touch[1] + (touch[0] - touch[1]).limit_length(body.radius),
+			"position": points[1] + (points[0] - points[1]).limit_length(radius),
 		}
 		beam.touched = true
+		beam.length = minf(beam.length, float(found.along) + radius)
 		if sim._blocks(target, beam.origin):
 			blocking_any = true
 			_push_blocker(sim, beam, target_index, contact)
-			continue
+			break
 		if target.is_armored():
 			contact.type = CombatSim.EventType.ARMOR
 		elif target.attack_phase() in [FighterState.AttackPhase.STARTUP, FighterState.AttackPhase.HOLD]:
 			contact.type = CombatSim.EventType.COUNTER
 		beam.hit_mask |= 1 << target_index
+		# The body takes the beam: it ends there and the target is blown out of it.
+		beam.max_length = beam.length
 		sim._apply_hit(contact, true)
+		break
 	beam.block_ticks = beam.block_ticks + 1 if blocking_any else 0
 
 
@@ -477,6 +488,8 @@ static func _resolve_clash(sim: CombatSim, clash: BeamClash) -> void:
 		"pitch": 0.0, "side": 1, "position": loser.position,
 	}
 	winner_beam.hit_mask |= 1 << loser_index
+	winner_beam.max_length = minf(winner_beam.max_length,
+		winner_beam.origin.distance_to(loser.position) + loser.stats.hurtbox_radius)
 	sim._apply_hit(contact, true)
 
 

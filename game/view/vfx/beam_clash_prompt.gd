@@ -51,7 +51,7 @@ func _draw() -> void:
 	if _clash == null:
 		return
 	var view := get_viewport_rect().size
-	var origin := Vector2((view.x - LANE_SIZE.x) * 0.5, view.y * 0.68)
+	var origin := Vector2((view.x - LANE_SIZE.x) * 0.5, view.y * 0.76)
 	var lane := Rect2(origin, LANE_SIZE)
 	draw_rect(lane, Color(0.05, 0.06, 0.1, 0.72))
 	var hit_x := origin.x + 70.0
@@ -81,5 +81,6 @@ func _draw() -> void:
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * share, bar.size.y)), Color(1.0, 0.7, 0.3))
 	draw_line(bar.position + Vector2(bar.size.x * 0.5, -3), bar.position + Vector2(bar.size.x * 0.5, 17),
 		Color.WHITE, 2.0)
-	draw_string(font, origin + Vector2(0, -12), "BEAM CLASH: hit the keys on the line", HORIZONTAL_ALIGNMENT_LEFT,
-		-1, 22, Color.WHITE)
+	draw_rect(Rect2(origin + Vector2(0, -34), Vector2(LANE_SIZE.x, 30)), Color(0.05, 0.06, 0.1, 0.72))
+	draw_string(font, origin + Vector2(10, -11), "BEAM CLASH: hit the keys on the line", HORIZONTAL_ALIGNMENT_LEFT,
+		-1, 22, Color(1.0, 0.9, 0.6))
