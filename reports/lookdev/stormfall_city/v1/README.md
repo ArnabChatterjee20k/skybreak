@@ -3,7 +3,10 @@
 Design sheet: `docs/lookdev/stormfall_city.md`. Code: `game/world/zones_voxel/stormfall_city/`
 (`StormfallCityVoxel` on the voxel zone kit, `CityBlocks` block mesher, `city_block`, `city_street`,
 `city_streak` and `city_rain` shaders). Tests: `tests/world/test_stormfall_city_voxel.gd`.
-Release: `lookdev-stormfall_city-v1` (full-size stills and the fly-through).
+Release: the pre-release `lookdev-stormfall_city-v1` could not be created from this session (GitHub
+answered 403, "creating releases is not permitted for this session type"). The stills (1920x1080 JPG),
+the contact sheet and `stormfall_city_flythrough_v1.mp4` (1920x1080, 30 fps, 20 s, H.264 CRF 23) are in
+this folder instead.
 
 Rendered with lavapipe (software Vulkan, colour-correct) through `zone_capture.gd`: 15 stills at
 1920x1080 and `stormfall_city_flythrough_v1.mp4` at 1920x1080, 30 fps, 20 s. The task asked for 720p30;
@@ -113,7 +116,8 @@ before it can hold 60 fps.
 4. **Draw calls are over budget** (above), and the GPU budget is an estimate, not a benchmark.
 5. **Day and dusk overviews are washed out by fog;** the skyline reads as flat layers, but the
    mid-ground loses contrast. The night presets are the tuned ones.
-6. **Motion is partial:** lightning flashes are timed, not synced to `stormfall_thunder`; no sign
+6. **Fly-through:** the camera clips through the noodle bar's awning and sign at about 4.5 s (the path
+   point at (-46, 404) is too close). **Motion is partial:** lightning flashes are timed, not synced to `stormfall_thunder`; no sign
    flicker, no puddle ripples, no gutter particles (the pour is static blocks), no cable or laundry
    sway.
 7. **Not done from the deliverables:** the readability strip (all four legends, the Vexa row), Kael
