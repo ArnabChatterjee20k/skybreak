@@ -93,6 +93,8 @@ func _draw() -> void:
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		var y := bottom - (STRIP_HEIGHT + 30.0) * scale_factor
 		var at := Vector2((size.x - width) / 2.0, y)
+		var pad := 12.0 * scale_factor
+		draw_rect(Rect2(at.x - pad, y - font_size * 1.05, width + pad * 2.0, font_size * 1.45), STRIP)
 		draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, maxi(roundi(6 * scale_factor), 2), INK)
 		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, PROMPT)
 	var entries := entries_for(gamepad) if strip_visible else [[ControlSettings.key_label(InputBindings.TOGGLE_HINTS), "Controls"]]

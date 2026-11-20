@@ -80,13 +80,14 @@ static func disc_alpha(feet: float) -> float:
 	return lerpf(ALPHA_LOW, ALPHA_HIGH, clampf(feet / FULL_HEIGHT, 0.0, 1.0))
 
 
-## White radial texture: a soft fill that fades out, then a crisp rim.
+## White radial texture: a soft fill that fades out, then a crisp rim with a
+## dark outer edge, so it reads on pale ground too.
 static func disc_texture() -> GradientTexture2D:
 	var gradient := Gradient.new()
-	gradient.offsets = PackedFloat32Array([0.0, 0.5, 0.8, 0.84, 0.92, 0.97])
+	gradient.offsets = PackedFloat32Array([0.0, 0.5, 0.78, 0.82, 0.9, 0.93, 0.97, 1.0])
 	gradient.colors = PackedColorArray([
 		Color(1, 1, 1, 0.42), Color(1, 1, 1, 0.24), Color(1, 1, 1, 0.12),
-		Color(1, 1, 1, 0.95), Color(1, 1, 1, 0.95), Color(1, 1, 1, 0.0),
+		Color(1, 1, 1, 0.95), Color(1, 1, 1, 0.95), Color(0, 0, 0, 0.45), Color(0, 0, 0, 0.3), Color(0, 0, 0, 0.0),
 	])
 	var texture := GradientTexture2D.new()
 	texture.gradient = gradient

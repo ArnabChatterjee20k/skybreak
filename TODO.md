@@ -13,6 +13,17 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-UX1 [desktop] Controls and readability (owner feedback "how to get to the ground"): descend
+  moves from Left Ctrl to `C` (Ctrl stays a desktop-only alternate, never on the web; Ctrl/Cmd/Alt
+  rebinds refused on the web), quick-swap moves from `C` to `Y`; double-tap `C` dives until landing
+  (input side, no sim change); in-match controls strip (`H`, on for the first 5 matches, then
+  remembered) with a "fly down" prompt after 3 s hovering; ground disc + short dashed tick replace
+  the drop lines; compact FFA/2v2 plates, slot tags on duplicate legends, no weapon box unarmed.
+  Follow-ups: gamepad bindings (none exist yet: the strip says so on a pad); UX1-WEB below.
+- UX1-WEB [developer] Web build: pressing FIGHT in headless Chromium (swiftshader) traps with wasm
+  `RuntimeError: remainder by zero` (an integer `%` by zero in a release build) before the match
+  draws. Reproduced on main 433d2ee with `node tools/web/match_smoke_test.js`, so not from T-UX1;
+  it blocks that script's in-match descend/hint check. Desktop debug runs of the same match are clean.
 - T-D35 [desktop] #107 Heartbloom: the sim floor matches the drawn island outline (`ZoneGround`
   25 cm outline mask, 0.25 m inset); falls/dives/vanish anchors can no longer pass through an
   island top (`CombatSim._stop_on_skipped_island`); the camera pulls in front of other fighters;
