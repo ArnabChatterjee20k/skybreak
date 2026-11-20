@@ -19,7 +19,7 @@ godot --path . --disable-vsync -s res://game/world/voxel_zone_kit/zone_capture.g
   - the shrine, the picnic blanket with Kael, Lantern Rise (dusk, night)
   - the sunset with the sun disc
   - the strata underside over the cloud sea
-- `heartbloom_flythrough_v2.mp4`: 1920×1080, 30 fps, 20 s, H.264. It flies in from the south, through the Heart Arch, past and under Blossom Crown, over the Wishing Fountain, low across Heart Isle past Kael, and rises to a wide shot. The task asked for 720p; the skill's quality rule (1080p30 minimum) overrides that.
+- `heartbloom_flythrough_v2.mp4`: 1920×1080, 30 fps, 20 s (600 frames), H.264 at CRF 21 so it fits in git (37 MB; the CRF 18 master was 61 MB). It flies in from the south, through the Heart Arch, past and under Blossom Crown, over the Wishing Fountain, low across Heart Isle past Kael, and rises to a wide shot. The task asked for 720p; the skill's quality rule (1080p30 minimum) overrides that.
 
 ## Perf
 
@@ -87,7 +87,8 @@ At a rough guess that preset lands at about 450 k tris and 110 draws.
 6. **Lanterns and posts are small** at gameplay distance. The lantern-post crossbars sit oddly short above the hanging pairs.
 7. **Trees are one design in 4 variants** with similar silhouettes. There are no visible forks at T1 distance in most shots, and the "falling petals" are GPU particles that are barely visible in stills.
 8. **Missing from the sheet:** the stream and Blossom Falls water, the petal whirlwinds, fireflies at night, wishing coins visible in the fountain (painted, but too small to see), and real OmniLights for the 4 nearest lanterns.
-9. **Visual polish:**
+9. **The fly-through brushes one canopy** at about 16.8 s, on the low pass over Heart Isle.
+10. **Visual polish:**
    - The lawn's flagstone walk is painted into the colour texture (flat), while the edging stones are 3D.
    - The tufts are bright yellow-green and slightly busy at the camera's feet.
    - One scatter stone sits right at Kael's feet in the gameplay shot.
