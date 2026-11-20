@@ -24,12 +24,10 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
 	offset_left = -320.0
 	offset_right = -48.0
-	horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	offset_top = -34.0
 	offset_bottom = 34.0
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	add_theme_font_override("font", MenuTheme.font())
 	add_theme_font_size_override("font_size", 44)
 	add_theme_color_override("font_color", COLOR)
