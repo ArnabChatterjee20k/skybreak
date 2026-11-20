@@ -58,6 +58,7 @@ var node := hf.build(self, mat, "IsleTop")            # one MeshInstance3D per ~
   the rim, and there are walls only at the rim. The T-junction gap on a gentle dome is
   under 1 mm. The look stays per voxel: the shader picks the colour of the cell under
   each pixel.
+- **Shadows**: build smooth lawns with `cast_shadow = false` (a gentle dome under a low sun self-shadows into contour bands). The underside below still casts the island's shadow.
 - **Colour**: alpha in `set_column`'s colour is free (a material code if you need one).
   Paint paths, petals, clover and baked canopy shade straight into the colour.
 - **Strata**: an underside whose bottoms are quantised to slabs of `strata_cells` cells

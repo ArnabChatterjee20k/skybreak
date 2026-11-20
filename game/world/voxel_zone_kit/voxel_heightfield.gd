@@ -135,7 +135,10 @@ func bind(material: ShaderMaterial) -> void:
 
 ## One MeshInstance3D per non-empty chunk (frustum-culled separately), all
 ## sharing `material`. visibility_end > 0 hides chunks past that distance.
-func build(parent: Node3D, material: Material, node_name: String, visibility_end := 0.0) -> Node3D:
+## cast_shadow false: a smooth lawn under a low sun self-shadows into contour
+## bands (acne); let the underside and the props cast instead.
+func build(parent: Node3D, material: Material, node_name: String, visibility_end := 0.0,
+		cast_shadow := true) -> Node3D:
 	var root := Node3D.new()
 	root.name = node_name
 	parent.add_child(root)
@@ -149,6 +152,8 @@ func build(parent: Node3D, material: Material, node_name: String, visibility_end
 			mi.material_override = material
 			if visibility_end > 0.0:
 				mi.visibility_range_end = visibility_end
+			if not cast_shadow:
+				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			root.add_child(mi)
 	return root
 

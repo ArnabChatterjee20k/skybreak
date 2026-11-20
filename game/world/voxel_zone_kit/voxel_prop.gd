@@ -85,8 +85,8 @@ static func quads(m: Mesh) -> int:
 
 
 ## Places copies of a mesh with LOD tiers, tiled. meshes: finest first;
-## ranges: where each tier ends (m), same length (0 = never ends). Tiers fade
-## into each other over `fade` m. shadow_tiers: how many of the finest tiers
+## ranges: where each tier ends (m), same length (0 = never ends); tiers
+## switch hard at the range (fade is unused, kept for callers). shadow_tiers: how many of the finest tiers
 ## cast shadows (the far ones never do). tile: the tile side (m); 0 picks
 ## TILE, or a third of it for short-range scatter (first range < 40 m), so
 ## the range switches small patches. Returns the parent node.
@@ -109,12 +109,10 @@ static func place(parent: Node3D, node_name: String, meshes: Array[ArrayMesh], r
 		for t in meshes.size():
 			var node := _multimesh(meshes[t], list)
 			node.name = "%s_%d_%d_t%d" % [node_name, key.x, key.y, t]
+			# Hard switches, no margins: with fading off, Godot treats margins as
+			# hysteresis, and after a camera cut a tile can sit in neither tier.
 			node.visibility_range_begin = begin
 			node.visibility_range_end = float(ranges[t])
-			if begin > 0.0:
-				node.visibility_range_begin_margin = fade
-			if float(ranges[t]) > 0.0:
-				node.visibility_range_end_margin = fade
 			node.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if t < shadow_tiers \
 				else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

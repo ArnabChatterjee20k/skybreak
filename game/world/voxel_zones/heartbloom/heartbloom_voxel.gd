@@ -153,7 +153,7 @@ func _island_top(i: int, cell: float) -> Node3D:
 	hf.smooth_height = func(x: float, z: float) -> float:
 		return field.top_profile(i, minf(field.rim_fraction(i, x, z), 1.0))
 	var mat := _terrain_material(hf, i)
-	return hf.build(self, mat, "%sTop" % field.names[i].replace(" ", ""))
+	return hf.build(self, mat, "%sTop" % field.names[i].replace(" ", ""), 0.0, false)
 
 
 ## The underside cone as strata slabs: bottoms quantised to slabs of
@@ -442,24 +442,25 @@ func _arch() -> void:
 			var r := Vector3((q.x + q.y) * 0.7071, (q.y - q.x) * 0.7071, q.z)
 			return VoxelSdf.box(r, Vector3.ZERO, hb)
 		g.paint(AABB(key_c - Vector3(5, 5, 5), Vector3(10, 10, 10)), func(p: Vector3) -> float:
-			return diamond.call(p, Vector3(3.2, 3.2, 3.5)), Mat.ROSE_DARK, -1, VoxelGrid.Mode.FILL)
+			return diamond.call(p, Vector3(3.2, 3.2, 3.5)), Mat.STONE, -1, VoxelGrid.Mode.FILL)
 		# The gold heart stands out of both faces in relief.
 		g.paint(AABB(key_c - Vector3(3.5, 3.5, 4.6), Vector3(7, 7, 9.2)), func(p: Vector3) -> float:
-			var q := Vector2(p.x - key_c.x, p.y - key_c.y + 0.5) / 2.6
+			# About 2.6 m across: it sits inside the keystone's face with a stone border.
+			var q := Vector2(p.x - key_c.x, p.y - key_c.y + 0.3) / 1.2
 			var heart := minf(Vector2(q.x - 0.5, q.y - 0.25).length(), Vector2(q.x + 0.5, q.y - 0.25).length()) - 0.55
 			heart = minf(heart, maxf(absf(q.x) + q.y * 0.9 - 0.75, -q.y - 1.1))
-			return maxf(heart * 2.6, absf(p.z) - 4.2), Mat.GOLD, -1, VoxelGrid.Mode.FILL)
+			return maxf(heart * 1.2, absf(p.z) - 4.0), Mat.GOLD, -1, VoxelGrid.Mode.FILL)
 		g.paint_surface(AABB(key_c - Vector3(5, 5, 5), Vector3(10, 10, 10)), func(p: Vector3, _c: Vector3i) -> bool:
 			var q := p - key_c
 			return absf(absf((q.x + q.y) * 0.7071) - 3.0) < T2 * 0.6 or absf(absf((q.y - q.x) * 0.7071) - 3.0) < T2 * 0.6,
-			Mat.MORTAR, [Mat.ROSE_DARK])
+			Mat.MORTAR, [Mat.STONE])
 		g.paint(AABB(Vector3(-7.2, -0.6, -5.2), Vector3(14.4, 1.6, 10.4)), func(p: Vector3) -> float:
 			return VoxelSdf.box(p, Vector3(0, 0.2, 0), Vector3(7.0, 0.7, 5.0)), Mat.STONE, -1, VoxelGrid.Mode.FILL)
 		g.paint(AABB(Vector3(-4.7, 0.5, -3.7), Vector3(9.4, 1.6, 7.4)), func(p: Vector3) -> float:
 			return VoxelSdf.box(p, Vector3(0, 1.4, 0), Vector3(4.5, 0.7, 3.5)), Mat.STONE, -1, VoxelGrid.Mode.FILL)
 		g.paint_surface(AABB(Vector3(-7.2, -0.6, -5.2), Vector3(14.4, 2.8, 10.4)), func(p: Vector3, c: Vector3i) -> bool:
 			return p.y < 0.5 and VoxelSdf.hash3(c, 43) < 0.3, Mat.MOSS, [Mat.STONE])
-	var m := _mesh("hb_arch", bounds, T2, paint)
+	var m := _mesh("hb_heart_arch", bounds, T2, paint)
 	var node := MeshInstance3D.new()
 	node.name = "HeartArch"
 	node.mesh = m
@@ -1114,24 +1115,9 @@ func _post_mesh() -> ArrayMesh:
 func _lanterns() -> void:
 	var paper: Array[ArrayMesh] = _lod(_lantern_mesh.bind(false), 4.0)
 	var blue: Array[ArrayMesh] = _lod(_lantern_mesh.bind(true), 4.0)
-	var warm: Array[Transform3D] = []
-	var odd: Array[Transform3D] = []
-	var rise := field.centres[field.index_of("Lantern Rise")]
-	var picked := false
-	for t in props.lanterns:
-		var s := t.basis.get_scale().y / 1.2
-		var xf := Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * s), t.origin)
-		if not picked and Vector2(t.origin.x, t.origin.z).distance_to(rise) < 30.0:
-			picked = true
-			odd.append(xf)
-		else:
-			warm.append(xf)
-	for at in arch_lanterns:
-		warm.append(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * 1.6), at))
-	var post: Array[ArrayMesh] = _lod(_lantern_post_mesh, 3.0)
-	var posts: Array[Transform3D] = []
-	var fc: Vector3 = zone.get_meta("wishing_fountain").centre
+	# Post spots: the sim's own (fountain ring, arch flanks, Lantern Rise ring).
 	var spots: Array[Vector2] = []
+	var fc: Vector3 = zone.get_meta("wishing_fountain").centre
 	for k in 6:
 		var a := TAU * float(k) / 6.0 + 0.5
 		spots.append(Vector2(fc.x + cos(a) * 11.0, fc.z + sin(a) * 11.0))
@@ -1142,17 +1128,43 @@ func _lanterns() -> void:
 	for k in 6:
 		var p := field.top_point(ri, TAU * float(k) / 6.0 + 0.3, 0.62)
 		spots.append(Vector2(p.x, p.z))
+	var post: Array[ArrayMesh] = _lod(_lantern_post_mesh, 3.0)
+	var posts: Array[Transform3D] = []
 	for s in spots:
 		var y := field.surface_at(s.x, s.y)
-		if not is_finite(y):
-			continue
-		var yaw := VoxelSdf.hash3(Vector3i(roundi(s.x), 1, roundi(s.y)), 3) * PI
-		var b := Basis(Vector3.UP, yaw)
-		posts.append(Transform3D(b, Vector3(s.x, y, s.y)))
-		# Two lanterns hang from the crossbar's ends.
-		for side: float in [-0.6, 0.6]:
-			warm.append(Transform3D(b.scaled(Vector3.ONE * 0.5), Vector3(s.x, y, s.y) + b * Vector3(side, 2.55, 0)))
+		if is_finite(y):
+			# Unrotated, like the sim's post: its lantern pair hangs at x +-0.6.
+			posts.append(Transform3D(Basis.IDENTITY, Vector3(s.x, y, s.y)))
+	var warm: Array[Transform3D] = []
+	var odd: Array[Transform3D] = []
+	var seats: Array[Transform3D] = []
+	var rise := field.centres[ri]
+	var picked := false
+	for t in props.lanterns:
+		var sc := t.basis.get_scale().y / 1.2
+		var at := t.origin
+		var ground := field.surface_at(at.x, at.z, at.y)
+		var xf := Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * sc), at)
+		var on_post := false
+		for s in spots:
+			if Vector2(at.x, at.z).distance_to(s) < 1.0:
+				on_post = true
+		if on_post:
+			# Hang it under the crossbar's end on its cord.
+			xf = Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * 0.5), Vector3(at.x, ground + 2.55, at.z))
+		elif is_finite(ground) and at.y - ground < 1.6:
+			# A floor lantern: set it down on a flat stone.
+			xf.origin.y = ground + 0.62 * sc + 0.14
+			seats.append(Transform3D(Basis(Vector3.UP, at.x).scaled(Vector3(0.5, 0.6, 0.5)), Vector3(at.x, ground - 0.02, at.z)))
+		if not picked and Vector2(at.x, at.z).distance_to(rise) < 30.0:
+			picked = true
+			odd.append(xf)
+		else:
+			warm.append(xf)
+	for at in arch_lanterns:
+		warm.append(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * 1.6), at))
 	VoxelProp.place(self, "LanternPosts", post, [40.0, 160.0], posts, 1)
+	_place(_lod(_stone_mesh.bind(1), 2.0), seats, "LanternSeats", [30.0, 100.0])
 	var a := VoxelProp.place(self, "PaperLanterns", paper, [22.0, 160.0], warm, 0)
 	var c := VoxelProp.place(self, "PaperLanternBlue", blue, [22.0, 160.0], odd, 0)
 	for root: Node3D in [a, c]:
