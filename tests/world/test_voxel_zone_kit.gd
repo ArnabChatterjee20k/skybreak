@@ -80,9 +80,14 @@ func test_heartbloom_lawn_vertices_stay_on_the_sim_surface() -> void:
 	hf.smooth_height = func(x: float, z: float) -> float:
 		return field.top_profile(i, minf(field.rim_fraction(i, x, z), 1.0))
 	var mesh := hf.chunk_mesh(0, 0)
-	for v in _verts(mesh):
-		if v.y > field.tops[i]:
-			assert_almost_eq(v.y, field.surface_at(v.x, v.z), 0.044, "QA foot check: within half a T1 cell")
+	var verts := _verts(mesh)
+	var normals := _normals(mesh)
+	var checked := 0
+	for k in verts.size():
+		if normals[k].y > 0.5:  # the lawn, not the patch's own edge walls
+			assert_almost_eq(verts[k].y, field.surface_at(verts[k].x, verts[k].z), 0.044, "QA foot check: within half a T1 cell")
+			checked += 1
+	assert_gt(checked, 0)
 
 
 func test_step_ao_darkens_the_foot_of_a_step_only() -> void:
