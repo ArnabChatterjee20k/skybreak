@@ -112,13 +112,14 @@ func _hilt_and_blade() -> VoxelGrid:
 	for k in 2:
 		var sx := -1.0 if k == 0 else 1.0
 		var a := Vector3(0.0, -0.3, 0)
-		var b := Vector3(0.02 * sx + 0.025, -0.42 + k * 0.025, 0.0)
+		# Short, so it stays inside the old model's clearance bounds (+10 cm).
+		var b := Vector3(0.024 * sx + 0.028, -0.335 + k * 0.012, 0.0)
 		g.paint(_segment_box(a, b, 0.03), func(p: Vector3) -> float:
 			var q := p - a
 			var ab := b - a
 			var h := clampf(q.dot(ab) / ab.dot(ab), 0.0, 1.0)
 			var d := q - ab * h
-			return maxf(absf(d.x) - 0.013, absf(d.z) - c * 0.5), Mat.ACCENT if k == 0 else Mat.CLOTH_DARK)
+			return maxf(Vector2(d.x, d.y).length() - 0.013, absf(d.z) - c * 0.5), Mat.ACCENT if k == 0 else Mat.CLOTH_DARK)
 	return g
 
 

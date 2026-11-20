@@ -88,6 +88,31 @@ originals from their sheets.
 | **Storm Repeater** (pickup) | Item gold, charcoal, wood; gold | Receiver, stock, three barrels / gold drum, clamp, muzzle ring, foregrip / drum flutes, gold charge rails, stitched cheek pad, item spark on the drum faces (5.5 mm) |
 | **Heartstring Bow** (Heartbloom pickup) | Rose lacquer, item gold, Heartbloom pink; pink-white | Lyra's recurve build / gold strips, pink inlay / heart lights, heart medallion, the old model's gold sparkles |
 
+## Budget (measured, `voxel_weapon_stats.gd`)
+
+| Weapon | Vertices | Triangles | Surfaces | Build (ms, cloud CPU) |
+|---|---|---|---|---|
+| Storm Blade | 22,864 | 11,432 | 3 | ~800 |
+| Arc Revolver | 23,936 | 11,968 | 3 | ~1,600 |
+| Ki Gauntlet (x2 in hand) | 21,144 | 10,572 | 3 | ~1,000 |
+| Orbit Chakram | 34,712 | 17,356 | 3 | ~1,600 |
+| Ki Bow | 9,648 | 4,824 | 4 | ~500 |
+| Sky Lance | 29,808 | 14,904 | 4 | ~1,300 |
+| Titan Hammer | 55,464 | 27,732 | 4 | ~3,300 |
+| Scatter Cannon | 60,000 | 30,000 | 3 | ~4,500 |
+| Ember Scythe | 33,440 | 16,720 | 4 | ~2,000 |
+| Storm Repeater | 58,048 | 29,024 | 4 | ~4,000 |
+| Heartstring Bow | 9,536 | 4,768 | 4 | ~500 |
+
+Meshes are built once per process on first use and shared. The build runs in
+GDScript on the main thread, so the first draw of each weapon hitches; before
+these go in-game, bake them to `.res` (or build at match load).
+
+The Brann hook-up above was checked on a scratch merge of
+`lookdev/brann-voxel` + this branch: with the node added, both stowed weapons
+and both held weapons are the voxel models
+(`reports/lookdev/weapons/brann_voxel_held_preview.jpg`).
+
 ## Look-dev captures
 
 Weapon alone (side and 3/4, the weapon turns so the cyclorama fills the
