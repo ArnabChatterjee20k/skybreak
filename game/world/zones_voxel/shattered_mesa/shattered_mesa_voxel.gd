@@ -169,13 +169,14 @@ func flight() -> Array[Dictionary]:
 		[Vector2(452, 742), 5.0], [Vector2(470, 672), 6.0], [Vector2(540, 632), 10.0], [Vector2(598, 598), 9.0],
 		[Vector2(594, 515), 11.0], [Vector2(600, 445), 14.0], [Vector2(gap.x + f.x * 60.0, gap.z + f.z * 60.0), 0.0],
 		[Vector2(gap.x, gap.z), 0.0], [Vector2(gap.x - f.x * 45.0, gap.z - f.z * 45.0), 0.0], [Vector2(645, 342), 16.0],
-		[Vector2(694, 352), 42.0], [Vector2(camp.x + 14.0, camp.z - 34.0), 20.0], [Vector2(camp.x - 22.0, camp.z + 6.0), 12.0],
-		[Vector2(camp.x - 60.0, camp.z + 70.0), 60.0], [Vector2(530, 525), 70.0],
+		[Vector2(722, 336), -(camp.y - 6.0)], [Vector2(726, 404), -(camp.y + 18.0)], [Vector2(camp.x + 10.0, camp.z - 26.0), -(camp.y + 14.0)],
+		[Vector2(camp.x - 34.0, camp.z + 22.0), -(camp.y + 26.0)], [Vector2(560, 520), -(camp.y + 50.0)],
 	]
 	var out: Array[Dictionary] = []
 	for i in route.size():
 		var xz: Vector2 = route[i][0]
-		var y := _lift(xz, route[i][1])
+		# A negative clearance is an absolute height (the climb round the Anvil Mesa).
+		var y := _lift(xz, route[i][1]) if float(route[i][1]) >= 0.0 else -float(route[i][1])
 		if i >= 6 and i <= 8:
 			y = gap.y + (2.0 if i == 6 else 0.0)
 		out.append({"from": Vector3(xz.x, y, xz.y), "fov": 64.0})
