@@ -5,10 +5,10 @@ extends Node
 
 enum TimeOfDay { DAY, DUSK, NIGHT }
 ## Fog end distance (m) for fog_density 0 and 1.
-const FOG_END_CLEAR := 1200.0
-const FOG_END_STORM := 450.0
+const FOG_END_CLEAR := 2600.0
+const FOG_END_STORM := 1100.0
 ## Haze starts this far out: fighters stay crisp, the backdrop recedes behind them.
-const HAZE_BEGIN := 70.0
+const HAZE_BEGIN := 150.0
 const WEATHER_RAIN := 1
 const WEATHER_SNOW := 2
 const WEATHER_EMBERS := 3

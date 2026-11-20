@@ -61,6 +61,8 @@ const KO_FRAMING_RANGE := 40.0
 var _camera_target := -1
 var weapon_layer := WeaponLayer.new()
 var fighter_views: Array[FighterView] = []
+## The ground marker under each fighter: contact shadow plus airborne team ring.
+var contact_shadows := ContactShadows.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -85,6 +87,10 @@ func _ready() -> void:
 		_apply_config({})
 	_build_world()
 	_build_fighters()
+	add_child(contact_shadows)
+	contact_shadows.setup(fighter_views.size())
+	for i in fighter_views.size():
+		contact_shadows.set_ring_color(i, fighter_views[i]._height_marker.color)
 	sim.pickups_enabled = true
 	camera.obstacles = CameraObstacles.from_zone_match(self)
 	add_child(weapon_layer)
@@ -287,6 +293,7 @@ func present_frame(blend: float, delta: float) -> void:
 		view.present(blend, delta)
 		# The ground marker sits on the zone's floor under the fighter, not y = 0.
 		view._height_marker.ground_y = view.fighter.stand_height - sim.tuning.ground_height
+	_place_contact_shadows()
 	weapon_layer.present(blend, delta)
 	var me := sim.fighters[player]
 	var locked := me.lock_on_target >= 0
@@ -313,3 +320,12 @@ func present_frame(blend: float, delta: float) -> void:
 	control_hints.player = player
 	match_hud.player = player
 	control_hints.active = not input_override.is_valid() and drivers[player] == null
+
+
+func _place_contact_shadows() -> void:
+	for i in fighter_views.size():
+		var view := fighter_views[i]
+		var floor_y := view.fighter.stand_height - sim.tuning.ground_height
+		var near := func(x: float, z: float) -> float: return ground.height_at(x, z, floor_y + 0.5)
+		contact_shadows.place(i, view.position.x, view.position.z,
+			view.position.y - HeightMarker.FEET_BELOW_CENTRE, floor_y, near)
