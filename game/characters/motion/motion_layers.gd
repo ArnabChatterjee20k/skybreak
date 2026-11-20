@@ -109,7 +109,7 @@ const STRING_CLEARANCE := 0.05
 const STRING_MAX_CANT := 0.9
 const STRING_CANT_STEP := 0.05
 ## Clearance solver: passes, and the margin it leaves (m).
-const CLEARANCE_PASSES := 16
+const CLEARANCE_PASSES := 24
 const CLEARANCE_MARGIN := 0.01
 ## Gap the solver keeps between weapon and body (m): the drawn spine can sit a few cm off the solved one.
 const CLEARANCE_GAP := 0.03
