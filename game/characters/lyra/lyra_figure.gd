@@ -351,7 +351,7 @@ static func _weapons(d: LyraDesign, j: Dictionary, list: Array[FigureRig.Part]) 
 		ring + axis * 0.27]), Vector2(0.045, 0.016), 8, 1.0, Vector3.BACK, 0.8))
 	# Star-chart case: a short capped tube on her left hip (not a bow: #124).
 	var case_top := hips + Vector3(0.27, 0.02, -0.03)
-	var case_bottom := case_top + Vector3(0.03, -0.24, 0.05)
+	var case_bottom := case_top + Vector3(0.02, -0.17, 0.04)
 	var case_axis := (case_bottom - case_top).normalized()
 	var case_basis := Basis(Quaternion(Vector3.UP, case_axis))
 	_add(list, &"Hips", &"night", FigureKit.capsule(case_top, case_bottom, Vector2(0.05, 0.05), Vector2(0.05, 0.05), 10, 2))
