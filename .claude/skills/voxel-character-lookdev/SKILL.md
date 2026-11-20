@@ -15,6 +15,12 @@ Skybreak's art style is **stylised high-res voxel art**: anime character design 
 - "Done" meant tests green and the PR merged. Agents self-certified. Nobody asked "does it look good?"
 - Many parallel visual lanes, nobody owning coherence, renders on GPU-less machines, and the owner only saw the end.
 
+## Quality rules (non-negotiable, owner's order: "quality shouldn't be compromised at all")
+- Every published still is 1920×1080 or larger. Every published video (moves reel, spin, idle, zone fly-through) is **1920×1080 at 30 fps or more**, and this **overrides any lower resolution or frame rate written in a task prompt**. GIF previews may be smaller.
+- Never shorten a reel, skip a segment, drop the lighting stack (AO, contact shadow, bloom) or lower voxel density to save render time. If time runs out, publish only what is finished at full quality and list exactly what is missing.
+- Never publish anything you haven't looked at. Every release carries an honest ranked critique.
+- Software rendering (lavapipe) is fine because it's colour-correct. Slow is acceptable; degraded is not.
+
 ## Ground rules
 1. **One asset at a time.** One visual lane, one owner of coherence. Nothing reaches `main` or the in-game roster until the owner approves the look.
 2. **Reference first.** Attach 1–3 reference images that set the quality bar (start with Torsten's tank and voxel Kael). No adjectives without an image.
