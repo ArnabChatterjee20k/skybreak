@@ -116,6 +116,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   bow/shot startup ticks 4-7 when he shoots while FLYING at near-zero pitch; the seed-3
   shattered_mesa visual QA run reaches it after the escape merge (4 frames, tolerance 1).
   `test_visual_qa.gd` reports it pending under QA-19 (fails under run_qa.sh strict).
+  Open: QA-20 [desktop, characters] Lyra's Heartstring Bow sinks 2-5 cm into her chest capsule
+  while she is in HITSTUN, then ESCAPING (air tech), then FLYING (seed-3 shattered_mesa visual QA,
+  12-30 frames depending on run order, QA-17). Reached once specials landed on the escape merge;
+  pending under QA-20 in `test_visual_qa.gd` (fails under run_qa.sh strict).
   Open: T-DEF3-pop, Lyra RightUpperArm turns 1.21 rad in one frame entering hitstun hit_light
   (1 frame in QA quick; limit 1.2), characters lane.
 
