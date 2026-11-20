@@ -12,6 +12,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `AGENTS.md`. Remaining: CI green on GitHub.
 
 ## In review
+- T-UI1 [desktop] HUD restyle (`claude/T-UI1-hud-restyle`, #117): plates, clock, banners (pop-in),
+  combo, READ!, control hints, fly-down and beam-clash prompts on `MenuTheme` (skewed navy panels,
+  ink borders, display font, gold/cyan/hot, team colours); legend portraits in the plate tiles, hit
+  flash + chip trail, low-HP pulse. `game/debug/hud_capture.gd` renders the review shots. Heartbloom
+  visual goldens re-blessed (HUD only). Open: on the web build `SystemFont` falls back to the default
+  face for menus and HUD alike; bundling a licensed heavy display font would fix both.
 
 - T-ART2 [desktop] Art round 2 (#99, #135, #137, #120, #138, #118, #121, #98, #124): crisp opaque
   Skyhold cloud sea and lighter haze, Heartbloom lawn shader (petals, stepping-stone walk, no fan

@@ -163,3 +163,12 @@ frames are left out and counted as `foot_slide_skipped_frames`. `qa_report.py`
 tags `metrics.json` with `metric_versions` (`foot_slide_cm_per_frame: 2`), and the
 trend skips a metric whose version differs from the reference report ("re-baselined").
 The first v2 quick report is the new foot-slide reference.
+
+## T-UI1 + T-ART2: merged re-bless
+
+PR #143 (HUD restyle on `MenuTheme`: plates, clock, banners, portraits) and PR #142
+(art round 2: zones, KO beat, model changes) both re-blessed the `heartbloom_*`
+shots. After merging main into #143 all visual goldens were re-rendered on the
+merged code with `bless_goldens.sh --visual` (Godot 4.7.2 linux x86_64). The eight
+`heartbloom_*` shots change because they show the new HUD over the art round 2
+Heartbloom zone; the zone shots changed only by art round 2 noise.

@@ -6,8 +6,9 @@ extends Node3D
 const TEXT := "READ!"
 const LIFETIME := 0.55
 const RISE := 0.6
-const COLOR := Color(0.78, 0.92, 1.0)
-const OUTLINE := Color(0.05, 0.1, 0.25)
+## The HUD's info cyan in the menus' display font with a heavy ink outline (T-UI1).
+const COLOR := MenuTheme.CYAN
+const OUTLINE := MenuTheme.INK
 
 var _label: Label3D
 var _age := 0.0
@@ -64,8 +65,9 @@ func _ensure_label() -> void:
 	_label.no_depth_test = true
 	_label.fixed_size = true
 	_label.pixel_size = 0.0016
+	_label.font = MenuTheme.font()
 	_label.font_size = 56
-	_label.outline_size = 14
+	_label.outline_size = 18
 	_label.outline_modulate = OUTLINE
 	_label.render_priority = 10
 	_label.shaded = false

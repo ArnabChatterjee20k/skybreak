@@ -1,7 +1,9 @@
 class_name MatchHud
 extends Control
 ## Match HUD for 2-4 fighters, drawn in a 1920x1080 design space and scaled to
-## the window, so it reads the same at 1080p, 720p and in the web build.
+## the window, so it reads the same at 1080p, 720p and in the web build. Styled
+## on MenuTheme (T-UI1): skewed navy panels, ink outlines, the display font,
+## gold accents and team colours.
 ## Per fighter: a name plate in team colour, health with a chip-damage trail
 ## and the recoverable grey part, ki in 4 bars, guard, burst stocks, round-win
 ## pips, the held weapon and inventory slots (only while armed). Centre: round
@@ -24,16 +26,31 @@ const INVENTORY_SLOTS := 3
 const KI_BARS := 4
 ## Banner baseline height as a fraction of the screen height.
 const BANNER_HEIGHT_FRACTION := 0.3
+const CLOCK_SIZE := Vector2(120, 84)
 
-const INK := Color(0.05, 0.05, 0.08, 0.85)
-const PANEL := Color(0.08, 0.09, 0.13, 0.72)
-const HEALTH := Color(0.96, 0.96, 0.92)
-const GREY := Color(0.62, 0.62, 0.66)
-const CHIP := Color(0.95, 0.25, 0.2)
-const KI := Color(0.35, 0.8, 1.0)
-const GUARD := Color(0.95, 0.8, 0.3)
-const GUARD_LOW := Color(0.95, 0.35, 0.2)
-const BANNER := Color(1.0, 0.85, 0.25)
+## Colours: the menus' palette (MenuTheme), shared with the training overlays.
+const INK := MenuTheme.INK
+const PANEL := Color(MenuTheme.PANEL, 0.9)
+const HEALTH_GLOSS := Color(1, 1, 1, 0.32)
+const GREY := Color(MenuTheme.TEXT_DIM, 0.75)
+const CHIP := Color(1.0, 0.3, 0.22)
+const KI := MenuTheme.CYAN
+const GUARD := MenuTheme.GOLD
+const GUARD_LOW := MenuTheme.HOT
+const BANNER := MenuTheme.GOLD
+## Plate borders (design px) and the low-health pulse.
+const BORDER := 4.0
+## Share of the plate's inner width for ki and guard; the weapon chip takes the rest.
+const METER_WIDTH := 0.5
+const LOW_HEALTH := 0.25
+const PULSE_HZ := 2.2
+## Seconds the freshly lost health flashes white before it turns into the chip trail.
+const HIT_FLASH := 0.12
+## Banners scale in from BANNER_POP to 1 over BANNER_POP_SECONDS.
+const BANNER_POP := 1.35
+const BANNER_POP_SECONDS := 0.15
+const BANNER_SIZE := 132
+const BANNER_OUTLINE := 22
 
 ## Set by the arena.
 var sim: CombatSim
@@ -43,11 +60,18 @@ var team_colors: Array[Color] = []
 ## Team per fighter and AI flags, for the 3+ fighter layout and name tags; optional.
 var teams: Array[int] = []
 var is_ai: Array[bool] = []
+## Legend head shots per fighter for the portrait tiles; optional (initials otherwise).
+var portraits: Array[Texture2D] = []
 ## The fighter this screen belongs to (keeps the full plate).
 var player := 0
 
 var _trail: Array[float] = []
 var _trail_hold: Array[float] = []
+var _last_health: Array[float] = []
+var _flash: Array[float] = []
+var _clock := 0.0
+var _banner_title := ""
+var _banner_age := 0.0
 
 
 func _ready() -> void:
@@ -58,13 +82,26 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if sim == null:
 		return
+	_clock += delta
 	while _trail.size() < sim.fighters.size():
-		_trail.append(health_fraction(sim.fighters[_trail.size()]))
+		var start := health_fraction(sim.fighters[_trail.size()])
+		_trail.append(start)
 		_trail_hold.append(0.0)
+		_last_health.append(start)
+		_flash.append(0.0)
 	for i in sim.fighters.size():
-		var result := chip_trail_step(_trail[i], health_fraction(sim.fighters[i]), _trail_hold[i], delta)
+		var health := health_fraction(sim.fighters[i])
+		var result := chip_trail_step(_trail[i], health, _trail_hold[i], delta)
 		_trail[i] = result.trail
 		_trail_hold[i] = result.hold
+		_flash[i] = HIT_FLASH if health < _last_health[i] else maxf(_flash[i] - delta, 0.0)
+		_last_health[i] = health
+	var title: String = flow.banner(names).title if flow != null and flow.enabled else ""
+	if title != _banner_title:
+		_banner_title = title
+		_banner_age = 0.0
+	else:
+		_banner_age += delta
 	queue_redraw()
 
 
@@ -88,7 +125,7 @@ func _draw() -> void:
 	# No clock or banners when the round flow is off (scripted playtests).
 	if flow != null and flow.enabled:
 		_draw_clock()
-		_draw_banner()
+		_draw_banner(offset, scale_factor)
 	draw_set_transform(Vector2.ZERO)
 
 
@@ -97,149 +134,215 @@ func _name_of(index: int) -> String:
 	return tagged[index] if index < tagged.size() and tagged[index] != "" else "P%d" % (index + 1)
 
 
+func _team_of(index: int) -> Color:
+	return team_colors[index] if index < team_colors.size() else MenuTheme.team_color(index)
+
+
+## Full plate: portrait tile in a team-coloured border on the outer edge, then a
+## skewed navy panel with the name, win pips, burst stocks, health, ki and guard.
 func _draw_plate(index: int, rect: Rect2) -> void:
 	var fighter := sim.fighters[index]
-	var team := team_colors[index] if index < team_colors.size() else Color.WHITE
-	var right_side := index % 2 == 1
-	var font := ThemeDB.fallback_font
-	draw_rect(rect, PANEL)
-	draw_rect(Rect2(rect.position, Vector2(rect.size.x, 6)), team)
-	# Name badge with the initial: the portrait slot until characters ship portraits.
-	var badge_x := rect.end.x - 96.0 if right_side else rect.position.x
-	var badge := Rect2(Vector2(badge_x, rect.position.y + 6), Vector2(96, rect.size.y - 6))
-	draw_rect(badge, Color(team, 0.85))
-	_text(font, badge.get_center() + Vector2(0, 22), _name_of(index).left(1), 64, INK, HORIZONTAL_ALIGNMENT_CENTER)
-	var inner_x := rect.position.x + (16.0 if right_side else 112.0)
-	var inner_w := rect.size.x - 128.0
-	var name_x := inner_x + inner_w if right_side else inner_x
-	_text(font, Vector2(name_x, rect.position.y + 36), _name_of(index), 26, Color.WHITE,
-		HORIZONTAL_ALIGNMENT_RIGHT if right_side else HORIZONTAL_ALIGNMENT_LEFT)
-	_draw_pips(index, Vector2(inner_x + 6 if right_side else inner_x + inner_w - 52, rect.position.y + 26))
-	# Health: chip trail under the grey (recoverable) part under current health.
-	var bar := Rect2(inner_x, rect.position.y + 46, inner_w, 26)
-	draw_rect(bar, INK)
-	var health := health_fraction(fighter)
-	_bar(bar, trail_of(index) if index < _trail.size() else health, CHIP, right_side)
-	_bar(bar, minf(health + grey_fraction(fighter), 1.0), GREY, right_side)
-	_bar(bar, health, HEALTH.lerp(team, 0.15), right_side)
-	draw_rect(bar, INK, false, 2.0)
-	# Ki in KI_BARS bars, filling from the badge side.
+	var team := _team_of(index)
+	var right := index % 2 == 1
+	var font := MenuTheme.font()
+	var panel := _mirror(rect, Rect2(rect.position.x + 66, rect.position.y + 10, rect.size.x - 80, 112), right)
+	draw_style_box(MenuTheme.box(PANEL, INK, int(BORDER)), panel)
+	# Inner column, from the portrait side to the far edge.
+	var inner := _mirror(rect, Rect2(rect.position.x + 132, rect.position.y, rect.size.x - 160, rect.size.y), right)
+	var align := HORIZONTAL_ALIGNMENT_RIGHT if right else HORIZONTAL_ALIGNMENT_LEFT
+	var near_x := inner.end.x if right else inner.position.x
+	var label := _name_of(index)
+	var name_size := fit_font_size(font, label, inner.size.x - 150.0, 30, 18)
+	_text(font, Vector2(near_x, rect.position.y + 44), label, name_size, MenuTheme.TEXT, align, 8)
+	# Round-win pips at the far end of the name row.
+	var far_x := inner.position.x if right else inner.end.x
+	var step := 1.0 if right else -1.0
+	for p in MatchFlow.WINS_NEEDED:
+		var won := flow != null and index < flow.wins.size() and p < flow.wins[index]
+		var x := far_x + step * (p * 30.0 + 16.0)
+		_slant(Rect2(x - 11, rect.position.y + 20, 22, 22), MenuTheme.GOLD if won else Color(INK, 0.8), INK, 3.0)
+	_health_bar(index, fighter, team, Rect2(inner.position.x, rect.position.y + 52, inner.size.x, 30), right)
+	# Ki in KI_BARS cells, filling from the portrait side.
 	var ki := ki_fraction(fighter, sim.meter_tuning)
-	var ki_w := (inner_w * 0.62 - (KI_BARS - 1) * 6.0) / KI_BARS
+	var ki_w := (inner.size.x * METER_WIDTH - (KI_BARS - 1) * 8.0) / KI_BARS
 	for b in KI_BARS:
-		var x := inner_x + inner_w - (b + 1) * ki_w - b * 6.0 if right_side else inner_x + b * (ki_w + 6.0)
-		var cell := Rect2(x, rect.position.y + 80, ki_w, 12)
-		draw_rect(cell, INK)
-		_bar(cell, clampf(ki * KI_BARS - b, 0.0, 1.0), KI, right_side)
+		var x := inner.end.x - (b + 1) * ki_w - b * 8.0 if right else inner.position.x + b * (ki_w + 8.0)
+		var cell := Rect2(x, rect.position.y + 89, ki_w, 12)
+		var fill := clampf(ki * KI_BARS - b, 0.0, 1.0)
+		_slant(cell, INK)
+		_slant_fill(cell, fill, KI if fill >= 1.0 else Color(KI, 0.7), right)
+		if fill >= 1.0:
+			_slant(Rect2(cell.position, Vector2(cell.size.x, 3)), Color(1, 1, 1, 0.55))
 	# Guard.
 	var guard := guard_fraction(fighter)
-	var guard_x := inner_x + inner_w * 0.38 if right_side else inner_x
-	var guard_rect := Rect2(guard_x, rect.position.y + 98, inner_w * 0.62, 8)
-	draw_rect(guard_rect, INK)
-	_bar(guard_rect, guard, GUARD if guard > 0.3 else GUARD_LOW, right_side)
-	# Held weapon and inventory slots, on the far side from the badge, only while armed.
+	var guard_x := inner.end.x - inner.size.x * METER_WIDTH if right else inner.position.x
+	var guard_rect := Rect2(guard_x, rect.position.y + 107, inner.size.x * METER_WIDTH, 7)
+	_slant(guard_rect, INK)
+	_slant_fill(guard_rect, guard, GUARD if guard > 0.3 else GUARD_LOW, right)
+	# Held weapon and inventory slots, on the far side, only while armed.
 	if shows_weapon_box(fighter):
-		_draw_weapon(fighter, team, inner_x, inner_w, rect, right_side)
-	# Burst stocks.
+		_draw_weapon(fighter, team, inner, rect, right)
+	_draw_portrait(index, fighter, team, _mirror(rect, Rect2(rect.position.x + 12, rect.position.y, 106, rect.size.y), right))
+
+
+## The portrait tile: legend head shot (or initial) inside a team-coloured border,
+## burst stocks on its foot strip.
+func _draw_portrait(index: int, fighter: FighterState, team: Color, tile: Rect2) -> void:
+	draw_style_box(MenuTheme.box(team.darkened(0.55), team, 5), tile)
+	var texture: Texture2D = portraits[index] if index < portraits.size() else null
+	if texture != null:
+		draw_texture_rect(texture, Rect2(tile.position + Vector2(14, 6), tile.size - Vector2(28, 18)), false)
+	else:
+		var font := MenuTheme.font()
+		_text(font, tile.get_center() + Vector2(4, 26), _name_of(index).left(1), 76, MenuTheme.TEXT,
+			HORIZONTAL_ALIGNMENT_CENTER, 14)
+	var foot := Rect2(tile.position.x - 2, tile.end.y - 16, tile.size.x + 4, 16)
+	_slant(foot, team, INK, 3.0)
 	var stocks := burst_stocks(fighter, sim.meter_tuning)
-	for s in sim.meter_tuning.burst_max_stocks:
-		var stock_x := inner_x + inner_w - 8.0 - s * 18.0 if right_side else inner_x + 8.0 + s * 18.0
-		draw_circle(Vector2(stock_x, rect.position.y + 120), 6, team if s < stocks else INK)
+	var count := sim.meter_tuning.burst_max_stocks
+	for s in count:
+		var x := foot.get_center().x + (s - (count - 1) * 0.5) * 20.0
+		_slant(Rect2(x - 7, foot.position.y + 3, 14, 10), MenuTheme.GOLD if s < stocks else INK, INK, 2.0)
 
 
-func _draw_weapon(fighter: FighterState, team: Color, inner_x: float, inner_w: float, rect: Rect2,
-		right_side: bool) -> void:
-	var font := ThemeDB.fallback_font
-	var weapon_w := inner_w * 0.34 - 52.0
-	var weapon_x := inner_x + 52.0 if right_side else inner_x + inner_w - weapon_w - 52.0
-	var weapon_rect := Rect2(weapon_x, rect.position.y + 78, weapon_w, 30)
-	draw_rect(weapon_rect, INK)
-	var weapon_text := weapon_label(fighter)
-	var weapon_size := fit_font_size(font, weapon_text, weapon_rect.size.x - 8.0, 16, 9)
-	_text(font, weapon_rect.get_center() + Vector2(0, weapon_size * 0.38), weapon_text, weapon_size,
-		Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_CENTER, 4)
+## Cyan info chip with the weapon name, then the inventory slots.
+func _draw_weapon(fighter: FighterState, team: Color, inner: Rect2, rect: Rect2, right: bool) -> void:
+	var font := MenuTheme.font()
 	var slots := inventory_slots(fighter)
+	var slots_w := slots.size() * 16.0
+	var weapon_w := inner.size.x * (1.0 - METER_WIDTH) - 18.0 - slots_w
+	var weapon_x := inner.position.x + slots_w + 4.0 if right else inner.end.x - weapon_w - slots_w - 4.0
+	var chip := Rect2(weapon_x, rect.position.y + 86, weapon_w, 30)
+	var style := MenuTheme.box(MenuTheme.CYAN, INK, 3)
+	draw_style_box(style, chip)
+	var weapon_text := weapon_label(fighter)
+	var weapon_size := fit_font_size(font, weapon_text, chip.size.x - 14.0, 18, 12)
+	_text(font, chip.get_center() + Vector2(0, weapon_size * 0.36), weapon_text, weapon_size, INK,
+		HORIZONTAL_ALIGNMENT_CENTER, 0)
 	for slot_index in slots.size():
-		var slot_x := weapon_rect.position.x - 24.0 - slot_index * 22.0 if right_side else weapon_rect.end.x + 6.0 + slot_index * 22.0
-		var slot := Rect2(slot_x, weapon_rect.position.y + 4, 18, 22)
-		draw_rect(slot, INK)
-		if slots[slot_index].filled:
-			draw_rect(slot.grow(-4), team)
-		if slots[slot_index].active:
-			draw_rect(slot, Color.WHITE, false, 2.0)
+		var slot_x := chip.position.x - 16.0 - slot_index * 16.0 if right else chip.end.x + 6.0 + slot_index * 16.0
+		var slot := Rect2(slot_x, chip.position.y + 5, 11, 20)
+		_slant(slot, team if slots[slot_index].filled else INK,
+			MenuTheme.GOLD if slots[slot_index].active else INK, 3.0)
 
 
-## Small plate: team stripe, name (plus the held weapon), win pips, health and ki.
+## Health: ink track, chip trail (white just after a hit), recoverable grey, then
+## health in the team colour with a gloss line; pulses below LOW_HEALTH.
+func _health_bar(index: int, fighter: FighterState, team: Color, bar: Rect2, from_right: bool) -> void:
+	var health := health_fraction(fighter)
+	var low := health > 0.0 and health <= LOW_HEALTH
+	var pulse := low_health_pulse(_clock) if low else 0.0
+	_slant(bar.grow(BORDER * 0.5), INK)
+	var flashing := index < _flash.size() and _flash[index] > 0.0
+	_slant_fill(bar, trail_of(index) if index < _trail.size() else health, Color.WHITE if flashing else CHIP, from_right)
+	_slant_fill(bar, minf(health + grey_fraction(fighter), 1.0), GREY, from_right)
+	var fill := team.lightened(0.12 + 0.45 * pulse)
+	_slant_fill(bar, health, fill, from_right)
+	_slant_fill(Rect2(bar.position + Vector2(0, 4), Vector2(bar.size.x, 5)), health, HEALTH_GLOSS, from_right)
+	_slant_outline(bar.grow(BORDER * 0.5), MenuTheme.HOT.lerp(INK, 1.0 - pulse) if low else INK, BORDER)
+
+
+## Small plate: skewed panel, team stripe, name (plus the held weapon), win
+## pips, health and ki.
 func _draw_compact_plate(index: int, rect: Rect2) -> void:
 	var fighter := sim.fighters[index]
-	var team := team_colors[index] if index < team_colors.size() else Color.WHITE
-	var font := ThemeDB.fallback_font
+	var team := _team_of(index)
+	var font := MenuTheme.font()
 	var faded := fighter.is_knocked_out()
-	draw_rect(rect, Color(PANEL, PANEL.a * (0.6 if faded else 1.0)))
-	draw_rect(Rect2(rect.position, Vector2(8, rect.size.y)), team)
-	var inner_x := rect.position.x + 18.0
-	var inner_w := rect.size.x - 30.0
+	var panel := Rect2(rect.position.x + 8, rect.position.y, rect.size.x - 16, rect.size.y)
+	draw_style_box(MenuTheme.box(Color(PANEL, PANEL.a * (0.55 if faded else 1.0)), INK, 3), panel)
+	_slant(Rect2(rect.position.x + 14, rect.position.y + 6, 10, rect.size.y - 12), team)
+	var inner_x := rect.position.x + 34.0
+	var inner_w := rect.size.x - 56.0
 	var label := _name_of(index)
-	var name_size := fit_font_size(font, label, inner_w * 0.6, 20, 12)
-	_text(font, Vector2(inner_x, rect.position.y + 22), label, name_size, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 4)
+	var name_size := fit_font_size(font, label, inner_w * 0.58, 21, 12)
+	_text(font, Vector2(inner_x, rect.position.y + 25), label, name_size,
+		MenuTheme.DISABLED if faded else MenuTheme.TEXT, HORIZONTAL_ALIGNMENT_LEFT, 6)
 	if shows_weapon_box(fighter):
 		var weapon_text := weapon_label(fighter)
-		var weapon_size := fit_font_size(font, weapon_text, inner_w * 0.38 - 50.0, 13, 9)
-		_text(font, Vector2(inner_x + inner_w - 52.0, rect.position.y + 20), weapon_text, weapon_size,
-			Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, 3)
+		var weapon_size := fit_font_size(font, weapon_text, inner_w * 0.42 - 54.0, 14, 9)
+		_text(font, Vector2(inner_x + inner_w - 54.0, rect.position.y + 23), weapon_text, weapon_size,
+			MenuTheme.CYAN, HORIZONTAL_ALIGNMENT_RIGHT, 4)
 	for p in MatchFlow.WINS_NEEDED:
 		var won := flow != null and index < flow.wins.size() and p < flow.wins[index]
-		var centre := Vector2(inner_x + inner_w - 6.0 - p * 16.0, rect.position.y + 15)
-		draw_circle(centre, 5, BANNER if won else INK)
-		draw_arc(centre, 5, 0, TAU, 12, Color(1, 1, 1, 0.6), 1.0, true)
-	var bar := Rect2(inner_x, rect.position.y + 30, inner_w, 14)
-	draw_rect(bar, INK)
-	var health := health_fraction(fighter)
-	_bar(bar, trail_of(index) if index < _trail.size() else health, CHIP, false)
-	_bar(bar, minf(health + grey_fraction(fighter), 1.0), GREY, false)
-	_bar(bar, health, HEALTH.lerp(team, 0.15), false)
-	var ki_rect := Rect2(inner_x, rect.position.y + 49, inner_w, 5)
-	draw_rect(ki_rect, INK)
-	_bar(ki_rect, ki_fraction(fighter, sim.meter_tuning), KI, false)
+		_slant(Rect2(inner_x + inner_w - 14.0 - p * 20.0, rect.position.y + 9, 14, 14),
+			MenuTheme.GOLD if won else INK, INK, 2.0)
+	_health_bar(index, fighter, team, Rect2(inner_x, rect.position.y + 32, inner_w, 13), false)
+	var ki_rect := Rect2(inner_x, rect.position.y + 50, inner_w * 0.7, 5)
+	_slant(ki_rect, INK)
+	_slant_fill(ki_rect, ki_fraction(fighter, sim.meter_tuning), KI, false)
 
 
-func _draw_pips(index: int, at: Vector2) -> void:
-	for p in MatchFlow.WINS_NEEDED:
-		var won := flow != null and index < flow.wins.size() and p < flow.wins[index]
-		var centre := at + Vector2(p * 22 + 8, 0)
-		draw_circle(centre, 8, BANNER if won else INK)
-		draw_arc(centre, 8, 0, TAU, 16, Color(1, 1, 1, 0.6), 1.5, true)
-
-
+## Round clock: a skewed navy chip, gold-bordered; hot and pulsing in the last 10 s.
 func _draw_clock() -> void:
-	var font := ThemeDB.fallback_font
-	var box := Rect2(DESIGN.x / 2 - 60, MARGIN, 120, 84)
-	draw_rect(box, PANEL)
+	var font := MenuTheme.font()
+	var box := Rect2(DESIGN.x / 2 - CLOCK_SIZE.x / 2, MARGIN, CLOCK_SIZE.x, CLOCK_SIZE.y)
 	var seconds := flow.seconds_left()
-	_text(font, Vector2(DESIGN.x / 2, MARGIN + 62), str(seconds), 56,
-		Color.WHITE if seconds > 10 else CHIP, HORIZONTAL_ALIGNMENT_CENTER)
+	var urgent := seconds <= 10 and flow.phase == MatchFlow.Phase.FIGHT
+	var pulse := low_health_pulse(_clock) if urgent else 0.0
+	draw_style_box(MenuTheme.box(PANEL, MenuTheme.HOT if urgent else INK, int(BORDER)), box)
+	_slant(Rect2(box.position.x + 10, box.end.y - 10, box.size.x - 20, 5), MenuTheme.HOT if urgent else MenuTheme.GOLD)
+	_text(font, Vector2(DESIGN.x / 2 + 3, MARGIN + 62), str(seconds), 58,
+		MenuTheme.TEXT.lerp(MenuTheme.HOT, 0.6 + 0.4 * pulse) if urgent else MenuTheme.TEXT,
+		HORIZONTAL_ALIGNMENT_CENTER, 10)
 
 
-func _draw_banner() -> void:
+## Round, count, FIGHT!, K.O.!: the menu header type (display font, heavy ink
+## outline) on a skewed ink band with a hot-orange underline, popping in.
+func _draw_banner(offset: Vector2, scale_factor: float) -> void:
 	var banner := flow.banner(names)
 	if banner.title == "":
 		return
-	var font := ThemeDB.fallback_font
+	var font := MenuTheme.font()
 	# Upper third of the real screen (in design space; the design is pinned to
 	# the top), clear of the fighters, who sit around the middle: media-1.9's
 	# centred K.O.! hid the fall.
 	var centre := banner_position(size)
-	_text(font, centre, banner.title, 132, BANNER, HORIZONTAL_ALIGNMENT_CENTER, 18)
+	var pop := banner_pop(_banner_age)
+	draw_set_transform(offset + centre * scale_factor, 0.0, Vector2.ONE * scale_factor * pop)
+	var width := font.get_string_size(banner.title, HORIZONTAL_ALIGNMENT_LEFT, -1, BANNER_SIZE).x
+	var band := Rect2(-width / 2.0 - 70.0, -BANNER_SIZE * 0.86, width + 140.0, BANNER_SIZE * 1.04)
+	_slant(band, Color(MenuTheme.PANEL, 0.86), INK, 5.0)
+	_slant(Rect2(band.position.x + 30, band.end.y - 4, band.size.x - 60, 10), MenuTheme.HOT, INK, 3.0)
+	_text(font, Vector2(4, 0), banner.title, BANNER_SIZE, banner_color(banner.title), HORIZONTAL_ALIGNMENT_CENTER,
+		BANNER_OUTLINE)
 	if banner.subtitle != "":
-		_text(font, centre + Vector2(0, 70), banner.subtitle, 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10)
+		_text(font, Vector2(0, 74), banner.subtitle, 40, MenuTheme.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 10)
+	draw_set_transform(offset, 0.0, Vector2.ONE * scale_factor)
 
 
-func _bar(rect: Rect2, fraction: float, color: Color, from_right: bool) -> void:
+## A parallelogram leaning like the menus' panels (top edge to the right).
+func _slant(rect: Rect2, color: Color, border := Color.TRANSPARENT, border_width := 0.0) -> void:
+	var points := slant_points(rect)
+	draw_colored_polygon(points, color)
+	if border_width > 0.0:
+		_slant_outline(rect, border, border_width)
+	else:
+		# A hairline in the fill colour smooths the slanted edges.
+		points.append(points[0])
+		draw_polyline(points, color, 1.0, true)
+
+
+func _slant_outline(rect: Rect2, color: Color, width: float) -> void:
+	var points := slant_points(rect)
+	points.append(points[0])
+	draw_polyline(points, color, width, true)
+
+
+## Fills fraction of a slanted bar from its left (or right) end.
+func _slant_fill(rect: Rect2, fraction: float, color: Color, from_right: bool) -> void:
 	var width := rect.size.x * clampf(fraction, 0.0, 1.0)
-	if width <= 0.0:
+	if width <= 0.5:
 		return
 	var x := rect.end.x - width if from_right else rect.position.x
-	draw_rect(Rect2(x, rect.position.y, width, rect.size.y), color)
+	_slant(Rect2(x, rect.position.y, width, rect.size.y), color)
+
+
+## rect (given for a left-side plate) mirrored inside plate for right-side plates.
+func _mirror(plate: Rect2, rect: Rect2, right: bool) -> Rect2:
+	if not right:
+		return rect
+	return Rect2(Vector2(plate.position.x + plate.end.x - rect.end.x, rect.position.y), rect.size)
 
 
 func _text(font: Font, at: Vector2, text: String, font_size: int, color: Color,
@@ -250,8 +353,38 @@ func _text(font: Font, at: Vector2, text: String, font_size: int, color: Color,
 		x -= width / 2.0
 	elif align == HORIZONTAL_ALIGNMENT_RIGHT:
 		x -= width
-	draw_string_outline(font, Vector2(x, at.y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline, INK)
+	if outline > 0:
+		draw_string_outline(font, Vector2(x, at.y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline, INK)
 	draw_string(font, Vector2(x, at.y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+
+
+## Corners of a parallelogram with the menus' skew, centred on rect.
+static func slant_points(rect: Rect2) -> PackedVector2Array:
+	var lean := MenuTheme.SKEW * rect.size.y * 0.5
+	return PackedVector2Array([
+		Vector2(rect.position.x + lean, rect.position.y), Vector2(rect.end.x + lean, rect.position.y),
+		Vector2(rect.end.x - lean, rect.end.y), Vector2(rect.position.x - lean, rect.end.y),
+	])
+
+
+## 0..1 pulse for low health and the last seconds on the clock.
+static func low_health_pulse(seconds: float) -> float:
+	return 0.5 + 0.5 * sin(seconds * TAU * PULSE_HZ)
+
+
+## Banner scale at age seconds: BANNER_POP easing out to 1.
+static func banner_pop(age: float) -> float:
+	var t := clampf(age / BANNER_POP_SECONDS, 0.0, 1.0)
+	return lerpf(BANNER_POP, 1.0, 1.0 - pow(1.0 - t, 3.0))
+
+
+## Title colour: hot orange for FIGHT!, gold for K.O.!/TIME!, the count and the winner, white otherwise.
+static func banner_color(title: String) -> Color:
+	if title == "FIGHT!":
+		return MenuTheme.HOT
+	if title.begins_with("ROUND"):
+		return MenuTheme.TEXT
+	return MenuTheme.GOLD
 
 
 # --- Layout and values (static, tested) ---
