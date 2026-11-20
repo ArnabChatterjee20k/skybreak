@@ -174,7 +174,7 @@ func _build_fighters() -> void:
 ## (or hovering where the zone spawns in the air).
 func spawn_positions() -> Array[Vector3]:
 	var data := world.zone(zone_id)
-	var points := data.spawn_points
+	var points := data.fighter_spawns()
 	var entries: Array = config.fighters
 	var team_ids: Array[int] = []
 	for i in entries.size():

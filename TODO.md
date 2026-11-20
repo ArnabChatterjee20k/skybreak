@@ -24,6 +24,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   visual tiles (6-7%) because the duel drop's telegraph pillar is now in frame; owner to decide
   whether to re-bless them.
 
+- T-WEB2 [desktop] Web crash `RuntimeError: remainder by zero` on FIGHT: `ZoneMatch.spawn_positions`
+  took `side % points.size()` with no spawn points (Godot 4.7.2's binary export conversion empties
+  packed arrays; #112 already keeps text resources, so main is fine). `ZoneData.fighter_spawns`
+  now falls back to two points across the zone centre, used by `ZoneMatch` and `WorldMap`.
 - T-KI1 [desktop] Ki blasts and beams as sim attacks (GAME_DESIGN §5.8): `KiRules` + per-legend
   `KiKit` (`game/combat/ki/`): tap Q blast (4 ki), hold Q charged blast (20 ki, not dash-soaked),
   beam special on 1 (40-60 ki, 24-30 f tell, aim locks 12 f before firing, +30 f whiff recovery),
