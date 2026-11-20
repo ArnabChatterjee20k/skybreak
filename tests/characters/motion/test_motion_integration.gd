@@ -377,3 +377,34 @@ func test_four_fighters_of_layers_fit_the_cpu_budget() -> void:
 	var ms := total / 1000.0 / frames
 	gut.p("MotionLayers + foot IK, 4 fighters (one of each legend): %.3f ms per frame" % ms)
 	assert_lt(ms, MAX_LAYERS_MS)
+
+
+func test_four_armed_fighters_of_layers_fit_the_cpu_budget() -> void:
+	var kinds: Array[Weapon.Kind] = [Weapon.Kind.STORM_BLADE, Weapon.Kind.KI_BOW, Weapon.Kind.SKY_LANCE,
+		Weapon.Kind.HEARTSTRING_BOW]
+	var views: Array[CharacterView] = []
+	var fighters: Array[FighterState] = []
+	for i in 4:
+		views.append(_view(SCENES.keys()[i]))
+		var f := FighterState.new()
+		f.weapons[0] = kinds[i]
+		f.active_slot = 0
+		f.enter_state(FighterState.State.MOVING)
+		f.velocity = Vector3(3, 0, -7)
+		fighters.append(f)
+		views[i].apply_state(f, DT)
+	var frames := 300
+	var total := 0
+	for frame in frames:
+		for i in 4:
+			fighters[i].state_ticks += 1
+			# Weapon holds, guard to hit reaction and back, so the clearance and the pose blends run.
+			fighters[i].state = FighterState.State.HITSTUN if (frame / 30) % 2 == 1 else FighterState.State.MOVING
+			views[i].apply_state(fighters[i], DT)
+		var start := Time.get_ticks_usec()
+		for view in views:
+			_layer(view)
+		total += Time.get_ticks_usec() - start
+	var ms := total / 1000.0 / frames
+	gut.p("MotionLayers + weapon holds, 4 armed fighters: %.3f ms per frame" % ms)
+	assert_lt(ms, MAX_LAYERS_MS)

@@ -39,9 +39,10 @@ const FLINCH_BLOCK := 0.5
 const FLINCH_HIT := 1.0
 const FLINCH_KNOCKBACK := 1.8
 const FLINCH_KO := 2.4
-const TWO_HANDED: Array[Weapon.Kind] = [Weapon.Kind.SKY_LANCE, Weapon.Kind.TITAN_HAMMER,
-	Weapon.Kind.EMBER_SCYTHE, Weapon.Kind.STORM_REPEATER, Weapon.Kind.SCATTER_CANNON]
-const BOWS: Array[Weapon.Kind] = [Weapon.Kind.KI_BOW, Weapon.Kind.HEARTSTRING_BOW]
+## How much of a one-hand attack follows the swing arc rather than the clip.
+const SWING_WEIGHT := 0.85
+## How much of the hold a weapon keeps during hit reactions.
+const REACTION_HOLD_WEIGHT := 0.85
 ## Height above its standing height (capsule centre over the floor under it, which zones raise
 ## and slope) at which a fighter counts as airborne.
 const AIRBORNE_MARGIN := 0.05
@@ -69,8 +70,11 @@ var _state_ticks := 0
 var _move_id := &""
 var _move_tick := -1
 var _tick_seconds := 0.0
-## Live realism layer (null without clips.motion).
+## Live layers (without clips.motion only the weapon-arm and foot IK stages run).
 var layers: MotionLayers
+## This legend's body capsules (T-D30), measured from its rest mesh.
+var body: BodyCapsules
+var _weapon_kind := Weapon.Kind.NONE
 var _motion: MotionLibrary
 var _motion_windows: Dictionary[StringName, Vector2] = {}
 var _motion_speeds := {}
@@ -107,6 +111,8 @@ func _ready() -> void:
 		_meshes.append(node as MeshInstance3D)
 	if clips.motion != null:
 		_setup_motion()
+	else:
+		_setup_layers(false)
 	_play(clips.clip_for_state(&"IDLE"), 0.0)
 
 
@@ -122,13 +128,22 @@ func _setup_motion() -> void:
 		_move_overrides[id] = StringName("fit_%s" % id)
 		_motion_windows[_move_overrides[id]] = Vector2(move.startup_ticks, move.recovery_start_tick()) * TICK_SECONDS
 	_player.add_animation_library(MOTION_LIBRARY_NAME, _motion)
+	_setup_layers(true)
+
+
+## The live layers; without mocap only the weapon-arm and foot IK stages run.
+func _setup_layers(body_layers: bool) -> void:
+	var skeleton := model.get_node("%GeneralSkeleton") as Skeleton3D
 	profile = clips.motion_profile if clips.motion_profile != null else MotionProfile.new()
 	layers = MotionLayers.new()
 	layers.name = "MotionLayers"
 	layers.apply_profile(profile)
+	layers.body_layers = body_layers
 	skeleton.add_child(layers)
 	# First modifier, so the scarf and other secondary chains follow the layered body.
 	skeleton.move_child(layers, 0)
+	body = BodyCapsules.measure(skeleton, _meshes)
+	layers.body = body
 	for child in skeleton.get_children():
 		if child != layers and child is SkeletonModifier3D and child.has_method(&"advance_frame"):
 			_frame_modifiers.append(child)
@@ -553,25 +568,103 @@ func _ground_under(at: Vector3, fighter: FighterState) -> float:
 	return clampf(under - (fighter.stand_height - _ground_height), -LEDGE_HEIGHT, LEDGE_HEIGHT) / scale
 
 
-## Per-weapon-class arm overlay: two-handed hold, bow draw, pistol aim.
+## Per-weapon-class hold (T-D30): one-hand guard, two-hand heavies across the body, pistol aim,
+## braced guns at the hip, bow draw while shooting; the clearance solver runs whenever armed.
 func _update_arms(fighter: FighterState) -> void:
 	var kind := fighter.held_weapon()
 	var attacking := fighter.state == FighterState.State.ATTACKING
 	var reacting := fighter.state in [FighterState.State.HITSTUN, FighterState.State.KNOCKDOWN,
-		FighterState.State.GRABBED, FighterState.State.GUARD_BROKEN]
+		FighterState.State.GRABBED, FighterState.State.GUARD_BROKEN, FighterState.State.KO_FALL,
+		FighterState.State.KO_DOWN]
+	_hold_weapon(kind)
 	layers.arm_pose = MotionLayers.ArmPose.NONE
 	layers.arm_weight = 0.0
-	if reacting or kind == Weapon.Kind.NONE:
+	if kind == Weapon.Kind.NONE:
 		return
-	if kind in TWO_HANDED:
-		layers.arm_pose = MotionLayers.ArmPose.TWO_HANDED
-		layers.arm_weight = 0.85
-	elif kind in BOWS and attacking:
-		layers.arm_pose = MotionLayers.ArmPose.BOW_DRAW
+	var hold := WeaponGrip.hold_of(kind)
+	# Held in one hand with the other free: blades, chakram, pistol, bows.
+	var one_hand := WeaponGrip.hands_of(kind).size() == 1 and WeaponGrip.off_hand_of(kind) == Vector3.INF
+	if one_hand and fighter.state == FighterState.State.HITSTUN:
+		# A fixed tuck, eased in: the weapon is already clear of the body while the clip flails.
+		layers.arm_pose = MotionLayers.ArmPose.BOW_TUCK if hold == WeaponGrip.Hold.BOW else MotionLayers.ArmPose.TUCK
 		layers.arm_weight = 1.0
-	elif kind == Weapon.Kind.ARC_REVOLVER and attacking:
-		layers.arm_pose = MotionLayers.ArmPose.PISTOL_AIM
+		return
+	if one_hand and layers.flying and not attacking:
+		layers.arm_pose = MotionLayers.ArmPose.BOW_FLY if hold == WeaponGrip.Hold.BOW else MotionLayers.ArmPose.FLY
 		layers.arm_weight = 1.0
+		return
+	if hold == WeaponGrip.Hold.HEAVY and layers.flying and not attacking:
+		# Flying with a heavy: carried at the side in one hand, the off hand free.
+		layers.arm_pose = MotionLayers.ArmPose.SIDE
+		layers.arm_weight = 1.0
+		return
+	if reacting:
+		# Hit reactions keep part of the class's hold, so a flinch never folds the weapon into the body.
+		match hold:
+			WeaponGrip.Hold.ONE_HAND:
+				layers.arm_pose = MotionLayers.ArmPose.GUARD
+			WeaponGrip.Hold.HEAVY:
+				layers.arm_pose = MotionLayers.ArmPose.SIDE if profile.heavy_at_side else MotionLayers.ArmPose.TWO_HANDED
+			WeaponGrip.Hold.BRACED:
+				layers.arm_pose = MotionLayers.ArmPose.BRACED
+			WeaponGrip.Hold.BOW:
+				layers.arm_pose = MotionLayers.ArmPose.BOW_LOW
+			WeaponGrip.Hold.PISTOL:
+				layers.arm_pose = MotionLayers.ArmPose.PISTOL_LOW
+		layers.arm_weight = REACTION_HOLD_WEIGHT if layers.arm_pose != MotionLayers.ArmPose.NONE else 0.0
+		return
+	match hold:
+		WeaponGrip.Hold.ONE_HAND:
+			if attacking:
+				# The swing arc: held out in front of the shoulder, sweeping as the attack runs.
+				layers.arm_pose = MotionLayers.ArmPose.SWING
+				layers.arm_weight = SWING_WEIGHT
+				layers.arm_phase = float(fighter.move_tick) / float(maxi(fighter.move_total_ticks(), 1)) \
+					if fighter.move != null else 0.0
+			else:
+				layers.arm_pose = MotionLayers.ArmPose.GUARD
+				layers.arm_weight = 0.8
+		WeaponGrip.Hold.HEAVY:
+			layers.arm_pose = MotionLayers.ArmPose.SIDE if profile.heavy_at_side and not attacking \
+				else MotionLayers.ArmPose.TWO_HANDED
+			layers.arm_weight = 0.5 if attacking else 0.9
+		WeaponGrip.Hold.PISTOL:
+			layers.arm_pose = MotionLayers.ArmPose.PISTOL_AIM if attacking else MotionLayers.ArmPose.PISTOL_LOW
+			layers.arm_weight = 1.0 if attacking else 0.8
+		WeaponGrip.Hold.BRACED:
+			layers.arm_pose = MotionLayers.ArmPose.BRACED
+			layers.arm_weight = 1.0
+		WeaponGrip.Hold.BOW:
+			if attacking:
+				layers.arm_pose = MotionLayers.ArmPose.BOW_DRAW
+				layers.arm_weight = 1.0
+			else:
+				layers.arm_pose = MotionLayers.ArmPose.BOW_LOW
+				layers.arm_weight = 0.9
+
+
+## Tells the layers which weapon is in hand: its grip, part boxes and off-hand point.
+func _hold_weapon(kind: Weapon.Kind) -> void:
+	if kind == _weapon_kind:
+		return
+	_weapon_kind = kind
+	layers.new_weapon()
+	if kind == Weapon.Kind.NONE:
+		# Empty hands: the arm eases out of the last hold (arm_pose NONE); nothing left to clear.
+		layers.weapon_boxes = [] as Array[Transform3D]
+		layers.weapon_drawn_boxes = [] as Array[Transform3D]
+		return
+	var skeleton := model.get_node("%GeneralSkeleton") as Skeleton3D
+	var hands := WeaponGrip.hands_of(kind)
+	layers.weapon_hand = hands[0] if hands.size() == 1 else &""
+	layers.weapon_boxes = WeaponGrip.clearance_boxes(kind) if hands.size() == 1 else ([] as Array[Transform3D])
+	var bow := hands.size() == 1 and WeaponGrip.clearance_boxes(kind).size() != WeaponGrip.model_boxes(kind).size()
+	layers.weapon_drawn_boxes = WeaponGrip.model_boxes(kind) if bow else ([] as Array[Transform3D])
+	layers.weapon_off_hand = WeaponGrip.off_hand_of(kind)
+	if hands.size() == 1:
+		layers.weapon_grip = WeaponGrip.grip_transform(skeleton, kind, hands[0])
+		var off := WeaponGrip.LEFT_HAND if hands[0] == WeaponGrip.RIGHT_HAND else WeaponGrip.RIGHT_HAND
+		layers.off_hand_socket = WeaponGrip.hand_socket(skeleton, off)
 
 
 func _loops(clip: StringName) -> bool:
