@@ -54,3 +54,22 @@ Rushes now stop 1.1 m from their target. Replaying the goldens blessed above:
 | pickups_heartbloom | none | | |
 
 Only goldens with a Razor Waltz (or a Comet Drive) that ran on past its target drift, on that move's tick. Re-blessed. `pickups_heartbloom` moved from seed 23 to 24: with the new Vexa AI, seed 23 no longer picks anything up in 1800 ticks (the bless tool asks for a spec change).
+
+## After moving Shade Flicker's landing beside the target
+
+The blink now lands 1.6 m round the target at 80 degrees (QA camera_on_screen: straight behind put Vexa at the player's camera). Replaying the goldens blessed above:
+
+| golden | first drift (tick) | events on that tick | special state then |
+|---|---|---|---|
+| duel_kael_mirror | none | | |
+| duel_vexa_vs_lyra | 34 | SPECIAL_BLINK(f0 vexa_shade_flicker) | f0 vexa momentum 0 decoy 0 used 1 |
+| duel_brann_vs_kael | none | | |
+| duel_lyra_vs_brann_airborne | none | | |
+| duel_low_level_mirror | none | | |
+| combos_level5 | none | | |
+| ffa4_all_legends | 885 | SPECIAL_BLINK(f1 vexa_shade_flicker) | f0 kael momentum 2 decoy 0 used 1; f1 vexa momentum 0 decoy 0 used 2 |
+| teams_2v2 | 36 | SPECIAL_BLINK(f2 vexa_shade_flicker) | f0 kael momentum 0 decoy 0 used 0; f2 vexa momentum 0 decoy 0 used 1 |
+| ko_and_second_round | none | | |
+| pickups_heartbloom | 172 | SPECIAL_BLINK(f0 vexa_shade_flicker) | f0 vexa momentum 0 decoy 0 used 1 |
+
+Every first drift is the first Shade Flicker blink. Re-blessed.

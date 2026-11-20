@@ -107,6 +107,9 @@ static func begin(sim: CombatSim, index: int, special: SpecialMove, move: MoveDa
 				reach = clampf(gap.length() - 1.0, 0.0, special.travel_distance)
 			state.leap_from = fighter.position
 			state.leap_to = fighter.position + forward * reach
+		SpecialMove.Effect.BLINK:
+			var across := Vector3(wish.x, 0.0, wish.z).dot(forward.cross(Vector3.UP))
+			state.blink_side = -1 if across < -_DEADZONE else 1
 		SpecialMove.Effect.DECOY_STEP:
 			var planar := Vector3(wish.x, 0.0, wish.z)
 			state.travel_direction = -forward if planar.length() < _DEADZONE else planar.normalized()
@@ -173,7 +176,10 @@ static func _blink(sim: CombatSim, index: int, special: SpecialMove) -> void:
 		var gap := other.position - fighter.position
 		var planar := Vector3(gap.x, 0.0, gap.z)
 		if planar.length() <= special.blink_range:
-			destination = other.position + forward * special.blink_behind
+			var right := forward.cross(Vector3.UP)
+			var around := forward * DetMath.cos(special.blink_angle) \
+				+ right * (DetMath.sin(special.blink_angle) * fighter.specials.blink_side)
+			destination = other.position + around * special.blink_behind
 			destination.y = other.position.y
 	fighter.position = destination
 	sim._clamp_to_arena(fighter)

@@ -103,7 +103,10 @@ func _vexa() -> SpecialKit:
 	flicker.effect = _FX.BLINK
 	flicker.blink_tick = 10
 	flicker.blink_range = 8.0
-	flicker.blink_behind = 1.3
+	flicker.blink_behind = 1.6
+	# 80 degrees round: past the defender's guard line (a cross-up), but beside rather than
+	# straight behind, so the player's own camera keeps her in view.
+	flicker.blink_angle = deg_to_rad(80.0)
 	flicker.move = _move("vexa_shade_flicker", "Shade Flicker", 14, 3, 18, Vector3(0, 0.1, -0.9), 0.8,
 		600, 26, 12, 7, _KB.NONE, Vector3(0, 0, -3), 10, 30, 14, 30)
 	flicker.move.invincible_start_tick = 6

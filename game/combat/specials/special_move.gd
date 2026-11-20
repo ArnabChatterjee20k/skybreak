@@ -62,8 +62,11 @@ enum AiRole {
 @export var blink_tick: int = 0
 ## Furthest the blink reaches; a target farther away is approached by this much instead.
 @export var blink_range: float = 0.0
-## Distance behind the target the blink lands.
+## Distance from the target the blink lands.
 @export var blink_behind: float = 1.3
+## Where round the target, radians from straight behind it (seen from the start) toward the
+## side picked with A/D (right when neutral). Past 0 keeps the cross-up in the camera's view.
+@export var blink_angle: float = 0.0
 
 @export_group("Look and sound")
 ## AudioDirector cue played on the tell (the first tick).

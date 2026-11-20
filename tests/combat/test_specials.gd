@@ -267,6 +267,19 @@ func test_shade_flicker_reappears_behind_the_target_and_hits() -> void:
 	assert_eq(_hits_by(&"vexa_shade_flicker").size(), 1)
 
 
+func test_shade_flicker_lands_beside_and_past_the_guard_on_the_side_held() -> void:
+	for side in [1, -1]:
+		_start(VEXA, 5.0)
+		_idle(1)
+		var facing := DetMath.forward(_them().facing_yaw)
+		_tick(SP1, 0, 0, Vector2(side, 0))
+		_idle(10)
+		var offset := _me().position - _them().position
+		assert_lt(offset.dot(facing), 0.0, "past the defender's front: a cross-up")
+		assert_gt(absf(offset.x), 1.2, "beside the target, not straight behind it")
+		assert_eq(signf(offset.x), float(side), "A/D picks the side")
+
+
 func test_shade_flicker_is_invulnerable_while_vanished() -> void:
 	_start(VEXA, 5.0)
 	_tick(SP1)

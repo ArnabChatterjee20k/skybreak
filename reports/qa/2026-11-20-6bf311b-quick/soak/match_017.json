@@ -1,0 +1,116 @@
+{
+	"hitstops": {
+		"beam": {
+			"14": 1
+		},
+		"breaker": {
+			"7": 4,
+			"8": 1,
+			"10": 2
+		},
+		"breaker+counter": {
+			"11": 2,
+			"14": 1
+		},
+		"charged_blast": {
+			"10": 1
+		},
+		"kael_comet_drive": {
+			"9": 2
+		},
+		"ki_blast": {
+			"4": 4
+		},
+		"light_1": {
+			"3": 5,
+			"4": 5,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 3
+		},
+		"light_2": {
+			"3": 7,
+			"4": 2,
+			"5": 1
+		},
+		"light_3": {
+			"3": 6,
+			"4": 1,
+			"8": 1,
+			"20": 1
+		}
+	},
+	"id": "117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 1,
+		"blasts": 7,
+		"charged": 4,
+		"clashes": 0,
+		"ki_hits": 6,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		3,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 117,
+	"sim_ms_per_tick": 1.33404208333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0110717266798019,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.16754765055873,
+		"foot_slide_cm_per_frame": 0.0444842653342309,
+		"foot_slide_frames": 536,
+		"foot_slide_skipped_frames": 3,
+		"locked_on_screen_share": 0.98015873015873,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.03389541666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 9,
+			"detail": "lowest sole +30.7 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 268,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 268,
+			"worst_value": 0.306939897841517
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +12.5 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 1,
+			"first_tick": 2215,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2215,
+			"worst_value": 0.124885160365977
+		}
+	],
+	"wall_seconds": 17.989,
+	"zone": "frozen_peaks"
+}

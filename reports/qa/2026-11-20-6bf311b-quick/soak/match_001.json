@@ -1,0 +1,95 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 2,
+			"8": 1
+		},
+		"charged_blast": {
+			"10": 4
+		},
+		"kael_comet_drive": {
+			"9": 3,
+			"20": 1
+		},
+		"ki_blast": {
+			"4": 4
+		},
+		"ki_blast+counter": {
+			"8": 1
+		},
+		"launcher": {
+			"8": 3
+		},
+		"light_1": {
+			"3": 7,
+			"4": 8,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 9,
+			"8": 5,
+			"9": 2
+		},
+		"light_2": {
+			"3": 11,
+			"4": 8,
+			"5": 2
+		},
+		"light_3": {
+			"3": 2,
+			"4": 5,
+			"5": 9,
+			"8": 2
+		},
+		"light_4": {
+			"6": 1
+		}
+	},
+	"id": "101:skyhold_ruins:ffa4:kael,vexa,brann,lyra:4235",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 8,
+		"charged": 4,
+		"clashes": 0,
+		"ki_hits": 9,
+		"reflects": 2,
+		"soaks": 1,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		2,
+		3,
+		5
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 101,
+	"sim_ms_per_tick": 2.17192416666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0101986369118094,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"foot_slide_frames": 0,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.964255677039529,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.62526958333333,
+	"violations": [],
+	"wall_seconds": 23.671,
+	"zone": "skyhold_ruins"
+}

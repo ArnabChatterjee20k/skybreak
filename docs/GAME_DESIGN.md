@@ -371,7 +371,7 @@ Keys `1` `2` `3`, all in `game/combat/specials/` (data in `kits/*.tres`, API in 
 
 | Key | Special | Cost | Startup / active / recovery | Damage | What it does | Beats | Loses to |
 |---|---|---|---|---|---|---|---|
-| 1 | **Shade Flicker** | 30 ki | 14 / 3 / 18 | 600 | Sinks into violet smoke (invulnerable f7–13), reappears 1.3 m behind the target (within 8 m) and strikes; +6 on hit links a light | A late-turning or unlocked guard, zoning | A locked guard that turns in time (−8), spot dodge, a fast button on her arrival |
+| 1 | **Shade Flicker** | 30 ki | 14 / 3 / 18 | 600 | Sinks into violet smoke (invulnerable f7–13), reappears 1.6 m round the target, past its guard but to the side (`A`/`D` picks which, so the player's camera keeps her in view; within 8 m), and strikes; +6 on hit links a light | A late-turning or unlocked guard, zoning | A locked guard that turns in time (−8), spot dodge, a fast button on her arrival |
 | 2 | **Mirage Step** | 25 ki | 3 / 10 (slide) / 12 | — (decoy 500) | Slides 4.5 m: `A`/`D` sideways, `W` forward, otherwise back; leaves the afterimage | Committed attacks, rushes, beams aimed at her spot | Tracking attacks and anyone who ignores the decoy |
 | 3 | **Razor Waltz** | 35 ki | 9 / 18 / 20 | 3 × 260 | A spinning three-cut rush; the confirm ender | Cashing out a confirmed string | Block (−13), a jab before it starts |
 

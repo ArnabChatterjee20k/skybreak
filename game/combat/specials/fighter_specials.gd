@@ -8,6 +8,8 @@ var travel_direction: Vector3 = Vector3.ZERO
 ## Where the current LEAP started and where it lands.
 var leap_from: Vector3 = Vector3.ZERO
 var leap_to: Vector3 = Vector3.ZERO
+## BLINK: side of the target it lands on (1 right, -1 left), from A/D at the start.
+var blink_side: int = 1
 ## Kael's Momentum stacks (consecutive landed hits since he was last hit).
 var momentum: int = 0
 ## Vexa's afterimage: ticks left (0 = none) and where it stands.
@@ -24,8 +26,8 @@ var transform_ticks: int = 0
 func state_values() -> Array:
 	if used == 0 and momentum == 0 and decoy_ticks == 0 and transform_ticks == 0:
 		return []
-	return [travel_direction, leap_from, leap_to, momentum, decoy_ticks, decoy_position, decoy_yaw,
-		used, transform_ticks]
+	return [travel_direction, leap_from, leap_to, blink_side, momentum, decoy_ticks, decoy_position,
+		decoy_yaw, used, transform_ticks]
 
 
 func has_decoy() -> bool:
@@ -37,6 +39,7 @@ func reset() -> void:
 	travel_direction = Vector3.ZERO
 	leap_from = Vector3.ZERO
 	leap_to = Vector3.ZERO
+	blink_side = 1
 	momentum = 0
 	decoy_ticks = 0
 	decoy_position = Vector3.ZERO
