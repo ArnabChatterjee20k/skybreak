@@ -188,7 +188,9 @@ static func reflected(projectile: Projectile, from_owner: int) -> void:
 ## True if the target's dash soaks up this tap blast (dash armour, §5.8); spends the ki.
 static func absorbs(sim: CombatSim, target_index: int, projectile: Projectile, at: Vector3) -> bool:
 	var target := sim.fighters[target_index]
-	if projectile.ki != Shot.BLAST or target.state != FighterState.State.DASHING:
+	# Rush and flight-dash armour; a dodge (T-DEF2) evades with its i-frames instead.
+	if projectile.ki != Shot.BLAST or target.state != FighterState.State.DASHING \
+			or target.dash_kind == FighterState.DashKind.DODGE:
 		return false
 	var speed := projectile.velocity.length()
 	if speed < 0.001 or target.dash_direction.dot(-projectile.velocity / speed) < sim.ki_tuning.dash_absorb_facing:
@@ -296,7 +298,8 @@ static func _beam_contacts(sim: CombatSim, beam: KiBeam) -> void:
 			var reach: float = (beam.radius if r == 0 else beam.split_radius) + float(body.radius)
 			var points := CombatSim._closest_points(rays[r][0], rays[r][1], body.start, body.end)
 			if points[0].distance_squared_to(points[1]) <= reach * reach:
-				if not target.is_invincible_to(target.is_upper_body(points[0])):
+				if not target.is_invincible_to(target.is_upper_body(points[0])) \
+						and not DodgeRules.evades(sim, target, beam.move):
 					touched.append({"target": target_index, "points": points, "radius": body.radius,
 						"along": beam.origin.distance_to(points[0])})
 				break

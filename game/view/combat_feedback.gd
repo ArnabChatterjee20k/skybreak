@@ -10,6 +10,9 @@ const SPARK_LIGHT := preload("res://game/view/shaders/vfx/hit_spark_light.tscn")
 const SPARK_HEAVY := preload("res://game/view/shaders/vfx/hit_spark_heavy.tscn")
 const COUNTER := preload("res://game/view/shaders/vfx/counter_hit.tscn")
 const PERFECT_BLOCK := preload("res://game/view/shaders/vfx/perfect_block_flash.tscn")
+const READ_POP := preload("res://game/view/shaders/vfx/read_pop.tscn")
+## Perfect dodge flash: white-blue (T-DEF2).
+const PERFECT_DODGE_COLOR := Color(0.75, 0.9, 1.0)
 const GUARD_BREAK := preload("res://game/view/shaders/vfx/guard_break_shatter.tscn")
 const SHOCKWAVE := preload("res://game/view/shaders/vfx/shockwave.tscn")
 
@@ -96,6 +99,15 @@ static func plan_for(event: Dictionary) -> Dictionary:
 		E.PERFECT_BLOCK:
 			plan.effects = [PERFECT_BLOCK]
 			plan.shake = 0.15
+		E.DODGE:
+			# A small air puff where the dodge pushes off; the afterimage trail is MatchVfx's.
+			plan.effects = [SHOCKWAVE]
+			plan.color = DUST_COLOR
+			plan.scale = 0.3
+		E.PERFECT_DODGE:
+			plan.effects = [PERFECT_BLOCK, READ_POP]
+			plan.color = PERFECT_DODGE_COLOR
+			plan.shake = 0.1
 		E.GUARD_BREAK:
 			plan.effects = [GUARD_BREAK]
 			plan.shake = 0.6

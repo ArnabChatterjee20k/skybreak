@@ -99,6 +99,11 @@ func inputs_for(player_input: FighterInput) -> Array[FighterInput]:
 ## Meter refills, KO protection and the frame meter, after each tick.
 func after_tick() -> void:
 	frame_meter.observe(sim, PLAYER, DUMMY)
+	for event in sim.events:
+		var who: int = event.get("fighter", event.get("target", -1))
+		var dodge_note := InputHistory.dodge_note(event)
+		if who == PLAYER and dodge_note != "":
+			input_history.note(dodge_note)
 	if sim.round_over:
 		reset_positions()
 		return

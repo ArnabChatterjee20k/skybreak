@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="DodgeTuning" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/dodge_tuning.gd" id="1_tuning"]
+
+[resource]
+script = ExtResource("1_tuning")
+directional_startup_ticks = 2
+directional_invuln_ticks = 12
+directional_recovery_ticks = 12
+directional_distance = 4.5
+spot_startup_ticks = 1
+spot_invuln_ticks = 16
+spot_recovery_ticks = 14
+sidestep_arc_degrees = 70.0
+sidestep_min_radius = 3.0
+sidestep_max_arc_degrees = 90.0
+hold_to_dash_tick = 10
+chain_window_ticks = 45
+chain_extra_recovery_ticks = 8
+chain_invuln_loss_ticks = 4
+stale_cooldown_ticks = 90
+air_dodges = 2
+air_refresh_ticks = 120
+perfect_window_ticks = 6
+perfect_recovery_cut_ticks = 6
+perfect_ki = 10
+perfect_ki_cooldown_ticks = 180
+perfect_attacker_freeze_ticks = 6
+tracking_move_ids = Array[StringName]([&"sweep"])
+tracking_turn_degrees_per_tick = 12.0
+recovery_grab_extra_hitstop_ticks = 4
