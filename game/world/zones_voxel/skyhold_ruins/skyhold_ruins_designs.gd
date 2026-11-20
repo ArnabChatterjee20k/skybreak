@@ -7,7 +7,7 @@ extends RefCounted
 ## the cell for coarser LOD tiers.
 
 ## Bump after changing any design (the meshes are cached on disk).
-const VERSION := 5
+const VERSION := 6
 const T0 := VoxelZone.T0
 const T1 := VoxelZone.T1
 const T2 := VoxelZone.T2
@@ -44,8 +44,8 @@ func color(mat: int, p: Vector3, c: Vector3i, n: Vector3, occlusion: float, expo
 		if mat == Mat.BRONZE:
 			green *= 0.35
 		var col := COLORS[Mat.BRONZE].lerp(COLORS[Mat.VERDIGRIS], green)
-		col = col.lerp(col.lightened(0.25), exposure * 0.5)
-		col *= 0.94 + 0.12 * VoxelSdf.hash3(c, 43)
+		col = col.lerp(col.lightened(0.12), exposure * 0.4)
+		col *= 0.9 + 0.12 * VoxelSdf.hash3(c, 43)
 		col.a = 1.0
 		return col
 	if mat == Mat.FLAME:
@@ -431,42 +431,50 @@ func robed_statue(arm: bool, plinth: bool) -> ArrayMesh:
 		if plinth:
 			_plinth(g, Vector3(1.05, 0.7, 0.85), bounds)
 		var b := Vector3(0, base, 0)
-		# Robe: a tapered block with planar fold ridges at the front.
-		g.paint(bounds, func(p: Vector3) -> float:
+		# Robe: a slim tapered block flaring at the hem, vertical folds at the front.
+		var robe := func(p: Vector3) -> float:
 			var t := clampf((p.y - base) / 2.2, 0.0, 1.0)
-			var hx := lerpf(0.62, 0.42, t)
-			var hz := lerpf(0.46, 0.32, t)
-			var fold := 0.05 * absf(sin((p.x) * 9.0)) if p.z > 0.0 else 0.0
-			return VoxelSdf.box(p, b + Vector3(0, 1.1, 0), Vector3(hx + fold, 1.1, hz + fold * 0.6)), Mat.VERDIGRIS)
+			return VoxelSdf.box(p, b + Vector3(0, 1.1, 0), Vector3(lerpf(0.5, 0.34, t), 1.1, lerpf(0.4, 0.27, t)))
+		g.paint(bounds, robe, Mat.VERDIGRIS)
+		_groove(g, AABB(b + Vector3(-0.7, 0.2, 0.0), Vector3(1.4, 1.9, 0.6)), robe, func(p: Vector3) -> bool:
+			return p.z > 0.15 and fposmod(p.x * 6.0 + 0.5, 1.0) < 0.22, g.cell * 1.05)
 		g.paint(bounds, func(p: Vector3) -> float:
-			return VoxelSdf.box(p, b + Vector3(0, 2.55, 0), Vector3(0.5, 0.38, 0.34)), Mat.VERDIGRIS)
+			return VoxelSdf.box(p, b + Vector3(0, 1.72, 0), Vector3(0.4, 0.06, 0.32)), Mat.BRONZE)
+		# Chest, shoulders with a cloak falling behind.
 		g.paint(bounds, func(p: Vector3) -> float:
-			return VoxelSdf.box(p, b + Vector3(0, 2.9, -0.02), Vector3(0.6, 0.12, 0.36)), Mat.VERDIGRIS)
-		# Head and hood.
+			return VoxelSdf.box(p, b + Vector3(0, 2.5, 0), Vector3(0.36, 0.34, 0.26)), Mat.VERDIGRIS)
 		g.paint(bounds, func(p: Vector3) -> float:
-			return VoxelSdf.ellipsoid(p, b + Vector3(0, 3.32, 0.04), Vector3(0.24, 0.29, 0.26)), Mat.VERDIGRIS)
+			return VoxelSdf.box(p, b + Vector3(0, 2.84, -0.02), Vector3(0.48, 0.1, 0.28)), Mat.VERDIGRIS)
 		g.paint(bounds, func(p: Vector3) -> float:
-			return maxf(VoxelSdf.ellipsoid(p, b + Vector3(0, 3.38, -0.04), Vector3(0.3, 0.34, 0.31)), -(p.z - 0.12 - b.z)), Mat.BRONZE)
-		# Left arm down, holding a book against the hip.
+			var t := clampf((b.y + 2.85 - p.y) / 2.6, 0.0, 1.0)
+			return VoxelSdf.box(p, b + Vector3(0, 1.55, -0.3 - t * 0.12), Vector3(0.44 + t * 0.12, 1.3, 0.05)), Mat.BRONZE)
+		# Head with a hood.
 		g.paint(bounds, func(p: Vector3) -> float:
-			return VoxelSdf.capsule(p, b + Vector3(-0.56, 2.8, 0), b + Vector3(-0.6, 1.9, 0.12), 0.15, 0.13), Mat.VERDIGRIS)
+			return VoxelSdf.ellipsoid(p, b + Vector3(0, 3.24, 0.05), Vector3(0.25, 0.3, 0.26)), Mat.VERDIGRIS)
 		g.paint(bounds, func(p: Vector3) -> float:
-			return VoxelSdf.box(p, b + Vector3(-0.5, 1.8, 0.3), Vector3(0.1, 0.32, 0.25)), Mat.BRONZE)
+			return maxf(VoxelSdf.ellipsoid(p, b + Vector3(0, 3.3, -0.03), Vector3(0.31, 0.36, 0.32)), -(p.z - 0.1 - b.z)), Mat.BRONZE)
+		# Left arm down in its sleeve, a book against the hip.
+		g.paint(bounds, func(p: Vector3) -> float:
+			return VoxelSdf.capsule(p, b + Vector3(-0.46, 2.75, 0), b + Vector3(-0.52, 1.95, 0.12), 0.14, 0.17), Mat.VERDIGRIS)
+		g.paint(bounds, func(p: Vector3) -> float:
+			return VoxelSdf.box(p, b + Vector3(-0.42, 1.85, 0.3), Vector3(0.08, 0.3, 0.22)), Mat.BRONZE)
 		if arm:
 			g.paint(bounds, func(p: Vector3) -> float:
-				return VoxelSdf.capsule(p, b + Vector3(0.56, 2.85, 0), b + Vector3(0.8, 3.75, 0.25), 0.15, 0.12), Mat.VERDIGRIS)
+				return VoxelSdf.capsule(p, b + Vector3(0.46, 2.78, 0), b + Vector3(0.7, 3.7, 0.22), 0.14, 0.12), Mat.VERDIGRIS)
 			g.paint(bounds, func(p: Vector3) -> float:
-				return VoxelSdf.capsule(p, b + Vector3(0.8, 3.75, 0.25), b + Vector3(0.88, 4.3, 0.4), 0.12, 0.11), Mat.VERDIGRIS)
+				return VoxelSdf.capsule(p, b + Vector3(0.7, 3.7, 0.22), b + Vector3(0.78, 4.25, 0.36), 0.11, 0.1), Mat.VERDIGRIS)
 			g.paint(bounds, func(p: Vector3) -> float:
-				return VoxelSdf.box(p, b + Vector3(0.9, 4.48, 0.42), Vector3(0.09, 0.16, 0.06)), Mat.VERDIGRIS)
+				return VoxelSdf.box(p, b + Vector3(0.8, 4.42, 0.38), Vector3(0.08, 0.15, 0.06)), Mat.VERDIGRIS)
 		else:
+			# The snapped shoulder, raw dark bronze, and a crack across the knees.
 			g.paint(bounds, func(p: Vector3) -> float:
-				return VoxelSdf.box(p, b + Vector3(0.6, 2.82, 0), Vector3(0.14, 0.12, 0.16)), Mat.BRONZE)
-		# Feet under the hem.
-		for xs: float in [-0.22, 0.22]:
+				return VoxelSdf.box(p, b + Vector3(0.5, 2.75, 0), Vector3(0.13, 0.12, 0.15)), Mat.BRONZE)
 			g.paint(bounds, func(p: Vector3) -> float:
-				return VoxelSdf.box(p, b + Vector3(xs, 0.08, 0.42), Vector3(0.12, 0.08, 0.14)), Mat.VERDIGRIS)
-	return _mesh("robed%d%d" % [int(arm), int(plinth)], bounds, T1, paint)
+				return absf(p.y - b.y - 0.85 - 0.12 * sin(p.x * 6.0)) - g.cell * 0.6, 0, -1, VoxelGrid.Mode.CARVE)
+		for xs: float in [-0.2, 0.2]:
+			g.paint(bounds, func(p: Vector3) -> float:
+				return VoxelSdf.box(p, b + Vector3(xs, 0.08, 0.4), Vector3(0.11, 0.08, 0.13)), Mat.VERDIGRIS)
+	return _mesh("robed_c%d%d" % [int(arm), int(plinth)], bounds, T1, paint)
 
 
 ## The snapped-off arm of the fallen statue (lying on the paving).

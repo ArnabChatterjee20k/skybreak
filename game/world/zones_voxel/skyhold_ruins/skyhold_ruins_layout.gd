@@ -59,11 +59,31 @@ func _read() -> void:
 				isl.name = zone.landmark_names[i]
 	for t: Transform3D in columns:
 		var base := t.origin - t.basis.y * 0.5
-		var isl := nearest(Vector2(base.x, base.z))
+		var isl := _owner(base)
 		var xa := t.basis.x.normalized()
 		isl.columns.append({"at": base, "height": t.basis.get_scale().y, "angle": atan2(-xa.z, xa.x)})
 	for t: Transform3D in arches:
-		nearest(Vector2(t.origin.x, t.origin.z)).arch = true
+		# An arch's origin sits 11 m over its island's top, at the centre.
+		var best: Island = islands[0]
+		for isl in islands:
+			var e := absf(t.origin.y - 11.0 - isl.top) + Vector2(t.origin.x, t.origin.z).distance_to(isl.centre)
+			if e < absf(t.origin.y - 11.0 - best.top) + Vector2(t.origin.x, t.origin.z).distance_to(best.centre):
+				best = isl
+		best.arch = true
+
+
+## The island a column stands on: its base sits 1 m over that island's top,
+## at 0.72 r from its centre (islands can stack, so the nearest centre isn't enough).
+func _owner(base: Vector3) -> Island:
+	var best: Island = islands[0]
+	var best_err := INF
+	for isl in islands:
+		var err := absf(base.y - isl.top - 1.0) * 10.0 \
+			+ absf(Vector2(base.x, base.z).distance_to(isl.centre) - isl.radius * 0.72)
+		if err < best_err:
+			best_err = err
+			best = isl
+	return best
 
 
 func nearest(p: Vector2) -> Island:

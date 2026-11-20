@@ -66,13 +66,13 @@ func presets() -> Dictionary:
 	# Golden hour, sun still up: deep blue zenith, pale warm horizon, a lighter
 	# cooler haze than the stone, rim 0.35 (sheet's preset notes).
 	p.day = {
-		"sky_top": Color("#2a50a8"), "sky_horizon": Color("#e6d6b8"), "sky_below": Color("#F4EEE4"),
+		"sky_top": Color("#2448a0"), "sky_horizon": Color("#d2dae6"), "sky_below": Color("#F4EEE4"),
 		"cloud": Color("#fffaf0"), "cloud_shadow": Color("#b8b4c4"), "cloud_cover": 0.3,
 		"sun_dir": z.sun_directions[0], "sun_color": Color("#ffd9a0"), "sun_energy": 2.7,
 		"sun_size": 0.035, "moon": false, "stars": 0.0,
 		"rim_color": Color("#fff0d0"), "rim_energy": 0.35,
 		"ambient_color": Color("#a8a4a8"), "ambient_energy": 0.5,
-		"fog_color": Color("#E4DCD0"), "fog_density": 0.00055, "exposure": 0.92, "lantern": 0.3,
+		"fog_color": Color("#d8dde4"), "fog_density": 0.0005, "exposure": 0.92, "lantern": 0.3,
 	}
 	p.dusk = {
 		"sky_top": Color("#4a5a96"), "sky_horizon": Color("#f2a868"), "sky_below": Color("#f2d2b4"),
@@ -86,11 +86,11 @@ func presets() -> Dictionary:
 	p.night = {
 		"sky_top": Color("#0a1030"), "sky_horizon": Color("#2a3458"), "sky_below": Color("#3a4468"),
 		"cloud": Color("#6a76a0"), "cloud_shadow": Color("#2a3050"), "cloud_cover": 0.25,
-		"sun_dir": z.sun_directions[2], "sun_color": Color("#b8c8ff"), "sun_energy": 0.9,
+		"sun_dir": z.sun_directions[2], "sun_color": Color("#b8c8ff"), "sun_energy": 0.55,
 		"sun_size": 0.0, "moon": true, "stars": 0.9,
 		"rim_color": Color("#a6c0ff"), "rim_energy": 0.6,
 		"ambient_color": Color("#30395e"), "ambient_energy": 0.6,
-		"fog_color": Color("#283050"), "fog_density": 0.0006, "exposure": 1.15, "lantern": 1.2,
+		"fog_color": Color("#283050"), "fog_density": 0.0006, "exposure": 1.0, "lantern": 1.2,
 	}
 	return p
 
@@ -315,7 +315,8 @@ func _fangs() -> void:
 				var lobe := 0.5 + 0.5 * sin(a * 3.0 + f * 1.9) * cos(a * 2.0 - f)
 				var notch := VoxelSdf.hash3(Vector3i(floori(a * 7.0 + 7.0), f, 0), 91)
 				var lift := clampf((h - CLOUD_Y) / 80.0, 0.0, 1.0)
-				h = CLOUD_Y + (h - CLOUD_Y) * (0.78 + 0.32 * lobe - 0.12 * notch * lift)
+				# Notches cut at most one slab (1.4 m) into the sim's rock.
+				h -= 1.4 * notch * lift * lobe
 				var raw := h / T2
 				var band := floori(raw / slab)
 				var wob := sin(a * 5.0 + band * 1.3 + f) * 0.6 + (VoxelSdf.hash3(Vector3i(x / 3, band, z / 3), 77 + f) - 0.5) * 1.4
@@ -469,9 +470,9 @@ func _story() -> void:
 	var wi := layout.islands.find(watch)
 	var fall := _local(watch, -14.0, -12.0)
 	var fall_yaw := watch.yaw + 0.6
-	var lying := Basis(Vector3.UP, fall_yaw) * Basis(Vector3.RIGHT, PI * 0.5) * Basis(Vector3.UP, 0.55)
+	var lying := Basis(Vector3.UP, fall_yaw) * Basis(Vector3.RIGHT, PI * 0.5) * Basis(Vector3.UP, PI * 0.5)
 	# Lying on its face: the figure's front (+z) down, its back 0.5 m up.
-	_add("robed_fallen", Transform3D(lying, Vector3(fall.x, wy + 0.55, fall.y)))
+	_add("robed_fallen", Transform3D(lying, Vector3(fall.x, wy + 0.6, fall.y)))
 	var reach := Vector2(sin(fall_yaw), cos(fall_yaw))
 	var arm_d := 4.0
 	while _gauge(wi, fall + reach * arm_d) < 0.95 and arm_d < 60.0:
@@ -807,9 +808,9 @@ func shots() -> Array[Dictionary]:
 	var fy: float = spots.fallen_yaw
 	var fdir := Vector3(sin(fy), 0, cos(fy))
 	var fside := Vector3(cos(fy), 0, -sin(fy))
-	var fk := f + fside * 2.2 - fdir * 1.0
-	var fcam := f + fside * 8.5 - fdir * 6.0 + Vector3(0, 2.4, 0)
-	out.append({"name": "fallen_statue", "from": fcam, "at": f + fdir * 3.0 + Vector3(0, 1.4, 0), "fov": 55.0,
+	var fk := f + fdir * 2.6 - fside * 2.2
+	var fcam := f + fdir * 7.5 + fside * 3.2 + Vector3(0, 2.3, 0)
+	out.append({"name": "fallen_statue", "from": fcam, "at": f + fdir * 1.5 + Vector3(0, 0.6, 0), "fov": 55.0,
 		"kael": [Vector2(fk.x, fk.z), atan2(fcam.x - fk.x, fcam.z - fk.z)], "times": ["day"]})
 	# A wide overview: island cluster, fangs, cloud sea, blue sky.
 	out.append({"name": "overview", "from": Vector3(260, 290, -300), "at": Vector3(10, 150, -640), "fov": 55.0,

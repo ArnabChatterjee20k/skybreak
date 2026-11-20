@@ -187,7 +187,7 @@ void fragment() {
 			ivec2 pc = ivec2(floor(world_pos.xz / pave_cell));
 			float h = hash3(ivec3(pc.x, 17, pc.y));
 			float moss_k = texel.a;
-			vec3 joint = mix(joint_color, joint_moss, step(0.55 - moss_k * 0.5, h));
+			vec3 joint = mix(joint_color, joint_moss, step(0.82 - moss_k * 0.6, h));
 			float far_k = 1.0 - smoothstep(25.0, 110.0, length(world_pos - CAMERA_POSITION_WORLD));
 			albedo = mix(stone, mix(stone * 0.8, joint * (0.85 + 0.3 * h), far_k), f.y);
 			// Wild cells in the joints: tiny white and butter flowers.
