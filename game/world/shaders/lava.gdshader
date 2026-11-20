@@ -1,6 +1,7 @@
 // Emissive lava: cooled-rock crust plates drifting on a warped flow, glowing cracks
 // between them and a slow heat shimmer, hidden outside its zone. Kept under the
-// tonemap's white so the glow never flattens into one yellow.
+// tonemap's white so the glow never flattens into one yellow. Instances with custom.r = 1
+// are floor fissures: a molten seam along the strip with ragged crust edges.
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_disabled, unshaded;
 #include "res://game/world/shaders/zone_plane.gdshaderinc"
@@ -16,9 +17,26 @@ uniform float plate_size = 9.0;
 uniform float night = 0.0;
 
 varying vec3 world_pos;
+varying float fissure;
 
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	fissure = INSTANCE_CUSTOM.r;
+}
+
+// Half-width of a fissure's ragged seam at UV (UV.x along the strip), 0..1 of the strip.
+float fissure_width(vec2 uv, vec2 xz) {
+	float ragged = value_noise(xz * 0.9) * 0.6 + value_noise(xz * 3.1) * 0.4;
+	float taper = smoothstep(0.0, 0.18, uv.x) * smoothstep(1.0, 0.82, uv.x);
+	return (0.45 + 0.5 * ragged) * taper;
+}
+
+// A fissure's colour from the seam centre (core 1) out to its crust edge (core 0).
+vec3 fissure_colour(float core, vec2 xz, float t) {
+	float seam_flow = value_noise(vec2(xz.x + xz.y, 0.0) * 0.8 - vec2(t * 0.9, t * 0.5));
+	float shimmer = 0.85 + 0.15 * sin(t * 2.3 + seam_flow * 8.0);
+	vec3 molten = mix(core_color.rgb, hot_color.rgb, core * core * (0.6 + 0.4 * seam_flow)) * shimmer;
+	return mix(crust_color.rgb, molten * glow * (1.0 + night * 0.25), smoothstep(0.12, 0.42, core));
 }
 
 // Distance to the nearest and second-nearest jittered cell centre (cheap 3x3 cellular).
@@ -43,12 +61,8 @@ vec2 cells(vec2 p) {
 	return vec2(d1, d2);
 }
 
-void fragment() {
-	if (zone_weight(world_pos.xz) < 0.4 || outside_clip(world_pos.xz)) {
-		discard;
-	}
-	float t = TIME;
-	vec2 xz = world_pos.xz;
+// The lava sea: drifting crust plates, glowing cracks and molten pools.
+vec3 sea_colour(vec2 xz, float t) {
 	// Domain-warped flow so the plates drift and stretch instead of sliding rigidly.
 	vec2 drift = flow * t * 0.25;
 	vec2 warp = vec2(value_noise(xz / 23.0 + t * 0.03), value_noise(xz / 23.0 + 5.2 - t * 0.025)) - 0.5;
@@ -68,5 +82,22 @@ void fragment() {
 	vec3 crust = crust_color.rgb * (0.7 + 0.5 * pit) + core_color.rgb * 0.18 * smoothstep(0.35, 0.0, edge);
 	vec3 molten = mix(core_color.rgb, hot_color.rgb, crack * crack * shimmer) * shimmer;
 	vec3 col = mix(crust, molten * glow * (1.0 + night * 0.25), heat);
-	ALBEDO = col;
+	return col;
+}
+
+void fragment() {
+	vec2 xz = world_pos.xz;
+	if (fissure > 0.5) {
+		float across = abs(UV.y - 0.5) * 2.0;
+		float width = fissure_width(UV, xz);
+		if (across > width) {
+			discard;
+		}
+		ALBEDO = fissure_colour(1.0 - across / max(width, 0.001), xz, TIME);
+	} else {
+		if (zone_weight(xz) < 0.4 || outside_clip(xz)) {
+			discard;
+		}
+		ALBEDO = sea_colour(xz, TIME);
+	}
 }

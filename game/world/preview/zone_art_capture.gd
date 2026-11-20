@@ -51,9 +51,24 @@ func _run() -> void:
 		var heights := zone_match.sim.fighters.map(func(f: FighterState) -> String:
 			return "%.1f" % (f.position.y - f.stand_height))
 		print("%s: heights above ground %s -> %s" % [zone_id, heights, path])
+		if OS.has_environment("ART_GROUND_VIEW"):
+			await _save_ground_view(zone_match, out_dir.path_join("zone_art_%s_ground.png" % zone_id))
 		zone_match.free()
 		await process_frame
 	quit(0)
+
+
+# A steep look down past the fighters at their ground markers and the floor detail.
+func _save_ground_view(zone_match: ZoneMatch, path: String) -> void:
+	var centre := zone_match.fighter_views[0].position
+	var floor_y := zone_match.sim.fighters[0].stand_height - zone_match.sim.tuning.ground_height
+	var look_at := Vector3(centre.x, floor_y, centre.z)
+	var camera := zone_match.camera.get_viewport().get_camera_3d()
+	var back := (camera.global_position - look_at) * Vector3(1, 0, 1)
+	camera.look_at_from_position(look_at + back.normalized() * 7.0 + Vector3.UP * 13.0, look_at)
+	await process_frame
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(path)
 
 
 # Everyone climbs, then hovers.

@@ -1,12 +1,11 @@
 class_name HeightMarker
 extends Node3D
 ## Shows how high an airborne fighter is: a thin line from the feet to the
-## ground and a ring on the ground under them. Hidden near the ground.
+## ground. Hidden near the ground. The ring on the ground is ContactShadows' rim.
 ## Lives under FighterView (which only moves, never turns), in team colour.
 
 ## Feet above this height (m) count as airborne enough to mark.
 const SHOW_ABOVE := 1.5
-const RING_RADIUS := 0.7
 const LINE_WIDTH := 0.04
 ## The fighter's position is its capsule centre, this far above its feet.
 const FEET_BELOW_CENTRE := 1.0
@@ -16,7 +15,6 @@ var color := Color(1, 0.6, 0.2)
 var ground_y := 0.0
 
 var _line: MeshInstance3D
-var _ring: MeshInstance3D
 
 
 func _ready() -> void:
@@ -36,16 +34,6 @@ func _ready() -> void:
 	_line.material_override = material
 	_line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_line)
-	var ring_mesh := TorusMesh.new()
-	ring_mesh.inner_radius = RING_RADIUS - 0.08
-	ring_mesh.outer_radius = RING_RADIUS
-	ring_mesh.rings = 32
-	ring_mesh.ring_segments = 4
-	_ring = MeshInstance3D.new()
-	_ring.mesh = ring_mesh
-	_ring.material_override = material
-	_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(_ring)
 	visible = false
 
 
@@ -58,7 +46,6 @@ func update(centre: Vector3) -> void:
 	# Local to the (non-rotating) FighterView at centre.
 	_line.position = Vector3(0, -FEET_BELOW_CENTRE - feet / 2.0, 0)
 	_line.scale = Vector3(1, feet, 1)
-	_ring.position = Vector3(0, -FEET_BELOW_CENTRE - feet + 0.03, 0)
 
 
 ## Height of the feet above the ground for a capsule-centre position.

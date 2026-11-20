@@ -4,6 +4,22 @@ Golden replays (`replays/`) and visual goldens (`visual/`) for the QA harness
 (T-D31). Re-record with `tools/qa/bless_goldens.sh --replays|--visual|--all`
 only in the PR that intends the change, and log it below.
 
+## Re-bless for #125 T-ART1 zone art pass (merge of main 372bccd)
+
+All 14 visual goldens re-blessed with `bless_goldens.sh --visual` on the merged code
+(official Godot 4.7.2 linux x86_64, fresh `--import`, gl_compatibility 960x540):
+
+- `zone_*` (6): the T-ART1 art pass (sRGB zone colours, 3-band terrain ramp, per-zone
+  ground detail, inked lips and props, backdrop-only fog, re-tuned palettes) on top of
+  #123's Ember Rift lava fissures. `zone_ember_rift.png` was a binary conflict (both
+  PRs re-blessed it); the new render shows the fissures on the darker seamed basalt.
+- `heartbloom_*` (8): #123's duel-drop telegraph pillar in frame (approved by the
+  owner) plus the T-ART1 terrain and the merged ground marker.
+- Ground marker: #125's contact shadow and the T-118 `HeightMarker` ring both drew
+  under an airborne fighter. They are now one marker: `ContactShadows` draws the soft
+  dark disc and, once the feet are above `HeightMarker.SHOW_ABOVE`, a team-colour rim;
+  `HeightMarker` keeps only its drop line.
+
 ## Re-bless for #89 polish batch 2 (merge of main 3466207 into `claude/polish-batch-2`)
 
 ### Golden replays

@@ -60,7 +60,7 @@ const KO_FRAMING_RANGE := 40.0
 var _camera_target := -1
 var weapon_layer := WeaponLayer.new()
 var fighter_views: Array[FighterView] = []
-## Dark disc on the floor under each fighter (T-ART1).
+## The ground marker under each fighter: contact shadow plus airborne team ring.
 var contact_shadows := ContactShadows.new()
 
 @onready var camera: FighterCamera = $FighterCamera
@@ -88,6 +88,8 @@ func _ready() -> void:
 	_build_fighters()
 	add_child(contact_shadows)
 	contact_shadows.setup(fighter_views.size())
+	for i in fighter_views.size():
+		contact_shadows.set_ring_color(i, fighter_views[i]._height_marker.color)
 	sim.pickups_enabled = true
 	camera.obstacles = CameraObstacles.from_zone_match(self)
 	add_child(weapon_layer)

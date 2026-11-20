@@ -74,6 +74,12 @@ func test_arena_fighters_keep_their_team_rims() -> void:
 				"%s rim tinted" % view.name)
 
 
+func test_height_marker_draws_no_ring_of_its_own() -> void:
+	var marker := HeightMarker.new()
+	add_child_autofree(marker)
+	assert_eq(marker.get_child_count(), 1, "the ground ring is the contact shadow's rim")
+
+
 func test_height_marker_shows_only_when_airborne() -> void:
 	var marker := HeightMarker.new()
 	add_child_autofree(marker)

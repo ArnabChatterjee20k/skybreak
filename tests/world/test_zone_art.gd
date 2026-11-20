@@ -90,3 +90,27 @@ func test_contact_shadow_tilts_with_the_slope() -> void:
 	shadows.place(0, 4.0, 0.0, 2.0, 2.0, _slope)
 	var up := shadows.disc(0).global_transform.basis.y.normalized()
 	assert_almost_eq(up, Vector3(-0.5, 1.0, 0.0).normalized(), Vector3.ONE * 0.001)
+
+
+func test_contact_shadow_adds_a_team_ring_only_when_airborne() -> void:
+	var shadows := ContactShadows.new()
+	add_child_autofree(shadows)
+	shadows.setup(1)
+	shadows.set_ring_color(0, Color.RED)
+	var material := shadows.disc(0).material_override as ShaderMaterial
+	shadows.place(0, 0.0, 0.0, 10.0, 10.0, _flat)
+	assert_eq(material.get_shader_parameter("ring_strength"), 0.0, "no ring while standing")
+	shadows.place(0, 0.0, 0.0, 10.0 + ContactShadows.RING_ABOVE + ContactShadows.RING_FADE_IN, 10.0, _flat)
+	assert_almost_eq(float(material.get_shader_parameter("ring_strength")), ContactShadows.RING_STRENGTH, 0.001)
+	assert_eq(material.get_shader_parameter("ring_color"), Color.RED)
+
+
+func test_the_team_ring_stays_visible_above_the_shadow_fade() -> void:
+	var shadows := ContactShadows.new()
+	add_child_autofree(shadows)
+	shadows.setup(1)
+	shadows.set_ring_color(0, Color.BLUE)
+	shadows.place(0, 0.0, 0.0, 10.0 + ContactShadows.FADE_HEIGHT + 5.0, 10.0, _flat)
+	var material := shadows.disc(0).material_override as ShaderMaterial
+	assert_true(shadows.disc(0).visible)
+	assert_almost_eq(float(material.get_shader_parameter("strength")), 0.0, 0.001)
