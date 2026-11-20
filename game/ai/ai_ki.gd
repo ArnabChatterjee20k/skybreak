@@ -2,7 +2,7 @@ class_name AIKi
 extends RefCounted
 ## The AI's ki game (T-KI1): zoning with tap and charged blasts at range,
 ## occasional beams (always with their tell), beam whiff punishes, reading a
-## beam's tell (sidestep after its aim locks, or block) and the beam clash
+## beam's tell (sidestep dodge after its aim locks, or block) and the beam clash
 ## beats. FighterAI owns one and calls it; all randomness from its own seeded rng.
 
 const _A := FighterInput.Action
@@ -20,8 +20,10 @@ const CHARGED_CHANCE: Array[float] = [0.0, 0.08, 0.14, 0.2, 0.25]
 const BEAM_CHANCE: Array[float] = [0.0, 0.004, 0.008, 0.012, 0.016]
 ## Chance to answer a seen whiff at range with a beam.
 const BEAM_PUNISH_CHANCE: Array[float] = [0.0, 0.1, 0.3, 0.5, 0.7]
-## Chance to sidestep a seen beam tell (else it blocks).
+## Chance to sidestep-dodge a seen beam tell at range (else it blocks).
 const SIDESTEP_CHANCE: Array[float] = [0.0, 0.15, 0.35, 0.55, 0.75]
+## Ticks before a beam fires that levels 4-5 tap the sidestep, so its i-frames cover the shot.
+const LATE_SIDESTEP_TICKS := 3
 ## Chance to hit each clash beat with the right key.
 const CLASH_ACCURACY: Array[float] = [0.3, 0.5, 0.65, 0.8, 0.9]
 ## Most ticks off the beat it presses when it hits one.
@@ -212,12 +214,15 @@ func answer_beams(ai: FighterAI, sim: CombatSim, me: FighterState, plan: Fighter
 				return true
 			plan.held_actions |= _A.BLOCK
 			return true
-		if _beam_answer == 2 and until_fire <= sim.ki_tuning.beam_aim_lock_ticks and until_fire > 0 \
-				and me.state != _S.DASHING and me.ki >= 10 * FighterState.METER_UNIT:
+		# A Shift tap across the line is a sidestep dodge (free, no ki); levels 4-5 wait until
+		# just before the shot, the rest go as soon as the aim locks.
+		var press_at := LATE_SIDESTEP_TICKS if level >= 3 else sim.ki_tuning.beam_aim_lock_ticks
+		if _beam_answer == 2 and until_fire <= press_at and until_fire > 0 \
+				and DodgeRules.can_start_from(me) and me.state != _S.DASHING:
 			plan.held_actions |= _A.DASH
 			plan.move = Vector2(ai.strafe(), 0)
 			return true
-		if _beam_answer == 2 and until_fire > sim.ki_tuning.beam_aim_lock_ticks:
+		if _beam_answer == 2 and until_fire > press_at:
 			plan.move = Vector2.ZERO
 			return true
 		plan.held_actions |= _A.BLOCK

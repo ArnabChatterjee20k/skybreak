@@ -93,11 +93,11 @@ static func _grab_and_tech() -> TutorialLesson:
 
 
 static func _dash_and_vanish() -> TutorialLesson:
-	var lesson := TutorialLesson.new(&"dash", "Dash and vanish",
-		"Speed wins fights. Dashes cost a little ki.")
+	var lesson := TutorialLesson.new(&"dash", "Dodge, dash and vanish",
+		"Tap Shift to dodge (free, but whiffs are punishable). Rushes and vanishes cost ki.")
 	lesson.setup = func(s: TutorialSession) -> void:
 		s.place_dummy(12.0)
-	lesson.step("Hold [A] or [D] and press [Shift] to dash aside.", func(s: TutorialSession) -> bool:
+	lesson.step("Hold [A] or [D] and tap [Shift] to sidestep round the dummy.", func(s: TutorialSession) -> bool:
 		return s.player().state == State.DASHING \
 			and s.player().dash_kind != FighterState.DashKind.RUSH)
 	lesson.step("Hold [W] and press [Shift] to rush at the dummy.", func(s: TutorialSession) -> bool:

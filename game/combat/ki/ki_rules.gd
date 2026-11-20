@@ -179,16 +179,30 @@ static func steer(sim: CombatSim, projectile: Projectile) -> void:
 	projectile.velocity = (DetMath.axis_angle(axis.normalized(), most) * current).normalized() * speed
 
 
+## A dodged ki shot: a homing blast re-acquires its target after a plain dodge,
+## a perfect dodge breaks the homing for good.
+static func dodged(projectile: Projectile, target_index: int, perfect: bool) -> void:
+	if projectile.ki != Shot.BLAST or projectile.homing_rate <= 0.0 or projectile.homing_target != target_index:
+		return
+	if perfect:
+		projectile.homing_target = -1
+		projectile.homing_rate = 0.0
+	else:
+		projectile.hit_mask &= ~(1 << target_index)
+
+
 ## A reflected homing blast hunts the fighter who fired it.
 static func reflected(projectile: Projectile, from_owner: int) -> void:
 	if projectile.ki != Shot.NONE and projectile.homing_rate > 0.0:
 		projectile.homing_target = from_owner
 
 
-## True if the target's dash soaks up this tap blast (dash armour, §5.8); spends the ki.
+## True if the target's flight-dash or rush soaks up this tap blast (dash armour, §5.8); spends the ki.
+## A tap dodge never soaks: its i-frames evade instead (DodgeRules).
 static func absorbs(sim: CombatSim, target_index: int, projectile: Projectile, at: Vector3) -> bool:
 	var target := sim.fighters[target_index]
-	if projectile.ki != Shot.BLAST or target.state != FighterState.State.DASHING:
+	if projectile.ki != Shot.BLAST or target.state != FighterState.State.DASHING \
+			or target.dash_kind == FighterState.DashKind.DODGE:
 		return false
 	var speed := projectile.velocity.length()
 	if speed < 0.001 or target.dash_direction.dot(-projectile.velocity / speed) < sim.ki_tuning.dash_absorb_facing:
@@ -296,7 +310,10 @@ static func _beam_contacts(sim: CombatSim, beam: KiBeam) -> void:
 			var reach: float = (beam.radius if r == 0 else beam.split_radius) + float(body.radius)
 			var points := CombatSim._closest_points(rays[r][0], rays[r][1], body.start, body.end)
 			if points[0].distance_squared_to(points[1]) <= reach * reach:
-				if not target.is_invincible_to(target.is_upper_body(points[0])):
+				if DodgeRules.evades(sim, target, beam.move):
+					# The beam passes through the i-frames; it keeps going and the dodger stays untouched.
+					DodgeRules.evade_beam(sim, beam.owner, beam.move, target_index, points[1])
+				elif not target.is_invincible_to(target.is_upper_body(points[0])):
 					touched.append({"target": target_index, "points": points, "radius": body.radius,
 						"along": beam.origin.distance_to(points[0])})
 				break

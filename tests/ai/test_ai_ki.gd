@@ -100,7 +100,7 @@ func test_far_from_a_locked_beam_tell_a_level_5_ai_often_sidesteps() -> void:
 		beamer.ki = 100 * FighterState.METER_UNIT
 		var kit := KiRules.kit_of(beamer)
 		KiRules._begin(sim, 0, kit.beam)
-		beamer.move_tick = kit.beam.startup_ticks - 8
+		beamer.move_tick = kit.beam.startup_ticks - AIKi.LATE_SIDESTEP_TICKS
 		var ai := FighterAI.new(1, 5, trial)
 		var plan := FighterInput.new()
 		if ai._ki_game.answer_beams(ai, sim, sim.fighters[1], plan) and (plan.held_actions & A.DASH) != 0:
@@ -160,3 +160,62 @@ func test_once_a_beam_is_in_its_recovery_the_ai_stops_guarding_it() -> void:
 	sim.fighters[0].move_tick = kit.beam.recovery_start_tick() + 2
 	var ai := FighterAI.new(1, 5, 3)
 	assert_false(ai._ki_game.answer_beams(ai, sim, sim.fighters[1], FighterInput.new()), "free to punish")
+
+
+## A beam tell locked at fighter 1 from 30 m, until_fire ticks before it fires; what a level-l AI holds.
+func _tell_answer(level: int, until_fire: int, trial: int) -> FighterInput:
+	var sim := CombatSim.new(trial)
+	sim.add_fighter(Vector3(0, 1, 15))
+	sim.add_fighter(Vector3(0, 1, -15))
+	sim.lock_everyone_onto_nearest()
+	var beamer := sim.fighters[0]
+	beamer.ki = 100 * FighterState.METER_UNIT
+	var kit := KiRules.kit_of(beamer)
+	KiRules._begin(sim, 0, kit.beam)
+	beamer.move_tick = kit.beam.startup_ticks - until_fire
+	var ai := FighterAI.new(1, level, trial)
+	ai._ki_game._beam_answer = 2
+	ai._ki_game._beam_key = sim.current_tick - beamer.move_tick # Fighter 0, this tell.
+	var plan := FighterInput.new()
+	ai._ki_game.answer_beams(ai, sim, sim.fighters[1], plan)
+	return plan
+
+
+func test_a_level_5_ai_holds_its_sidestep_dodge_until_just_before_the_beam_fires() -> void:
+	var early := _tell_answer(5, 8, 3)
+	assert_eq(early.held_actions & (A.DASH | A.BLOCK), 0, "waits, neither dodging nor blocking")
+	var timed := _tell_answer(5, AIKi.LATE_SIDESTEP_TICKS, 3)
+	assert_ne(timed.held_actions & A.DASH, 0, "taps Shift for the sidestep dodge")
+	assert_ne(timed.move.x, 0.0, "across the beam's line")
+	var low := _tell_answer(3, 6, 3)
+	assert_ne(low.held_actions & A.DASH, 0, "lower levels dodge as soon as the aim locks")
+
+
+func test_a_level_5_ai_sidestep_dodges_beams_at_range_and_makes_them_whiff() -> void:
+	var dodges := 0
+	var whiffs := 0
+	var perfect := 0
+	for trial in 20:
+		var sim := CombatSim.new(700 + trial)
+		sim.add_fighter(Vector3(0, 1, 11))
+		sim.add_fighter(Vector3(0, 1, -11))
+		sim.lock_everyone_onto_nearest()
+		var beamer := sim.fighters[0]
+		beamer.ki = 100 * FighterState.METER_UNIT
+		# The tell is already showing, so the AI reads it at range instead of rushing in first.
+		KiRules._begin(sim, 0, KiRules.kit_of(beamer).beam)
+		beamer.move_tick = 10
+		var ai := FighterAI.new(1, 5, FighterAI.seed_for(700 + trial, 1))
+		for tick in 110:
+			var inputs: Array[FighterInput] = [FighterInput.new(), ai.next_input(sim)]
+			sim.tick(inputs)
+			for event in sim.events:
+				if event.type == E.DODGE and event.fighter == 1 and event.kind == FighterDodge.Kind.SIDESTEP:
+					dodges += 1
+				elif event.type == E.BEAM_END and event.whiff:
+					whiffs += 1
+				elif event.type == E.PERFECT_DODGE and event.target == 1 and event.attacker == 0:
+					perfect += 1
+	gut.p("L5 vs 20 beams from 22 m: sidestep dodges %d, whiffs %d, perfect dodges %d" % [dodges, whiffs, perfect])
+	assert_gte(dodges, 5, "sidestep dodges are an answer at range")
+	assert_gte(whiffs, 3, "the dodges make beams whiff")

@@ -12,6 +12,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `AGENTS.md`. Remaining: CI green on GitHub.
 
 ## In review
+- T-DEF2 dodge [desktop] (`claude/T-DEF2-dodge`): tap Shift = directional / spot / sidestep dodge with
+  i-frames, chain and cooldown, air limits, perfect dodge (attacker freeze, READ pop, +10 ki once per
+  3 s), Sweep tracks sidesteps, recovery grabs are untechable counter-hits; `DodgeTuning`,
+  `DodgePose`, dodge audio cues, training input notes. Goldens re-blessed (dodge fields only).
 - polish batch 3 [desktop] (`claude/polish-batch-3`): media-2 flaws. Lyra UNARMED (#78 follow-up) is
   the design-correct auto-throw of an emptied 12-arrow Ki Bow (regression test added); KO drops its
   burst lines and post-KO trails/rings/smears; Ember Rift lava fissures around the spawns
@@ -30,7 +34,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   orb, beams at sim thickness, clash prompt), ki sounds and charge hum, `AIKi` zoning/beams/tell
   reading/clash beats, QA ki counts, DetCheck ki duel. Open: beam ultimate cinematic, beam clash
   camera framing (developer), dedicated ki clips per legend (palm thrust stands in), new ki
-  sounds (existing cues re-pitched), dodge (T-DEF2) i-frames vs beams once it lands.
+  sounds (existing cues re-pitched). Merged with T-DEF2: only the held flight-dash/rush soaks
+  tap blasts; dodge i-frames evade blasts and beam ticks, a perfect dodge freezes the shooter or
+  beam owner 6 f (the beam goes on) and breaks homing; no dodging in a clash; `AIKi` sidestep-
+  dodges beam tells at range (`tests/combat/test_ki_dodge.gd`). QA quick: foot_ground seed 117
+  Frozen Peaks 2v2 t268 (Lyra IDLE +30.7 cm, 7 frames) came in with T-KI1 (also on b9fbf04), QA-12.
 - T-UX1 [desktop] Controls and readability (owner feedback "how to get to the ground"): descend
   moves from Left Ctrl to `C` (Ctrl stays a desktop-only alternate, never on the web; Ctrl/Cmd/Alt
   rebinds refused on the web), quick-swap moves from `C` to `Y`; double-tap `C` dives until landing
@@ -124,6 +132,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+- DEF2-1 [desktop] Perfect-dodge view slow (0.85x for 8 frames, local offline only), proposal M2; not
+  built in T-DEF2.
+- DEF2-2 [desktop] An ideal-read spot dodge evades all 12 matrix attacks (like vanish). It is minus
+  against lights and shots, but the proposal wants no option to beat everything: decide on a tracking
+  or long-active answer (or a shorter spot window) with the defense matrix.
+- DEF2-3 [developer] Proposal §5 AI-match dodge metrics (dodged share, dodge success, whiff punish,
+  vanish share) need AI dodging (T-DEF4) and `defense_audit` in `run_qa.sh` (T-DEF6).
 - PB3-1 [developer] AI pickup interest: in 14 seeded 60 s duels a level-3 AI picks up a weapon in
   only ~half, even with the drop 4-9 m away (PRESSURE outscores PICKUP up close, `fighter_ai.gd`
   `_choose_plan`). Raise the duel pickup weight so a typical duel shows a weapon.

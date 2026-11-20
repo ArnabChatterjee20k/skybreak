@@ -66,3 +66,9 @@ log it here.
   `tools/diag/det_check.gd` total on Linux changes from `7f2c2af91b6d870f` to
   `715c1e5b39ad708c`.
 
+- **T-DEF2 (dodge)**: re-blessed. A tapped Shift is now a dodge (directional 4.5 m
+  eased over 14 frames, 26 frames total) instead of the 8 m / 10-tick step.
+  - `free_for_all` (seed 10): first differs at index 53 (sim tick 54), the tick
+    fighter 2 taps Shift with a direction: a `DODGE` (DIRECTIONAL) event, where
+    before it started the old step. Identical before that tick.
+  - `bot_match`: unchanged (the AI only rushes, never taps a non-rush Shift).

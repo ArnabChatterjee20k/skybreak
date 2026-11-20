@@ -33,6 +33,7 @@ const EVENT_CUES := {
 	CombatSim.EventType.GRAB_TECH: &"tech",
 	CombatSim.EventType.PUSH_BLOCK: &"push_block",
 	CombatSim.EventType.ARMOR: &"armor_hit",
+	CombatSim.EventType.PERFECT_DODGE: &"perfect_dodge",
 }
 const KNOCKBACK_CUES := {
 	MoveData.KnockbackType.LAUNCH: &"launcher",
@@ -72,7 +73,7 @@ const UI_CUES := {
 }
 const STATE_CUES: Array[StringName] = [
 	&"hit_light", &"hit_medium", &"hit_heavy", &"counter_hit", &"spike_bounce",
-	&"combo_tick", &"whoosh_light", &"whoosh_heavy", &"dash", &"air_dash", &"rush_whoosh",
+	&"combo_tick", &"whoosh_light", &"whoosh_heavy", &"dash", &"air_dash", &"rush_whoosh", &"dodge",
 	&"vanish_out", &"vanish_in", &"lock_on", &"lock_switch", &"land_light", &"land_heavy",
 	&"flight_start", &"flight_stop", &"power_up_burst", &"round_end",
 ]
@@ -235,6 +236,8 @@ func _transition_cues(index: int, was: Dictionary, now: Dictionary) -> Array[Dic
 			or (now.dash_kind == FighterState.DashKind.RUSH and was.dash_kind != FighterState.DashKind.RUSH)):
 		if now.dash_kind == FighterState.DashKind.RUSH:
 			out.append(_request(&"rush_whoosh", at))
+		elif now.dash_kind == FighterState.DashKind.DODGE:
+			out.append(_request(&"dodge", at))
 		else:
 			out.append(_request(&"dash" if was.grounded else &"air_dash", at))
 	if state == FighterState.State.VANISHING and before != FighterState.State.VANISHING:

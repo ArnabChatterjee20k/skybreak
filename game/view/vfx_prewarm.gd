@@ -13,6 +13,7 @@ const WORLD_EFFECTS: Array[PackedScene] = [
 	preload("res://game/view/shaders/vfx/perfect_block_flash.tscn"),
 	preload("res://game/view/shaders/vfx/guard_break_shatter.tscn"),
 	preload("res://game/view/shaders/vfx/shockwave.tscn"),
+	preload("res://game/view/shaders/vfx/read_pop.tscn"),
 ]
 const AURA := preload("res://game/view/shaders/vfx/fighter_aura.tscn")
 const SCREEN_EFFECTS: Array[PackedScene] = [
