@@ -1,0 +1,122 @@
+{
+	"hitstops": {
+		"beam": {
+			"14": 1
+		},
+		"blade/breaker": {
+			"8": 5,
+			"20": 1
+		},
+		"blade/breaker+counter": {
+			"12": 1
+		},
+		"blade/light_1": {
+			"4": 3
+		},
+		"blade/light_1+counter": {
+			"8": 5
+		},
+		"blade/light_2": {
+			"4": 6
+		},
+		"blade/light_3": {
+			"4": 5
+		},
+		"breaker": {
+			"7": 3,
+			"10": 1
+		},
+		"breaker+counter": {
+			"11": 2
+		},
+		"charged_blast": {
+			"10": 1
+		},
+		"ki_blast": {
+			"4": 4
+		},
+		"ki_blast+counter": {
+			"8": 1
+		},
+		"light_1": {
+			"3": 6,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 2,
+			"9": 1
+		},
+		"light_2": {
+			"3": 8,
+			"5": 1
+		},
+		"light_3": {
+			"3": 3,
+			"5": 4,
+			"8": 1
+		},
+		"weapon/thrown": {
+			"6": 2
+		}
+	},
+	"id": "117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 1,
+		"blasts": 9,
+		"charged": 4,
+		"clashes": 0,
+		"ki_hits": 7,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		3,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 117,
+	"sim_ms_per_tick": 1.23391041666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0108077125623822,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.03532732733811,
+		"foot_slide_cm_per_frame": 0.0775647812437939,
+		"foot_slide_frames": 556,
+		"foot_slide_skipped_frames": 2,
+		"locked_on_screen_share": 0.990182954038376,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.01872666666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 7,
+			"detail": "lowest sole +30.7 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 268,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 268,
+			"worst_value": 0.306939897841517
+		}
+	],
+	"wall_seconds": 17.908,
+	"zone": "frozen_peaks"
+}
