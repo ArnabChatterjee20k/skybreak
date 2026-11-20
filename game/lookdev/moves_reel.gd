@@ -487,7 +487,8 @@ func _ki_volley() -> void:
 
 func _beam() -> void:
 	_caption.text = "Beam charge"
-	_reset_hero(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
+	# Side-on like the melee: facing -Z the charge camera clamps to behind her back.
+	_reset_hero(Vector3(-2.5, 0, 0.0), -PI * 0.5)
 	_place_dummy(5.0)
 	_cam_mode = "close"
 	_hero.f.enter_state(S.CHARGING)
@@ -497,7 +498,7 @@ func _beam() -> void:
 		orb.scale = Vector3.ONE * (1.0 + t / 150.0 * 2.4 + 0.2 * sin(t * 0.7))
 		await _tick()
 	_caption.text = "Beam fire"
-	_cam_mode = "shoulder"
+	_cam_mode = "range"
 	_cam_snap = true
 	_hero.f.enter_state(S.IDLE)
 	_set_pose(_hero, BEAM_AIMS, BEAM_TURNS, false, 1.0, 0.3)
