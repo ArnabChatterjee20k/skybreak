@@ -13,6 +13,11 @@ const SUB := 1 << SUB_BITS
 const NONE := -2147483648
 ## A fighter this far below an island top still stands on it (as IslandField.STEP_UP).
 const STEP_UP_CM := 50
+## Island outline mask: 8 x 8 bits per cell (25 cm squares), bit = row * 8 + column.
+const MASK_BITS := 3
+const MASK_SIDE := 1 << MASK_BITS
+## The floor ends this far inside the visible rim, so a standing fighter's feet stay on the island.
+const RIM_INSET := 0.25
 
 ## World (x, z) of sample (0, 0), on the heightmap grid.
 var origin := Vector2.ZERO
@@ -20,8 +25,10 @@ var columns := 0
 var rows := 0
 ## Terrain height per sample, centimetres.
 var terrain := PackedInt32Array()
-## Highest island top per sample, centimetres, or NONE.
+## Highest island top per sample, centimetres, or NONE; extended a little past the rim.
 var island_tops := PackedInt32Array()
+## Per cell, which 25 cm squares lie inside an island outline (see MASK_BITS).
+var island_mask := PackedInt64Array()
 
 
 ## Bakes the ground of the square box `centre` ± `half_size` (plus a margin).
@@ -40,6 +47,8 @@ static func bake(heightmap: TerrainHeightmap, islands: IslandField, centre: Vect
 	ground.terrain.resize(ground.columns * ground.rows)
 	ground.island_tops.resize(ground.columns * ground.rows)
 	ground.island_tops.fill(NONE)
+	ground.island_mask.resize(ground.columns * ground.rows)
+	ground.island_mask.fill(0)
 	for row in ground.rows:
 		for column in ground.columns:
 			var h := heightmap.height_at_sample(first.x + column, first.y + row)
@@ -52,20 +61,36 @@ static func bake(heightmap: TerrainHeightmap, islands: IslandField, centre: Vect
 func _bake_islands(islands: IslandField) -> void:
 	for i in islands.size():
 		var c := islands.centres[i]
-		var r := islands.radii[i] * 1.2
+		var r := islands.radii[i] * 1.2 + 2.0 * CELL
 		var lo := Vector2i(floori((c.x - r - origin.x) / CELL), floori((c.y - r - origin.y) / CELL))
 		var hi := Vector2i(ceili((c.x + r - origin.x) / CELL), ceili((c.y + r - origin.y) / CELL))
 		lo = lo.clamp(Vector2i.ZERO, Vector2i(columns - 1, rows - 1))
 		hi = hi.clamp(Vector2i.ZERO, Vector2i(columns - 1, rows - 1))
+		# Samples up to two cells past the rim get the (extrapolated) top, so every cell the
+		# outline touches has four corners to blend; the mask decides where the floor is.
+		var reach := 1.0 + 2.0 * CELL * 1.5 / islands.radii[i]
 		for row in range(lo.y, hi.y + 1):
 			for column in range(lo.x, hi.x + 1):
 				var p := origin + Vector2(column, row) * CELL
 				var s := islands.rim_fraction(i, p.x, p.y)
-				if s > 1.0:
-					continue
-				var top := roundi(islands.top_profile(i, s) * 100.0)
 				var k := row * columns + column
-				island_tops[k] = maxi(island_tops[k], top)
+				if s <= reach:
+					island_tops[k] = maxi(island_tops[k], roundi(islands.top_profile(i, s) * 100.0))
+				if row < hi.y and column < hi.x:
+					island_mask[k] |= _outline_bits(islands, i, p)
+
+
+# Bits of the 25 cm squares of the cell at corner p whose centres are inside island i's outline, less RIM_INSET.
+func _outline_bits(islands: IslandField, i: int, p: Vector2) -> int:
+	var bits := 0
+	var step := CELL / MASK_SIDE
+	for v in MASK_SIDE:
+		for u in MASK_SIDE:
+			var q := p + Vector2(u + 0.5, v + 0.5) * step
+			var d := q - islands.centres[i]
+			if d.length() <= islands.rim_radius(i, atan2(d.y, d.x)) - RIM_INSET:
+				bits |= 1 << (v * MASK_SIDE + u)
+	return bits
 
 
 ## Floor height at (x, z) for something at height `from_y`: an island top at or just
@@ -92,15 +117,20 @@ func _bilinear(grid: PackedInt32Array, k: int, tx: int, tz: int) -> int:
 	return (a * (SUB - tz) + b * tz) >> (2 * SUB_BITS)
 
 
-# Island top in cm: blended inside the island, the nearest sample at the rim, NONE outside.
+# Island top in cm where the outline mask covers (x, z), else NONE.
 func _island_top(k: int, tx: int, tz: int) -> int:
+	var bits := island_mask[k]
+	if bits == 0:
+		return NONE
+	var shift := SUB_BITS - MASK_BITS
+	if (bits >> (((tz >> shift) << MASK_BITS) + (tx >> shift))) & 1 == 0:
+		return NONE
 	var corners := [island_tops[k], island_tops[k + 1], island_tops[k + columns], island_tops[k + columns + 1]]
 	if not corners.has(NONE):
 		return _bilinear(island_tops, k, tx, tz)
-	var nearest: int = corners[(1 if tx >= SUB / 2 else 0) + (2 if tz >= SUB / 2 else 0)]
-	return nearest
+	return corners.max()
 
 
 ## Hash of the baked grids, for determinism checks.
 func checksum() -> int:
-	return hash([origin, columns, rows, terrain, island_tops])
+	return hash([origin, columns, rows, terrain, island_tops, island_mask])

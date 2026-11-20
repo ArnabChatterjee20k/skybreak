@@ -246,3 +246,29 @@ func test_an_island_body_blocks_the_camera_from_below() -> void:
 	assert_false(obstacles.is_inside(Vector3(0, 103, 0)), "above the top is clear")
 	assert_true(obstacles.blocks(Vector3(0, 103, 0), Vector3(0, 70, 0)), "rock between a player on top and a camera below")
 	assert_false(obstacles.blocks(Vector3(0, 103, 0), Vector3(0, 108, 6)), "a camera above the top is clear")
+
+
+# --- Issue #107: other fighters on the boom ---
+
+func test_camera_pulls_in_front_of_another_fighter_on_the_boom() -> void:
+	var player := Vector3(0, 10, 0)
+	var target := Vector3(0, 10, -12)
+	var free := _locked_camera()
+	_settle(free, player, target, 120)
+	# A third fighter standing right where the camera would sit (FFA, seed 2610).
+	var obstacles := CameraObstacles.new()
+	var body := Vector3(free.global_position.x, 10.0, free.global_position.z)
+	obstacles.set_bodies(PackedVector3Array([body]), Vector3(1.0, 1.8, 1.0))
+	var camera := _locked_camera(obstacles)
+	for i in 120:
+		camera.follow(player, target, true, 1.0 / 60.0)
+		assert_false(obstacles.bodies[0].has_point(camera.global_position), "never inside the body (frame %d)" % i)
+	assert_lt(camera.global_position.distance_to(player), free.global_position.distance_to(player) - 0.5,
+		"in front of it")
+
+
+func test_a_body_around_the_pivot_does_not_block_the_boom() -> void:
+	var obstacles := CameraObstacles.new()
+	obstacles.set_bodies(PackedVector3Array([Vector3(0, 10, 0)]), Vector3(1.0, 1.8, 1.0))
+	assert_eq(obstacles.body_clear_fraction(Vector3(0, 10, 0), Vector3(0, 11, 6)), 1.0)
+	assert_lt(obstacles.body_clear_fraction(Vector3(0, 10, 5), Vector3(0, 10, -5)), 0.5)

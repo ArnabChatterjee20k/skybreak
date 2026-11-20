@@ -258,6 +258,19 @@ func step_tick() -> void:
 	match_audio.after_tick()
 
 
+## Other fighters' bodies, so the camera never sits inside one (issue #107).
+func _update_camera_bodies() -> void:
+	if camera.obstacles == null:
+		return
+	var centres := PackedVector3Array()
+	for i in fighter_views.size():
+		if i != player and fighter_views[i].visible and sim.fighters[i].state != FighterState.State.VANISHING:
+			centres.append(fighter_views[i].position)
+	var stats := CombatSim.DEFAULT_FIGHTER_STATS as FighterStats
+	var width := stats.pushbox_radius * 2.0
+	camera.obstacles.set_bodies(centres, Vector3(width, stats.pushbox_height, width))
+
+
 ## Draws one frame: fighters between the last two ticks, then the camera.
 func present_frame(blend: float, delta: float) -> void:
 	for view in fighter_views:
@@ -278,6 +291,7 @@ func present_frame(blend: float, delta: float) -> void:
 		locked = apart < KO_FRAMING_RANGE
 	var target := _camera_target if locked else (1 if player == 0 and fighter_views.size() > 1 else 0)
 	var opponent := fighter_views[target].position
+	_update_camera_bodies()
 	camera.follow(fighter_views[player].position, opponent, locked, delta)
 	for view in fighter_views:
 		view.fade_for_camera(camera.global_position)
