@@ -13,6 +13,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-WEB2 [desktop] Web crash `RuntimeError: remainder by zero` on FIGHT: `ZoneMatch.spawn_positions`
+  took `side % points.size()` with no spawn points (Godot 4.7.2's binary export conversion empties
+  packed arrays; #112 already keeps text resources, so main is fine). `ZoneData.fighter_spawns`
+  now falls back to two points across the zone centre, used by `ZoneMatch` and `WorldMap`.
 - T-D36 [desktop] Playable web build: exports kept as text resources (Godot 4.7.2's binary
   conversion emptied zone spawn points, so every exported match crashed), webrtc-native left
   out of the Web preset, no Quit on web, `tools/web/match_smoke_test.js` (menu -> vs AI, 30 s).
