@@ -11,6 +11,15 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   test), keyboard/mouse bindings, debug overlay (fps, frame time), GUT, CI,
   `AGENTS.md`. Remaining: CI green on GitHub.
 
+- LOOKDEV-SM [desktop] Shattered Mesa voxel look v1 (`game/world/zones_voxel/shattered_mesa/`, branch
+  `lookdev/zone-shattered_mesa`, report `reports/lookdev/shattered_mesa/`). Waiting on the owner's
+  draft-stills gate. Open for v2 (ranked in the report's critique):
+  - triangle and draw-call budget: about 1.5 M visible + 1.7 M shadow triangles at the arch (target
+    1.2 M / 250 draws; web 500 k / 120): greedy-merge prop faces, T2 hoodoo tier ends sooner
+  - hoodoo lower 12 m and boulders at T1 (now T2 and 2xT1), caprock overhang lips, sand drifts
+  - slot-canyon hero shot and chockstone, heat shimmer, sand drift off crests, scrub sway
+  - the render benchmark on the GTX 1650
+
 - LOOKDEV-HB [desktop] Heartbloom voxel look v2 + the voxel zone kit (`game/world/voxel_zone_kit/`,
   branch `lookdev/heartbloom-zone`, report `reports/lookdev/heartbloom/v2/`). Waiting on the owner's
   draft-stills gate. Open for v3:

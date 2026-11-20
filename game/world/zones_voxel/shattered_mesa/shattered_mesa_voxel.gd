@@ -81,11 +81,13 @@ func presets() -> Dictionary:
 	p.dusk.sun_size = 0.05
 	p.dusk.ambient_color = Color("#a08ea8")
 	p.dusk.fog_color = Color("#d8c4b8")
-	p.dusk.fog_density = 0.0008
+	p.dusk.fog_density = 0.0005
 	# Night: cool moonlight, fog kept off violet.
 	p.night.sky_horizon = Color("#2c3a5c")
 	p.night.fog_color = Color("#283448")
 	p.night.sky_below = Color("#202a3c")
+	p.night.fog_density = 0.0007
+	p.night.sun_energy = 0.6
 	return p
 
 
@@ -214,3 +216,11 @@ func flight_kael() -> Array:
 func animate(t: float) -> void:
 	if props != null:
 		props.animate(t)
+	# The sand bounce follows the sun: warm and strong at noon, faint at night.
+	var bounce: DirectionalLight3D = get_meta("bounce", null)
+	if bounce != null:
+		for n in get_parent().get_children():
+			if n is VoxelStage and (n as VoxelStage).sun != null:
+				var sun := (n as VoxelStage).sun
+				bounce.light_energy = 0.32 * clampf(sun.light_energy / 2.4, 0.0, 1.0) * clampf(sun.basis.z.y * 1.6, 0.25, 1.0)
+				bounce.light_color = Color("#f0c8a0").lerp(sun.light_color, 0.4)

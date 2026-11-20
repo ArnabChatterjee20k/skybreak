@@ -592,6 +592,7 @@ func _story() -> void:
 	_well()
 	_petroglyphs()
 	_cairns()
+	_motion()
 
 
 ## The surveyor's camp on the Anvil Mesa: a canvas lean-to, a theodolite on a
@@ -861,5 +862,68 @@ func _find_top(want: Vector2, mc: Vector2) -> Vector2:
 	return mc
 
 
-func animate(_t: float) -> void:
-	pass
+# ---------------------------------------------------------------- motion
+
+var _devils: Array[Node3D] = []
+var _devil_paths: Array = []
+var _birds: Array[Node3D] = []
+
+
+## Dust devils (rigid spirals of sand flecks drifting over the floor, away
+## from the spawns) and three far birds gliding round the Great Mesa.
+func _motion() -> void:
+	var devil := func(g: VoxelGrid) -> void:
+		for i in 420:
+			var t := float(i) / 420.0
+			var y := t * 15.0
+			var r := 0.4 + 1.6 * t * t + 0.2 * sin(t * 40.0)
+			var a := t * 26.0 + VoxelSdf.hash3(Vector3i(i, 0, 0), 5) * 0.8
+			var c := Vector3(cos(a) * r, y, sin(a) * r)
+			var s := 0.09 + 0.06 * VoxelSdf.hash3(Vector3i(i, 1, 0), 5)
+			g.paint(AABB(c - Vector3.ONE * 0.2, Vector3.ONE * 0.4), func(p: Vector3) -> float:
+				return VoxelSdf.box(p, c, Vector3.ONE * s), Mat.SAND if i % 5 != 0 else Mat.PALE)
+	var dm := _mesh("dust_devil", AABB(Vector3(-2.4, 0, -2.4), Vector3(4.8, 15.4, 4.8)), VoxelZone.T1, devil)
+	for k in 2:
+		var mi := MeshInstance3D.new()
+		mi.mesh = dm
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.transparency = 0.35
+		root.add_child(mi)
+		_devils.append(mi)
+	# Wander lines on open floor: start, end (20 s life, looped).
+	_devil_paths = [[Vector2(470, 700), Vector2(560, 640)], [Vector2(620, 560), Vector2(560, 470)]]
+	var bird := func(g: VoxelGrid) -> void:
+		g.paint(AABB(Vector3(-0.9, -0.1, -0.3), Vector3(1.8, 0.2, 0.6)), func(p: Vector3) -> float:
+			var span := 0.9 - absf(p.z) * 1.5
+			return maxf(absf(p.x) - span, absf(p.y + absf(p.x) * 0.12) - 0.04) if absf(p.z) < 0.18 else 1.0, Mat.LEDGER)
+		g.paint(AABB(Vector3(-0.15, -0.1, -0.4), Vector3(0.3, 0.2, 0.8)), func(p: Vector3) -> float:
+			return VoxelSdf.box(p, Vector3(0, 0, 0), Vector3(0.08, 0.06, 0.32)), Mat.LEDGER)
+	var bm := _mesh("bird", AABB(Vector3(-1, -0.15, -0.45), Vector3(2, 0.3, 0.9)), VoxelZone.T0 * 2.0, bird)
+	for k in 3:
+		var mi := MeshInstance3D.new()
+		mi.mesh = bm
+		mi.scale = Vector3.ONE * 1.6
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(mi)
+		_birds.append(mi)
+	animate(0.0)
+
+
+func animate(t: float) -> void:
+	for k in _devils.size():
+		var path: Array = _devil_paths[k]
+		var u := fposmod(t / 20.0 + k * 0.45, 1.0)
+		var p: Vector2 = (path[0] as Vector2).lerp(path[1], u) + Vector2(sin(t * 0.7 + k), cos(t * 0.5 + k)) * 6.0
+		var d := _devils[k]
+		d.position = Vector3(p.x, ground(p.x, p.y) - 0.2, p.y)
+		d.rotation.y = -t * 5.0
+		var grow := clampf(minf(u, 1.0 - u) * 8.0, 0.0, 1.0)
+		d.scale = Vector3(1.0, 0.2 + 0.8 * grow, 1.0) * (0.4 + 0.6 * grow)
+		d.visible = grow > 0.02
+	var gm: Vector2 = zone.zone.centre + TerrainShape.MESAS[2][0]
+	for k in _birds.size():
+		var a := t * 0.16 + k * 2.1
+		var r := 95.0 + 18.0 * k
+		var b := _birds[k]
+		b.position = Vector3(gm.x + cos(a) * r, 150.0 + 9.0 * k + 3.0 * sin(t * 0.5 + k), gm.y + sin(a) * r)
+		b.rotation = Vector3(0.0, -a, 0.28)
