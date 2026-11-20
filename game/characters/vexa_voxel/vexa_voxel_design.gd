@@ -17,7 +17,7 @@ enum Mat {
 	EMPTY, HOOD, HOOD_DARK, LINING, SUIT, SUIT_SEAM, JACKET, JACKET_EDGE, JACKET_DARK, ZIP,
 	WRAP, WRAP_RIDGE, BOOT, SOLE, STEEL, VISOR, VISOR_GLINT, SLIT, GLINT, SKIN, SKIN_SHADE,
 	MOUTH, HAIR, HAIR_STREAK, ACCENT, ACCENT_DARK, COIN, CHALK, THREAD, CHAKRAM, CHAKRAM_EDGE,
-	ENGRAVE, CRACK, PAD,
+	ENGRAVE, CRACK, PAD, HOOD_INNER, HOOD_RIM, WRAP_BAND,
 }
 enum Tag {
 	TORSO, ARM_L, ARM_R, LEG_L, LEG_R, MANTLE, HOOD, HEAD, EARS, SASH, COLLAR,
@@ -30,9 +30,10 @@ const FINGERS: Array[String] = ["Index", "Middle", "Ring", "Little"]
 const COLORS := {
 	Mat.HOOD: Color("#3a2650"), Mat.HOOD_DARK: Color("#271a37"), Mat.LINING: Color("#8a3cf0"),
 	Mat.SUIT: Color("#1a1c24"), Mat.SUIT_SEAM: Color("#2a2d3a"),
-	Mat.JACKET: Color("#8a8f9c"), Mat.JACKET_EDGE: Color("#a9aeb9"), Mat.JACKET_DARK: Color("#565a66"),
-	Mat.ZIP: Color("#3c3f48"),
-	Mat.WRAP: Color("#7a7484"), Mat.WRAP_RIDGE: Color("#8e8898"),
+	Mat.HOOD_INNER: Color("#160e20"), Mat.HOOD_RIM: Color("#5e4482"),
+	Mat.JACKET: Color("#5a5a70"), Mat.JACKET_EDGE: Color("#3c3c4e"), Mat.JACKET_DARK: Color("#2e2e3c"),
+	Mat.ZIP: Color("#c4c8d2"),
+	Mat.WRAP: Color("#8a8aa0"), Mat.WRAP_RIDGE: Color("#9696ac"), Mat.WRAP_BAND: Color("#3a3848"),
 	Mat.BOOT: Color("#2c2a30"), Mat.SOLE: Color("#141316"), Mat.PAD: Color("#3a3840"),
 	Mat.STEEL: Color("#bcc0ca"),
 	Mat.VISOR: Color("#18141f"), Mat.VISOR_GLINT: Color("#4a4358"),
@@ -47,7 +48,7 @@ const COLORS := {
 ## Big calm panels: about +-2% value noise, no edge lightening.
 const QUIET := [Mat.HOOD, Mat.HOOD_DARK, Mat.SUIT, Mat.JACKET, Mat.LINING, Mat.VISOR]
 ## Worn spots lighten on exposed edges (leather, metal, wraps, the chakram edge).
-const WEARS := [Mat.BOOT, Mat.PAD, Mat.STEEL, Mat.WRAP, Mat.WRAP_RIDGE, Mat.CHAKRAM, Mat.CHAKRAM_EDGE, Mat.COIN]
+const WEARS := [Mat.BOOT, Mat.PAD, Mat.STEEL, Mat.WRAP_RIDGE, Mat.CHAKRAM, Mat.CHAKRAM_EDGE, Mat.COIN]
 
 ## Torso slices (y: half width, half depth, centre z), planar between keys:
 ## wide hips, a 0.22 m waist, a narrow chest, the shoulder chamfer.
@@ -117,13 +118,40 @@ func surface_params() -> Array:
 	return params
 
 
-func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exposure: float) -> Color:
+func color(mat: int, p: Vector3, c: Vector3i, n: Vector3, occlusion: float, exposure: float) -> Color:
 	var base: Color = COLORS.get(mat, Color.MAGENTA)
-	if mat == Mat.HOOD and p.y < 1.3 and p.y > 1.0:
-		# The mantle darkens toward the tatter tips.
-		base = base.lerp(COLORS[Mat.HOOD_DARK], clampf((1.24 - p.y) / 0.14, 0.0, 1.0) * 0.45)
+	if mat == Mat.HOOD or mat == Mat.HOOD_DARK or mat == Mat.HOOD_RIM:
+		base = hood_shade(base, mat, p, n)
 	return default_color(base, mat, c, occlusion, exposure, mat in QUIET, mat in WEARS,
 		mat == Mat.HAIR or mat == Mat.HAIR_STREAK)
+
+
+## Hood and mantle values: faces turned in toward the body or down are the
+## dark interior; the outer panels get fold shading and light tatter tips.
+static func hood_shade(base: Color, mat: int, p: Vector3, n: Vector3) -> Color:
+	var outward := Vector3(p.x, 0.0, p.z + 0.015).normalized()
+	if n.dot(outward) < -0.35 or n.y < -0.6:
+		return COLORS[Mat.HOOD_INNER].lerp(base, 0.15)
+	if mat == Mat.HOOD_RIM:
+		return base
+	var angle := atan2(p.x, p.z + 0.015)
+	if p.y < 1.32 and p.y > 1.0:
+		# Mantle: light on each tatter's centre fold, dark in the valleys
+		# between tatters, a light rim along the tips.
+		var d := 1.0
+		for t: Array in TATTERS:
+			d = minf(d, absf(angle_difference(angle, deg_to_rad(t[0]))) / TATTER_HALF)
+		var fold := lerpf(1.12, 0.7, smoothstep(0.15, 1.0, d))
+		var tip := 1.0 - smoothstep(0.0, 0.04, p.y - tatter_hem(angle))
+		return (base * fold).lerp(COLORS[Mat.HOOD_RIM], tip * 0.75)
+	if p.y >= 1.32:
+		# Hood: soft drape folds round the back and sides, lighter toward the
+		# crown, darker at the cowl.
+		var drape := 0.5 + 0.5 * cos(angle * 6.0)
+		var back := smoothstep(0.6, 2.0, absf(angle))
+		var fold := lerpf(1.0, lerpf(0.8, 1.1, drape), back)
+		return base * fold * lerpf(0.86, 1.1, smoothstep(1.36, 1.74, p.y))
+	return base
 
 
 # ---------------------------------------------------------------- shapes
@@ -503,6 +531,12 @@ func build_hood() -> VoxelGrid:
 		var cut := 0.075 + (1.46 - p.y) * 0.5
 		var cowl := p.y < 1.46 and p.z > 0.0 and absf(p.x) >= cut - 0.001 and absf(p.x) < cut + FINE_CELL * 1.1
 		return p.z > -0.02 and ((f > -FINE_CELL * 2.2 and f <= 0.0) or cowl), Mat.LINING, [Mat.HOOD, Mat.HOOD_DARK])
+	# A lighter rim on the outer edge, just outside the lining.
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
+		var f := face_opening(p)
+		var cut := 0.075 + (1.46 - p.y) * 0.5
+		var cowl := p.y < 1.46 and p.z > 0.0 and absf(p.x) >= cut + FINE_CELL * 1.1 and absf(p.x) < cut + FINE_CELL * 2.2
+		return p.z > -0.02 and ((f > -FINE_CELL * 3.3 and f <= -FINE_CELL * 2.2) or cowl), Mat.HOOD_RIM, [Mat.HOOD])
 	return g
 
 
@@ -710,6 +744,12 @@ func build_hand(side: float) -> VoxelGrid:
 		var ax := p.x * side
 		var u := atan2(p.z, p.y - y) / TAU
 		return ax > 0.47 and ax < 0.63 and fposmod((ax - u * 0.03) / 0.032, 1.0) < 0.2, Mat.WRAP_RIDGE, [Mat.WRAP])
+	# Every third wrap is a dark band.
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
+		var ax := p.x * side
+		var u := atan2(p.z, p.y - y) / TAU
+		return ax > 0.46 and ax < 0.64 and posmod(int(floor((ax + u * 0.03) / 0.032)), 3) == 1, Mat.WRAP_BAND,
+		[Mat.WRAP, Mat.WRAP_RIDGE])
 	# Elbow edge of the wraps tucked under the jacket cuff.
 	g.paint(box, func(p: Vector3):
 		var ax := p.x * side
@@ -802,6 +842,12 @@ func build_lower_leg(side: float) -> VoxelGrid:
 			var on := k < 7 and stroke and p.y > 0.25 and p.y < 0.3
 			var cross := absf(p.y - 0.275 - (u - 0.95) * 0.04) < FINE_CELL * 0.6 and u > 0.8 and u < 1.15
 			return on or cross, Mat.CHALK, [Mat.WRAP, Mat.WRAP_RIDGE])
+	# Every third wrap is a dark band.
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
+		var r: Vector3 = shin.call(clampf(p.y, 0.14, 0.43))
+		var u := atan2(p.x - bx, p.z - r.z) / TAU
+		return p.y > 0.15 and p.y < 0.44 and posmod(int(floor((p.y + u * 0.05) / 0.05)), 3) == 1, Mat.WRAP_BAND,
+		[Mat.WRAP, Mat.WRAP_RIDGE])
 	# Soft boot: planar upper narrowing to a pointed toe, a turned cuff, a
 	# thin sole and the toe split.
 	var half_w := func(z: float) -> float:
