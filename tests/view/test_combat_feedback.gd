@@ -23,7 +23,10 @@ func test_heavy_hit_gets_a_heavy_spark_and_more_shake() -> void:
 
 func test_every_event_type_shows_something() -> void:
 	for type in E.values():
+		if type == E.KO:
+			continue # #121: its one burst is MatchVfx's ko_burst (test_match_vfx).
 		assert_false(CombatFeedback.plan_for(_event(type)).effects.is_empty(), E.find_key(type))
+	assert_true(MatchVfx.effects_for(_event(E.KO), &"").has(&"ko_burst"), "KO shows its burst")
 
 
 func test_blocks_are_tinted_and_smaller_than_hits() -> void:
@@ -38,6 +41,7 @@ func test_ko_and_guard_break_get_the_biggest_shakes_but_leave_impact_frames_to_t
 	for type in E.values():
 		assert_eq(CombatFeedback.plan_for(_event(type, 20)).impact_frames, 0, "%s: MatchVfx rations those" % E.find_key(type))
 	assert_gt(ko.shake, CombatFeedback.plan_for(_event(E.HIT, 8)).shake)
+	assert_eq(ko.effects, [], "#121: the KO's burst is MatchVfx's ko_burst alone")
 	assert_gt(guard_break.shake, CombatFeedback.plan_for(_event(E.HIT, 8)).shake)
 
 
@@ -147,3 +151,8 @@ func test_the_arena_feeds_sim_events_to_the_feedback_every_tick() -> void:
 			break
 	assert_gt(spawned, 0, "the bot landed a hit")
 	assert_gt(arena.combat_feedback.get_child_count(), 0, "and the arena spawned its spark")
+
+
+func test_a_beam_clash_shockwave_stays_compact() -> void:
+	for type in [E.BEAM_CLASH, E.CLASH_END]:
+		assert_lte(CombatFeedback.plan_for(_event(type)).scale, CombatFeedback.CLASH_SHOCKWAVE_SCALE)

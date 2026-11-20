@@ -18,6 +18,16 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   flash + chip trail, low-HP pulse. `game/debug/hud_capture.gd` renders the review shots. Heartbloom
   visual goldens re-blessed (HUD only). Open: on the web build `SystemFont` falls back to the default
   face for menus and HUD alike; bundling a licensed heavy display font would fix both.
+
+- T-ART2 [desktop] Art round 2 (#99, #135, #137, #120, #138, #118, #121, #98, #124): crisp opaque
+  Skyhold cloud sea and lighter haze, Heartbloom lawn shader (petals, stepping-stone walk, no fan
+  shading), Stormfall neon night city with skyline and wet-street neon, shaded Ember spires, no prop
+  stripe aliasing, KO beat at the contact, readable beam clash, Brann's cannon and hammer guard,
+  Lyra's hip star-chart case, full zone card names. Follow-ups:
+  - T-ART2a [desktop] Combo breaker (#129, not merged yet): one shockwave instead of a dome + 3 rings.
+  - T-ART2b [desktop] Main-menu backdrop: stray dark spike shadow on the grass (world flythrough scene).
+  - T-ART2c [desktop] Re-render the zone select cards (`game/ui/menus/zone_cards/*.png`), Skyhold's still shows stripes.
+  - T-ART2d [developer] `ZoneMatch.step_tick` never calls `FighterView.react_to_tick`, so hit flinches are missing in matches.
 - T-DEF2 dodge [desktop] (`claude/T-DEF2-dodge`): tap Shift = directional / spot / sidestep dodge with
   i-frames, chain and cooldown, air limits, perfect dodge (attacker freeze, READ pop, +10 ki once per
   3 s), Sweep tracks sidesteps, recovery grabs are untechable counter-hits; `DodgeTuning`,
