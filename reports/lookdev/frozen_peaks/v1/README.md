@@ -88,7 +88,7 @@ Prop meshes come from the character kit's `VoxelMesher`, which emits one quad pe
 8. **Dusk still leans warm and pink** on the snow despite the lilac fog: too close to Heartbloom's hero time.
 9. **Missing from the sheet:** the snowstorm shot, the spindrift plumes, the readability strip (4 legends over snow, slate and the night sky), and the render benchmark before and after. The stand-in range beyond the zone box replaces the real neighbouring zones (look-dev framing only).
 10. **The fly-through flies higher than planned.** Every control point is lifted until the spline clears the 60 sim spires and the ground by 4 m and 2.5 m (tested), so the "low along the valley" leg runs at roughly 20–40 m. The first full render dipped below the floor around frame 210 and showed a seam where the T1 and T2 floors meet. Both were fixed (ground clearance in the check; lattice squares owned by their centre) and the video re-rendered.
-11. **Aurora seam (fixed in the video):** the first render showed a vertical seam (atan's wrap fell inside the visible spread) and a hard bottom edge when seen from altitude. Fixed in `frozen_sky.gdshader`; frames 270–599 re-rendered.
+11. **Aurora seam (fixed in the video; the last ~2 s turn away from the aurora, a weak ending):** the first render showed a vertical seam (atan's wrap fell inside the visible spread) and a hard bottom edge when seen from altitude. Fixed in `frozen_sky.gdshader`; frames 270–599 re-rendered.
 12. **One hack:** the zone swaps `VoxelStage._sky_mat`'s shader (a private member) to add the aurora. The kit should get a per-zone sky shader hook. No kit file was edited.
 
 ## Publishing
