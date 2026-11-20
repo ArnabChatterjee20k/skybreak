@@ -1,0 +1,83 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 3
+		},
+		"breaker": {
+			"7": 4,
+			"8": 6
+		},
+		"breaker+counter": {
+			"11": 2,
+			"12": 1
+		},
+		"light_1": {
+			"3": 15,
+			"4": 7,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 8,
+			"8": 2
+		},
+		"light_2": {
+			"3": 15,
+			"4": 7,
+			"5": 2
+		},
+		"light_3": {
+			"3": 5,
+			"4": 6,
+			"5": 8,
+			"8": 2,
+			"20": 1
+		}
+	},
+	"id": "104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		2,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 104,
+	"sim_ms_per_tick": 1.14452708333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0108148818835616,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.0328553451485,
+		"foot_slide_cm_per_frame": 0.262601436020993,
+		"foot_slide_frames": 594,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.993775011116052,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.97304,
+	"violations": [],
+	"wall_seconds": 18.367,
+	"zone": "verdant_falls"
+}
