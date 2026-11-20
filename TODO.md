@@ -17,6 +17,14 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   25 cm outline mask, 0.25 m inset); falls/dives/vanish anchors can no longer pass through an
   island top (`CombatSim._stop_on_skipped_island`); the camera pulls in front of other fighters;
   QA `camera_cover` skips camera-faded bodies; `run_qa.sh --zone`.
+- T-D30e [desktop] Weapon holds, view-only port of #70 (supersedes it): `WeaponGrip`, per-build
+  holds, clearance solver with carry-over, KO weapon drop, bow reach, `VisualQa`; plus fixed
+  one-hand hit-reaction tuck and flight hold, heavies at the side in flight, eased hold changes,
+  clear-then-limit rounds after the turn cap, a short equip moment. Open: VisualQa
+  weapon_vs_holder 9 and bow_vs_head 14 (3 zones x seeds 1-3), not 0; armed layers cost
+  ~2.9-3.3 ms for 4 fighters here (target 0.5 ms; unarmed 0.54-0.78 vs main 0.47); VisualQa
+  ground_contact / fighter_vs_fighter tracked under QA-12 / QA-11; the strip's flight column
+  renders upright (preview does not reach the flight body).
 
 - QA-11 [desktop] `fighter_overlap` measures pushboxes (`Pushboxes.gap`, skipping the pairs
   `Pushboxes.collide` lets through) instead of hurtboxes. Quick soak: sim invariants PASS, no real
@@ -103,6 +111,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - QA-12 [desktop] Bug (T-D22d): foot_ground still fails in 18/21 quick matches (545 frames, down from 3190). T-D22e (`claude/T-D22e-foot-grounding`): 542 -> 19 frames in a local replay of the quick matrix, all 19 in QA-12c. T-D34 quick run on 93ca66b: 3 frames in 2/21, both view-side: Brann's first IDLE frame after a vanish reappears (+10.2 cm, Stormfall t1902) and Lyra's `guard` +6.6 cm on flat Frozen Peaks ground (t1178-1181). Owner: characters (T-D22 motion).
 - QA-13 [developer] Bug (T-D22d): `ZoneMatch` never calls `FighterView.react_to_tick`, so in real matches nobody flinches at hits or looks at the lock-on target (FighterView now finds the sim's floor itself).
 - QA-9 [desktop] Bug (T-D31): a held bow's string passes within 1.5–8 cm of the head centre (Brann blocking, attacking or in blockstun; Kael dashing), 7 of 252 full-soak matches.
+- QA-17 [desktop] Bug (T-D30e): a VisualQa seed plays a different match depending on what ran earlier in the process (Frozen Peaks s2: 9860 samples in `visual_qa_run.gd`, 10055 for the test alone, 10886 in the full GUT suite). The AI seeds lazily from `sim.rng.seed`, so some other state leaks between scripts; find it so GUT and the runner agree.
 - QA-10 [desktop] Bug (QA re-baseline): the Skyhold Ruins cloud sea renders differently on every run (SSIM 0.944, 4.2% tiles between two renders of the same commit), so `zone_skyhold_ruins` sits just above the visual-golden threshold on noise alone. Make the cloud layer's time deterministic in the QA shots.
 - [desktop] Bug (found in T-D22b): `WeaponMoves.move_set(kind, unarmed)` caches by weapon kind only, so the first fighter to arm a kind (e.g. Vexa) fixes its unarmed grab/push_block for everyone after. Key the cache by the unarmed set too.
 

@@ -19,3 +19,6 @@ hover_bob = 0.07
 hover_bob_hz = 0.4
 flight_arm_scale = 1.2
 dive_pitch = 92.0
+hold_forward = 0.15
+hold_out = 0.1
+heavy_at_side = true
