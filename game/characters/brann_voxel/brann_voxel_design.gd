@@ -22,7 +22,7 @@ enum Mat {
 }
 enum Tag {
 	TORSO, NECK, ARM_L, ARM_R, LEG_L, LEG_R, APRON, BOULDER_L, BOULDER_R, HEAD, BEARD, BRAID,
-	GAUNT_L, GAUNT_R, THUMB_L, THUMB_R,
+	GAUNT_L, GAUNT_R, THUMB_L, THUMB_R, FOOT_L, FOOT_R,
 }
 ## Per-finger rig tags: FINGER_BASE + side (0 left, 1 right) * 4 + finger.
 const FINGER_BASE := 32
@@ -84,14 +84,14 @@ var _boulder := PackedFloat32Array()
 func _init(skel: Skeleton3D) -> void:
 	super(skel)
 	_chest = planes([
-		[Vector3(0, 0.30, 1), 0.27], [Vector3(0, 0.15, -1), 0.24], [Vector3(1, 0.12, 0), 0.40],
+		[Vector3(0, 0, 1), 0.28], [Vector3(0, 0.15, -1), 0.24], [Vector3(1, 0.12, 0), 0.40],
 		[Vector3(-1, 0.12, 0), 0.40], [Vector3(1, 0, 1), 0.42], [Vector3(-1, 0, 1), 0.42],
 		[Vector3(1, 0.1, -1), 0.40], [Vector3(-1, 0.1, -1), 0.40], [Vector3(0.55, 1, 0), 0.21],
 		[Vector3(-0.55, 1, 0), 0.21], [Vector3(0, 1, 0), 0.25], [Vector3(0, -1, 0), 0.24],
 		[Vector3(0, 1, 1), 0.30], [Vector3(0, 1, -1), 0.28], [Vector3(0, -1, 1.2), 0.36],
 	])
 	_belly = planes([
-		[Vector3(0, -0.35, 1), 0.31], [Vector3(0, 0.4, 1), 0.30], [Vector3(0, 0, -1), 0.22],
+		[Vector3(0, -0.35, 1), 0.31], [Vector3(0, 0, 1), 0.29], [Vector3(0, 0, -1), 0.22],
 		[Vector3(1, -0.1, 0), 0.37], [Vector3(-1, -0.1, 0), 0.37], [Vector3(1, 0, 1.1), 0.40],
 		[Vector3(-1, 0, 1.1), 0.40], [Vector3(1, 0, -1), 0.34], [Vector3(-1, 0, -1), 0.34],
 		[Vector3(0, 1, 0), 0.20], [Vector3(0, -1, 0), 0.16],
@@ -116,8 +116,9 @@ func build_grids() -> Array[VoxelGrid]:
 		build_head(), build_beard(), build_front()]
 
 
+## No smoothing pass: the parts are planar or fine-cell, and it costs build time.
 func soft_materials() -> Array:
-	return [Mat.TROUSER, Mat.BEARD]
+	return []
 
 
 func blur_cells(_grid: VoxelGrid) -> int:
@@ -144,7 +145,7 @@ func surface_params() -> Array:
 		{"roughness_value": 0.88, "specular_value": 0.28, "bevel_tilt": 0.35, "edge_lift": 0.04},  # CLOTH
 		{"roughness_value": 0.5, "metallic_value": 0.7, "specular_value": 0.55, "edge_lift": 0.22},  # METAL
 		{"roughness_value": 0.1, "metallic_value": 0.1, "specular_value": 0.9, "emission_value": 0.6},  # GLASS
-		{"roughness_value": 0.9, "specular_value": 0.25, "bevel_tilt": 0.5, "edge_lift": 0.07},  # SKIN (stone)
+		{"roughness_value": 0.9, "specular_value": 0.25, "bevel_tilt": 0.3, "edge_lift": 0.05},  # SKIN (stone)
 		{"roughness_value": 0.6, "emission_value": GLOW_EMISSION, "edge_lift": 0.0},  # GLOW (ember)
 		{"roughness_value": 0.72, "specular_value": 0.4, "edge_lift": 0.14},  # HAIR (beard)
 	]
@@ -175,7 +176,7 @@ func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exp
 	if mat in WEARS:
 		var worn: Color = IRON_WEAR if mat == Mat.IRON or mat == Mat.RIVET else col.lightened(0.3)
 		col = col.lerp(worn, exposure * 0.7)
-	elif (mat == Mat.STONE or mat == Mat.BOULDER) and VoxelSdf.hash3(c / 2, 77) < 0.3:
+	elif (mat == Mat.STONE or mat == Mat.BOULDER) and VoxelSdf.hash3(c / 2, 77) < 0.12 and exposure > 0.5:
 		col = col.lerp(col.lightened(0.22), exposure * 0.8)
 	col.a = 1.0
 	return col
@@ -302,6 +303,25 @@ func crack(g: VoxelGrid, bounds: AABB, sdf: Callable, pts: PackedVector2Array, a
 		facing: Callable, tag: int, width := 0.7) -> void:
 	var w := g.cell * width
 	var cell := g.cell
+	# Only cells near the polyline's footprint are visited.
+	var lo := Vector2(1e9, 1e9)
+	var hi := Vector2(-1e9, -1e9)
+	for q in pts:
+		lo = Vector2(minf(lo.x, q.x), minf(lo.y, q.y))
+		hi = Vector2(maxf(hi.x, q.x), maxf(hi.y, q.y))
+	lo -= Vector2.ONE * cell * 2.0
+	hi += Vector2.ONE * cell * 2.0
+	var near := bounds
+	match axis:
+		0:
+			near = AABB(Vector3(bounds.position.x, lo.y, lo.x), Vector3(bounds.size.x, hi.y - lo.y, hi.x - lo.x))
+		1:
+			near = AABB(Vector3(lo.x, bounds.position.y, lo.y), Vector3(hi.x - lo.x, bounds.size.y, hi.y - lo.y))
+		_:
+			near = AABB(Vector3(lo.x, lo.y, bounds.position.z), Vector3(hi.x - lo.x, hi.y - lo.y, bounds.size.z))
+	bounds = bounds.intersection(near)
+	if not bounds.has_volume():
+		return
 	var proj := func(p: Vector3) -> Vector2:
 		match axis:
 			0:
@@ -318,7 +338,7 @@ func crack(g: VoxelGrid, bounds: AABB, sdf: Callable, pts: PackedVector2Array, a
 			var h: Vector2 = hit.call(p)
 			if h.x > w:
 				return 1.0
-			var kind := Mat.EMBER_DIM if h.y > 0.82 else (Mat.EMBER_CORE if h.y > 0.15 and h.y < 0.6 else Mat.EMBER)
+			var kind := Mat.EMBER_DIM if h.y > 0.8 else (Mat.EMBER_CORE if h.y > 0.3 and h.y < 0.48 else Mat.EMBER)
 			if kind != m:
 				return 1.0
 			var d: float = sdf.call(p)
@@ -377,11 +397,13 @@ func _pelvis_and_legs(g: VoxelGrid) -> void:
 func _boots(g: VoxelGrid) -> void:
 	for side: float in [1.0, -1.0]:
 		var tag := Tag.LEG_L if side > 0 else Tag.LEG_R
+		# The foot, toe cap and sole ride the foot rigidly; the shaft the shin.
+		var foot_tag := Tag.FOOT_L if side > 0 else Tag.FOOT_R
 		var bx := 0.19 * side
 		var box := AABB(Vector3(bx - 0.17, -0.01, -0.2), Vector3(0.34, 0.33, 0.5))
 		# Shaft (planar octagon), foot block, iron toe cap, a thick sole.
 		g.paint(box, func(p: Vector3):
-			if p.y < 0.04 or p.y > 0.29:
+			if p.y < 0.13 or p.y > 0.29:
 				return 1.0
 			return octagon(p.x - bx, p.z + 0.005, 0.138, 0.13), Mat.BOOT, tag)
 		g.paint(box, func(p: Vector3):
@@ -389,22 +411,22 @@ func _boots(g: VoxelGrid) -> void:
 				return 1.0
 			var top := 0.17 - maxf(p.z - 0.05, 0.0) * 0.32
 			return maxf(maxf(octagon(p.x - bx, 0.0, 0.13, 0.13), absf(p.z - 0.055) - 0.2), maxf(p.y - top, 0.04 - p.y)),
-			Mat.BOOT, tag)
+			Mat.BOOT, foot_tag)
 		g.paint(box, func(p: Vector3):
 			if p.z < 0.14 or p.y < 0.04:
 				return 1.0
 			var top := 0.17 - maxf(p.z - 0.05, 0.0) * 0.32 + 0.012
-			return maxf(maxf(octagon(p.x - bx, 0.0, 0.142, 0.142), absf(p.z - 0.2) - 0.07), p.y - top), Mat.IRON, tag)
+			return maxf(maxf(octagon(p.x - bx, 0.0, 0.142, 0.142), absf(p.z - 0.2) - 0.07), p.y - top), Mat.IRON, foot_tag)
 		g.paint(box, func(p: Vector3):
 			return maxf(octagon(p.x - bx, 0.0, 0.15, 0.15), maxf(absf(p.z - 0.06) - 0.225, absf(p.y - 0.026) - 0.026)),
-			Mat.SOLE, tag)
+			Mat.SOLE, foot_tag)
 		# Hobnails: six iron studs along each sole edge.
 		for k in 6:
 			var z := lerpf(-0.13, 0.25, k / 5.0)
 			for e: float in [1.0, -1.0]:
 				var at := Vector3(bx + 0.162 * e, 0.024, z)
 				g.paint(box_of(at, Vector3(0.02, 0.02, 0.02)), func(p: Vector3): return VoxelSdf.box(p, at, Vector3(0.008, 0.008, 0.008)),
-					Mat.RIVET, tag, ADD)
+					Mat.RIVET, foot_tag, ADD)
 		# A strap and buckle round the shaft top.
 		g.paint(box, func(p: Vector3):
 			if absf(p.y - 0.25) > 0.022:
@@ -611,7 +633,7 @@ func _apron(g: VoxelGrid) -> void:
 # ---------------------------------------------------------------- boulders
 
 func build_boulder(side: float) -> VoxelGrid:
-	var c := Vector3(0.40 * side, 1.70, -0.01)
+	var c := Vector3(0.42 * side, 1.715, -0.01)
 	var g := VoxelGrid.new(box_of(c, Vector3(0.235, 0.21, 0.245)), FINE_CELL)
 	var box := AABB(g.origin, Vector3(g.size) * g.cell)
 	var tag := Tag.BOULDER_L if side > 0 else Tag.BOULDER_R
@@ -641,12 +663,14 @@ func build_boulder(side: float) -> VoxelGrid:
 		var up := n.y + (lo - 0.5) * 0.5
 		if up < 0.55:
 			return 1.0
-		var thick := FINE_CELL * (0.7 + 1.2 * lo)
-		if d > thick and VoxelSdf.hash3(cc, 52) > 0.04:
+		var thick := FINE_CELL * (0.8 + 1.3 * lo)
+		# Sparse tufts stand a cell or two proud.
+		var tuft := VoxelSdf.hash3(Vector3i(cc.x, 0, cc.z), 52) < 0.02
+		if d > thick and not tuft:
 			return 1.0
 		return -1.0, Mat.MOSS, tag, ADD)
 	g.paint_surface(box, func(_p: Vector3, cc: Vector3i):
-		return VoxelSdf.hash3(Vector3i(cc.x / 2, cc.y / 2, cc.z / 2), 53) < 0.3, Mat.MOSS_DARK, [Mat.MOSS])
+		return VoxelSdf.hash3(Vector3i(cc.x / 3, cc.y / 3, cc.z / 3), 53) < 0.3, Mat.MOSS_DARK, [Mat.MOSS])
 	# Lichen dots on the bare rock.
 	g.paint_surface(box, func(_p: Vector3, cc: Vector3i):
 		return VoxelSdf.hash3(cc, 54) < 0.03, Mat.LICHEN, [Mat.BOULDER])
@@ -727,8 +751,8 @@ func build_arm(side: float) -> VoxelGrid:
 	# Fist: a stone palm block with an iron back plate.
 	var palm := Vector3(0.975 * side, y, -0.003)
 	g.paint(box_of(palm, Vector3(0.08, 0.09, 0.15)), func(p: Vector3):
-		return VoxelSdf.box(p, palm, Vector3(0.062, 0.07, 0.127), 0.018), Mat.STONE, gtag)
-	var plate := palm + Vector3(-0.005 * side, 0.072, 0.0)
+		return VoxelSdf.box(p, palm, Vector3(0.062, 0.078, 0.127), 0.018), Mat.STONE, gtag)
+	var plate := palm + Vector3(-0.005 * side, 0.08, 0.0)
 	g.paint(box_of(plate, Vector3(0.07, 0.02, 0.13)), func(p: Vector3):
 		var q := p - plate
 		var bevel := 0.006 if absf(q.y) > 0.002 else 0.0
@@ -756,7 +780,7 @@ func build_arm(side: float) -> VoxelGrid:
 			chain[i] += Vector3(0, 0, dz)
 		chain[0] -= Vector3(0.02 * side, 0, 0)
 		var ftag := FINGER_BASE + (0 if side > 0 else 4) + f
-		var hy := 0.042 if f < 3 else 0.036
+		var hy := 0.048 if f < 3 else 0.04
 		var hz := 0.027 if f < 3 else 0.024
 		for i in 3:
 			var a := chain[i]
@@ -822,25 +846,29 @@ func build_head() -> VoxelGrid:
 		var brow_box := AABB(Vector3(minf(0.0, 0.17 * s) - 0.005, 1.84, 0.08), Vector3(0.18, 0.09, 0.16))
 		var yb := func(u: float) -> float: return 1.876 + 0.018 * clampf(u / 0.15, 0.0, 1.0)
 		var zf := func(u: float) -> float: return 0.214 - u * 0.14
-		g.paint(brow_box, func(p: Vector3):
+		var ledge := func(p: Vector3) -> float:
 			var u := p.x * s
 			return maxf(maxf(absf(p.y - yb.call(u)) - 0.021, p.z - zf.call(u) - (p.y - yb.call(u)) * 0.35),
-				maxf(0.1 - p.z, maxf(u - 0.148, -u - 0.004))), Mat.STONE, t)
-		# Bushy ember brows along the ledge's top front edge.
+				maxf(0.1 - p.z, maxf(u - 0.148, -u - 0.004)))
+		g.paint(brow_box, ledge, Mat.STONE, t)
+		# Bushy dark-ember brows on the ledge's top front edge only.
 		g.paint_surface(brow_box, func(p: Vector3, _c: Vector3i):
 			var u := p.x * s
-			return u > 0.01 and u < 0.14 and p.y > yb.call(u) + 0.006 and p.z > zf.call(u) - 0.03, Mat.BEARD, [Mat.STONE])
+			return u > 0.015 and u < 0.14 and ledge.call(p) <= 0.0 and head_sdf(p) > 0.0 and p.y > yb.call(u) + 0.008 \
+				and p.z > zf.call(u) - 0.03, Mat.BEARD_DARK, [Mat.STONE])
 	# Deep-set glowing eyes under the ledge, a dark pupil block in front, a glint.
 	for s: float in [1.0, -1.0]:
 		var e := Vector3(0.058 * s, 1.84, 0.17)
 		var eb := box_of(e, Vector3(0.05, 0.035, 0.05))
 		g.paint(eb, func(p: Vector3): return VoxelSdf.ellipsoid(p, e + Vector3(0, 0, 0.03), Vector3(0.042, 0.022, 0.05)), 0, -1, CARVE)
 		g.paint(eb, func(p: Vector3): return VoxelSdf.ellipsoid(p, e + Vector3(0, -0.002, -0.022), Vector3(0.034, 0.017, 0.035)),
-			Mat.EMBER_CORE, t, ADD)
-		var pupil := e + Vector3(-0.006 * s, -0.002, 0.016)
-		g.paint(box_of(pupil, Vector3(0.02, 0.02, 0.02)), func(p: Vector3): return VoxelSdf.box(p, pupil, Vector3(0.0085, 0.0085, 0.006)),
+			Mat.EMBER, t, ADD)
+		g.paint(eb, func(p: Vector3): return VoxelSdf.ellipsoid(p, e + Vector3(0, -0.002, -0.022), Vector3(0.024, 0.011, 0.04)),
+			Mat.EMBER_CORE, t, PAINT)
+		var pupil := e + Vector3(-0.004 * s, -0.002, 0.016)
+		g.paint(box_of(pupil, Vector3(0.02, 0.02, 0.02)), func(p: Vector3): return VoxelSdf.box(p, pupil, Vector3(0.0045, 0.0095, 0.006)),
 			Mat.PUPIL, t, ADD)
-		var glint := pupil + Vector3(0.006 * s, 0.006, 0.005)
+		var glint := pupil + Vector3(0.0085 * s, 0.006, 0.0)
 		g.paint(box_of(glint, Vector3(0.01, 0.01, 0.01)), func(p: Vector3): return VoxelSdf.box(p, glint, Vector3(0.004, 0.004, 0.004)),
 			Mat.GLINT, t, FILL)
 		# Cheekbones.
@@ -1105,6 +1133,11 @@ func weights(tag: int, p: Vector3) -> Array:
 			_arm_w(p, w, "Left" if tag == Tag.ARM_L else "Right")
 		Tag.LEG_L, Tag.LEG_R:
 			_leg_w(p, w, "Left" if tag == Tag.LEG_L else "Right")
+		Tag.FOOT_L, Tag.FOOT_R:
+			var prefix := "Left" if tag == Tag.FOOT_L else "Right"
+			var toes := smoothstep(0.08, 0.2, p.z)
+			_add(w, StringName(prefix + "Foot"), 1.0 - toes)
+			_add(w, StringName(prefix + "Toes"), toes)
 		Tag.APRON:
 			# Stiff leather: mostly the hips, the flap's spring lower down, and
 			# at most 0.25 of the legs at the hem's sides.
@@ -1125,16 +1158,11 @@ func weights(tag: int, p: Vector3) -> Array:
 			_add(w, &"Head", 1.0 - k)
 			_add(w, &"Neck", k)
 		Tag.BRAID:
-			# Hangs on the spring bone; its root blends from the beard.
-			var k := smoothstep(1.36, 1.27, p.y)
-			_add(w, &"Head", (1.0 - k) * 0.35)
-			_add(w, &"Neck", (1.0 - k) * 0.65)
-			_add(w, &"BeardBraid", k)
+			# Rigid on the spring bone; its root is hidden in the beard.
+			_add(w, &"BeardBraid", 1.0)
 		Tag.GAUNT_L, Tag.GAUNT_R:
-			var prefix := "Left" if tag == Tag.GAUNT_L else "Right"
-			var k := smoothstep(0.905, 0.935, absf(p.x))
-			_add(w, StringName(prefix + "LowerArm"), 1.0 - k)
-			_add(w, StringName(prefix + "Hand"), k)
+			# Rigid with the hand; the seam hides under the forearm's wrist cuff.
+			_add(w, &"LeftHand" if tag == Tag.GAUNT_L else &"RightHand", 1.0)
 		Tag.THUMB_L, Tag.THUMB_R:
 			_add(w, &"LeftHand" if tag == Tag.THUMB_L else &"RightHand", 1.0)
 	return _pack(w)
@@ -1151,11 +1179,12 @@ func _torso_w(p: Vector3, w: Dictionary) -> void:
 
 func _arm_w(p: Vector3, w: Dictionary, prefix: String) -> void:
 	var ax := absf(p.x)
-	if ax < 0.29:
+	if ax < 0.27:
 		_torso_w(p, w)
 		return
-	_piecewise(ax, [[0.29, prefix + "Shoulder"], [0.40, prefix + "UpperArm"], [0.60, prefix + "UpperArm"],
-		[0.72, prefix + "LowerArm"], [0.89, prefix + "LowerArm"], [0.935, prefix + "Hand"]], w, true)
+	# The forearm (and its wrist cuff) stays on the lower arm: the fist is its own rigid tag.
+	_piecewise(ax, [[0.27, prefix + "Shoulder"], [0.48, prefix + "UpperArm"], [0.60, prefix + "UpperArm"],
+		[0.72, prefix + "LowerArm"]], w, true)
 
 
 func _leg_w(p: Vector3, w: Dictionary, prefix: String) -> void:
@@ -1163,13 +1192,9 @@ func _leg_w(p: Vector3, w: Dictionary, prefix: String) -> void:
 		_torso_w(p, w)
 		return
 	var tmp := {}
-	_piecewise(p.y, [[0.13, prefix + "Foot"], [0.22, prefix + "LowerLeg"], [0.39, prefix + "LowerLeg"],
-		[0.50, prefix + "UpperLeg"], [0.70, prefix + "UpperLeg"], [0.84, "Hips"]], tmp, true)
-	var foot := StringName(prefix + "Foot")
-	if tmp.has(foot):
-		var toes: float = smoothstep(0.10, 0.18, p.z) * tmp[foot]
-		tmp[foot] -= toes
-		tmp[StringName(prefix + "Toes")] = toes
+	# Boot shaft and shin on the lower leg (the foot is its own rigid tag).
+	_piecewise(p.y, [[0.39, prefix + "LowerLeg"], [0.50, prefix + "UpperLeg"], [0.70, prefix + "UpperLeg"],
+		[0.84, "Hips"]], tmp, true)
 	for b: StringName in tmp:
 		_add(w, b, tmp[b])
 

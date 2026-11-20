@@ -5,9 +5,9 @@ extends BrannView
 ## the old figure's ember material. Each view owns its copy of the material.
 
 ## Emission per unit of ember energy, clamped so bloom stays a thin line glow.
-const EMBER_GAIN := 0.9
-const EMBER_MIN := 1.2
-const EMBER_MAX := 3.2
+const EMBER_GAIN := 0.7
+const EMBER_MIN := 1.0
+const EMBER_MAX := 2.6
 
 var _glow: ShaderMaterial
 
