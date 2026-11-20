@@ -117,12 +117,12 @@ func _save(level: ZoneMatch, name: String) -> void:
 ## camera_qa's ffa4_frozen config (seed 3, AI 3) rendered at QA_TICKS (comma list).
 func _qa_frame() -> void:
 	var fighters := []
-	var legends := [&"vexa", &"lyra", &"kael", &"brann"]
+	var legends: Array = Array(OS.get_environment("QA_LEGENDS").split(",")).map(func(x): return StringName(x)) 		if OS.get_environment("QA_LEGENDS") != "" else [&"vexa", &"lyra", &"kael", &"brann"]
 	for i in legends.size():
 		fighters.append({"character": legends[i], "team": i, "is_ai": true, "ai_level": 3})
 	var level: ZoneMatch = load("res://game/levels/zone_match.tscn").instantiate()
-	level.configure({"zone": &"frozen_peaks", "fighters": fighters})
-	level.sim.rng.seed = 3
+	level.configure({"zone": StringName(OS.get_environment("QA_ZONE")) if OS.get_environment("QA_ZONE") != "" else &"frozen_peaks", "fighters": fighters})
+	level.sim.rng.seed = int(OS.get_environment("QA_SEED")) if OS.get_environment("QA_SEED") != "" else 3
 	root.add_child(level)
 	level.set_physics_process(false)
 	level.set_process(false)
@@ -133,6 +133,8 @@ func _qa_frame() -> void:
 	for t in wanted.max() + 1:
 		level.step_tick()
 		level.present_frame(1.0, 1.0 / 60.0)
+		if OS.get_environment("QA_SCAN") != "" and level.camera.has_method("exchange_weight") and t % 30 == 0:
+			print("scan t%d xw=%.2f" % [t, level.camera.exchange_weight()])
 		if t in wanted:
 			print(_report("qa t%d" % t, level))
 			await _save(level, "qa_t%d" % t)

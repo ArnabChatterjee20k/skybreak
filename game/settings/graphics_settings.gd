@@ -65,6 +65,9 @@ var resolution_scale: float = 1.0:
 var vsync_enabled: bool = true
 ## Borderless fullscreen at the desktop resolution; false = centred window.
 var fullscreen: bool = true
+## The fight camera's side-on swing for melee exchanges and beam clashes; off
+## keeps the steady over-the-shoulder view (accessibility).
+var exchange_camera: bool = true
 
 
 func _init(is_web: bool = OS.has_feature("web")) -> void:
@@ -87,6 +90,9 @@ func apply_to(viewport: Viewport) -> void:
 	viewport.mesh_lod_threshold = values.mesh_lod_threshold
 	viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 	viewport.scaling_3d_scale = resolution_scale
+	var camera := viewport.get_camera_3d()
+	if camera is FighterCamera:
+		(camera as FighterCamera).exchange_cam_enabled = exchange_camera
 	RenderingServer.directional_shadow_atlas_set_size(values.directional_shadow_size, true)
 	# The browser owns vsync and the canvas size.
 	if DisplayServer.get_name() != "headless" and not OS.has_feature("web"):
@@ -110,6 +116,7 @@ func save(path: String = SAVE_PATH) -> Error:
 	config.set_value(SECTION, "resolution_scale", resolution_scale)
 	config.set_value(SECTION, "vsync_enabled", vsync_enabled)
 	config.set_value(SECTION, "fullscreen", fullscreen)
+	config.set_value(SECTION, "exchange_camera", exchange_camera)
 	return config.save(path)
 
 
@@ -126,6 +133,7 @@ static func load_saved(
 	settings.resolution_scale = config.get_value(SECTION, "resolution_scale", settings.resolution_scale)
 	settings.vsync_enabled = config.get_value(SECTION, "vsync_enabled", settings.vsync_enabled)
 	settings.fullscreen = config.get_value(SECTION, "fullscreen", settings.fullscreen)
+	settings.exchange_camera = config.get_value(SECTION, "exchange_camera", settings.exchange_camera)
 	return settings
 
 

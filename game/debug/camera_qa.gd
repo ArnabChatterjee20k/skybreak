@@ -107,7 +107,7 @@ func _measure(config: Dictionary, ticks: int) -> String:
 			var me_view: FighterView = zone_match.fighter_views[zone_match.player]
 			heights.append(CameraQaMetrics.screen_height(view, camera.fov, me_view.position))
 		if OS.get_environment("CAMQA_DETAIL") == config.name and coverage > MAX_COVERAGE:
-			print("  t%d COVER %.0f%% by fighter %d (player %d) fade=%.2f phase=%s cam-player %.2f m" % [t, coverage * 100.0, who, zone_match.player, zone_match.fighter_views[who].camera_fade(),
+			print("  t%d COVER %.0f%% by fighter %d (player %d) fade=%.2f xw=%.2f cam-other %.2f phase=%s cam-player %.2f m" % [t, coverage * 100.0, who, zone_match.player, zone_match.fighter_views[who].camera_fade(), zone_match.camera.exchange_weight(), view.origin.distance_to(zone_match.fighter_views[who].position),
 				MatchFlow.Phase.find_key(zone_match.match_flow.phase),
 				view.origin.distance_to(zone_match.fighter_views[zone_match.player].position)])
 		if zone_match.match_flow.phase == MatchFlow.Phase.INTRO:

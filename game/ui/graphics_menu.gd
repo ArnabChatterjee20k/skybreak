@@ -71,6 +71,11 @@ func _build_panel() -> void:
 	_fullscreen_toggle.toggled.connect(_on_fullscreen_toggled)
 	rows.add_child(_labelled("Fullscreen", _fullscreen_toggle))
 
+	var exchange_toggle := CheckBox.new()
+	exchange_toggle.button_pressed = settings.exchange_camera
+	exchange_toggle.toggled.connect(_on_exchange_camera_toggled)
+	rows.add_child(_labelled("Cinematic exchange camera", exchange_toggle))
+
 
 func _labelled(text: String, control: Control) -> HBoxContainer:
 	var row := HBoxContainer.new()
@@ -100,6 +105,11 @@ func _on_vsync_toggled(enabled: bool) -> void:
 
 func _on_fullscreen_toggled(enabled: bool) -> void:
 	settings.fullscreen = enabled
+	_apply_and_save()
+
+
+func _on_exchange_camera_toggled(enabled: bool) -> void:
+	settings.exchange_camera = enabled
 	_apply_and_save()
 
 

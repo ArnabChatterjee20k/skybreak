@@ -309,6 +309,9 @@ func present_frame(blend: float, delta: float) -> void:
 	var target := _camera_target if locked else (1 if player == 0 and fighter_views.size() > 1 else 0)
 	var opponent := fighter_views[target].position
 	_update_camera_bodies()
+	# Side-on exchange angle for melee exchanges and beam clashes (hybrid cam).
+	var exchange := ExchangeCam.participants(sim, player)
+	camera.set_exchange(PackedVector3Array([fighter_views[exchange[0]].position, fighter_views[exchange[1]].position]) 		if exchange.size() == 2 else PackedVector3Array())
 	camera.follow(fighter_views[player].position, opponent, locked, delta)
 	for view in fighter_views:
 		view.fade_for_camera(camera.global_position)
