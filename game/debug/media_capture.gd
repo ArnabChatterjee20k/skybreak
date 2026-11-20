@@ -3,6 +3,8 @@ extends SceneTree
 ##   menu  - main menu -> character select (Kael, Vexa) -> zone select (Heartbloom)
 ##   duel  - zone_match, Kael vs Vexa, both AI, seeded; stops ~3.5 s after the first KO
 ##   ffa   - zone_match, 4 legends AI, for a fixed number of frames
+##   armed - zone_match 1v1, both AI, each starting with a weapon:
+##           armed <zone> <seed> <frames> <legend_a> <WEAPON_A> <legend_b> <WEAPON_B>
 ## godot --path . --write-movie out.avi --fixed-fps 60 -s res://game/debug/media_capture.gd -- <segment> [zone] [seed] [frames]
 
 
@@ -23,6 +25,9 @@ func _run() -> void:
 			await _match(zone, seed_value, [&"kael", &"vexa"], -1)
 		"ffa":
 			await _match(zone, seed_value, [&"kael", &"vexa", &"lyra", &"brann"], frames)
+		"armed":
+			var weapons := [Weapon.Kind[args[5]], Weapon.Kind[args[7]]]
+			await _match(zone, seed_value, [StringName(args[4]), StringName(args[6])], frames, weapons)
 	quit()
 
 
@@ -52,7 +57,7 @@ func _menu(zone: StringName) -> void:
 	await _wait(1.6)
 
 
-func _match(zone: StringName, seed_value: int, characters: Array, frames: int) -> void:
+func _match(zone: StringName, seed_value: int, characters: Array, frames: int, weapons: Array = []) -> void:
 	var fighters := []
 	for i in characters.size():
 		fighters.append({"character": characters[i], "team": i, "is_ai": true, "ai_level": 3})
@@ -60,6 +65,12 @@ func _match(zone: StringName, seed_value: int, characters: Array, frames: int) -
 	zone_match.configure({"zone": zone, "fighters": fighters})
 	zone_match.sim.rng.seed = seed_value
 	root.add_child(zone_match)
+	for i in weapons.size():
+		var fighter := zone_match.sim.fighters[i]
+		fighter.weapons[0] = weapons[i]
+		fighter.active_slot = 0
+		if Weapon.is_ranged(weapons[i]):
+			fighter.ammo[0] = Weapon.RANGED_STATS[weapons[i]].ammo
 	var ko_frame := -1
 	var f := 0
 	while true:

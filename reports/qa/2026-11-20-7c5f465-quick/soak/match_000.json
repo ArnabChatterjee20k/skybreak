@@ -1,0 +1,55 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 7
+		},
+		"light_1": {
+			"3": 7
+		},
+		"light_1+counter": {
+			"7": 7
+		},
+		"light_2": {
+			"3": 12
+		},
+		"light_3": {
+			"3": 8,
+			"20": 1
+		},
+		"light_4": {
+			"4": 1
+		}
+	},
+	"id": "100:shattered_mesa:1v1:kael,vexa:54",
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "KO",
+	"rounds_started": 1,
+	"seed": 100,
+	"sim_ms_per_tick": 0.553125,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00970000121742487,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.0729266258096,
+		"foot_slide_cm_per_frame": 0.00275244844277095,
+		"foot_slide_frames": 263,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.965042372881356,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.521045833333333,
+	"violations": [],
+	"wall_seconds": 18.61,
+	"zone": "shattered_mesa"
+}

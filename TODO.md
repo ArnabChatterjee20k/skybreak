@@ -20,6 +20,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   visual tiles (6-7%) because the duel drop's telegraph pillar is now in frame; owner to decide
   whether to re-bless them.
 
+- T-UX1 [desktop] Controls and readability (owner feedback "how to get to the ground"): descend
+  moves from Left Ctrl to `C` (Ctrl stays a desktop-only alternate, never on the web; Ctrl/Cmd/Alt
+  rebinds refused on the web), quick-swap moves from `C` to `Y`; double-tap `C` dives until landing
+  (input side, no sim change); in-match controls strip (`H`, on for the first 5 matches, then
+  remembered) with a "fly down" prompt after 3 s hovering; ground disc + short dashed tick replace
+  the drop lines; compact FFA/2v2 plates, slot tags on duplicate legends, no weapon box unarmed.
+  Follow-ups: gamepad bindings (none exist yet: the strip says so on a pad).
 - T-D36 [desktop] Playable web build: exports kept as text resources (Godot 4.7.2's binary
   conversion emptied zone spawn points, so every exported match crashed), webrtc-native left
   out of the Web preset, no Quit on web, `tools/web/match_smoke_test.js` (menu -> vs AI, 30 s).

@@ -18,7 +18,16 @@ const CONFIGS := [
 		"fighters": [&"vexa", &"lyra", &"kael", &"brann"]},
 	{"name": "ffa4_skyhold", "zone": &"skyhold_ruins", "seed": 5,
 		"fighters": [&"kael", &"vexa", &"lyra", &"brann"]},
+	{"name": "media2_duel", "zone": &"heartbloom_gardens", "seed": 3,
+		"fighters": [&"kael", &"vexa"]},
+	{"name": "heartbloom_2621", "zone": &"heartbloom_gardens", "seed": 2621,
+		"fighters": [&"kael", &"vexa"]},
 ]
+## A fighter covering more than this share of the screen is "in the lens".
+const MAX_COVERAGE := 0.40
+## Drawn fighter box for coverage: half width and height (m), around the centre.
+const BODY_HALF_WIDTH := 0.55
+const BODY_HEIGHT := 2.0
 const ASPECT := 16.0 / 9.0
 
 var _last_player := Vector3.ZERO
@@ -57,6 +66,8 @@ func _measure(config: Dictionary, ticks: int) -> String:
 	var inside := 0
 	var occluded := 0
 	var worst_accel := 0.0
+	var worst_coverage := 0.0
+	var covered := 0
 	var turns: Array[float] = []
 	var previous_basis := Basis()
 	for t in ticks:
@@ -66,6 +77,23 @@ func _measure(config: Dictionary, ticks: int) -> String:
 		var view := camera.global_transform
 		var turn := rad_to_deg(previous_basis.get_rotation_quaternion().angle_to(view.basis.get_rotation_quaternion()))
 		previous_basis = view.basis
+		# Coverage counts in every frame, intro included (it should start wide).
+		var coverage := 0.0
+		var who := -1
+		for vi in zone_match.fighter_views.size():
+			# Opaque coverage: a body faded for the camera (FighterView.fade_for_camera)
+			# doesn't block the view, so it counts by its remaining opacity.
+			var fv: FighterView = zone_match.fighter_views[vi]
+			var c := _coverage(view, camera.fov, fv.position) * (1.0 - fv.camera_fade())
+			if c > coverage:
+				coverage = c
+				who = vi
+		worst_coverage = maxf(worst_coverage, coverage)
+		covered += int(coverage > MAX_COVERAGE)
+		if OS.get_environment("CAMQA_DETAIL") == config.name and coverage > MAX_COVERAGE:
+			print("  t%d COVER %.0f%% by fighter %d (player %d) fade=%.2f phase=%s cam-player %.2f m" % [t, coverage * 100.0, who, zone_match.player, zone_match.fighter_views[who].camera_fade(),
+				MatchFlow.Phase.find_key(zone_match.match_flow.phase),
+				view.origin.distance_to(zone_match.fighter_views[zone_match.player].position)])
 		if zone_match.match_flow.phase == MatchFlow.Phase.INTRO:
 			turns.clear()
 			continue
@@ -97,12 +125,40 @@ func _measure(config: Dictionary, ticks: int) -> String:
 		target_on += int(t_on)
 		both_on += int(p_on and t_on)
 		blank += int(not any_on)
+		if OS.get_environment("CAMQA_DETAIL") == config.name and obstacles.is_inside(view.origin):
+			var below := view.origin.y < obstacles.ground_at(view.origin)
+			var lf := player_pos + Vector3.UP * 0.5
+			var boxes_hit := []
+			for b in obstacles.boxes:
+				if b.has_point(view.origin):
+					boxes_hit.append("%s pivot_in=%s" % [b, b.grow(0.4).has_point(lf)])
+			print("  t%d INSIDE %s cam=%s cam-player %.2f m prop_clear=%.2f body_clear=%.2f boxes=%s" % [t, "ground" if below else "prop",
+				view.origin.snapped(Vector3.ONE * 0.01), view.origin.distance_to(player_pos),
+				obstacles.clear_fraction(lf, view.origin), obstacles.body_clear_fraction(lf, view.origin), boxes_hit])
 		inside += int(obstacles.is_inside(view.origin))
 		occluded += int(obstacles.blocks(player_pos, view.origin))
 	zone_match.free()
-	return "%-15s frames %d | player on %.1f%% | target on %.1f%% | both %.1f%% | blank %d | inside geometry %d | occluded %d | worst accel %.0f deg/s^2" % [
+	return "%-15s frames %d | player on %.1f%% | target on %.1f%% | both %.1f%% | blank %d | inside geometry %d | occluded %d | worst accel %.0f deg/s^2 | >40%% cover %d (worst %.0f%%)" % [
 		config.name, frames, 100.0 * player_on / maxi(frames, 1), 100.0 * target_on / maxi(frames, 1),
-		100.0 * both_on / maxi(frames, 1), blank, inside, occluded, worst_accel]
+		100.0 * both_on / maxi(frames, 1), blank, inside, occluded, worst_accel, covered, worst_coverage * 100.0]
+
+
+## Share of the screen a fighter's drawn box covers (0..1), clipped to the frame.
+static func _coverage(view: Transform3D, fov: float, centre: Vector3) -> float:
+	var local := view.affine_inverse() * centre
+	var depth := -local.z
+	if depth < 0.05:
+		# At or behind the lens plane: if it's right at the camera it fills the view.
+		return 1.0 if local.length() < BODY_HALF_WIDTH + 0.2 else 0.0
+	var tan_v := tan(deg_to_rad(fov) / 2.0)
+	var tan_h := tan_v * ASPECT
+	var cx := local.x / depth / tan_h
+	var cy := local.y / depth / tan_v
+	var hx := BODY_HALF_WIDTH / depth / tan_h
+	var hy := BODY_HEIGHT * 0.5 / depth / tan_v
+	var w := maxf(0.0, minf(cx + hx, 1.0) - maxf(cx - hx, -1.0))
+	var h := maxf(0.0, minf(cy + hy, 1.0) - maxf(cy - hy, -1.0))
+	return w * h / 4.0
 
 
 static func _on_screen(view: Transform3D, fov: float, point: Vector3) -> bool:
