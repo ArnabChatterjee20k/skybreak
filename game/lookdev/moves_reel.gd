@@ -616,7 +616,7 @@ func _dodge() -> void:
 			_hero.f.velocity = dir * 8.0 * (1.0 - i / 20.0)
 			_hero.f.position += _hero.f.velocity * DT
 			if i % 3 == 0:
-				_afterimage(Color(0.45, 0.75, 1.0, 0.22))
+				_afterimage(Color(KI_COLOR, 0.22))
 			await _tick()
 		_hero.f.velocity = Vector3.ZERO
 		_hero.f.dash_kind = FighterState.DashKind.NONE
