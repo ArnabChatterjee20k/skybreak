@@ -15,7 +15,9 @@ git -C "${ROOT}" ls-files -co --exclude-standard -z | (cd "${ROOT}" && xargs -0 
 sed -i 's|^exclude_filter=.*|exclude_filter="docs/*, *.md"|' "${COPY}/export_presets.cfg"
 # The web template ignores -s, so the audit runs as the main loop instead.
 sed -i 's|^\[application\]$|[application]\n\nrun/main_loop_type="ControlsAudit"|' "${COPY}/project.godot"
-sed -i '/^run\/main_scene=/d' "${COPY}/project.godot"
+# Web still needs a main scene: an empty one, so only the audit's front end runs.
+printf '[gd_scene format=3]\n\n[node name="Empty" type="Node"]\n' > "${COPY}/empty_main.tscn"
+sed -i 's|^run/main_scene=.*|run/main_scene="res://empty_main.tscn"|' "${COPY}/project.godot"
 rm -rf "${OUT}"
 mkdir -p "${OUT}"
 "${GODOT}" --headless --path "${COPY}" --import >/dev/null 2>&1 || true
