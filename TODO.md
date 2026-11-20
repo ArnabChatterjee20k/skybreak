@@ -15,8 +15,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - polish batch 3 [desktop] (`claude/polish-batch-3`): media-2 flaws. Lyra UNARMED (#78 follow-up) is
   the design-correct auto-throw of an emptied 12-arrow Ki Bow (regression test added); KO drops its
   burst lines and post-KO trails/rings/smears; Ember Rift lava fissures around the spawns
-  (`zone_ember_rift` re-blessed); 1v1 drops land 8-16 m out. Open: re-bless the flat-floor bot-match
-  golden (drifts at tick 241, the first duel drop) and golden replays, full GUT, QA quick.
+  (`zone_ember_rift` re-blessed); 1v1 drops land 8-16 m out (`pickups_heartbloom` replay and the
+  flat-floor `bot_match` re-blessed at the first drop). Open: 4 Heartbloom character shots fail the
+  visual tiles (6-7%) because the duel drop's telegraph pillar is now in frame; owner to decide
+  whether to re-bless them.
 
 - T-D35 [desktop] #107 Heartbloom: the sim floor matches the drawn island outline (`ZoneGround`
   25 cm outline mask, 0.25 m inset); falls/dives/vanish anchors can no longer pass through an
