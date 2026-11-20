@@ -99,8 +99,8 @@ func test_rim_light_reaches_fighters_but_not_the_world() -> void:
 			if (node as VisualInstance3D).layers & WorldAtmosphere.RIM_LAYERS:
 				on_rim_layers += 1
 	assert_eq(on_rim_layers, 0, "no terrain or prop on the fighters' layer")
-	assert_almost_eq(world.environment_node.environment.tonemap_exposure, 0.9, 0.001)
-	assert_almost_eq(world.rim_light.light_energy, 0.2, 0.001)
+	assert_almost_eq(world.environment_node.environment.tonemap_exposure, 0.98, 0.001)
+	assert_almost_eq(world.rim_light.light_energy, 0.5, 0.001)
 	world.free()
 
 

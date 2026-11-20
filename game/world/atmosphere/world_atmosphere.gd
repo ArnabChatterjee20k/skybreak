@@ -133,7 +133,7 @@ func apply_at(position: Vector3) -> void:
 		environment.fog_depth_end = current.fog_end
 		environment.fog_depth_begin = HAZE_BEGIN
 		environment.ambient_light_color = current.ambient
-		environment.tonemap_exposure = current.exposure
+		environment.tonemap_exposure = LookGrade.exposure(current.exposure)
 	if rim:
 		rim.light_color = current.rim_color
 		rim.light_energy = current.rim_energy
