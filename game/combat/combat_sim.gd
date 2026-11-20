@@ -57,6 +57,7 @@ enum EventType {
 	BULLET_ABSORB, ## fighter's dash absorbed repeater bullet id (+2 ki).
 	SWAP_CANCEL, ## fighter swap-cancelled into weapon for 10 ki.
 	DISC_CATCH, ## fighter caught its Orbit Chakram disc id.
+	KI_BLAST, ## fighter fired ki blast id (level 1 tap, 2 charged; weapon NONE).
 }
 
 const _DASH := FighterInput.Action.DASH
@@ -70,6 +71,7 @@ const _THROW := FighterInput.Action.THROW
 const _WEAPON_NEXT := FighterInput.Action.WEAPON_NEXT
 const _WEAPON_PREVIOUS := FighterInput.Action.WEAPON_PREVIOUS
 const _QUICK_SWAP := FighterInput.Action.QUICK_SWAP
+const _KI_BLAST := FighterInput.Action.KI_BLAST
 ## Projectiles spawn this far in front of the fighter's centre, and this high.
 const _MUZZLE_FORWARD := 0.8
 const _MUZZLE_UP := 0.3
@@ -493,6 +495,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		_start_block(index, input)
 		_start_grab(index)
 		_start_attack(index, input, wish)
+		_start_ki_blast(index, input)
 		_start_charging(index)
 	_track_block_press(index, input, state_before)
 	match fighter.state:
@@ -776,6 +779,57 @@ func _begin_light(index: int, number: int) -> bool:
 	return true
 
 
+## A buffered Q press starts a ki blast from a free state with ki for a tap shot.
+func _start_ki_blast(index: int, input: FighterInput) -> void:
+	var fighter := fighters[index]
+	if fighter.state not in _ATTACK_START_STATES or not _may_attack(fighter) \
+			or fighter.ki < KiBlasts.TAP_KI * _UNIT or not consume_buffered(index, _KI_BLAST):
+		return
+	_update_facing(index)
+	_aim_at_target(index)
+	fighter.begin_move(KiBlasts.tap_move())
+	# charge_ticks counts ticks Q stays held since the press; 0 once let go.
+	fighter.charge_ticks = 1 if input.is_held(_KI_BLAST) else 0
+
+
+## Holding Q waits at the tap's fire point, then turns into the charged blast
+## if there is ki for it. True while the tap waits.
+func _hold_ki_blast(index: int, input: FighterInput) -> bool:
+	var fighter := fighters[index]
+	if fighter.charge_ticks == 0 or not input.is_held(_KI_BLAST):
+		fighter.charge_ticks = 0
+		return false
+	fighter.charge_ticks += 1
+	if fighter.charge_ticks >= KiBlasts.CHARGE_TICKS:
+		fighter.charge_ticks = 0
+		if fighter.ki < KiBlasts.CHARGED_KI * _UNIT:
+			return false
+		fighter.begin_move(KiBlasts.charged_move())
+		# The charged blast's startup counts from the press.
+		fighter.move_tick = KiBlasts.CHARGE_TICKS - 1
+		return true
+	if fighter.move_tick >= fighter.move.startup_ticks:
+		fighter.move_tick = fighter.move.startup_ticks - 1
+	return true
+
+
+## Spends the ki and launches a ki blast along the aim; nothing without the ki.
+func _fire_ki_blast(index: int, level: int) -> void:
+	var fighter := fighters[index]
+	var charged := level == KiBlasts.CHARGED
+	if not _spend_ki(fighter, KiBlasts.CHARGED_KI if charged else KiBlasts.TAP_KI):
+		return
+	var speed := KiBlasts.CHARGED_SPEED if charged else KiBlasts.TAP_SPEED
+	var projectile := _spawn_projectile(index, Weapon.Kind.NONE, _aim_direction(index) * speed, 0.0,
+		KiBlasts.CHARGED_RADIUS if charged else KiBlasts.TAP_RADIUS,
+		KiBlasts.CHARGED_LIFETIME if charged else KiBlasts.TAP_LIFETIME,
+		KiBlasts.hit_move(level), Weapon.Effect.NONE)
+	projectile.level = level
+	var event := _weapon_event(EventType.KI_BLAST, index, projectile.position, Weapon.Kind.NONE, projectile.id)
+	event["level"] = level
+	events.append(event)
+
+
 ## Blocking, or late in a blockstun from a block, with more guard than the cost.
 func _can_push_block(fighter: FighterState) -> bool:
 	var guarding := fighter.state == FighterState.State.BLOCKING \
@@ -871,6 +925,10 @@ func _advance_attack(index: int, input: FighterInput) -> void:
 		_fire(index)
 	if WeaponMoves.is_disc_throw(move) and fighter.move_tick == move.startup_ticks:
 		WeaponEffects.throw_disc(self, index)
+	if KiBlasts.is_tap(move) and _hold_ki_blast(index, input):
+		return
+	if (KiBlasts.is_tap(move) or KiBlasts.is_charged(move)) and fighter.move_tick == move.startup_ticks:
+		_fire_ki_blast(index, KiBlasts.CHARGED if KiBlasts.is_charged(move) else KiBlasts.TAP)
 	if move.can_charge() and fighter.move_tick < move.startup_ticks:
 		# Charge counts only while the button stays held since the press.
 		if input.is_held(_HEAVY) and fighter.charge_ticks == fighter.move_tick:
@@ -2429,9 +2487,10 @@ func _projectile_contact(projectile: Projectile, from: Vector3) -> bool:
 			continue
 		if target.is_invincible_to(target.is_upper_body(points[0])):
 			continue
-		# A dash soaks up repeater bullets for ki, like tap blasts.
-		if projectile.weapon == Weapon.Kind.STORM_REPEATER and not projectile.thrown \
-				and target.state == FighterState.State.DASHING:
+		# A dash soaks up repeater bullets and tap ki blasts for ki (§5.8).
+		var soakable := (projectile.weapon == Weapon.Kind.STORM_REPEATER and not projectile.thrown) \
+			or (KiBlasts.is_blast(projectile) and projectile.level == KiBlasts.TAP)
+		if soakable and target.state == FighterState.State.DASHING:
 			_add_ki(target, Weapon.DASH_ABSORB_KI * _UNIT)
 			events.append(_weapon_event(EventType.BULLET_ABSORB, target_index, points[1], projectile.weapon,
 				projectile.id))

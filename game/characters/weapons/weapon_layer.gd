@@ -14,6 +14,9 @@ const LEFT_HAND := &"LeftHand"
 ## Item glow colour (GAME_DESIGN §5.11 gold family) and the Heartbloom pink.
 const ITEM_GLOW := Color(1.0, 0.78, 0.25)
 const HEART_GLOW := Color(1.0, 0.5, 0.75)
+## Ki blast core and halo (GAME_DESIGN §5.8).
+const KI_CORE := Color(0.92, 0.98, 1.0)
+const KI_GLOW := Color(0.45, 0.8, 1.0)
 const BOB_HEIGHT := 0.18
 const BOB_SPEED := 2.6
 const SPIN_SPEED := 1.4
@@ -257,6 +260,14 @@ func _make_projectile(projectile: Projectile) -> Node3D:
 		var spinner := Node3D.new()
 		spinner.add_child(model)
 		node.add_child(spinner)
+		return node
+	if KiBlasts.is_blast(projectile):
+		var charged := projectile.level == KiBlasts.CHARGED
+		var size := KiBlasts.CHARGED_RADIUS if charged else KiBlasts.TAP_RADIUS
+		node.add_child(_glow_ball(size * 0.6, KI_CORE))
+		node.add_child(_glow_ball(size, Color(KI_GLOW, 0.45)))
+		node.add_child(_tracer(KI_GLOW, size * 5.0, size * 0.7))
+		node.name = "KiBlast%d" % projectile.id
 		return node
 	match projectile.weapon:
 		Weapon.Kind.KI_BOW, Weapon.Kind.HEARTSTRING_BOW:

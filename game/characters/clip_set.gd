@@ -15,8 +15,9 @@ extends Resource
 @export var intro_clips: Dictionary[StringName, StringName] = {}
 ## MoveData.id -> clip.
 @export var move_clips: Dictionary[StringName, StringName] = {}
-## Weapon move slots without an unarmed twin, played as this unarmed move's clip.
-const WEAPON_SLOT_CLIPS := {&"bash": &"breaker", &"throw": &"light_2", &"shot": &"light_1", &"pickup": &"light_1"}
+## Weapon and ki move slots without an unarmed twin, played as this unarmed move's clip.
+const WEAPON_SLOT_CLIPS := {&"bash": &"breaker", &"throw": &"light_2", &"shot": &"light_1", &"pickup": &"light_1",
+	&"blast": &"light_1", &"charged_blast": &"smash"}
 ## Clip played when a move has no entry.
 @export var fallback_move_clip: StringName = &"cross"
 ## Clip held while charging a chargeable move (attack phase HOLD).

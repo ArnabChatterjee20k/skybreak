@@ -102,6 +102,10 @@ static func cues_for_event(event: Dictionary) -> Array[Dictionary]:
 			out.append(_request(&"counter_hit", at))
 	elif EVENT_CUES.has(type):
 		out.append(_request(EVENT_CUES[type], at, params))
+	elif type == CombatSim.EventType.KI_BLAST:
+		out.append(_request(KI_CUES[&"blast_fire"], at))
+	elif type == CombatSim.EventType.PROJECTILE_HIT and event.get("weapon", -1) == Weapon.Kind.NONE:
+		out.append(_request(KI_CUES[&"blast_impact"], at))
 	if type != CombatSim.EventType.KO and KNOCKBACK_CUES.has(event.get("knockback_type", 0)):
 		out.append(_request(KNOCKBACK_CUES[event.knockback_type], at))
 	return out
