@@ -14,7 +14,7 @@ extends SceneTree
 ## hover, crossed guard, ki shot, kick, jump crouch, a big flinch) are layered
 ## over the clips by LookdevPoseOverride. Neither the sim nor the clips change.
 
-const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb]"
+const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
 ## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
 const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
@@ -137,6 +137,7 @@ class Actor:
 var _out := ""
 var _scene := ""
 var _dummy_scene := DEFAULT_DUMMY
+var _hide_stowed := false
 var MOVES := ""
 ## FighterStats.pushbox_radius: fighters' centres never come closer than twice this.
 var PUSHBOX_RADIUS := 0.5
@@ -173,6 +174,7 @@ func _initialize() -> void:
 	if not MOVES.ends_with("/"):
 		MOVES += "/"
 	_dummy_scene = args.get_option("dummy", DEFAULT_DUMMY)
+	_hide_stowed = args.options.has("hide-stowed")
 	if args.options.has("stats"):
 		PUSHBOX_RADIUS = (load(args.get_option("stats")) as FighterStats).pushbox_radius
 	else:
@@ -206,6 +208,7 @@ func _spawn(actor: Actor, scene: String) -> void:
 	_stage.add_child(actor.body)
 	actor.view = (load(scene) as PackedScene).instantiate() as CharacterView
 	actor.body.add_child(actor.view)
+	_hide_weapons(actor.view)
 	actor.pose = LookdevPoseOverride.new()
 	actor.skeleton().add_child(actor.pose)
 	actor.f.position = Vector3(0, STAND, 0)
@@ -424,7 +427,7 @@ func _flight_dash() -> void:
 		_hero.f.velocity = Vector3(v, 0, 0)
 		_hero.f.position += _hero.f.velocity * DT
 		if i % 5 == 0 and i < 80:
-			_afterimage(Color(1.0, 0.7, 0.35, 0.18))
+			_afterimage(Color(KI_COLOR, 0.18))
 		await _tick()
 	_hero.f.dash_kind = FighterState.DashKind.NONE
 	_hero.f.enter_state(S.FLYING)
@@ -1185,3 +1188,11 @@ func _save() -> void:
 	await RenderingServer.frame_post_draw
 	_viewport.get_texture().get_image().save_jpg(_out.path_join("f_%05d.jpg" % _frame), 0.93)
 	_frame += 1
+
+
+## --hide-stowed: look-dev only, hides a view's stowed weapons (views with
+## stowed_weapons(); they're still the old smooth meshes).
+func _hide_weapons(view: CharacterView) -> void:
+	if _hide_stowed and view.has_method(&"stowed_weapons"):
+		for w: Node3D in view.call(&"stowed_weapons"):
+			w.visible = false
