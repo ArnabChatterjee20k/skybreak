@@ -33,9 +33,9 @@ float noise3(vec3 p) {
 void sky() {
 	float up = EYEDIR.y;
 	// Three stops: a bright band just over the horizon, the horizon colour, then the zenith.
-	vec3 mid = mix(horizon_color.rgb, top_color.rgb, 0.45);
-	vec3 col = mix(horizon_color.rgb, mid, smoothstep(0.02, 0.22, up));
-	col = mix(col, top_color.rgb, smoothstep(0.18, 0.7, up));
+	vec3 mid = mix(horizon_color.rgb, top_color.rgb, 0.35);
+	vec3 col = mix(horizon_color.rgb, mid, smoothstep(0.02, 0.3, up));
+	col = mix(col, top_color.rgb, smoothstep(0.3, 0.9, up));
 	col = mix(col, horizon_color.rgb * 1.08 + vec3(0.02), (1.0 - smoothstep(0.0, 0.06, abs(up - 0.02))) * 0.5);
 	if (cloud_amount > 0.0 && up > -0.02) {
 		// Flattened, wind-stretched value noise: long painted streaks, thinning toward the zenith.
