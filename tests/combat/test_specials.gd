@@ -138,11 +138,18 @@ func test_vexas_keys_start_her_three_specials() -> void:
 		assert_eq(_me().move_id(), pair[1])
 
 
-func test_a_legend_without_a_kit_leaves_the_keys_to_other_systems() -> void:
-	_start(BRANN, 4.0)
+func test_a_legend_without_a_kit_keeps_the_ki_beam_on_key_one() -> void:
+	_start(BRANN, 12.0)
+	_me().ki = 100 * UNIT
 	_tick(SP1)
-	assert_ne(_me().state, State.ATTACKING)
-	assert_true(_sim.is_buffered(0, SP1), "still buffered for the ki beam (T-KI1)")
+	assert_eq(_me().move_id(), KiRules.kit_of(_me()).beam.id, "T-KI1's beam special")
+
+
+func test_a_kit_that_owns_key_one_takes_it_from_the_ki_beam() -> void:
+	_start(KAEL, 12.0)
+	assert_null(KiRules.beam_special(_me()))
+	_tick(SP1)
+	assert_eq(_me().move_id(), &"kael_comet_drive")
 
 
 # Cancel rules.
@@ -358,12 +365,11 @@ func test_a_kit_ultimate_costs_two_burst_stocks() -> void:
 	assert_eq(_me().burst, 0)
 
 
-func test_without_a_kit_ultimate_key_four_is_left_alone() -> void:
+func test_without_a_kit_ultimate_key_four_stays_the_ki_beam_ultimate() -> void:
 	_start(KAEL, 7.0)
 	_me().burst = 2 * _sim.meter_tuning.burst_stock_size * UNIT
 	_tick(ULT)
-	assert_ne(_me().state, State.ATTACKING)
-	assert_true(_sim.is_buffered(0, ULT), "for the ki ultimate (T-KI1)")
+	assert_eq(_me().move_id(), KiRules.kit_of(_me()).ultimate.id, "T-KI1's beam ultimate still owns key 4")
 	assert_eq(KAEL.special_kit.ultimate_burst_stocks, 2)
 	assert_eq(KAEL.special_kit.transform_burst_stocks, 1)
 

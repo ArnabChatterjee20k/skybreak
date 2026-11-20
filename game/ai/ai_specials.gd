@@ -11,6 +11,8 @@ const ANSWER_CHANCE: Array[float] = [0.0, 0.1, 0.22, 0.32, 0.4]
 const NEUTRAL_CHANCE: Array[float] = [0.0, 0.01, 0.02, 0.03, 0.04]
 ## Per level: chance to cancel a confirmed heavy into a special.
 const ENDER_CHANCE: Array[float] = [0.0, 0.15, 0.35, 0.55, 0.7]
+## Offensive specials only on a target within this height (m): none on juggles overhead.
+const LEVEL_HEIGHT := 1.5
 ## Ticks before a seen strike lands that a counter stance still catches it.
 const ANSWER_TICKS := 10
 
@@ -31,7 +33,8 @@ static func answer(sim: CombatSim, index: int, distance: float, threat: int, lev
 ## Key to open with in neutral (approach from mid range, crack a guard), or 0.
 static func neutral(sim: CombatSim, index: int, target: FighterState, distance: float, level: int,
 		rng: RandomNumberGenerator) -> int:
-	if SpecialRules.kit_of(sim.fighters[index]) == null:
+	if SpecialRules.kit_of(sim.fighters[index]) == null \
+			or absf(target.position.y - sim.fighters[index].position.y) > LEVEL_HEIGHT:
 		return 0
 	var slot := 0
 	if target.blocking:
@@ -50,8 +53,10 @@ static func neutral(sim: CombatSim, index: int, target: FighterState, distance: 
 
 ## Key to cancel a confirmed hit into (an ender, else an approach that chases), or 0.
 static func ender(sim: CombatSim, index: int, distance: float, level: int, rng: RandomNumberGenerator) -> int:
-	if SpecialRules.kit_of(sim.fighters[index]) == null \
-			or not sim.can_cancel_into(index, MoveData.CancelLevel.SPECIAL):
+	var me := sim.fighters[index]
+	if SpecialRules.kit_of(me) == null or not sim.can_cancel_into(index, MoveData.CancelLevel.SPECIAL):
+		return 0
+	if me.lock_on_target >= 0 and absf(sim.fighters[me.lock_on_target].position.y - me.position.y) > LEVEL_HEIGHT:
 		return 0
 	var slot := SpecialRules.ai_pick(sim, index, _ROLE.ENDER, distance, level)
 	if slot == 0:

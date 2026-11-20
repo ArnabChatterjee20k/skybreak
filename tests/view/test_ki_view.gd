@@ -68,6 +68,10 @@ func test_ki_layer_draws_a_beam_at_sim_thickness_and_the_clash_prompt() -> void:
 		return input
 	for fighter in sim.fighters:
 		fighter.ki = 100 * FighterState.METER_UNIT
+		# Key 1 is the ki beam only for a legend without a special kit (T-SP1).
+		var stats := fighter.stats.duplicate() as FighterStats
+		stats.special_kit = null
+		fighter.stats = stats
 	held.fill(A.SPECIAL_1)
 	arena.step_tick()
 	held.fill(0)

@@ -15,6 +15,8 @@ const SLOT_ACTIONS: Array[int] = [
 const _ULTIMATE := FighterInput.Action.ULTIMATE
 ## States a special starts from without a cancel.
 const START_STATES: Array[FighterState.State] = [_S.IDLE, _S.MOVING, _S.FLYING]
+## A rush stops travelling once this close to its target (planar m).
+const RUSH_ARRIVAL := 1.1
 ## Wish input below this length counts as neutral (DECOY_STEP goes straight back).
 const _DEADZONE := 0.5
 
@@ -130,7 +132,8 @@ static func move(sim: CombatSim, index: int) -> void:
 	var touched := fighter.contact_hit or fighter.contact_blocked
 	match special.effect:
 		SpecialMove.Effect.RUSH, SpecialMove.Effect.DECOY_STEP:
-			if travelling and not (special.stop_on_contact and touched):
+			var arrived := special.effect == SpecialMove.Effect.RUSH and _arrived(sim, index)
+			if travelling and not (special.stop_on_contact and touched) and not arrived:
 				var ticks := special.travel_end_tick - special.travel_start_tick
 				fighter.velocity = state.travel_direction * (special.travel_distance / (ticks * CombatSim.TICK_SECONDS))
 		SpecialMove.Effect.LEAP:
@@ -148,6 +151,15 @@ static func move(sim: CombatSim, index: int) -> void:
 				_blink(sim, index, special)
 		SpecialMove.Effect.COUNTER:
 			pass
+
+
+## A rush stops on reaching its locked target, rather than running under or over it.
+static func _arrived(sim: CombatSim, index: int) -> bool:
+	var fighter := sim.fighters[index]
+	if fighter.lock_on_target < 0:
+		return false
+	var gap := sim.fighters[fighter.lock_on_target].position - fighter.position
+	return Vector2(gap.x, gap.z).length() <= RUSH_ARRIVAL
 
 
 ## Reappears behind the locked target (or blink_range ahead when it is far or unlocked).

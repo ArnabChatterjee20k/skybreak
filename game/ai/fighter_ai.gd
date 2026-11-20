@@ -408,6 +408,7 @@ func _continue_attack(sim: CombatSim, me: FighterState, target: FighterState,
 			profile.level, rng)
 		if special != 0:
 			_tap(plan, AISpecials.action_for(special))
+			plan.vertical = 0 # The neutral version: rise/dive variants only on purpose.
 			return
 	# Ender: heavy cancel at the end of the string.
 	if _stacked_on(me, target):
@@ -521,6 +522,7 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 		var answer := AISpecials.answer(sim, fighter_index, distance, threat, profile.level, rng)
 		if answer != 0:
 			_tap(plan, AISpecials.action_for(answer))
+			plan.vertical = 0
 			return
 	if threat < 99 and _guard(me, threat, plan):
 		return
@@ -554,6 +556,7 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 		var opener := AISpecials.neutral(sim, fighter_index, target, distance, profile.level, rng)
 		if opener != 0:
 			_tap(plan, AISpecials.action_for(opener))
+			plan.vertical = 0
 			return
 	_neutral(sim, me, target, distance, light_reach, plan)
 
