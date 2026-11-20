@@ -156,3 +156,10 @@ The frame is **dark green around a mid-value floor, with white water and mist as
 | Mist, spray, god-rays | T3 puffs, height fog, mist cards, light shafts | **shared kit:** puff clouds; **zone:** god-ray setup |
 | Placement | keep `VerdantFallsProps` trees and falls positions and the 4242 seed; storytelling props at authored spots outside the spawn ring | |
 | Code home | look-dev in `game/lookdev/` plus a zone variant folder; the existing world code stays untouched until the owner approves | |
+
+## v1 build (look-dev lane `lookdev/zone-verdant_falls`)
+- **Code:** `game/world/zones_voxel/verdant_falls/` (`VerdantFallsVoxel` on the shared kit, plus the water, falls, mist and god-ray shaders). The shared kit is unchanged. Tests: `tests/world/test_verdant_falls_voxel.gd`.
+- **Sim truth:** the floor is a smooth top on `TerrainHeightmap.ground_height_at` (the same samples `ZoneGround` bakes; the test checks within 4.4 cm). Trees, canopies, the falls curtain and its spray come from `VerdantFallsProps` run as a zone match runs it (`PropKit` seed 4242, every ground zone's spawns kept clear). The lake is the plane at y 0. No sim or gameplay files changed.
+- **Tiers:** T1 floor and shore around the spawns (195 × 150 m), T2 valley, T3 the rest of the box; coarser tiers run 5–20 cm under the finer ones so seams never open. Cliff face: 1.4 m basalt prisms of T2 cells, standing proud by up to 4.5 m; plateau at T3; backdrop hills at 4 × T3.
+- **Story props:** overgrown shrine (frog guardian, empty heron plinth, Falling Leaf altar, fresh orchids, roots through the blocks) and the toppled heron in the shallows; canopy walkway (two planks missing, empty lantern hook); broken sluice (Falling Leaf on the lintel, spill at the broken end); fallen giant (root plate, hollow heartwood end); stepping stones to an islet with a cairn; carved height marks on the giant nearest the shrine (highest one fresh).
+- **Report:** `reports/lookdev/verdant_falls/README.md`.

@@ -1772,7 +1772,7 @@ func flight() -> Array[Dictionary]:
 	var walk: Vector3 = stats.get("walkway", {}).get("mid", Vector3(centre.x + 100, 30, centre.y + 180))
 	var sh := Vector3(shrine_at.x, ground_at(shrine_at.x, shrine_at.y), shrine_at.y)
 	return [
-		{"from": Vector3(shore.x + 10, 6.0, shore.y + 20), "at": Vector3(top.x, 40.0, top.z), "fov": 58.0},
+		{"from": Vector3(shore.x + 10, ground_at(shore.x + 10, shore.y + 20) + 6.0, shore.y + 20), "at": Vector3(top.x, 40.0, top.z), "fov": 58.0},
 		{"from": Vector3(centre.x - 5, 5.0, centre.y + 20), "at": Vector3(top.x, 50.0, top.z), "fov": 58.0},
 		{"from": Vector3(foot.x + 15, 14.0, foot.z + 90), "at": Vector3(top.x, 70.0, top.z), "fov": 60.0},
 		{"from": Vector3(foot.x + 30, 60.0, foot.z + 60), "at": Vector3(top.x, 105.0, top.z), "fov": 60.0},
@@ -1781,8 +1781,8 @@ func flight() -> Array[Dictionary]:
 		{"from": Vector3(foot.x - 15, 38.0, foot.z + 75), "at": Vector3(centre.x + 40, 15.0, centre.y + 140), "fov": 60.0},
 		{"from": Vector3(centre.x + 30, 12.0, centre.y + 95), "at": walk, "fov": 62.0},
 		{"from": walk + Vector3(-20, -8, -25), "at": walk + Vector3(10, -4, 20), "fov": 62.0},
-		{"from": walk + Vector3(15, -12, 20), "at": sh + Vector3(0, 2, 0), "fov": 60.0},
-		{"from": sh + Vector3(14, 6, 14), "at": Vector3(spawns[1].x, 4.0, spawns[1].y), "fov": 58.0},
+		{"from": walk + Vector3(15, -6, 20), "at": sh + Vector3(0, 2, 0), "fov": 60.0},
+		{"from": sh + Vector3(16, 11, 6), "at": Vector3(spawns[1].x, 4.0, spawns[1].y), "fov": 58.0},
 		{"from": Vector3(spawns[1].x + 25, 18.0, spawns[1].y + 30), "at": Vector3(top.x, 60.0, top.z), "fov": 58.0},
 	]
 
