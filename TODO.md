@@ -13,6 +13,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-ART1 [desktop] Zone art pass, Brawlhalla-clean look in all 7 zones: terrain reads zone
+  colours as sRGB (they were 3x too bright), 3-band ramp, crisp per-zone ground detail
+  (cracks, grass tufts, basalt, streets, sastrugi), inked cliff lips and silhouettes, prop ink
+  outlines, fog only on the far backdrop, a contact shadow under each fighter, re-tuned
+  palettes. Open: ART1-a Frozen Peaks snow still reads blue-lilac under Filmic (white = 1);
+  ART1-b a tonemap pass (Filmic white / AgX) would need a fighter look review.
+
 - T-D35 [desktop] #107 Heartbloom: the sim floor matches the drawn island outline (`ZoneGround`
   25 cm outline mask, 0.25 m inset); falls/dives/vanish anchors can no longer pass through an
   island top (`CombatSim._stop_on_skipped_island`); the camera pulls in front of other fighters;

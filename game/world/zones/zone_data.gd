@@ -23,7 +23,7 @@ extends Resource
 ## 0..1: horizontal rock strata on slopes.
 @export var strata := 0.5
 ## Ground pattern drawn by the terrain shader.
-@export_enum("none", "streets", "sastrugi") var ground_pattern := 0
+@export_enum("none", "streets", "sastrugi", "cracks", "grass", "basalt") var ground_pattern := 0
 
 @export_group("Atmosphere")
 @export var fog_colors: PackedColorArray = [Color(0.7, 0.8, 0.9), Color(0.9, 0.6, 0.5), Color(0.1, 0.12, 0.2)]
