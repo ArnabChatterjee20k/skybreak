@@ -2,7 +2,8 @@ extends SceneTree
 ## T-DEF1 'player' defense matrix: scripted inputs, one attack x one defensive option per
 ## run, for every legend. A dry run (no defence) finds the attack's first contact tick T;
 ## the option is then input at T - lead (an ideal read), and the outcome and the frame
-## advantage after it are recorded.
+## advantage after it are recorded. T-DEF2: dodge options are Shift taps (sidestep = locked
+## Shift+D, back dodge = Shift+S, spot = Shift alone); PERFECT_DODGE marks a perfect dodge.
 ##   godot --headless --path . -s res://tools/qa/defense_matrix.gd -- --out DIR
 ## Writes DIR/defense_matrix.json and prints a markdown table.
 
@@ -36,8 +37,11 @@ const OPTIONS := {
 	"none": {},
 	"hold_block": {"held": A.BLOCK, "lead": 999},
 	"perfect_block": {"press": A.BLOCK, "lead": 3},
-	"sidestep_dash": {"press": A.DASH, "move": Vector2(1, 0), "lead": 4},
-	"back_dash": {"press": A.DASH, "move": Vector2(0, -1), "lead": 4},
+	"sidestep": {"press": A.DASH, "move": Vector2(1, 0), "lead": 4},
+	"back_dodge": {"press": A.DASH, "move": Vector2(0, -1), "lead": 4},
+	"spot_dodge": {"press": A.DASH, "lead": 4},
+	# Dodged too early: the attack meets the recovery (T-DEF2 S5: grabs counter-hit it).
+	"spot_dodge_early": {"press": A.DASH, "lead": 22, "delay_attack": true},
 	"jump_ascend": {"press": 0, "vertical": 1, "lead": 8},
 	"vanish_neutral": {"press": A.DASH | A.BLOCK, "lead": 2},
 	"vanish_side": {"press": A.DASH | A.BLOCK, "move": Vector2(1, 0), "lead": 2},
@@ -93,26 +97,31 @@ func _run(legend: StringName, attack: String, option: String, contact_tick: int)
 	var attacker_free := -1
 	var defender_free := -1
 	var defender_held: int = opt.get("held", 0)
-	for t in WATCH_TICKS:
+	var lead: int = opt.get("lead", -1)
+	# An early option before a fast attack: the attack starts later instead.
+	var delay := 0
+	if opt.get("delay_attack", false) and contact_tick >= 0:
+		delay = maxi(lead - contact_tick, 0)
+		contact_tick += delay
+	for t in WATCH_TICKS + delay:
 		var a_press := 0
-		var a_move: Vector2 = spec.get("move", Vector2.ZERO)
-		if t == 0:
+		var a_move: Vector2 = spec.get("move", Vector2.ZERO) if t - delay < 2 else Vector2.ZERO
+		if t == delay:
 			a_press = spec.press
-		if hold > 0 and t < hold:
+		if hold > 0 and t >= delay and t - delay < hold:
 			attacker_held = spec.press
 		else:
 			attacker_held = 0
 		var d_press := 0
 		var d_move := Vector2.ZERO
 		var d_vertical := 0
-		var lead: int = opt.get("lead", -1)
 		if lead >= 0 and contact_tick >= 0 and t == maxi(contact_tick - lead, 0):
 			d_press = opt.get("press", 0)
 			d_move = opt.get("move", Vector2.ZERO)
 			d_vertical = opt.get("vertical", 0)
 		if opt.get("tech", false) and sim.fighters[1].state == S.GRABBED and sim.fighters[1].state_ticks == 2:
 			d_press = A.GRAB
-		var events := _step_once(attacker_held | a_press, a_move if t < 2 else Vector2.ZERO, 0,
+		var events := _step_once(attacker_held | a_press, a_move, 0,
 			defender_held | d_press, d_move, d_vertical)
 		for event: Dictionary in events:
 			var against: bool = event.get("target", event.get("fighter", -1)) == 1
@@ -121,7 +130,9 @@ func _run(legend: StringName, attack: String, option: String, contact_tick: int)
 				E.HIT, E.COUNTER, E.ARMOR, E.THROW:
 					label = "HIT" if against else ""
 				E.GRAB:
-					label = "GRABBED" if against else ""
+					label = ("GRABBED_CH" if event.counter else "GRABBED") if against else ""
+				E.PERFECT_DODGE:
+					label = "PERFECT_DODGE" if against else ""
 				E.BLOCK:
 					label = "BLOCKED" if against else ""
 				E.PERFECT_BLOCK:
@@ -137,11 +148,11 @@ func _run(legend: StringName, attack: String, option: String, contact_tick: int)
 				if first_contact < 0:
 					first_contact = t
 				if outcome == "" or label in ["HIT", "TECHED", "GUARD_BREAK"]:
-					outcome = label if outcome != "GRABBED" or label == "TECHED" else outcome
+					outcome = label if not outcome.begins_with("GRABBED") or label == "TECHED" else outcome
 			# The defender's own reversal landing on the attacker.
 			if event.type in [E.HIT, E.COUNTER] and event.get("target", -1) == 0 and outcome == "":
 				outcome = "TRADE_WON"
-		if t > 1:
+		if t > delay + 1:
 			if attacker_free < 0 and sim.fighters[0].state in FREE:
 				attacker_free = t
 			if defender_free < 0 and sim.fighters[1].state in FREE and _defender_acted(t, contact_tick, lead):

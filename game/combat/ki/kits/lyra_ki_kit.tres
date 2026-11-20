@@ -1,0 +1,105 @@
+[gd_resource type="Resource" script_class="KiKit" format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_amwxq"]
+[ext_resource type="Script" path="res://game/combat/ki/ki_kit.gd" id="2_qv3hs"]
+
+[sub_resource type="Resource" id="Resource_lm8mq"]
+script = ExtResource("1_amwxq")
+id = &"beam"
+display_name = "Constellation Ray"
+startup_ticks = 26
+active_ticks = 44
+recovery_ticks = 26
+hitbox_offsets = PackedVector3Array()
+hitbox_radii = PackedFloat32Array()
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 1300
+hitstun_ticks = 42
+blockstun_ticks = 12
+hitstop_ticks = 14
+knockback_type = 1
+knockback = Vector3(0, 6, -28)
+ki_cost = 40
+cancel_level = 3
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_cimf2"]
+script = ExtResource("1_amwxq")
+id = &"ki_blast"
+display_name = "Star Mote"
+startup_ticks = 8
+recovery_ticks = 10
+hitbox_offsets = PackedVector3Array()
+hitbox_radii = PackedFloat32Array()
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 110
+hitstun_ticks = 12
+blockstun_ticks = 8
+hitstop_ticks = 4
+knockback = Vector3(0, 0, -3)
+guard_damage = 4
+ki_cost = 4
+cancel_level = 3
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_byxqc"]
+script = ExtResource("1_amwxq")
+id = &"charged_blast"
+display_name = "Nova Orb"
+startup_ticks = 22
+recovery_ticks = 18
+hitbox_offsets = PackedVector3Array()
+hitbox_radii = PackedFloat32Array()
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 700
+hitstun_ticks = 34
+blockstun_ticks = 18
+hitstop_ticks = 10
+knockback_type = 1
+knockback = Vector3(0, 5, -20)
+guard_damage = 16
+ki_cost = 20
+cancel_level = 3
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_ar14c"]
+script = ExtResource("1_amwxq")
+id = &"beam_ultimate"
+display_name = "Starfall Array"
+startup_ticks = 34
+active_ticks = 70
+recovery_ticks = 32
+hitbox_offsets = PackedVector3Array()
+hitbox_radii = PackedFloat32Array()
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 2700
+hitstun_ticks = 58
+blockstun_ticks = 12
+hitstop_ticks = 20
+knockback_type = 1
+knockback = Vector3(0, 10, -40)
+cancel_level = 5
+charge_level_ticks = PackedInt32Array()
+
+[resource]
+script = ExtResource("2_qv3hs")
+blast = SubResource("Resource_cimf2")
+charged = SubResource("Resource_byxqc")
+beam = SubResource("Resource_lm8mq")
+ultimate = SubResource("Resource_ar14c")
+blast_speed = 40.0
+blast_radius = 0.33
+blast_homing = 2.4
+charged_speed = 32.0
+charged_radius = 0.85
+beam_radius = 0.75
+beam_range = 62.0
+beam_speed = 130.0
+beam_split_angle = 0.21
+ultimate_radius = 1.25
+ultimate_range = 75.0
+color = Color(0.55, 0.82, 1, 1)

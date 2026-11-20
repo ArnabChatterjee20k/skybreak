@@ -210,16 +210,43 @@ func _build_planes() -> void:
 		material.set_shader_parameter("clip_circle", Vector3(centre.x, centre.y, spec[6]))
 		var mesh := PlaneMesh.new()
 		mesh.size = spec[5]
-		var node := MeshInstance3D.new()
+		var node: GeometryInstance3D
+		if spec[1] == "lava":
+			node = _lava_node(spec[5], Vector3(centre.x, spec[3], centre.y))
+		else:
+			node = MeshInstance3D.new()
+			(node as MeshInstance3D).mesh = mesh
+			node.position = Vector3(centre.x, spec[3], centre.y)
 		node.name = spec[0]
-		node.mesh = mesh
 		node.material_override = material
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		node.visibility_range_end = PropKit.PROP_VISIBILITY_END
-		node.position = Vector3(centre.x, spec[3], centre.y)
 		props.add_child(node)
 		if spec[1] != "lava":
 			unshaded_materials.append(material)
 		if spec[1] == "lava":
 			node.set_meta("hazard", "lava")
 			_night_materials.append(material)
+
+
+# The lava sea as instance 0 of a multimesh, plus Ember Rift's floor fissures as flat strips
+# (custom data r = 1), so the fissures cost no extra node or draw call.
+func _lava_node(size: Vector2, at: Vector3) -> MultiMeshInstance3D:
+	var transforms: Array[Transform3D] = [Transform3D(Basis.from_scale(Vector3(size.x, 1.0, size.y)), at)]
+	for group in props.get_children():
+		if group.has_meta(EmberRiftProps.FISSURES_META):
+			transforms.append_array(group.get_meta(EmberRiftProps.FISSURES_META))
+	var unit := PlaneMesh.new()
+	unit.size = Vector2.ONE
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_custom_data = true
+	mm.mesh = unit
+	mm.instance_count = transforms.size()
+	for i in transforms.size():
+		mm.set_instance_transform(i, transforms[i])
+		mm.set_instance_custom_data(i, Color(0.0 if i == 0 else 1.0, 0.0, 0.0, 0.0))
+	var node := MultiMeshInstance3D.new()
+	node.multimesh = mm
+	node.set_meta(PropKit.INSTANCE_TRANSFORMS_META, transforms)
+	return node

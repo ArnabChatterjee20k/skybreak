@@ -61,6 +61,8 @@ var _prev_position := PackedVector3Array()
 var _prev_velocity := PackedVector3Array()
 var _sonic_ready := PackedInt32Array()
 var _was_fast := PackedByteArray()
+## Ki blasts, beams and clash prompts (T-KI1).
+var ki_layer := KiLayer.new()
 
 
 func _ready() -> void:
@@ -71,6 +73,8 @@ func _ready() -> void:
 		_pools[kind] = pool
 	_screen = VfxScreen.new()
 	add_child(_screen)
+	ki_layer.vfx = self
+	add_child(ki_layer)
 
 
 ## Plays this tick's effects. Call once per sim tick, after sim.tick().
@@ -81,8 +85,25 @@ func react(events: Array[Dictionary]) -> void:
 	var zone: StringName = sim.zone if sim != null else &""
 	for event in events:
 		_play_event(event, zone)
+		if event.get("type", -1) == CombatSim.EventType.PERFECT_DODGE:
+			_play_perfect_dodge(event)
 	if sim != null:
 		_watch_fighters()
+		ki_layer.sim = sim
+		ki_layer.react(events)
+
+
+## Perfect dodge (T-DEF2): a bright white-blue afterimage where the dodger was, crisp speed lines
+## and a short cool colour pop; no full-screen flash, so the counter-attack stays readable.
+func _play_perfect_dodge(event: Dictionary) -> void:
+	if sim == null or event.get("target", -1) < 0:
+		return
+	var dodger := sim.fighters[event.target as int]
+	var ghost := Color(0.75, 0.9, 1.0)
+	spawn(&"afterimage", dodger.position, ghost, 1.2)
+	var center := _screen_point(dodger.position)
+	_screen.burst_lines(center, ghost, 0.22)
+	_screen.color_pop(ghost, 0.3, 0.12)
 
 
 func _process(delta: float) -> void:
@@ -95,7 +116,7 @@ func follow_fighters(delta: float = 1.0 / 60.0) -> void:
 		return
 	for i in mini(_trails.size(), sim.fighters.size()):
 		var fighter := sim.fighters[i]
-		var lines := wants_speed_lines(fighter, sim.tuning)
+		var lines := wants_speed_lines(fighter, sim.tuning) and not sim.round_over
 		_trails[i].follow(fighter.position, fighter.velocity if lines else Vector3.ZERO, color_of(i), delta)
 
 
@@ -103,7 +124,8 @@ func follow_fighters(delta: float = 1.0 / 60.0) -> void:
 static func wants_speed_lines(fighter: FighterState, tuning: MovementTuning) -> bool:
 	match fighter.state:
 		S.DASHING:
-			return fighter.dash_kind == FighterState.DashKind.SUSTAINED or fighter.state_ticks >= tuning.dash_step_ticks
+			return fighter.dash_kind == FighterState.DashKind.SUSTAINED \
+				or (fighter.dash_kind == FighterState.DashKind.RUSH and fighter.state_ticks >= tuning.dash_step_ticks)
 		S.FLYING, S.FALLING:
 			return fighter.velocity.length() >= tuning.fly_speed * TOP_SPEED_SHARE
 	return false
@@ -148,6 +170,13 @@ func spawn(kind: StringName, where: Vector3, color: Color = Color.TRANSPARENT, e
 func play_ki_blast(from: Vector3, to: Vector3, color: Color, speed: float = 45.0) -> KiBlastEffect:
 	var blast := (_pools[&"ki_blast"] as VfxPool).spawn() as KiBlastEffect
 	blast.launch(from, to - from, color, from.distance_to(to) / speed, speed)
+	return blast
+
+
+## A ki blast held in flight at `at`; the caller moves it (KiLayer follows the sim).
+func hold_ki_blast(at: Vector3, color: Color) -> KiBlastEffect:
+	var blast := (_pools[&"ki_blast"] as VfxPool).spawn() as KiBlastEffect
+	blast.launch(at, Vector3.ZERO, color, 10.0, 0.0)
 	return blast
 
 
@@ -261,9 +290,9 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 		&"lines":
 			_screen.burst_lines(center, Color(1.0, 0.85, 0.85), 0.3)
 		&"ko":
+			# One clean beat: flash and colour pop, no speed lines over the contact point.
 			_screen.flash(VfxScreen.MAX_FLASH_FRAMES, 0.4)
 			_screen.color_pop(VfxScreen.SKY_POP, 0.6, 0.25)
-			_screen.burst_lines(center, Color.WHITE, 0.35)
 
 
 func _combo_hits(target: int) -> int:
@@ -282,9 +311,15 @@ func _watch_fighters() -> void:
 		var was := _prev_state[i]
 		var color := color_of(i)
 		var speed := fighter.velocity.length()
+		# After a KO nothing adds trails or rings, so the loser's body reads.
+		var calm := sim.round_over or fighter.is_ko_state()
 		# Dash afterimages, stretched along the dash.
-		if state == S.DASHING and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
+		if not calm and state == S.DASHING and fighter.dash_kind != FighterState.DashKind.DODGE \
+				and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
 			spawn(&"afterimage", _prev_position[i], color, 1.0, stretch_along(fighter.velocity, speed))
+		elif DodgeTrail.wants_ghost(fighter):
+			spawn(&"afterimage", _prev_position[i], DodgeTrail.ghost_color(fighter, color), 1.0,
+				stretch_along(fighter.velocity, speed))
 		# Vanish: a ghost and a burst where they left, a burst where they appear.
 		if state == S.VANISHING and was != S.VANISHING:
 			spawn(&"afterimage", _prev_position[i], color.lerp(Color.WHITE, 0.4), 1.15)
@@ -296,7 +331,7 @@ func _watch_fighters() -> void:
 			spawn(&"aura_flare", fighter.position, color)
 		# Sonic ring the moment they break the speed line.
 		var fast := speed >= SONIC_SPEED
-		if fast and _was_fast[i] == 0 and sim.current_tick >= _sonic_ready[i]:
+		if fast and not calm and _was_fast[i] == 0 and sim.current_tick >= _sonic_ready[i]:
 			spawn(&"sonic_ring", fighter.position, color.lerp(Color.WHITE, 0.6), 1.0, facing_along(fighter.velocity))
 			_sonic_ready[i] = sim.current_tick + SONIC_COOLDOWN
 		_was_fast[i] = 1 if fast else 0
@@ -307,7 +342,7 @@ func _watch_fighters() -> void:
 			_land(fighter.position, -_prev_velocity[i].y, fighter.state == S.KNOCKDOWN)
 		# Swing smear on the first active tick.
 		var phase := int(fighter.attack_phase())
-		if phase == FighterState.AttackPhase.ACTIVE and _prev_phase[i] != phase:
+		if not calm and phase == FighterState.AttackPhase.ACTIVE and _prev_phase[i] != phase:
 			_smear(fighter, color)
 		_prev_state[i] = state
 		_prev_phase[i] = phase

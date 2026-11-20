@@ -58,3 +58,17 @@ log it here.
     fighter 0's knockback goes from (-0.47, 1.41, -1.33) to (-1.01, 1.41, -2.83).
   `tools/diag/det_check.gd` total on Linux changes from `2bb1c571b216b165` to
   `7f2c2af91b6d870f`.
+- **Polish batch 3 (media-2 #5)**: `bot_match` re-blessed; `free_for_all` (4 fighters)
+  unchanged. A 1v1's sky drops now land 8-16 m from the fighters' midpoint instead of
+  25-60 m (`PickupTuning.duel_spawn_distance_*`, same rng calls).
+  - `bot_match`: first differs at index 241 (sim tick 242). The first drop spawns at
+    tick 121 closer in, leaves its telegraph at tick 241, and the bots turn toward it.
+  `tools/diag/det_check.gd` total on Linux changes from `7f2c2af91b6d870f` to
+  `715c1e5b39ad708c`.
+
+- **T-DEF2 (dodge)**: re-blessed. A tapped Shift is now a dodge (directional 4.5 m
+  eased over 14 frames, 26 frames total) instead of the 8 m / 10-tick step.
+  - `free_for_all` (seed 10): first differs at index 53 (sim tick 54), the tick
+    fighter 2 taps Shift with a direction: a `DODGE` (DIRECTIONAL) event, where
+    before it started the old step. Identical before that tick.
+  - `bot_match`: unchanged (the AI only rushes, never taps a non-rush Shift).

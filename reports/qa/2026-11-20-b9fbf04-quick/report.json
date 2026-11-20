@@ -1,0 +1,301 @@
+{
+  "status": {
+    "Invariant soak (sim)": "PASS",
+    "Invariant soak (view)": "FAIL",
+    "Scenario library": "PASS",
+    "Golden replays": "PASS",
+    "Visual goldens": "FAIL",
+    "Feel metrics trend": "FAIL"
+  },
+  "matches": 21,
+  "top": [
+    {
+      "check": "foot_ground",
+      "count": 7,
+      "detail": "lowest sole +30.7 cm off the visible ground (IDLE, clip fight_idle)",
+      "fighter": 2,
+      "first_tick": 268,
+      "legend": "lyra",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 268,
+      "worst_value": 0.306939897841517,
+      "match": "117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343",
+      "seed": 117,
+      "zone": "frozen_peaks",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343' --tick 268 --fighter 2",
+      "pending": false,
+      "image": "2026-11-20-b9fbf04-quick/captures/117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t268/frame_00268.png",
+      "clip": "2026-11-20-b9fbf04-quick/captures/117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t268/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 3,
+      "detail": "lowest sole +6.9 cm off the visible ground (CHARGING, clip charge)",
+      "fighter": 3,
+      "first_tick": 1565,
+      "legend": "lyra",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 1568,
+      "worst_value": 0.0686655520807875,
+      "match": "102:stormfall_city:2v2:kael,vexa,brann,lyra:4455",
+      "seed": 102,
+      "zone": "stormfall_city",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '102:stormfall_city:2v2:kael,vexa,brann,lyra:4455' --tick 1568 --fighter 3",
+      "pending": false,
+      "image": "2026-11-20-b9fbf04-quick/captures/102_stormfall_city_2v2_kael-vexa-brann-lyra_4455_t1568/frame_01568.png",
+      "clip": "2026-11-20-b9fbf04-quick/captures/102_stormfall_city_2v2_kael-vexa-brann-lyra_4455_t1568/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 2,
+      "detail": "lowest sole +6.6 cm off the visible ground (BLOCKING, clip guard)",
+      "fighter": 0,
+      "first_tick": 1178,
+      "legend": "lyra",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 1181,
+      "worst_value": 0.0661217976698936,
+      "match": "110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523",
+      "seed": 110,
+      "zone": "frozen_peaks",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523' --tick 1181 --fighter 0",
+      "pending": false,
+      "image": "2026-11-20-b9fbf04-quick/captures/110_frozen_peaks_ffa4_lyra-kael-vexa-brann_3523_t1181/frame_01181.png",
+      "clip": "2026-11-20-b9fbf04-quick/captures/110_frozen_peaks_ffa4_lyra-kael-vexa-brann_3523_t1181/clip.mp4"
+    }
+  ],
+  "metrics": {
+    "hitstop_consistency": 0.6421911421911422,
+    "pops_per_fighter_minute": 0.0,
+    "finger_pops_per_fighter_minute": 0.0,
+    "foot_slide_cm_per_frame": 0.03813643343661094,
+    "foot_error_p95_cm": 0.9054893026499082,
+    "camera_jerk_p95": 0.010741343677398702,
+    "locked_on_screen_share": 0.9894915729595278,
+    "sim_ms_per_tick": 0.8400938293650795,
+    "view_ms_per_frame": 0.6898211111111112,
+    "metric_versions": {
+      "foot_slide_cm_per_frame": 2
+    },
+    "latency_ticks": {
+      "brann": {
+        "grab@air": 10,
+        "grab@ground": 10,
+        "heavy@air": 19,
+        "heavy@ground": 19,
+        "light@air": 9,
+        "light@ground": 9
+      },
+      "kael": {
+        "grab@air": 8,
+        "grab@ground": 8,
+        "heavy@air": 15,
+        "heavy@ground": 15,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "lyra": {
+        "grab@air": 9,
+        "grab@ground": 9,
+        "heavy@air": 16,
+        "heavy@ground": 16,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "vexa": {
+        "grab@air": 7,
+        "grab@ground": 7,
+        "heavy@air": 12,
+        "heavy@ground": 12,
+        "light@air": 5,
+        "light@ground": 5
+      }
+    }
+  },
+  "trend": [
+    [
+      "hitstop_consistency",
+      0.6421911421911422,
+      0.62004662004662,
+      0.03571428571428567,
+      false
+    ],
+    [
+      "pops_per_fighter_minute",
+      0.0,
+      0.0,
+      null,
+      false
+    ],
+    [
+      "finger_pops_per_fighter_minute",
+      0.0,
+      0.0,
+      null,
+      false
+    ],
+    [
+      "foot_slide_cm_per_frame",
+      0.03813643343661094,
+      0.03259006036517444,
+      0.1701860324678416,
+      true
+    ],
+    [
+      "foot_error_p95_cm",
+      0.9054893026499082,
+      0.8549737629378978,
+      0.05908431568522841,
+      false
+    ],
+    [
+      "camera_jerk_p95",
+      0.010741343677398702,
+      0.010449993047153659,
+      0.027880461635752016,
+      false
+    ],
+    [
+      "locked_on_screen_share",
+      0.9894915729595278,
+      0.9879195228014763,
+      0.0015912735013005844,
+      false
+    ],
+    [
+      "sim_ms_per_tick",
+      0.8400938293650795,
+      1.0707471626984129,
+      -0.2154134434053124,
+      false
+    ],
+    [
+      "view_ms_per_frame",
+      0.6898211111111112,
+      0.9176677182539682,
+      -0.24828878973358365,
+      false
+    ]
+  ],
+  "visual": [
+    {
+      "shot": "heartbloom_brann_idle.png",
+      "status": "FAIL",
+      "ssim": 0.972500522383347,
+      "tiles": 0.06458333333333334,
+      "diff": "reports/qa/2026-11-20-b9fbf04-quick/visual_diff/diff_heartbloom_brann_idle.png"
+    },
+    {
+      "shot": "heartbloom_brann_light.png",
+      "status": "FAIL",
+      "ssim": 0.9620466722620153,
+      "tiles": 0.075,
+      "diff": "reports/qa/2026-11-20-b9fbf04-quick/visual_diff/diff_heartbloom_brann_light.png"
+    },
+    {
+      "shot": "heartbloom_kael_idle.png",
+      "status": "PASS",
+      "ssim": 0.9821633433262663,
+      "tiles": 0.041666666666666664
+    },
+    {
+      "shot": "heartbloom_kael_light.png",
+      "status": "FAIL",
+      "ssim": 0.9714446754119888,
+      "tiles": 0.05416666666666667,
+      "diff": "reports/qa/2026-11-20-b9fbf04-quick/visual_diff/diff_heartbloom_kael_light.png"
+    },
+    {
+      "shot": "heartbloom_lyra_idle.png",
+      "status": "PASS",
+      "ssim": 0.9861319670871845,
+      "tiles": 0.0375
+    },
+    {
+      "shot": "heartbloom_lyra_light.png",
+      "status": "FAIL",
+      "ssim": 0.9632281064504304,
+      "tiles": 0.058333333333333334,
+      "diff": "reports/qa/2026-11-20-b9fbf04-quick/visual_diff/diff_heartbloom_lyra_light.png"
+    },
+    {
+      "shot": "heartbloom_vexa_idle.png",
+      "status": "PASS",
+      "ssim": 0.9813310253179229,
+      "tiles": 0.041666666666666664
+    },
+    {
+      "shot": "heartbloom_vexa_light.png",
+      "status": "FAIL",
+      "ssim": 0.9674167121132495,
+      "tiles": 0.06041666666666667,
+      "diff": "reports/qa/2026-11-20-b9fbf04-quick/visual_diff/diff_heartbloom_vexa_light.png"
+    },
+    {
+      "shot": "zone_ember_rift.png",
+      "status": "PASS",
+      "ssim": 0.9954650528295675,
+      "tiles": 0.0
+    },
+    {
+      "shot": "zone_frozen_peaks.png",
+      "status": "PASS",
+      "ssim": 0.9915940731326748,
+      "tiles": 0.025
+    },
+    {
+      "shot": "zone_shattered_mesa.png",
+      "status": "PASS",
+      "ssim": 0.9974045505030704,
+      "tiles": 0.029166666666666667
+    },
+    {
+      "shot": "zone_skyhold_ruins.png",
+      "status": "PASS",
+      "ssim": 0.9903259088929963,
+      "tiles": 0.0
+    },
+    {
+      "shot": "zone_stormfall_city.png",
+      "status": "PASS",
+      "ssim": 0.9873364767454452,
+      "tiles": 0.0375
+    },
+    {
+      "shot": "zone_verdant_falls.png",
+      "status": "PASS",
+      "ssim": 0.9938321530433467,
+      "tiles": 0.016666666666666666
+    }
+  ],
+  "scenarios": {
+    "tests": 38,
+    "passing": 38,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "goldens": {
+    "tests": 9,
+    "passing": 9,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "sim_summary": {},
+  "view_summary": {
+    "foot_ground": {
+      "matches": 3,
+      "frames": 12,
+      "pending": false
+    }
+  }
+}

@@ -7,7 +7,7 @@ const CAPACITY := {
 	&"anime_burst": 4, &"guard_shatter": 2, &"ko_dome": 1, &"lightning": 2,
 	&"petals": 4, &"sparkles": 4, &"blast_impact": 6, &"aura_flare": 2,
 	&"sonic_ring": 3, &"afterimage": 14, &"vanish_burst": 4, &"landing_dust": 4,
-	&"ki_blast": 8, &"ki_beam": 2,
+	&"ki_blast": 24, &"ki_beam": 6,
 	&"smear_fist": 4, &"smear_gauntlets": 4, &"smear_blade": 4, &"smear_lance": 4,
 	&"smear_hammer": 3, &"smear_chakram": 3, &"smear_scythe": 3,
 }
