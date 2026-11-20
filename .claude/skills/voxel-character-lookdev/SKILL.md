@@ -32,7 +32,7 @@ Copy the structure of `docs/lookdev/kael.md`:
   - *Medium parts:* plates, straps, collars, belts, cuffs, soles, knots.
   - *Tiny details:* rivets (4–6 per plate), stitch lines, glints, laces, fringe, stray hair locks, eyebrows, eye highlights, an **original** emblem, and at least 4 **storytelling details** (wear, a stowed item, a personal mark).
 - **Palette table:** muted base materials with one saturated accent (Kael's is the burnt-orange scarf; energy colours are the only other saturation). Every material gets a shadow tone.
-- **Voxel spec:** body cell ≤ 1/64 of the height (Kael's is 1/82 = 2.2 cm), with face, hands and weapon detail at half that (1.1 cm).
+- **Voxel spec:** body cell ≤ 1/64 of the height (Kael's is 1/82 = 2.2 cm), fine cell for hands, weapon and gear detail at half that (1.1 cm), and a head cell of about 8.5 mm (Kael v2) so the face and skull read smoothly.
 - **Lighting stack, deliverables and acceptance** (below).
 
 ## Step 2: Build in code (reuse Kael's pipeline)
@@ -58,7 +58,7 @@ Use `game/lookdev/lookdev_stage.gd`. Its lighting stack is half the quality, so 
 5. A subtle rim light.
 6. A mid-grey endless cyclorama, with the camera clamped so the edge never shows.
 
-Capture at exactly 1920×1080 through a SubViewport, like `kael_lookdev_capture.gd` does. The deliverables go to a GitHub pre-release `lookdev-<name>-v<N>`:
+Capture at exactly 1920×1080 through a SubViewport, like `kael_lookdev_capture.gd` does. Stills use the small cyclorama; a huge one makes the PCSS contact shadow speckled. Only reels set `LookdevStage.large = true`. The deliverables go to a GitHub pre-release `lookdev-<name>-v<N>`:
 - an 8-angle turntable (every 45°) plus a contact sheet
 - close-ups of the head and the signature part (hand, weapon)
 - `old | new` and `vN-1 | vN` side-by-sides
@@ -69,6 +69,8 @@ Capture at exactly 1920×1080 through a SubViewport, like `kael_lookdev_capture.
   3. shooting: a ki volley that travels to the target with an impact; a beam charge and fire, **framed close enough to judge the pose**
   4. combat against a grey target dummy: jab, combo, launcher, kick, dodge, guard against a string, hit react, knockdown and get-up, with hitstop, flashes and pops
   5. an idle orbit to close
+
+**Collision in reels:** keep fighter centres at least 2 × `FighterStats.pushbox_radius` apart, with equal pushback on overlap like the sim. Test fists, forearms and boots against the target's body capsule: the first touch lands the hit (hitstop, flash, pop), and any further overlap pushes the target back. Nothing may sink in. Stage melee side-on. Report the measured silhouette (height, width, r90 per band) against the pushbox and hurtbox values; any change to those values goes in a separate tuning PR with tests, never in the art swap.
 
 Missing clips: author look-dev-only procedural poses with `pose_override.gd` (a SkeletonModifier3D that exists only in the look-dev scene). Label them as stand-ins; they aren't final animation.
 
@@ -81,6 +83,8 @@ Self-check before handing over:
 - AO and the contact shadow are visible in every shot.
 - The palette is muted and coherent, with only the accent and the energy saturated.
 - It animates with the current rig with no tearing or stretching, and the thumbs and fingers stay sane in a fist, a guard and a shot.
+- **Stretch scan:** no face is stretched more than 3× in idle or guard. This catches bad skin weights, such as a side test using abs(x) that lets one side's pass overwrite the other.
+- No body clipping between fighters anywhere in the reel.
 - The silhouette reads in pure black.
 - It holds up next to the reference images.
 
