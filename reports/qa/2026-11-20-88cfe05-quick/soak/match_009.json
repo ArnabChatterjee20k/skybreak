@@ -1,0 +1,79 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 1
+		},
+		"breaker": {
+			"8": 2
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"ki_blast": {
+			"4": 1
+		},
+		"light_1": {
+			"4": 3
+		},
+		"light_1+counter": {
+			"7": 5
+		},
+		"light_2": {
+			"3": 5,
+			"4": 3
+		},
+		"light_3": {
+			"4": 2,
+			"5": 4
+		},
+		"scatter/projectile": {
+			"3": 30
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "109:stormfall_city:1v1:lyra,kael:43",
+	"ki": {
+		"beam_whiffs": 3,
+		"beams": 3,
+		"blasts": 3,
+		"charged": 1,
+		"clashes": 0,
+		"ki_hits": 1,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 109,
+	"sim_ms_per_tick": 0.663465,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0109808128327131,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.990257170036912,
+		"foot_slide_cm_per_frame": 0.00257648992767677,
+		"foot_slide_frames": 268,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.991477272727273,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.5533675,
+	"violations": [],
+	"wall_seconds": 17.226,
+	"zone": "stormfall_city"
+}
