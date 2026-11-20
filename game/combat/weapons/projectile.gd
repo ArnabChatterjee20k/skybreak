@@ -29,8 +29,17 @@ var level: int = 0
 var hit_mask: int = 0
 ## Orbit Chakram disc on its way back to the thrower.
 var returning: bool = false
+## Ki shot kind (KiRules.Shot), NONE for weapon shots (T-KI1).
+var ki: int = 0
+## Fighter a homing ki blast turns toward, and its turn rate in rad/s.
+var homing_target: int = -1
+var homing_rate: float = 0.0
 
 
 func state_values() -> Array:
-	return [id, owner, weapon, thrown, position, velocity, gravity, radius, ticks_left,
+	var values: Array = [id, owner, weapon, thrown, position, velocity, gravity, radius, ticks_left,
 		move.id if move else &"", effect, ammo, age, level, hit_mask, returning]
+	# Ki fields join only on ki shots, so weapon-only states hash as before.
+	if ki != 0:
+		values.append_array([ki, homing_target, homing_rate])
+	return values
