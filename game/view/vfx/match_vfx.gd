@@ -81,8 +81,23 @@ func react(events: Array[Dictionary]) -> void:
 	var zone: StringName = sim.zone if sim != null else &""
 	for event in events:
 		_play_event(event, zone)
+		if event.get("type", -1) == CombatSim.EventType.PERFECT_DODGE:
+			_play_perfect_dodge(event)
 	if sim != null:
 		_watch_fighters()
+
+
+## Perfect dodge (T-DEF2): a bright white-blue afterimage where the dodger was, crisp speed lines
+## and a short cool colour pop; no full-screen flash, so the counter-attack stays readable.
+func _play_perfect_dodge(event: Dictionary) -> void:
+	if sim == null or event.get("target", -1) < 0:
+		return
+	var dodger := sim.fighters[event.target as int]
+	var ghost := Color(0.75, 0.9, 1.0)
+	spawn(&"afterimage", dodger.position, ghost, 1.2)
+	var center := _screen_point(dodger.position)
+	_screen.burst_lines(center, ghost, 0.22)
+	_screen.color_pop(ghost, 0.3, 0.12)
 
 
 func _process(delta: float) -> void:
@@ -103,7 +118,8 @@ func follow_fighters(delta: float = 1.0 / 60.0) -> void:
 static func wants_speed_lines(fighter: FighterState, tuning: MovementTuning) -> bool:
 	match fighter.state:
 		S.DASHING:
-			return fighter.dash_kind == FighterState.DashKind.SUSTAINED or fighter.state_ticks >= tuning.dash_step_ticks
+			return fighter.dash_kind == FighterState.DashKind.SUSTAINED \
+				or (fighter.dash_kind == FighterState.DashKind.RUSH and fighter.state_ticks >= tuning.dash_step_ticks)
 		S.FLYING, S.FALLING:
 			return fighter.velocity.length() >= tuning.fly_speed * TOP_SPEED_SHARE
 	return false
@@ -285,8 +301,12 @@ func _watch_fighters() -> void:
 		# After a KO nothing adds trails or rings, so the loser's body reads.
 		var calm := sim.round_over or fighter.is_ko_state()
 		# Dash afterimages, stretched along the dash.
-		if not calm and state == S.DASHING and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
+		if not calm and state == S.DASHING and fighter.dash_kind != FighterState.DashKind.DODGE \
+				and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
 			spawn(&"afterimage", _prev_position[i], color, 1.0, stretch_along(fighter.velocity, speed))
+		elif DodgeTrail.wants_ghost(fighter):
+			spawn(&"afterimage", _prev_position[i], DodgeTrail.ghost_color(fighter, color), 1.0,
+				stretch_along(fighter.velocity, speed))
 		# Vanish: a ghost and a burst where they left, a burst where they appear.
 		if state == S.VANISHING and was != S.VANISHING:
 			spawn(&"afterimage", _prev_position[i], color.lerp(Color.WHITE, 0.4), 1.15)

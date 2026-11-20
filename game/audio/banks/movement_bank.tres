@@ -26,6 +26,8 @@
 [ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/flight_stop_1.ogg" id="s22"]
 [ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/flight_stop_2.ogg" id="s23"]
 [ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/movement/flight_wind_loop.ogg" id="s24"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/perfect_block_1.ogg" id="d1"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/perfect_block_2.ogg" id="d2"]
 
 [sub_resource type="Resource" id="dash"]
 script = ExtResource("cue")
@@ -267,7 +269,67 @@ layers = Array[StringName]([])
 duck_db = 0.0
 duck_seconds = 0.0
 
+[sub_resource type="Resource" id="dodge"]
+script = ExtResource("cue")
+id = &"dodge"
+streams = Array[AudioStream]([ExtResource("s1"), ExtResource("s2"), ExtResource("s3")])
+bus = &"SFX"
+volume_db = -2.0
+pitch_min = 1.18
+pitch_max = 1.28
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 50
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
+[sub_resource type="Resource" id="perfect_dodge"]
+script = ExtResource("cue")
+id = &"perfect_dodge"
+streams = Array[AudioStream]([ExtResource("d1"), ExtResource("d2")])
+bus = &"SFX"
+volume_db = 1.0
+pitch_min = 1.22
+pitch_max = 1.26
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 80
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([&"perfect_dodge_tail"])
+duck_db = -4.0
+duck_seconds = 0.25
+
+[sub_resource type="Resource" id="perfect_dodge_tail"]
+script = ExtResource("cue")
+id = &"perfect_dodge_tail"
+streams = Array[AudioStream]([ExtResource("s11"), ExtResource("s12")])
+bus = &"SFX"
+volume_db = -3.0
+pitch_min = 0.78
+pitch_max = 0.82
+volume_jitter_db = 1.0
+max_voices = 3
+priority = 60
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
 [resource]
 script = ExtResource("bank")
 category = &"movement"
-cues = Array[ExtResource("cue")]([SubResource("dash"), SubResource("air_dash"), SubResource("rush_whoosh"), SubResource("vanish_out"), SubResource("vanish_in"), SubResource("lock_on"), SubResource("lock_switch"), SubResource("land_light"), SubResource("land_heavy"), SubResource("flight_start"), SubResource("flight_stop"), SubResource("flight_wind_loop")])
+cues = Array[ExtResource("cue")]([SubResource("dash"), SubResource("dodge"), SubResource("perfect_dodge"), SubResource("perfect_dodge_tail"), SubResource("air_dash"), SubResource("rush_whoosh"), SubResource("vanish_out"), SubResource("vanish_in"), SubResource("lock_on"), SubResource("lock_switch"), SubResource("land_light"), SubResource("land_heavy"), SubResource("flight_start"), SubResource("flight_stop"), SubResource("flight_wind_loop")])

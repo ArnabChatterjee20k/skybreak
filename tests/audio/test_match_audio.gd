@@ -107,4 +107,4 @@ func test_the_arena_hook_hands_sim_sounds_to_the_director() -> void:
 	hook.after_tick()
 	sim.tick([dash, FighterInput.new()])
 	hook.after_tick()
-	assert_eq(director.voices_playing(&"dash"), 1)
+	assert_eq(director.voices_playing(&"dodge"), 1, "a Shift tap is a dodge (T-DEF2)")

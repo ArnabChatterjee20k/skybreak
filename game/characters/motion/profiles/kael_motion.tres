@@ -5,3 +5,7 @@
 [resource]
 script = ExtResource("1_profile")
 resource_name = "kael: heroic, balanced"
+dodge_lean_degrees = 22.0
+dodge_roll_degrees = 26.0
+dodge_twist_degrees = 40.0
+dodge_drop = 0.16
