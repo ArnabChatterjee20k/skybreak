@@ -12,6 +12,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `AGENTS.md`. Remaining: CI green on GitHub.
 
 ## In review
+- T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
+  all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
+  energy on GLOW, emblems at 5.5 mm), drop-in behind `VoxelArmory` / `WeaponModels.voxel_everywhere`
+  (old meshes stay the default). Voxel Kael uses them. Open: owner look review on a real GPU; hook
+  `VoxelArmory` into the Vexa/Lyra/Brann voxel scenes when those branches merge; voxel nocked arrow
+  and projectiles (still the old meshes); weapon clearance boxes are still the old models' parts.
 - T-UI1 [desktop] HUD restyle (`claude/T-UI1-hud-restyle`, #117): plates, clock, banners (pop-in),
   combo, READ!, control hints, fly-down and beam-clash prompts on `MenuTheme` (skewed navy panels,
   ink borders, display font, gold/cyan/hot, team colours); legend portraits in the plate tiles, hit
