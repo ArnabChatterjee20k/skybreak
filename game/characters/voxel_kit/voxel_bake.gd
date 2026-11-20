@@ -105,13 +105,18 @@ func save_to(path: String) -> Error:
 		var mat := mesh.surface_get_material(s)
 		if mat != null:
 			mat.resource_scene_unique_id = "surface_%d" % s
-	return ResourceSaver.save(self, path, ResourceSaver.FLAG_COMPRESS)
+	var err := ResourceSaver.save(self, path, ResourceSaver.FLAG_COMPRESS)
+	if err != OK:
+		return err
+	# A path-derived uid instead of a random one, so a fresh bake matches too.
+	return ResourceSaver.set_uid(path, ResourceUID.create_id_for_path(path))
 
 
 ## The design's bake if present and current for this skeleton, else null
-## (with the reason in why[0]).
-static func load_for(design: Script, skeleton: Skeleton3D, why: Array = []) -> VoxelBake:
-	var path := path_for(design)
+## (with the reason in why[0]). path defaults to path_for(design).
+static func load_for(design: Script, skeleton: Skeleton3D, why: Array = [], path := "") -> VoxelBake:
+	if path == "":
+		path = path_for(design)
 	if not ResourceLoader.exists(path):
 		why.append("no bake at %s" % path)
 		return null

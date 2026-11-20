@@ -25,16 +25,18 @@ func _ready() -> void:
 	if not _cache.has(key):
 		var why := []
 		var bake := VoxelBake.load_for(design, skeleton, why)
-		if bake != null:
-			_cache[key] = [bake.mesh, bake.skin]
-		else:
+		if bake == null:
 			push_warning("VoxelBody: building %s live (%s); run tools/voxel_bake.gd" % [key, why[0]])
-			_cache[key] = [build(design.new(skeleton) as VoxelDesign), rest_skin(skeleton)]
-	target.mesh = _cache[key][0]
+			bake = VoxelBake.new()
+			bake.mesh = build(design.new(skeleton) as VoxelDesign)
+			bake.skin = rest_skin(skeleton)
+		_cache[key] = bake
+	var current: VoxelBake = _cache[key]
+	target.mesh = current.mesh
 	for i in target.get_surface_override_material_count():
 		target.set_surface_override_material(i, null)
 	target.material_overlay = null
-	target.skin = _cache[key][1]
+	target.skin = current.skin
 
 
 static func build(d: VoxelDesign) -> ArrayMesh:
