@@ -1,7 +1,7 @@
 extends SceneTree
 ## Look-dev renders of voxel Kael on the neutral stage (docs/lookdev/kael.md).
 ##   godot --path . -s res://game/lookdev/kael_lookdev_capture.gd -- <out dir> [quick|turntable|closeups|spin|idle|compare|all]
-## Needs a 1920x1080 window (override.cfg) and a GPU (not headless). spin and
+## Needs a GPU (not headless); renders at 1920x1080 offscreen. spin and
 ## idle write numbered PNG frames for ffmpeg.
 
 const VOXEL := "res://game/characters/kael_voxel/kael_voxel.tscn"
@@ -10,6 +10,9 @@ const CLIP_FPS := 30
 const GAUNTLET_YAW := 0.0
 
 var _out := ""
+## Renders go through a fixed-size viewport so stills and clips are exactly
+## 1920x1080 whatever the window's client area is.
+var _viewport: SubViewport
 var _stage: LookdevStage
 var _pivot: Node3D
 var _view: CharacterView
@@ -21,8 +24,14 @@ func _initialize() -> void:
 	_out = args[0]
 	var what := args[1] if args.size() > 1 else "quick"
 	DirAccess.make_dir_recursive_absolute(_out)
+	_viewport = SubViewport.new()
+	_viewport.size = Vector2i(1920, 1080)
+	_viewport.msaa_3d = root.msaa_3d if root.msaa_3d != Viewport.MSAA_DISABLED else Viewport.MSAA_4X
+	_viewport.screen_space_aa = root.screen_space_aa
+	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(_viewport)
 	_stage = LookdevStage.new()
-	root.add_child(_stage)
+	_viewport.add_child(_stage)
 	_run.call_deferred(what)
 
 
@@ -128,4 +137,4 @@ func _save(name: String) -> void:
 	for i in 2:
 		await process_frame
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png(_out.path_join(name + ".png"))
+	_viewport.get_texture().get_image().save_png(_out.path_join(name + ".png"))
