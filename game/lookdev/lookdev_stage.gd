@@ -59,15 +59,15 @@ func _environment() -> void:
 func _cyclorama() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var width := 30.0
+	var width := 400.0
 	var back := -3.5
 	var radius := 2.5
 	var profile := PackedVector2Array()  # (z, y) from the front of the floor to the top of the wall
-	profile.append(Vector2(24.0, 0.0))
+	profile.append(Vector2(300.0, 0.0))
 	for k in range(0, 17):
 		var a := PI * 0.5 * k / 16.0
 		profile.append(Vector2(back + radius - sin(a) * radius, radius - cos(a) * radius))
-	profile.append(Vector2(back, 9.0))
+	profile.append(Vector2(back, 200.0))
 	for i in profile.size() - 1:
 		var a := profile[i]
 		var b := profile[i + 1]
