@@ -36,6 +36,7 @@ const EVENT_CUES := {
 	CombatSim.EventType.COMBO_BREAKER: &"combo_breaker",
 	CombatSim.EventType.AIR_TECH: &"air_tech",
 	CombatSim.EventType.TECH_ROLL: &"air_tech",
+	CombatSim.EventType.PERFECT_DODGE: &"perfect_dodge",
 }
 const KNOCKBACK_CUES := {
 	MoveData.KnockbackType.LAUNCH: &"launcher",
@@ -75,7 +76,7 @@ const UI_CUES := {
 }
 const STATE_CUES: Array[StringName] = [
 	&"hit_light", &"hit_medium", &"hit_heavy", &"counter_hit", &"spike_bounce",
-	&"combo_tick", &"whoosh_light", &"whoosh_heavy", &"dash", &"air_dash", &"rush_whoosh",
+	&"combo_tick", &"whoosh_light", &"whoosh_heavy", &"dash", &"air_dash", &"rush_whoosh", &"dodge",
 	&"vanish_out", &"vanish_in", &"lock_on", &"lock_switch", &"land_light", &"land_heavy",
 	&"flight_start", &"flight_stop", &"power_up_burst", &"round_end",
 ]
@@ -110,6 +111,41 @@ static func cues_for_event(event: Dictionary) -> Array[Dictionary]:
 		out.append(_request(EVENT_CUES[type], at, params))
 	if type != CombatSim.EventType.KO and KNOCKBACK_CUES.has(event.get("knockback_type", 0)):
 		out.append(_request(KNOCKBACK_CUES[event.knockback_type], at))
+	out.append_array(ki_cues_for_event(event))
+	return out
+
+
+## Ki blast and beam sounds (T-KI1): fire, impact, reflect, soak, beam fire, clash and beats.
+static func ki_cues_for_event(event: Dictionary) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var at: Vector3 = event.get("position", Vector3.ZERO)
+	match event.type:
+		CombatSim.EventType.KI_FIRE:
+			var charged: bool = event.get("shot", 0) == KiRules.Shot.CHARGED
+			out.append(_request(KI_CUES.blast_fire, at, {"pitch_scale": 0.75 if charged else 1.0,
+				"volume_db": 3.0 if charged else 0.0}))
+		CombatSim.EventType.KI_CHARGE:
+			out.append(_request(&"power_up_burst", at, {"pitch_scale": 1.3}))
+		CombatSim.EventType.KI_ABSORB:
+			out.append(_request(KI_CUES.blast_impact, at, {"pitch_scale": 1.4, "volume_db": -6.0}))
+		CombatSim.EventType.PROJECTILE_HIT:
+			if event.get("weapon", -1) == Weapon.Kind.NONE:
+				if event.get("reflected", false):
+					out.append(_request(&"perfect_block", at))
+					out.append(_request(KI_CUES.blast_fire, at, {"pitch_scale": 1.25}))
+				else:
+					out.append(_request(KI_CUES.blast_impact, at))
+		CombatSim.EventType.BEAM_FIRE:
+			out.append(_request(KI_CUES.beam_fire, at))
+		CombatSim.EventType.BEAM_CLASH:
+			out.append(_request(KI_CUES.beam_clash, at))
+		CombatSim.EventType.CLASH_BEAT:
+			if event.get("gain", 0) > 0:
+				out.append(_request(&"perfect_block", at, {"pitch_scale": 1.0 + 0.08 * maxi(int(event.get("beat", 0)), 0)}))
+			else:
+				out.append(_request(&"block", at, {"pitch_scale": 0.7, "volume_db": -4.0}))
+		CombatSim.EventType.CLASH_END:
+			out.append(_request(KI_CUES.beam_clash, at, {"pitch_scale": 0.8, "volume_db": 3.0}))
 	return out
 
 
@@ -180,7 +216,21 @@ func loops_for(sim: CombatSim) -> Array[Dictionary]:
 		out.append(_loop(&"charge_%d" % i, &"ki_charge_loop", charging,
 			float(f.state_ticks) / CHARGE_FULL_TICKS, f.position))
 		out.append(_loop(&"aura_%d" % i, &"aura_loop", charging, 1.0, f.position))
+		out.append_array(_ki_loops(i, f))
 	return out
+
+
+## Charge hum that rises through a charged blast or a beam's startup, then the beam's roar.
+static func _ki_loops(index: int, f: FighterState) -> Array[Dictionary]:
+	var kit := KiRules.kit_of(f)
+	var move := f.move if f.state == FighterState.State.ATTACKING else null
+	var charging := move != null and (move == kit.charged or kit.is_beam(move)) and f.move_tick < move.startup_ticks
+	var firing := move != null and kit.is_beam(move) and not charging and f.move_tick < move.recovery_start_tick()
+	var rise := float(f.move_tick) / move.startup_ticks if charging else 0.0
+	return [
+		_loop(&"ki_charge_%d" % index, KI_LOOPS.beam_charge, charging, rise, f.position),
+		_loop(&"beam_%d" % index, KI_LOOPS.beam, firing, 1.0, f.position),
+	]
 
 
 func _transition_cues(index: int, was: Dictionary, now: Dictionary) -> Array[Dictionary]:
@@ -192,6 +242,8 @@ func _transition_cues(index: int, was: Dictionary, now: Dictionary) -> Array[Dic
 			or (now.dash_kind == FighterState.DashKind.RUSH and was.dash_kind != FighterState.DashKind.RUSH)):
 		if now.dash_kind == FighterState.DashKind.RUSH:
 			out.append(_request(&"rush_whoosh", at))
+		elif now.dash_kind == FighterState.DashKind.DODGE:
+			out.append(_request(&"dodge", at))
 		else:
 			out.append(_request(&"dash" if was.grounded else &"air_dash", at))
 	if state == FighterState.State.VANISHING and before != FighterState.State.VANISHING:

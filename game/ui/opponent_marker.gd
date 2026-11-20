@@ -7,12 +7,12 @@ extends Control
 ## Pixels between an edge arrow and the screen edge.
 const EDGE_MARGIN := 48.0
 const ARROW_SIZE := 34.0
-const OUTLINE := Color(0.05, 0.05, 0.08, 0.85)
+const OUTLINE := MenuTheme.INK
 const FONT_SIZE := 22
 ## Height difference (m) beyond which the arrow says above or below.
 const HEIGHT_CUE := 4.0
 const RETICLE_RADIUS := 26.0
-const COLOR := Color(1.0, 0.85, 0.25)
+const COLOR := MenuTheme.GOLD
 
 ## Set by the scene each frame.
 var camera: Camera3D
@@ -58,7 +58,7 @@ func _draw() -> void:
 	var cue := cue_for(origin, target, _placement.behind)
 	# Text sits on the inner side of the arrow, toward the screen centre.
 	var text_at := at - forward * ARROW_SIZE * 1.9
-	var font := ThemeDB.fallback_font
+	var font := MenuTheme.font()
 	var label: String = cue.label
 	var width := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x
 	var baseline := text_at + Vector2(-width / 2.0, FONT_SIZE * 0.35)

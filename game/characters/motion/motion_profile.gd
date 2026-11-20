@@ -34,5 +34,14 @@ extends Resource
 ## whose chest or short arms would bring a hold into the body (chibi Lyra, bulky Brann).
 @export var hold_forward := 0.0
 @export var hold_out := 0.0
+## Two-handed heavy guard: the weapon's +Y in chest space (as ARM_POSES); zero keeps the shared
+## diagonal. Brann's wide pauldrons need the head forward of his shoulder, not over it (#98).
+@export var heavy_guard_up := Vector3.ZERO
 ## Heavy weapons rest at the side between attacks instead of across the chest.
 @export var heavy_at_side := false
+## Dodge feel (T-DEF2), procedural on top of the clips: lean into a directional dodge, bank into
+## a sidestep, twist through a spot dodge (degrees), and how far the hips drop (m).
+@export var dodge_lean_degrees := 22.0
+@export var dodge_roll_degrees := 26.0
+@export var dodge_twist_degrees := 40.0
+@export var dodge_drop := 0.16

@@ -61,6 +61,8 @@ const KO_FRAMING_RANGE := 40.0
 var _camera_target := -1
 var weapon_layer := WeaponLayer.new()
 var fighter_views: Array[FighterView] = []
+## The ground marker under each fighter: contact shadow plus airborne team ring.
+var contact_shadows := ContactShadows.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -85,6 +87,10 @@ func _ready() -> void:
 		_apply_config({})
 	_build_world()
 	_build_fighters()
+	add_child(contact_shadows)
+	contact_shadows.setup(fighter_views.size())
+	for i in fighter_views.size():
+		contact_shadows.set_ring_color(i, fighter_views[i]._height_marker.color)
 	sim.pickups_enabled = true
 	camera.obstacles = CameraObstacles.from_zone_match(self)
 	add_child(weapon_layer)
@@ -105,6 +111,7 @@ func _ready() -> void:
 		match_hud.names.append(fighter_views[i].display_name)
 		match_hud.team_colors.append(Color(fighter_views[i].energy_color, 1.0))
 		match_hud.is_ai.append(drivers[i] != null)
+		match_hud.portraits.append(_hud_portrait(fighter_views[i].character_id))
 	match_hud.teams = teams
 	match_hud.player = player
 	$Hud.add_child(match_hud)
@@ -174,7 +181,7 @@ func _build_fighters() -> void:
 ## (or hovering where the zone spawns in the air).
 func spawn_positions() -> Array[Vector3]:
 	var data := world.zone(zone_id)
-	var points := data.spawn_points
+	var points := data.fighter_spawns()
 	var entries: Array = config.fighters
 	var team_ids: Array[int] = []
 	for i in entries.size():
@@ -243,6 +250,16 @@ func _process(delta: float) -> void:
 	present_frame(Engine.get_physics_interpolation_fraction(), delta)
 
 
+## A legend's head shot for the HUD portrait tile, rendered once like the
+## character-select cards; the container itself stays invisible.
+func _hud_portrait(id: StringName) -> Texture2D:
+	var shot := LegendTurntable.new(id, false, true, Vector2i(156, 232))
+	shot.stretch = false
+	shot.self_modulate = Color.TRANSPARENT
+	$Hud.add_child(shot)
+	return shot.viewport.get_texture()
+
+
 ## Advances the sim one tick: keyboard for the player, drivers for AI slots.
 func step_tick() -> void:
 	for view in fighter_views:
@@ -287,6 +304,7 @@ func present_frame(blend: float, delta: float) -> void:
 		view.present(blend, delta)
 		# The ground marker sits on the zone's floor under the fighter, not y = 0.
 		view._height_marker.ground_y = view.fighter.stand_height - sim.tuning.ground_height
+	_place_contact_shadows()
 	weapon_layer.present(blend, delta)
 	var me := sim.fighters[player]
 	var locked := me.lock_on_target >= 0
@@ -313,3 +331,12 @@ func present_frame(blend: float, delta: float) -> void:
 	control_hints.player = player
 	match_hud.player = player
 	control_hints.active = not input_override.is_valid() and drivers[player] == null
+
+
+func _place_contact_shadows() -> void:
+	for i in fighter_views.size():
+		var view := fighter_views[i]
+		var floor_y := view.fighter.stand_height - sim.tuning.ground_height
+		var near := func(x: float, z: float) -> float: return ground.height_at(x, z, floor_y + 0.5)
+		contact_shadows.place(i, view.position.x, view.position.z,
+			view.position.y - HeightMarker.FEET_BELOW_CENTRE, floor_y, near)

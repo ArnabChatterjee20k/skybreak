@@ -456,3 +456,10 @@ func _replay_hash(seed_value: int) -> int:
 		if sim.round_over:
 			sim.start_round()
 	return sim.state_hash()
+
+
+func test_her_hip_carries_a_short_chart_case_not_a_bow() -> void:
+	# #124: a bow-length brass arc on her hip read as a held Ki Bow when she was unarmed.
+	for part in LyraFigure.parts(_design()):
+		if part.bone == &"Hips" and part.material in [&"brass", &"star", &"night"]:
+			assert_lt(part.shape.aabb().size.y, 0.3, "hip %s part is short (%.2f m)" % [part.material, part.shape.aabb().size.y])

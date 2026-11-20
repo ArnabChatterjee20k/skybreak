@@ -4,6 +4,12 @@ extends RefCounted
 ## MultiMesh placement on the terrain. Seeded, so the world is the same every load.
 
 const PROP_SHADER := preload("res://game/world/shaders/prop_toon.gdshader")
+const OUTLINE_SHADER := preload("res://game/view/shaders/outline.gdshader")
+## Ink outline on props (T-ART1): thinner than the fighters' so they stay on top.
+const OUTLINE_WIDTH := 1.5
+const OUTLINE_COLOR := Color(0.12, 0.08, 0.14)
+## Materials without an ink outline (soft shapes: mist, clouds).
+const NO_OUTLINE := ["mist", "hb_cloud"]
 ## Group for props the destruction system (later) may break.
 const DESTRUCTIBLE_GROUP := &"world_destructible"
 ## Props past this distance are culled; the fog has hidden them by then.
@@ -16,6 +22,7 @@ var materials: Dictionary = {}
 var night_materials: Array[ShaderMaterial] = []
 ## Circles (x, z, radius) props must keep clear of, e.g. spawn points.
 var keep_clear: Array[Vector3] = []
+var _outline_material: ShaderMaterial
 
 
 func _init(heightmap: TerrainHeightmap, seed_value: int) -> void:
@@ -40,17 +47,33 @@ func is_clear(x: float, z: float, radius: float) -> bool:
 	return true
 
 
-func material(key: String, color: Color, params: Dictionary = {}) -> ShaderMaterial:
+func material(key: String, color: Color, params: Dictionary = {}, shader: Shader = PROP_SHADER) -> ShaderMaterial:
 	if materials.has(key):
 		return materials[key]
 	var m := ShaderMaterial.new()
-	m.shader = PROP_SHADER
-	m.set_shader_parameter("albedo_color", color)
+	m.shader = shader
+	if shader == PROP_SHADER:
+		m.set_shader_parameter("albedo_color", color)
 	for p in params:
 		m.set_shader_parameter(p, params[p])
 	if params.has("windows") or params.has("night_emission"):
 		night_materials.append(m)
+	if not key in NO_OUTLINE:
+		m.next_pass = _outline()
 	materials[key] = m
+	return m
+
+
+func _outline() -> ShaderMaterial:
+	if _outline_material:
+		return _outline_material
+	var m := ShaderMaterial.new()
+	m.shader = OUTLINE_SHADER
+	m.set_shader_parameter("outline_color", OUTLINE_COLOR)
+	m.set_shader_parameter("outline_width", OUTLINE_WIDTH)
+	m.set_shader_parameter("outline_fade_distance", 60.0)
+	m.set_shader_parameter("outline_min_width", 0.6)
+	_outline_material = m
 	return m
 
 

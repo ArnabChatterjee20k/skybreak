@@ -4,6 +4,24 @@ Golden replays (`replays/`) and visual goldens (`visual/`) for the QA harness
 (T-D31). Re-record with `tools/qa/bless_goldens.sh --replays|--visual|--all`
 only in the PR that intends the change, and log it below.
 
+## Re-bless for #125 T-ART1 zone art pass (merge of main 372bccd)
+
+All 14 visual goldens re-blessed with `bless_goldens.sh --visual` on the merged code
+(official Godot 4.7.2 linux x86_64, fresh `--import`, gl_compatibility 960x540):
+
+- `zone_*` (6): the T-ART1 art pass (sRGB zone colours, 3-band terrain ramp, per-zone
+  ground detail, inked lips and props, backdrop-only fog, re-tuned palettes) on top of
+  #123's Ember Rift lava fissures. `zone_ember_rift.png` was a binary conflict (both
+  PRs re-blessed it); the new render shows the fissures on the darker seamed basalt.
+- `heartbloom_*` (8): #123's duel-drop telegraph pillar in frame (approved by the
+  owner) plus the T-ART1 terrain and the merged ground marker.
+- Ground marker: #125's contact shadow and the T-118 `HeightMarker` ring both drew
+  under an airborne fighter. They are now one marker: `ContactShadows` draws the soft
+  dark disc and, once the feet are above `HeightMarker.SHOW_ABOVE`, a team-colour rim;
+  `HeightMarker` keeps only its drop line. After merging #122 (T-UX1, main 26019b8)
+  the drop line is gone too: `HeightMarker` draws only #122's faint 3-dash tick above
+  3 m, and the rim starts at 0.4 m and quiets with height (`ContactShadows.ring_strength`).
+
 ## Re-bless for #89 polish batch 2 (merge of main 3466207 into `claude/polish-batch-2`)
 
 ### Golden replays
@@ -145,3 +163,12 @@ frames are left out and counted as `foot_slide_skipped_frames`. `qa_report.py`
 tags `metrics.json` with `metric_versions` (`foot_slide_cm_per_frame: 2`), and the
 trend skips a metric whose version differs from the reference report ("re-baselined").
 The first v2 quick report is the new foot-slide reference.
+
+## T-UI1 + T-ART2: merged re-bless
+
+PR #143 (HUD restyle on `MenuTheme`: plates, clock, banners, portraits) and PR #142
+(art round 2: zones, KO beat, model changes) both re-blessed the `heartbloom_*`
+shots. After merging main into #143 all visual goldens were re-rendered on the
+merged code with `bless_goldens.sh --visual` (Godot 4.7.2 linux x86_64). The eight
+`heartbloom_*` shots change because they show the new HUD over the art round 2
+Heartbloom zone; the zone shots changed only by art round 2 noise.

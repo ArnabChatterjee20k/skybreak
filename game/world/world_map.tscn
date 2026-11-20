@@ -19,9 +19,9 @@ tonemap_mode = 2
 fog_enabled = true
 fog_mode = 1
 fog_light_color = Color(0.7, 0.8, 0.9, 1)
-fog_density = 1.0
-fog_sky_affect = 0.2
-fog_depth_curve = 1.0
+fog_density = 0.6
+fog_sky_affect = 0.1
+fog_depth_curve = 0.7
 fog_depth_begin = 200.0
 fog_depth_end = 1200.0
 

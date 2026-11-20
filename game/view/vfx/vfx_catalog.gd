@@ -4,10 +4,10 @@ extends RefCounted
 
 ## Pool capacity per effect kind; pools never grow past it.
 const CAPACITY := {
-	&"anime_burst": 4, &"guard_shatter": 2, &"ko_dome": 1, &"lightning": 2,
+	&"anime_burst": 4, &"guard_shatter": 2, &"ko_burst": 1, &"lightning": 2,
 	&"petals": 4, &"sparkles": 4, &"blast_impact": 6, &"aura_flare": 2,
-	&"sonic_ring": 3, &"afterimage": 14, &"vanish_burst": 4, &"landing_dust": 4,
-	&"ki_blast": 8, &"ki_beam": 2,
+	&"sonic_ring": 3, &"breaker_ring": 2, &"afterimage": 14, &"vanish_burst": 4, &"landing_dust": 4,
+	&"ki_blast": 24, &"ki_beam": 6,
 	&"smear_fist": 4, &"smear_gauntlets": 4, &"smear_blade": 4, &"smear_lance": 4,
 	&"smear_hammer": 3, &"smear_chakram": 3, &"smear_scythe": 3,
 }
@@ -18,6 +18,9 @@ const WARM := Color(1.0, 0.55, 0.15)
 const RED := Color(1.0, 0.22, 0.2)
 const PETAL := Color(1.0, 0.62, 0.78)
 const STORM := Color(0.72, 0.8, 1.0)
+## KO burst sprite sizes (m): the star stays inside the loser's body height, the ring a bit wider.
+const KO_STAR := 1.4
+const KO_RING := 1.5
 
 
 static func kinds() -> Array[StringName]:
@@ -54,16 +57,12 @@ static func _fill(effect: VfxEffect, kind: StringName) -> void:
 			effect.default_color = RED
 			var shards := effect.add_particles(&"chunk", &"shards", 12, 0.5, Vector2(0.14, 0.14))
 			effect.make_secondary(shards)
-		&"ko_dome":
-			# An outlined shell drawn only behind the fighters, a ground-level ring and a few
-			# sparks; no flash or spikes over the bodies.
-			effect.lifetime = 1.0
+		&"ko_burst":
+			# The KO's one beat at the contact: a star and one ring, about a body wide.
+			effect.lifetime = 0.25
 			effect.default_color = Color(1.0, 0.9, 0.7)
-			var dome := effect.add_mesh(&"dome", VfxKit.sphere())
-			dome.scale = Vector3.ONE * 6.0
-			var ring := effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(16, 16)))
-			ring.rotation = Vector3(-PI / 2.0, 0.0, 0.0)
-			effect.add_particles(&"spark", &"burst", 12, 0.4, Vector2(0.06, 0.6))
+			effect.add_sprite(&"spikes", KO_STAR)
+			effect.add_sprite(&"ring", KO_RING)
 		&"lightning":
 			effect.lifetime = 0.65
 			effect.default_color = STORM
@@ -106,6 +105,11 @@ static func _fill(effect: VfxEffect, kind: StringName) -> void:
 			var inner := effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(3.2, 3.2)))
 			inner.position = Vector3(0.0, 0.0, -1.2)
 			effect.add_sprite(&"flash", 1.6)
+		&"breaker_ring":
+			# Combo breaker: one clean camera-facing shockwave ring, gone in under 0.25 s.
+			effect.lifetime = 0.22
+			effect.default_color = Color(0.9, 0.95, 1.0)
+			effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(3.0, 3.0)))
 		&"afterimage":
 			effect.lifetime = 0.28
 			effect.default_color = WARM

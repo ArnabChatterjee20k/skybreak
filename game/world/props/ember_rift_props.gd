@@ -3,6 +3,9 @@ extends RefCounted
 ## Ember Rift grey-block: obsidian spires in and around the crater, glowing geyser vents,
 ## and lava fissures across the floor around the fight spawns.
 
+## Spire mesh height (radius 0.5): a tall mesh keeps the instance scale near uniform, so the
+## normals stay true; a 1 m cone stretched 70x had them point up and the rim lit it all (#138).
+const SPIRE_MESH_HEIGHT := 5.0
 ## Meta on the zone's prop group: the fissure strips' transforms, drawn by the Lava plane node.
 const FISSURES_META := &"lava_fissures"
 ## Fissure chains per spawn area, segments per chain, and one segment's length and width (m).
@@ -24,7 +27,9 @@ const FISSURE_LIFT := 0.04
 static func build(parent: Node3D, kit: PropKit, zone: ZoneData, layout: ZoneLayout) -> void:
 	var zi := layout.index_of(zone.id)
 	var c := zone.centre
-	var obsidian := kit.material("obsidian", Color(0.16, 0.13, 0.18), {"rim_strength": 0.45, "rim_color": Color(1.0, 0.45, 0.2)})
+	# Obsidian with maroon shade, a lit facet band and only a thin lava rim (#138).
+	var obsidian := kit.material("obsidian", Color(0.34, 0.25, 0.3), {"rim_strength": 0.18, "rim_color": Color(1.0, 0.45, 0.2),
+		"shadow_tint": Color(0.42, 0.22, 0.26)})
 	var vent_mat := kit.material("vent", Color(0.2, 0.09, 0.06), {"emission_color": Color(1.0, 0.32, 0.06), "emission_strength": 0.7, "strata": 0.6, "strata_spacing": 0.8})
 	var spires: Array[Transform3D] = []
 	var vents: Array[Transform3D] = []
@@ -39,8 +44,10 @@ static func build(parent: Node3D, kit: PropKit, zone: ZoneData, layout: ZoneLayo
 		if g < 33.0 or kit.roughness(x, z, 5.0) > 10.0:
 			continue
 		var r := kit.rng.randf_range(3.0, 8.0)
-		spires.append(PropKit.placed(Vector3(x, g - 2.0, z), Vector3(r * 2.0, kit.rng.randf_range(24.0, 70.0), r * 2.0),
-			kit.rng.randf() * TAU, Vector3(kit.rng.randf_range(-0.15, 0.15), 0, kit.rng.randf_range(-0.15, 0.15))))
+		var spire := PropKit.placed(Vector3(x, g - 2.0, z), Vector3(r * 2.0, kit.rng.randf_range(24.0, 70.0) / SPIRE_MESH_HEIGHT, r * 2.0),
+			kit.rng.randf() * TAU, Vector3(kit.rng.randf_range(-0.15, 0.15), 0, kit.rng.randf_range(-0.15, 0.15)))
+		spire.origin += spire.basis * Vector3(0.0, (SPIRE_MESH_HEIGHT - 1.0) * 0.5, 0.0)
+		spires.append(spire)
 	tries = 0
 	while vents.size() < 10 and tries < 2000:
 		tries += 1
@@ -52,7 +59,10 @@ static func build(parent: Node3D, kit: PropKit, zone: ZoneData, layout: ZoneLayo
 		if g < 33.0 or not kit.is_clear(x, z, 10.0):
 			continue
 		vents.append(PropKit.placed(Vector3(x, g - 1.0, z), Vector3(9, 3.5, 9), 0.0))
-	kit.multimesh(parent, "ObsidianSpires", PropKit.cylinder(0.0, 0.5, 5), obsidian, spires, PackedColorArray(), "obsidian_spire")
+	var spire_tint := PackedColorArray()
+	for k in spires.size():
+		spire_tint.append(Color(1, 1, 1) * (0.9 + 0.2 * fposmod(k * 0.618, 1.0)))
+	kit.multimesh(parent, "ObsidianSpires", _spire_mesh(), obsidian, spires, spire_tint, "obsidian_spire")
 	var vent_node := kit.multimesh(parent, "GeyserVents", PropKit.cylinder(0.35, 0.5, 8), vent_mat, vents, PackedColorArray(), "geyser_vent", false)
 	vent_node.set_meta("hazard", "lava_geyser")
 	_fissures(parent, kit, zone)
@@ -94,3 +104,9 @@ static func _near_spawn(at: Vector2, spawns: PackedVector3Array) -> bool:
 		if at.distance_to(Vector2(point.x, point.z)) < FISSURE_SPAWN_CLEARANCE + FISSURE_LENGTH * 0.5:
 			return true
 	return false
+
+
+static func _spire_mesh() -> CylinderMesh:
+	var mesh := PropKit.cylinder(0.0, 0.5, 6)
+	mesh.height = SPIRE_MESH_HEIGHT
+	return mesh

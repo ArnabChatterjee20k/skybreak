@@ -14,9 +14,11 @@ uniform float emission_strength = 0.0;
 uniform float night_emission = 0.0;
 // 0 day, 1 night: windows and lanterns light up.
 uniform float night = 0.0;
-uniform vec4 shadow_tint : source_color = vec4(0.45, 0.42, 0.6, 1.0);
+uniform vec4 shadow_tint : source_color = vec4(0.6, 0.56, 0.8, 1.0);
+// Direct sun scale: with the ambient fill, lit faces land near their albedo.
+uniform float sun_scale = 0.5;
 uniform vec4 rim_color : source_color = vec4(1.0, 0.95, 0.85, 1.0);
-uniform float rim_strength = 0.25;
+uniform float rim_strength = 0.15;
 
 varying vec3 world_pos;
 varying vec3 world_normal;
@@ -35,7 +37,11 @@ float hash12(vec2 p) {
 void fragment() {
 	vec3 col = albedo_color.rgb * COLOR.rgb;
 	if (strata > 0.0) {
-		float band = step(0.5, fract(world_pos.y / strata_spacing));
+		// Antialiased bands that fade to their average before they would alias into stripes.
+		float y = world_pos.y / strata_spacing;
+		float w = max(fwidth(y), 1e-4);
+		float band = clamp((abs(fract(y) - 0.5) - 0.25) / w + 0.5, 0.0, 1.0);
+		band = mix(band, 0.5, smoothstep(0.12, 0.3, w));
 		col *= mix(1.0, 0.8 + 0.2 * band, strata);
 	}
 	vec3 glow = emission_color.rgb * (emission_strength + night_emission * night) * mix(vec3(1.0), COLOR.rgb, step(0.001, night_emission));
@@ -61,8 +67,8 @@ void light() {
 	vec3 light_in = LIGHT_COLOR / PI;
 	if (LIGHT_IS_DIRECTIONAL) {
 		float x = n_dot_l * ATTENUATION;
-		float lit = smoothstep(0.1, 0.14, x) * 0.62 + smoothstep(0.48, 0.52, x) * 0.38;
-		DIFFUSE_LIGHT += light_in * mix(shadow_tint.rgb, vec3(1.0), lit);
+		float lit = smoothstep(0.1, 0.14, x) * 0.8 + smoothstep(0.48, 0.52, x) * 0.2;
+		DIFFUSE_LIGHT += light_in * sun_scale * mix(shadow_tint.rgb, vec3(1.0), lit);
 	} else {
 		DIFFUSE_LIGHT += light_in * smoothstep(0.1, 0.14, n_dot_l) * ATTENUATION;
 	}

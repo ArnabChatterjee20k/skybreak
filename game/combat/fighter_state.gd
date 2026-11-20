@@ -39,7 +39,7 @@ const METER_UNIT := 60
 
 enum DashKind {
 	NONE,
-	STEP, ## Tapped dash: fixed short distance.
+	DODGE, ## Tapped dash away from the target, or in place: a dodge; dodge.kind says which (T-DEF2).
 	SUSTAINED, ## Dash held past the step: steerable flight-dash.
 	RUSH, ## Dash toward the lock-on target: homes in on it.
 }
@@ -183,6 +183,9 @@ var combo_starter_percent: int = 100
 var powers := FighterPowers.new()
 # Escape tools (T-DEF3).
 var escapes := FighterEscapes.new()
+
+# Dodge (T-DEF2).
+var dodge := FighterDodge.new()
 
 # Pushback (T-D29): a hit or block slides the target apart from its attacker.
 ## Slide per second still owed, zero when none.
@@ -393,7 +396,7 @@ func state_values() -> Array:
 		pushback_velocity, pushback_ticks, pushback_from,
 		last_slot, heat, overheated, draw_ticks, pin_ticks, pinned,
 		tether_partner, tether_ticks, tether_length, combo_starter_percent,
-	] + powers.state_values() + escapes.state_values()
+	] + powers.state_values() + escapes.state_values() + dodge.state_values()
 
 
 ## Weapon in hand (Weapon.Kind), NONE when unarmed.

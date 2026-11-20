@@ -71,7 +71,8 @@ func _draw_inputs(rect: Rect2) -> void:
 		y += 27
 		if y > rect.end.y - 8:
 			break
-		_text(Vector2(x, y), "%3d" % mini(row.ticks, 999), 18, DIM)
+		if row.ticks > 0:
+			_text(Vector2(x, y), "%3d" % mini(row.ticks, 999), 18, DIM)
 		_text(Vector2(x + 50, y), row.text, 20)
 
 

@@ -148,11 +148,11 @@ static func can_air_tech(sim: CombatSim, fighter: FighterState) -> bool:
 		and fighter.state_ticks < fighter.stun_ticks
 
 
-## True when a combo breaker would fire now (ignoring the button).
+## True when a combo breaker would fire now (ignoring the button); never inside a beam clash.
 static func can_break(sim: CombatSim, fighter: FighterState) -> bool:
 	var tuning := sim.escape_tuning
 	return fighter.state == _S.HITSTUN and not sim.round_over and not fighter.is_knocked_out() \
-		and fighter.escapes.breaker_cooldown == 0 \
+		and fighter.escapes.breaker_cooldown == 0 and not KiRules.in_clash(sim, sim.fighters.find(fighter)) \
 		and fighter.burst >= tuning.breaker_burst_stocks * sim.meter_tuning.burst_stock_size * _UNIT
 
 
@@ -181,7 +181,9 @@ static func _try_breaker(sim: CombatSim, index: int) -> bool:
 	var pushed := -1
 	for other in sim.fighters.size():
 		var opponent := sim.fighters[other]
-		if other == index or opponent.team == fighter.team or opponent.is_knocked_out():
+		# Fighters locked in a beam clash stay locked: the breaker does not push them.
+		if other == index or opponent.team == fighter.team or opponent.is_knocked_out() \
+				or KiRules.in_clash(sim, other):
 			continue
 		var away := opponent.position - fighter.position
 		away.y = 0.0

@@ -1,7 +1,7 @@
 class_name MatchVfx
 extends Node3D
 ## The T-D27 effects layer: reads CombatSim.events and fighter state (read-only) and
-## plays pooled effects: heavy-hit bursts, guard-break shatter, KO finisher, zone
+## plays pooled effects: heavy-hit bursts, guard-break shatter, KO contact burst, zone
 ## extras, swing smears, dash/vanish afterimages, speed lines, sonic rings, landing
 ## dust and aura flares. CombatFeedback forwards each tick's events to react().
 
@@ -44,6 +44,8 @@ const SMEAR_BY_WEAPON := {
 const SPARK_STANDOFF := 0.4
 ## Effect scale when more than two fighters share the screen (FFA).
 const CROWD_SCALE := 0.8
+## Rendered frames the KO impact frame holds (ART_BIBLE §7: the 1-frame KO impact frame).
+const KO_IMPACT_FRAMES := 1
 
 ## Read-only. Found among the ancestors (the arena's `sim`) when not set.
 var sim: CombatSim
@@ -61,6 +63,8 @@ var _prev_position := PackedVector3Array()
 var _prev_velocity := PackedVector3Array()
 var _sonic_ready := PackedInt32Array()
 var _was_fast := PackedByteArray()
+## Ki blasts, beams and clash prompts (T-KI1).
+var ki_layer := KiLayer.new()
 
 
 func _ready() -> void:
@@ -71,6 +75,8 @@ func _ready() -> void:
 		_pools[kind] = pool
 	_screen = VfxScreen.new()
 	add_child(_screen)
+	ki_layer.vfx = self
+	add_child(ki_layer)
 
 
 ## Plays this tick's effects. Call once per sim tick, after sim.tick().
@@ -81,8 +87,25 @@ func react(events: Array[Dictionary]) -> void:
 	var zone: StringName = sim.zone if sim != null else &""
 	for event in events:
 		_play_event(event, zone)
+		if event.get("type", -1) == CombatSim.EventType.PERFECT_DODGE:
+			_play_perfect_dodge(event)
 	if sim != null:
 		_watch_fighters()
+		ki_layer.sim = sim
+		ki_layer.react(events)
+
+
+## Perfect dodge (T-DEF2): a bright white-blue afterimage where the dodger was, crisp speed lines
+## and a short cool colour pop; no full-screen flash, so the counter-attack stays readable.
+func _play_perfect_dodge(event: Dictionary) -> void:
+	if sim == null or event.get("target", -1) < 0:
+		return
+	var dodger := sim.fighters[event.target as int]
+	var ghost := Color(0.75, 0.9, 1.0)
+	spawn(&"afterimage", dodger.position, ghost, 1.2)
+	var center := _screen_point(dodger.position)
+	_screen.burst_lines(center, ghost, 0.22)
+	_screen.color_pop(ghost, 0.3, 0.12)
 
 
 func _process(delta: float) -> void:
@@ -103,7 +126,8 @@ func follow_fighters(delta: float = 1.0 / 60.0) -> void:
 static func wants_speed_lines(fighter: FighterState, tuning: MovementTuning) -> bool:
 	match fighter.state:
 		S.DASHING:
-			return fighter.dash_kind == FighterState.DashKind.SUSTAINED or fighter.state_ticks >= tuning.dash_step_ticks
+			return fighter.dash_kind == FighterState.DashKind.SUSTAINED \
+				or (fighter.dash_kind == FighterState.DashKind.RUSH and fighter.state_ticks >= tuning.dash_step_ticks)
 		S.FLYING, S.FALLING:
 			return fighter.velocity.length() >= tuning.fly_speed * TOP_SPEED_SHARE
 	return false
@@ -151,6 +175,13 @@ func play_ki_blast(from: Vector3, to: Vector3, color: Color, speed: float = 45.0
 	return blast
 
 
+## A ki blast held in flight at `at`; the caller moves it (KiLayer follows the sim).
+func hold_ki_blast(at: Vector3, color: Color) -> KiBlastEffect:
+	var blast := (_pools[&"ki_blast"] as VfxPool).spawn() as KiBlastEffect
+	blast.launch(at, Vector3.ZERO, color, 10.0, 0.0)
+	return blast
+
+
 ## A beam charging at `from` and firing to `to`; clash flares the tip.
 func play_beam(from: Vector3, to: Vector3, color: Color, charge: float = 0.6, sustain: float = 1.2,
 		clash: bool = false) -> KiBeamEffect:
@@ -177,7 +208,7 @@ static func effects_for(event: Dictionary, zone: StringName) -> Array[StringName
 		E.AIR_TECH, E.TECH_ROLL:
 			found.append_array(EscapeVfx.tech_effects(event))
 		E.KO:
-			found.append(&"ko_dome")
+			found.append(&"ko_burst")
 			if zone == &"stormfall_city":
 				found.append(&"lightning")
 	if hit and (move.begins_with("ki_blast") or move.begins_with("charged_blast") or move.begins_with("beam")):
@@ -254,11 +285,14 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 			&"guard_shatter", &"petals", &"sparkles":
 				spawn(kind, spark, Color.TRANSPARENT, size)
 			&"breaker_ring":
-				spawn(&"sonic_ring", where, color.lerp(Color.WHITE, 0.5), 2.2, _facing_camera(where))
+				spawn(&"breaker_ring", where, color.lerp(Color.WHITE, 0.5), EscapeVfx.BREAKER_RING_SCALE,
+					_facing_camera(where))
 			&"tech_ghost":
 				spawn(&"afterimage", where, color.lerp(Color.WHITE, 0.5), 1.1)
 			&"ko_dome":
 				spawn(kind, where, color.lerp(Color.WHITE, 0.5))
+			&"ko_burst":
+				spawn(kind, spark, color.lerp(Color.WHITE, 0.4), size)
 			&"lightning":
 				spawn(kind, Vector3(where.x, where.y - FEET, where.z), Color.TRANSPARENT, 1.0, _facing_camera(where))
 			_:
@@ -272,12 +306,11 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 		&"lines":
 			_screen.burst_lines(center, Color(1.0, 0.85, 0.85), 0.3)
 		&"breaker":
+			# One short flash during the breaker's hitstop; the ring is the only shape.
 			_screen.flash(2, 0.25)
-			_screen.burst_lines(center, color.lerp(Color.WHITE, 0.45), 0.35)
 		&"ko":
-			# One clean beat: flash and colour pop, no speed lines over the contact point.
-			_screen.flash(VfxScreen.MAX_FLASH_FRAMES, 0.4)
-			_screen.color_pop(VfxScreen.SKY_POP, 0.6, 0.25)
+			# The one KO beat (#121): a single impact frame centred on the contact, no flash or grade.
+			_screen.impact(color, center, KO_IMPACT_FRAMES)
 
 
 func _combo_hits(target: int) -> int:
@@ -299,8 +332,12 @@ func _watch_fighters() -> void:
 		# After a KO nothing adds trails or rings, so the loser's body reads.
 		var calm := sim.round_over or fighter.is_ko_state()
 		# Dash afterimages, stretched along the dash.
-		if not calm and state == S.DASHING and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
+		if not calm and state == S.DASHING and fighter.dash_kind != FighterState.DashKind.DODGE \
+				and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
 			spawn(&"afterimage", _prev_position[i], color, 1.0, stretch_along(fighter.velocity, speed))
+		elif DodgeTrail.wants_ghost(fighter):
+			spawn(&"afterimage", _prev_position[i], DodgeTrail.ghost_color(fighter, color), 1.0,
+				stretch_along(fighter.velocity, speed))
 		# Vanish: a ghost and a burst where they left, a burst where they appear.
 		if state == S.VANISHING and was != S.VANISHING:
 			spawn(&"afterimage", _prev_position[i], color.lerp(Color.WHITE, 0.4), 1.15)

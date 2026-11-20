@@ -114,12 +114,13 @@ void fragment() {
 		alpha = mix(rim, 1.0, edge_width) * (0.85 + 0.15 * vfx_noise1(UV.y * 20.0 + TIME * 12.0 + seed * 40.0));
 		core = rim * rim;
 	} else if (shape == 6) {
-		// Beam body: hot core where the cylinder faces the camera, scrolling energy bands.
+		// Beam body: a narrow white core where the cylinder faces the camera inside a wide
+		// energy-coloured rim, with scrolling energy bands.
 		float facing = abs(dot(NORMAL, VIEW));
 		float bands = vfx_noise3(vec3(UV.x * 6.0, UV.y * 18.0 - TIME * scroll_speed, seed * 10.0));
 		float ripples = 0.5 + 0.5 * sin(UV.y * 60.0 - TIME * scroll_speed * 6.0);
 		alpha = smoothstep(0.0, 0.5, facing) * (0.55 + 0.3 * bands + 0.15 * ripples);
-		core = smoothstep(0.55, 0.95, facing);
+		core = smoothstep(0.86, 0.99, facing);
 	} else if (shape == 7) {
 		// Lightning: UV.y along the bolt, a jagged centre line that re-rolls 20 times a second.
 		float frame = floor(TIME * 20.0) + seed * 37.0;

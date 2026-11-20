@@ -350,7 +350,7 @@ func test_the_scripted_10k_tick_matches_cover_every_movement_mode_and_a_knockout
 		FighterState.State.BLOCKING, FighterState.State.GRABBED, FighterState.State.THROWING,
 	]:
 		assert_true(visited.has("state %d" % state), "reached %s" % FighterState.State.keys()[state])
-	for kind in [FighterState.DashKind.STEP, FighterState.DashKind.SUSTAINED, FighterState.DashKind.RUSH]:
+	for kind in [FighterState.DashKind.DODGE, FighterState.DashKind.SUSTAINED, FighterState.DashKind.RUSH]:
 		assert_true(visited.has("dash %d" % kind), "reached %s" % FighterState.DashKind.keys()[kind])
 
 

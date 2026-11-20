@@ -9,7 +9,7 @@ extends RefCounted
 ## slot and inputs always give the same AI inputs (replays, rollback).
 
 ## Neutral plans.
-enum Plan { WAIT, APPROACH, SPACE, BAIT, PRESSURE, GRAB, CHARGE, CHASE, PICKUP, ZONE }
+enum Plan { WAIT, APPROACH, SPACE, BAIT, PRESSURE, GRAB, CHARGE, CHASE, PICKUP, ZONE, KI_ZONE }
 ## Combo enders, in order of skill: light 4, breaker, launcher, launcher + vanish + air string, + spike.
 enum Route { LIGHTS, BREAKER, LAUNCHER, AIR, SPIKE }
 
@@ -20,6 +20,8 @@ const _PHASE := FighterState.AttackPhase
 const WALL_MARGIN := 20.0
 ## Goes for weapons within this distance.
 const PICKUP_RANGE := 90.0
+## In a duel, no pickup runs closer than this to the opponent (m).
+const POINT_BLANK_PICKUP := 2.5
 ## Ticks between target choices in free-for-all.
 const TARGET_TICKS := 30
 ## Hits on this AI within this many ticks make the hitter "who attacks it".
@@ -107,6 +109,8 @@ var _last_hitter := PackedInt32Array()
 var _ki: int = 0
 ## Combo breaker, air tech, chase and wakeups (T-DEF3); its own rng.
 var escapes: EscapeAI
+## Ki blasts, beams and beam clashes (T-KI1).
+var _ki_game := AIKi.new()
 
 
 ## seed_value should come from seed_for(sim seed, slot).
@@ -115,6 +119,7 @@ func _init(index: int, level: int = 3, seed_value: int = 0) -> void:
 	rng.seed = seed_value
 	profile = AIProfile.for_level(level, rng)
 	escapes = EscapeAI.new(level, hash([seed_value, "skybreak-escapes"]))
+	_ki_game.rng.seed = seed_value ^ 0x4B49
 
 
 ## The rng seed of the AI in slot for a match with sim_seed.
@@ -160,7 +165,7 @@ func snapshot() -> Dictionary:
 			_air_combo, _guard_key, _guard_roll, _punish_key, _punish_until, _link_key, _link_ok,
 			_defend_left, _escape_left, _tech_tick, _hold_left, _hold_move, _hold_vertical,
 			_last_state, _grudge, _grudge_tick, _push_rolled, _step_out, _edge_gap, _perfect_streak, _target_air_ticks, legend,
-			profile.spacing, _last_hitter.duplicate()],
+			profile.spacing, _last_hitter.duplicate(), _ki_game.snapshot_values()],
 		"escapes": escapes.snapshot(),
 	}
 
@@ -187,6 +192,8 @@ func restore(saved: Dictionary) -> void:
 	_edge_gap = v[26]; _perfect_streak = v[27]; _target_air_ticks = v[28]; legend = v[29]
 	profile.spacing = v[30]
 	_last_hitter = (v[31] as PackedInt32Array).duplicate() if v.size() > 31 else PackedInt32Array()
+	if v.size() > 32:
+		_ki_game.restore_values(v[32])
 	if saved.has("escapes"):
 		escapes.restore(saved.escapes)
 
@@ -223,6 +230,9 @@ func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 			plan.target_switch = 1
 	var distance := to_target.length()
 	escapes.level = profile.level
+	if me.state in [_S.IDLE, _S.MOVING, _S.FLYING, _S.FALLING, _S.CHARGING, _S.BLOCKING] \
+			and _ki_game.answer_beams(self, sim, me, plan):
+		return
 	match me.state:
 		_S.GRABBED:
 			_tech(me, plan)
@@ -232,8 +242,11 @@ func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 			escapes.decide(sim, me, target, plan)
 			return
 		_S.ATTACKING:
-			if not escapes.chase(sim, me, plan):
-				_continue_attack(sim, me, target, plan)
+			if escapes.chase(sim, me, plan):
+				return
+			if _ki_game.during_attack(self, sim, me, plan):
+				return
+			_continue_attack(sim, me, target, plan)
 			return
 		_S.BLOCKING, _S.BLOCKSTUN:
 			_keep_guard(sim, me, target, distance, plan)
@@ -244,7 +257,8 @@ func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 				plan.move = Vector2(0, 1)
 			return
 		_S.CHARGING:
-			if me.ki < 85 * FighterState.METER_UNIT and distance > 9.0 and _plan == Plan.CHARGE:
+			var saving := _plan == Plan.KI_ZONE and _ki_game.saving()
+			if me.ki < 85 * FighterState.METER_UNIT and distance > 9.0 and (_plan == Plan.CHARGE or saving):
 				plan.held_actions |= _A.CHARGE
 			return
 	if escapes.chase(sim, me, plan):
@@ -536,6 +550,8 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 	# Whiff punish.
 	if _punish(sim, me, target, distance, light_reach, plan):
 		return
+	if _ki_game.punish(self, me, target, distance, plan):
+		return
 	_neutral(sim, me, target, distance, light_reach, plan)
 
 
@@ -684,6 +700,10 @@ func _neutral(sim: CombatSim, me: FighterState, target: FighterState, distance: 
 			_go_for_pickup(sim, me, distance, plan)
 		Plan.ZONE:
 			_zone(me, distance, plan)
+		Plan.KI_ZONE:
+			_ki_game.zone(self, sim, me, target, distance, plan, _ticks)
+			if distance < 3.0:
+				_plan_left = 0
 	if _plan != Plan.PICKUP and (plan.held_actions & (_A.DASH | _A.GRAB)) == 0:
 		_keep_apart(sim, me, target, plan)
 
@@ -705,16 +725,18 @@ func _choose_plan(sim: CombatSim, me: FighterState, target: FighterState, distan
 	scores[Plan.GRAB] = (p.grab_guard_chance * 1.4 if perception.guarding(_target) else p.mixup * 0.15) \
 		if distance < 3.5 else 0.0
 	scores[Plan.CHARGE] = 0.8 if distance > 16.0 and me.ki < 45 * unit else 0.0
-	if _pickup_goal(sim, me, distance) >= 0:
-		scores[Plan.PICKUP] = p.weapon_interest * (0.7 + (0.4 if distance > 8.0 else 0.0))
+	scores[Plan.PICKUP] = _pickup_score(sim, me, target, distance)
 	if Weapon.is_ranged(me.held_weapon()) and distance > 3.0:
 		scores[Plan.ZONE] = 1.0 + 0.4 * p.zoning
+	scores[Plan.KI_ZONE] = AIKi.zone_score(self, me, distance)
 	var best := 0
 	var best_score := -1.0
 	for i in scores.size():
 		if scores[i] <= 0.0:
 			continue
-		var score := scores[i] + rng.randf() * noise
+		# The ki plan rolls on its own stream, so adding it left the other plans' rolls unchanged.
+		var roll := _ki_game.rng.randf() if i == Plan.KI_ZONE else rng.randf()
+		var score := scores[i] + roll * noise
 		if score > best_score:
 			best = i
 			best_score = score
@@ -726,6 +748,35 @@ func _choose_plan(sim: CombatSim, me: FighterState, target: FighterState, distan
 
 
 # Weapons.
+
+## How much the AI wants the nearest pickup (0 = none). Up close the base score
+## lost to PRESSURE nearly every time, so duels never showed weapons (PB3-1):
+## unarmed fighters and drops they'd reach first score higher, but never while
+## the opponent is swinging at point blank (no suicidal grabs mid-combo).
+func _pickup_score(sim: CombatSim, me: FighterState, target: FighterState, distance: float) -> float:
+	var goal := _pickup_goal(sim, me, distance)
+	if goal < 0:
+		return 0.0
+	var want := 0.7 + (0.4 if distance > 8.0 else 0.0)
+	# Free-for-alls keep the old score: their spacing is tuned around it.
+	if sim.fighters.size() != 2:
+		return profile.weapon_interest * want
+	# Point blank: fight, don't turn your back (no grabs mid-combo, and no
+	# walking into the opponent hovering right overhead).
+	if distance < POINT_BLANK_PICKUP:
+		return 0.0
+	var at := sim.pickups[goal].position
+	# Only drops near the AI's own height and away from the opponent: long dives
+	# to a drop under them stacked the two fighters vertically (test_ai_spacing).
+	var level_with_me := absf(at.y - me.position.y) < 5.0
+	var clear_of_target := Vector2(at.x - target.position.x, at.z - target.position.z).length() >= 4.0
+	if level_with_me and clear_of_target:
+		if me.held_weapon() == Weapon.Kind.NONE:
+			want += 0.6
+		if me.position.distance_to(at) < target.position.distance_to(at):
+			want += 0.3
+	return profile.weapon_interest * want
+
 
 ## Index of the pickup worth going for, or -1.
 func _pickup_goal(sim: CombatSim, me: FighterState, distance: float) -> int:
@@ -1032,6 +1083,15 @@ func _may_attack(me: FighterState) -> bool:
 
 
 ## Holds action this tick only if it was not held last tick, so every tap is a fresh press.
+## Current strafe side (+1 right, -1 left), for AIKi.
+func strafe() -> float:
+	return _strafe
+
+
+func may_attack(me: FighterState) -> bool:
+	return _may_attack(me)
+
+
 func _tap(plan: FighterInput, action: int) -> void:
 	if (_previous.held_actions & action) == 0:
 		plan.held_actions |= action

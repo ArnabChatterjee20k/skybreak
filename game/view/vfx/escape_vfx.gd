@@ -4,8 +4,10 @@ extends RefCounted
 ## and shake for CombatFeedback, and the view-only perfect-block slow (§5.10).
 
 const E := CombatSim.EventType
-## Combo breaker: a counter-style burst on the breaker plus a big ring in its colour.
-const BREAKER_EFFECTS: Array[StringName] = [&"anime_burst", &"aura_flare", &"breaker_ring"]
+## Combo breaker: exactly one beat (art bible §7), a single shockwave ring in its colour.
+const BREAKER_EFFECTS: Array[StringName] = [&"breaker_ring"]
+## Breaker ring size: about 1.2x the ring's base size.
+const BREAKER_RING_SCALE := 1.2
 const BREAKER_COLOR := Color(1.0, 0.95, 0.75)
 const TECH_COLOR := Color(0.75, 0.9, 1.0)
 const ROLL_DUST := Color(0.8, 0.72, 0.6)
@@ -23,8 +25,8 @@ static func plan_for(event: Dictionary, shockwave: PackedScene, spark: PackedSce
 		counter: PackedScene) -> Dictionary:
 	match event.get("type", -1):
 		E.COMBO_BREAKER:
-			return {"effects": [shockwave, spark], "color": BREAKER_COLOR, "scale": 1.8, "shake": 0.55,
-				"impact_frames": 0}
+			# The ring comes from MatchVfx; here only the shake, so nothing stacks on it.
+			return {"effects": [], "color": BREAKER_COLOR, "scale": 1.0, "shake": 0.55, "impact_frames": 0}
 		E.AIR_TECH:
 			if event.get("caught", false):
 				return {"effects": [counter], "color": Color.TRANSPARENT, "scale": 1.0, "shake": 0.3,

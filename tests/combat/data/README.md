@@ -66,13 +66,19 @@ log it here.
   `tools/diag/det_check.gd` total on Linux changes from `7f2c2af91b6d870f` to
   `715c1e5b39ad708c`.
 
-- **T-DEF3 (escape tools)**, on the merge of `main` (26019b8): re-blessed. Both sequences
-  match main's goldens up to the first escape the scripted inputs trigger (intended):
-  - `free_for_all`: first differs at index 1085 (sim tick 1086). Fighter 1, in
-    blowback hitstun inside the air-tech window, has a buffered Dash press and
-    now air-techs (AIR_TECH) instead of flying out the rest of its knockback.
+- **T-DEF2 (dodge)**: re-blessed. A tapped Shift is now a dodge (directional 4.5 m
+  eased over 14 frames, 26 frames total) instead of the 8 m / 10-tick step.
+  - `free_for_all` (seed 10): first differs at index 53 (sim tick 54), the tick
+    fighter 2 taps Shift with a direction: a `DODGE` (DIRECTIONAL) event, where
+    before it started the old step. Identical before that tick.
+  - `bot_match`: unchanged (the AI only rushes, never taps a non-rush Shift).
+- **T-DEF3 (escape tools)**, on the merge of `main` (68f6429, after T-DEF2 and T-KI1): re-blessed.
+  Both sequences match main's goldens up to the first escape the scripted inputs trigger (intended):
+  - `free_for_all`: first differs at index 170 (sim tick 171). Fighter 3, in knockback
+    hitstun inside the air-tech window, has a buffered Dash press and now air-techs
+    (AIR_TECH) instead of flying out the rest of its knockback.
   - `bot_match`: first differs at index 3318 (sim tick 3319). Fighter 1 lands
     from a spike holding ascend inside the 10-tick window and tech-rolls
     (TECH_ROLL) instead of lying for 40 ticks.
-  `tools/diag/det_check.gd` total on Linux changes from `715c1e5b39ad708c` to
-  `2177a0b25ce6f613` (the escape fields are hashed from tick 0).
+  `tools/diag/det_check.gd` total changes from main's `3d78e5d8c28bc699` (the escape fields
+  are hashed from tick 0).

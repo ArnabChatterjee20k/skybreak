@@ -48,17 +48,49 @@ func test_guard_break_shatters_with_burst_lines() -> void:
 	assert_eq(MatchVfx.screen_for(_event(E.GUARD_BREAK, 14)), &"lines")
 
 
-func test_ko_gets_the_finisher_and_lightning_only_in_stormfall() -> void:
-	assert_eq(MatchVfx.effects_for(_event(E.KO, 20), &"skyhold_ruins"), [&"ko_dome"] as Array[StringName])
-	assert_eq(MatchVfx.effects_for(_event(E.KO, 20), &"stormfall_city"), [&"ko_dome", &"lightning"] as Array[StringName])
+func test_ko_gets_the_contact_burst_and_lightning_only_in_stormfall() -> void:
+	assert_eq(MatchVfx.effects_for(_event(E.KO, 20), &"skyhold_ruins"), [&"ko_burst"] as Array[StringName])
+	assert_eq(MatchVfx.effects_for(_event(E.KO, 20), &"stormfall_city"), [&"ko_burst", &"lightning"] as Array[StringName])
 	assert_eq(MatchVfx.screen_for(_event(E.KO, 20)), &"ko")
 
 
-func test_the_ko_flashes_without_speed_lines_over_the_contact() -> void:
+func test_the_ko_is_one_impact_frame_without_flash_grade_or_speed_lines() -> void:
 	var vfx := _vfx_with_sim()
 	_react(vfx, [_event(E.KO, 20)] as Array[Dictionary])
-	assert_true(vfx.screen().is_active(VfxScreen.Mode.FLASH), "the KO still flashes")
+	assert_true(vfx.screen().is_active(VfxScreen.Mode.IMPACT), "#121: the KO impact frame")
+	assert_false(vfx.screen().is_active(VfxScreen.Mode.FLASH), "#121: no white flash on top")
+	assert_false(vfx.screen().is_active(VfxScreen.Mode.POP), "ART_BIBLE §7: no colour grade on top")
 	assert_false(vfx.screen().is_active(VfxScreen.Mode.LINES), "media-2 #6: no burst lines on the KO")
+	vfx.screen().advance(TICK)
+	assert_false(vfx.screen().is_active(VfxScreen.Mode.IMPACT), "it lasts one rendered frame")
+
+
+func test_the_ko_burst_plays_once_at_the_contact() -> void:
+	var vfx := _vfx_with_sim()
+	var event := _event(E.KO, 20)
+	_react(vfx, [event] as Array[Dictionary])
+	var pool := vfx.pool(&"ko_burst")
+	assert_eq(pool.playing_count(), 1)
+	var burst: VfxEffect
+	for child in pool.get_children():
+		if child is VfxEffect and (child as VfxEffect).is_playing():
+			burst = child
+	var contact := MatchVfx.spark_point(event, vfx.sim.fighters)
+	assert_almost_eq(burst.global_position.distance_to(contact), 0.0, 0.001, "centred on the hit")
+	assert_lte(burst.global_position.distance_to(event.position), MatchVfx.SPARK_STANDOFF + 0.001)
+
+
+func test_the_ko_burst_is_a_star_and_one_ring_about_a_body_wide() -> void:
+	var burst := VfxCatalog.build(&"ko_burst")
+	autofree(burst)
+	var looks: Array = []
+	for mesh in burst.meshes():
+		looks.append(mesh.material_override.get_meta(&"look"))
+		assert_lte((mesh.mesh as QuadMesh).size.x, 1.6, "no screen-wide swoosh (#121)")
+	assert_eq(looks.count(&"spikes"), 1)
+	assert_eq(looks.count(&"ring"), 1)
+	assert_eq(looks.size(), 2, "nothing else stacked on the beat")
+	assert_lte(burst.lifetime, 0.25 + 0.001, "ART_BIBLE §7: hits clear within 0.25 s")
 
 
 func test_a_knocked_out_fighter_flying_off_leaves_no_rings_trails_or_ghosts() -> void:
@@ -148,18 +180,18 @@ func test_pools_recycle_the_oldest_and_never_grow_past_capacity() -> void:
 	assert_true(first.is_playing(), "the oldest got restarted, not leaked")
 
 
-func test_react_plays_the_ko_finisher_and_screen_pop() -> void:
+func test_react_plays_the_ko_burst_and_impact_frame_then_clears() -> void:
 	var vfx := _vfx_with_sim(&"stormfall_city")
 	var events: Array[Dictionary] = [_event(E.KO, 20)]
 	vfx.react(events)
-	assert_eq(vfx.pool(&"ko_dome").playing_count(), 1)
+	assert_eq(vfx.pool(&"ko_burst").playing_count(), 1)
 	assert_eq(vfx.pool(&"lightning").playing_count(), 1)
-	assert_true(vfx.screen().is_active(VfxScreen.Mode.POP))
-	assert_true(vfx.screen().is_active(VfxScreen.Mode.FLASH))
+	assert_true(vfx.screen().is_active(VfxScreen.Mode.IMPACT))
 	for i in 120:
 		vfx.advance(TICK)
-	assert_eq(vfx.pool(&"ko_dome").playing_count(), 0)
-	assert_false(vfx.screen().is_active(VfxScreen.Mode.POP), "the pop fades out")
+	assert_eq(vfx.pool(&"ko_burst").playing_count(), 0)
+	for mode in VfxScreen.Mode.values():
+		assert_false(vfx.screen().is_active(mode), "%s cleared" % VfxScreen.Mode.find_key(mode))
 
 
 func test_a_heavy_counter_leaves_the_screen_untouched() -> void:
@@ -333,17 +365,14 @@ func test_a_3600_tick_bot_fight_keeps_pools_bounded_and_spawns_nothing_outside_t
 		assert_eq(pool.playing_count(), 0, "%s all despawned" % pool.kind)
 
 
-func test_ko_flash_lasts_at_most_four_rendered_frames_even_in_slow_mo() -> void:
-	var vfx := _vfx_with_sim()
-	var events: Array[Dictionary] = [_event(E.KO, 20)]
-	vfx.react(events)
-	var lit := 0
-	# Slow-mo shrinks delta; the flash counts frames, not seconds.
-	for i in 30:
-		if vfx.screen().is_active(VfxScreen.Mode.FLASH):
-			lit += 1
-		vfx.advance(TICK * 0.3)
-	assert_between(lit, 1, VfxScreen.MAX_FLASH_FRAMES)
+func test_an_impact_frame_started_this_frame_is_drawn_before_it_counts_down() -> void:
+	var screen := VfxScreen.new()
+	add_child_autofree(screen)
+	screen.impact(Color.WHITE, Vector2(0.5, 0.5), 1)
+	screen.advance(TICK, true)
+	assert_true(screen.is_active(VfxScreen.Mode.IMPACT), "held through the frame it started in")
+	screen.advance(TICK)
+	assert_false(screen.is_active(VfxScreen.Mode.IMPACT))
 
 
 func test_ko_colour_pop_is_capped_and_subtle() -> void:
@@ -352,20 +381,6 @@ func test_ko_colour_pop_is_capped_and_subtle() -> void:
 	screen.color_pop(VfxScreen.SKY_POP, 0.6, 0.9)
 	var rect := screen.get_child(VfxScreen.Mode.POP) as ColorRect
 	assert_lte(float((rect.material as ShaderMaterial).get_shader_parameter("amount")), VfxScreen.MAX_POP)
-
-
-func test_ko_dome_is_an_outline_drawn_behind_the_fighters() -> void:
-	var dome := VfxCatalog.build(&"ko_dome")
-	autofree(dome)
-	var looks: Array = []
-	for mesh in dome.meshes():
-		looks.append(mesh.material_override.get_meta(&"look"))
-		if mesh.material_override.get_meta(&"look") == &"dome":
-			var material := mesh.material_override as ShaderMaterial
-			assert_true(material.get_shader_parameter("back_faces_only"), "only the far half draws")
-			assert_gte(float(material.get_shader_parameter("rim_power")), 4.0, "a thin rim, not a filled bubble")
-	assert_true(looks.has(&"dome"))
-	assert_false(looks.has(&"flash") or looks.has(&"spikes"), "nothing bright sits on the bodies")
 
 
 func test_hit_effects_are_short_and_sized_to_the_fighters() -> void:
@@ -421,10 +436,10 @@ func test_speed_lines_skip_tapped_dashes_and_keep_long_dashes_boost_and_top_spee
 	var tuning := MovementTuning.new()
 	var fighter := FighterState.new()
 	fighter.state = S.DASHING
-	fighter.dash_kind = FighterState.DashKind.STEP
+	fighter.dash_kind = FighterState.DashKind.DODGE
 	fighter.state_ticks = 3
 	fighter.velocity = Vector3(48, 0, 0)
-	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "a tapped dash")
+	assert_false(MatchVfx.wants_speed_lines(fighter, tuning), "a dodge (tapped dash)")
 	fighter.dash_kind = FighterState.DashKind.SUSTAINED
 	assert_true(MatchVfx.wants_speed_lines(fighter, tuning), "a flight boost")
 	fighter.dash_kind = FighterState.DashKind.RUSH

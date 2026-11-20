@@ -1,12 +1,13 @@
 class_name DetCheck
 extends RefCounted
 ## Determinism self-check (T-D32): a SHA-256 hash chain over the full sim state of
-## the flat-floor golden scenarios, plus DetMath probes. The lines must be
+## the flat-floor golden scenarios and a ki AI duel (T-KI1), plus DetMath probes. The lines must be
 ## byte-identical on every platform (Linux, Windows, web). Printed by
 ## tools/diag/det_check.gd (desktop) and tools/web/det_check_main.gd (browser).
 
 const FREE_FOR_ALL_EVERY := 2_000
 const BOT_MATCH_EVERY := 600
+const KI_MATCH_EVERY := 600
 
 var _chain := PackedByteArray()
 var _lines := PackedStringArray()
@@ -25,6 +26,10 @@ func run() -> PackedStringArray:
 	weapons._bot_match(FlatFloorSequences.BOT_MATCH_SEED, FlatFloorSequences.BOT_MATCH_TICKS, &"skyhold_ruins",
 		func(sim: CombatSim) -> void: _link("bot", sim, BOT_MATCH_EVERY))
 	weapons.free()
+	_chain = "chain".to_utf8_buffer()
+	var ki := load("res://tests/combat/test_ki_blasts.gd").new() as Node
+	ki._ki_match(ki.KI_MATCH_SEED, ki.KI_MATCH_TICKS, func(sim: CombatSim) -> void: _link("ki", sim, KI_MATCH_EVERY))
+	ki.free()
 	_lines.append("det_check total %s" % _sha("\n".join(_lines).to_utf8_buffer()))
 	return _lines
 
@@ -40,6 +45,7 @@ func _link(name: String, sim: CombatSim, every: int) -> void:
 		parts.append_array(pickup.state_values())
 	for gadget in sim.gadgets:
 		parts.append_array(gadget.state_values())
+	parts.append_array(KiRules.state_values(sim))
 	var context := HashingContext.new()
 	context.start(HashingContext.HASH_SHA256)
 	context.update(_chain)

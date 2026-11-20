@@ -330,8 +330,8 @@ static func _astrolabe(d: LyraDesign, list: Array[FigureRig.Part]) -> void:
 			c + out * (r + 0.07)]), Vector2(0.016, 0.01), 6), Transform3D.IDENTITY)
 
 
-## Signature pair (GAME_DESIGN §6): the Sky Lance slung across her back and a
-## folded Ki Bow at her left hip.
+## The Sky Lance slung across her back and a star-chart case at her left hip
+## (the hip bow read as a held Ki Bow, #124).
 static func _weapons(d: LyraDesign, j: Dictionary, list: Array[FigureRig.Part]) -> void:
 	var hips: Vector3 = j[&"Hips"]
 	var upper: Vector3 = j[&"UpperChest"]
@@ -349,16 +349,18 @@ static func _weapons(d: LyraDesign, j: Dictionary, list: Array[FigureRig.Part]) 
 	_add(list, &"UpperChest", &"star", FigureKit.rounded_box(Vector3.ONE * 0.05, 1.0, 8, 6), ring)
 	_add(list, &"UpperChest", &"brass", FigureKit.point(PackedVector3Array([ring + axis * 0.07, ring + axis * 0.16,
 		ring + axis * 0.27]), Vector2(0.045, 0.016), 8, 1.0, Vector3.BACK, 0.8))
-	# Ki Bow: a slim brass arc with a starlight string.
-	var bow_center := hips + Vector3(0.27, -0.08, -0.02)
-	var arc := PackedVector3Array()
-	var arc_radii := PackedVector2Array()
-	for k in 9:
-		var angle := lerpf(-1.0, 1.0, k / 8.0)
-		arc.append(bow_center + Vector3(0, sin(angle) * 0.26, -cos(angle) * 0.1))
-		arc_radii.append(Vector2.ONE * lerpf(0.022, 0.012, absf(angle)))
-	_add(list, &"Hips", &"brass", FigureKit.loft(arc, arc_radii, 8))
-	_add(list, &"Hips", &"star", FigureKit.capsule(arc[0], arc[-1], Vector2(0.006, 0.006), Vector2(0.006, 0.006), 6, 2))
+	# Star-chart case: a short capped tube on her left hip (not a bow: #124).
+	var case_top := hips + Vector3(0.27, 0.02, -0.03)
+	var case_bottom := case_top + Vector3(0.02, -0.17, 0.04)
+	var case_axis := (case_bottom - case_top).normalized()
+	var case_basis := Basis(Quaternion(Vector3.UP, case_axis))
+	_add(list, &"Hips", &"night", FigureKit.capsule(case_top, case_bottom, Vector2(0.05, 0.05), Vector2(0.05, 0.05), 10, 2))
+	for end: Vector3 in [case_top, case_bottom]:
+		_add(list, &"Hips", &"brass", FigureKit.torus(0.052, 0.014, 16, 6), Transform3D(case_basis, end))
+	_add(list, &"Hips", &"parchment", FigureKit.capsule(case_top - case_axis * 0.02, case_top - case_axis * 0.07,
+		Vector2(0.032, 0.032), Vector2(0.03, 0.03), 8, 1))
+	_add(list, &"Hips", &"star", FigureKit.extrude(_star_profile(0.035, 0.015), 0.02, 0.006),
+		Transform3D(Basis(Vector3.UP, PI / 2), (case_top + case_bottom) * 0.5 + Vector3(0.05, 0, 0)))
 
 
 ## Glowing stars at points (in place's space) joined by thin starlight lines.

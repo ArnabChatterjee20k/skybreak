@@ -129,6 +129,7 @@ var body_capsules := {}
 ## Weapon hold points pushed forward and out (arm lengths; MotionProfile).
 var hold_forward := 0.0
 var hold_out := 0.0
+var heavy_guard_up := Vector3.ZERO
 ## Fighter velocity in skeleton space (m/s).
 @export var velocity := Vector3.ZERO
 @export var flying := false
@@ -425,6 +426,7 @@ func apply_profile(profile: MotionProfile) -> void:
 	dive_pitch = deg_to_rad(profile.dive_pitch)
 	hold_forward = profile.hold_forward
 	hold_out = profile.hold_out
+	heavy_guard_up = profile.heavy_guard_up
 
 
 ## Blend from the last output pose into whatever the next clip gives, without a linear crossfade.
@@ -774,7 +776,9 @@ func _arm_layer(rotations: Array[Quaternion], hips: Vector3, delta: float) -> vo
 		var mirror := Vector3(-1, 1, 1) if weapon_hand == &"LeftHand" else Vector3.ONE
 		var point := (pose[0] as Vector3) + Vector3(-hold_out, 0, hold_forward)
 		goal_point = shoulder + frame * (point * mirror * reach)
-		goal_basis = _weapon_basis(frame * ((pose[1] as Vector3) * mirror).normalized(), frame * (pose[2] as Vector3).normalized())
+		var up: Vector3 = heavy_guard_up if _arm_pose_now == ArmPose.TWO_HANDED and heavy_guard_up != Vector3.ZERO \
+			else pose[1]
+		goal_basis = _weapon_basis(frame * (up * mirror).normalized(), frame * (pose[2] as Vector3).normalized())
 	else:
 		return
 	var eased := _ease_goal(Transform3D(goal_basis, goal_point), _world_at(rotations, hips, chest), delta)

@@ -194,3 +194,32 @@ func test_rollback_mid_tech_roll_re_simulates_identically() -> void:
 	_mark()
 	_tick(40)
 	_assert_rollback_matches("tech roll")
+
+
+func test_rollback_mid_dodge_re_simulates_identically() -> void:
+	_start()
+	_move[DEFENDER] = Vector2(1, 0)
+	_tap(DEFENDER, DASH)
+	_move[DEFENDER] = Vector2.ZERO
+	assert_true(_fighter(DEFENDER).dodge.is_dodging(), "the sidestep dodge starts")
+	_tick(2)
+	_mark()
+	_tap(ATTACKER, LIGHT)
+	_tick(30)
+	_assert_rollback_matches("dodge")
+
+
+func test_rollback_mid_beam_and_breaker_re_simulates_identically() -> void:
+	_start()
+	_fighter(ATTACKER).ki = 100 * UNIT
+	_fighter(DEFENDER).burst = 2 * _sim.meter_tuning.burst_stock_size * UNIT
+	_tap(ATTACKER, FighterInput.Action.SPECIAL_1)
+	_tick(5)
+	_mark()
+	_until(DEFENDER, State.HITSTUN, 60)
+	assert_eq(_fighter(DEFENDER).state, State.HITSTUN, "the beam lands")
+	while _fighter(DEFENDER).hitstop_ticks > 0:
+		_tick()
+	_tap(DEFENDER, BREAKER)
+	_tick(30)
+	_assert_rollback_matches("beam + breaker")

@@ -65,7 +65,7 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 | **Light attack** | `Left Mouse` | Strings, hit-confirms |
 | **Heavy attack** | `Right Mouse` | Direction + heavy = different heavies (see §5.3). Hold = charged smash |
 | **Block** | `E` (hold) | **Tap** just before a hit = perfect block (§5.4) |
-| **Dash** | `Left Shift` + direction | Tap = short step. Hold = sustained flight-dash. Toward the target while locked = rush dash |
+| **Dodge / dash** | `Left Shift` (+ direction) | Tap = **dodge** (§5.4): with a direction a directional dodge, alone a spot dodge, locked with `A`/`D` a sidestep round the target. Hold = the dodge turns into the sustained flight-dash. Toward the target while locked = rush dash (no i-frames) |
 | Grab | `F` | Beats block. Loses to strikes |
 | Pick up / throw item | `G` | Tap near an item to pick it up. Tap while holding a weapon to throw it at the target |
 | Ki blast | `Q` | Tap = rapid shot. Hold = charged blast |
@@ -118,7 +118,7 @@ The camera is a gameplay system, not a presentation detail. Rules:
 | Meter | Max | Gains | Spends | Notes |
 |---|---|---|---|---|
 | **Health** | 10,000 | Recoverable part: 40% of combo damage turns grey and regenerates at 150/s after 3 s without being hit | — | Losing all health loses the round |
-| **Ki** | 100 (shown as 4 bars) | +2/s passive, +25/s while charging (`R`), +3 per landed hit, +2 per blocked hit | Dash 8, rush dash 15, vanish step 20, vanish counter 25 (40 for the second in one exchange), ki blast 4, charged blast 20, specials 25–50 | At 0 ki: no dashes or vanishes; you can still fight with melee |
+| **Ki** | 100 (shown as 4 bars) | +2/s passive, +25/s while charging (`R`), +3 per landed hit, +2 per blocked hit, +10 per perfect dodge (once per 3 s) | Dodge free, rush dash 15, vanish step 20, vanish counter 25 (40 for the second in one exchange), ki blast 4, charged blast 20, specials 25–50 | At 0 ki: no dashes or vanishes; you can still fight with melee |
 | **Guard** | 100 | +20/s after 1 s of not blocking | Blocking: light −6, heavy −18, blast −4, beam −2/tick | At 0: **Guard Break**, 60 f stun, opponent gets a free combo |
 | **Burst** | 3 stocks × 100 | Dealing damage (+1 per 100 damage), taking damage (+1.5 per 100), perfect blocks (+15) | Combo breaker 1, transform 1, ultimate 2 | The comeback meter: you gain more from taking damage than dealing it |
 
@@ -166,10 +166,25 @@ The camera is a gameplay system, not a presentation detail. Rules:
 | Block | Hold `E` | Strikes, blasts | Grabs, Breaker heavy, guard depletion | Guard meter |
 | **Perfect block** | A fresh press of `E` within 6 f of a hit (0–5 f before it lands; an early held press only blocks) | Strikes (attacker gets +16 recovery = free punish), ki blasts (**reflected**) | Grabs, delayed attacks (frame traps) | Nothing; mistiming means a 20 f lockout on the next perfect-block attempt (anti-mash) |
 | Grab tech | Press `F` within 10 f of being grabbed | Grabs | — | — |
-| Sidestep | Dash A/D at mid range | Beams, charged blasts, straight smash | Sweep heavy, homing blasts | 8 ki |
+| **Dodge** (T-DEF2) | Tap `Shift` (+ direction) | Strikes, grabs and projectiles during its i-frames | Anything that meets its recovery; **grabs counter-hit the recovery and can't be teched** | Free; chain and cooldown rules below |
+| **Sidestep** | Locked, tap `Shift` + `A`/`D` | Straight attacks, shots, grabs (70° arc round the target, ignores the orbit cap) | **Sweep** (tracks sidesteps through i-frames), grabs on the recovery | Free |
 | Vanish counter | `Shift+E` while blocking or in the first 6 f of hitstun | Strings, smash | Opponent's counter-vanish or **Sense** (§5.5) | 25 / 40 ki |
 | Combo breaker | `X` in hitstun: 8 f freeze and burst ring, attacker blown out to 5.5 m, breaker intangible for 20 f (its 12 f burst pose first; attacking ends it) | Any combo | Nothing (guaranteed escape), but it's expensive and has a 5 s cooldown | 1 burst stock |
 | Push-block | Heavy while blocking | Pressure strings (pushes them to mid range) | — | 10 guard |
+
+**Dodge frames** (60 Hz ticks, frame 1 = the press; all in `DodgeTuning`):
+
+| Kind | I-frames | Recovery (vulnerable, throw bait) | Total | Travel |
+|---|---|---|---|---|
+| Directional | f3–14 | f15–26 | 26 | 4.5 m, eased out |
+| Spot | f2–17 | f18–31 | 31 | none |
+| Sidestep | f3–14 | f15–26 | 26 | 70° arc round the target at the same distance (wider up to 90° closer than 3 m) |
+
+- **Anti-mash:** a dodge within 45 f of the last one ending is a *chain*: +8 f recovery, −4 i-frames. A third in a chain has **no i-frames** (a plain step, grey trail) until 90 quiet ticks pass. In the air: **2 dodges per airborne spell** (landing, being hit or 120 f without a dodge refreshes them); more come out with no i-frames.
+- Only from free states (and out of a rush). **Never out of hitstun or blockstun**: that is the vanish counter's job.
+- Holding `Shift` past f10 turns the dodge into the flight-dash: the i-frames end there and the dash can't be let go before the dodge's last frame (no free recovery cancel).
+- **Perfect dodge:** a live hitbox or projectile meeting the first 6 i-frames (f3–8, spot f2–7). The attacker freezes 6 f (hitstop on the attacker only), the dodger gets −6 f recovery, a fresh chain and +10 ki (once per 180 f). A white-blue afterimage, a flash, a **READ!** pop and a whoosh with a reverse tail mark it. A dodge with nothing to dodge gets nothing, so mashing is worse than blocking.
+- **Feel:** each legend leans, banks or twists through its dodge (`MotionProfile` dodge values); the afterimage trail is white on i-frames, plain on recovery and grey on a stale dodge, so the invulnerable window reads.
 
 **Rock-paper-scissors at close range:** *Strike* beats *Grab* (counter-hit), *Grab* beats *Block*, *Block / perfect block* beats *Strike*. Every close exchange is a read.
 
@@ -211,6 +226,19 @@ Every wakeup has 6 f of invincibility, then is vulnerable. The attacker reads it
 - **Beam Clash:** if two beams meet, a **rhythm minigame** starts. Four to eight beat prompts on `Q`/`E`/`F`/`R` scroll toward a hit line; accuracy pushes your beam forward. Spending ki mid-clash adds push. The loser takes the beam's full damage; the winner gains 50 burst. Mashing does nothing, because only on-beat presses count.
 - **Anti-turtle:** charging ki is loud (aura sound and visual tell) and leaves you vulnerable, so the opponent can always punish a charger by rush-dashing.
 
+**As built (T-KI1).** Numbers live in `game/combat/ki/kits/<legend>_ki_kit.tres` and `default_ki_tuning.tres`.
+
+| | Kael | Vexa | Brann | Lyra |
+|---|---|---|---|---|
+| Tap blast (Q) | 8 f, 120 dmg, 44 m/s | 8 f, 100, 52 m/s, 9 f recovery | 8 f, 150, 34 m/s, big | 8 f, 110, 40 m/s, **homing** 2.4 rad/s |
+| Charged blast (hold Q past 8 f) | 22 f, 700 | 22 f, 620 | 24 f, 820 | 22 f, 700 |
+| Beam (1) | Dawnspear: 50 ki, 26 f, 1500 | Hexline: 45 ki, 24 f, 1300, thin | Forgemaw: 60 ki, 30 f, 1800, short and wide | Constellation Ray: 40 ki, 26 f, 1300, **splits in three** |
+| Beam ultimate (4, 2 burst stocks) | Zenith Lance 2800 | Umbral Rift 2500 | Magma Torrent 3100 | Starfall Array 2700 |
+
+- Projectile hits use the ranged 80% combo start (§5.11). Hitstop freezes only the target.
+- A beam's aim follows the target until 12 f before it fires, then its line is fixed: a sidestep after that point makes it whiff. A whiff adds 30 f of recovery. It hits once (blowback) and stops at the first body it hits or that blocks it; blocking costs 2 guard and 6 chip per tick and pushes the blocker along it. Beams eat oncoming blasts.
+- Beam clash: beats start 36 f after the clash, then one every 22 f; a press within 4 f of its beat with the right key pushes 10 (16 within 1 f); a wrong or off-beat press gives 6 back; up to 3 presses of `1` spend 10 ki for 6 push. The starting push favours the stronger beam (1 per 100 damage).
+
 ### 5.9 Transformations and ultimates
 
 - **Transform** (`T`, 1 burst stock): a 1.5 s cinematic (skippable, invincible). Gives +15% damage and speed, new specials and a new ultimate, but **drains 5 ki/s**. When ki hits 0 you **revert with Exhaustion** (2 s of slower movement and no dashes). Timing a transformation is a strategic decision.
@@ -224,7 +252,7 @@ Every wakeup has 6 f of invincibility, then is vulnerable. The attacker reads it
 | Heavy hit | 8 f | 0.15 (directional) | orange spark, impact ring |
 | Counter-hit (hit during their startup) | +4 f | +50% | "COUNTER" text pop, red flash |
 | Perfect block | 10 f | 0.1 | blue flash, bright "tink" sound, slight time-slow (0.8× for 6 f, view only: `Engine.time_scale`, the sim never changes speed) |
-| Combo breaker | 8 f | 0.55 | burst ring and aura flare in the breaker's colour, burst lines and a 2-frame flash (rationed with K.O. and guard break), deep boom + ring sound, shove pose |
+| Combo breaker | 8 f | 0.55 | one shockwave ring in the breaker's colour (about 1.2x, under 0.25 s) and a 2-frame flash in its hitstop (rationed with K.O. and guard break), deep boom + ring sound, shove pose |
 | Guard break | 14 f | 0.3 | glass-shatter sound, guard bar shards |
 | Wall-splat | 10 f | 0.35 | wall cracks decal, dust |
 | Round-ending hit | 20 f, then 0.3× slow-mo for 1.2 s | 0.5 | camera orbits the impact, white impact frame (1 frame of inverted colors) |
