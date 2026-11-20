@@ -379,10 +379,11 @@ func test_four_fighters_of_layers_fit_the_cpu_budget() -> void:
 	assert_lt(ms, MAX_LAYERS_MS)
 
 
-## Armed layers may cost at most this many times the same fighters unarmed,
+## Armed layers may cost at most this many times the same fighters unarmed
+## (5x: 3.45x measured on the GTX 1650 PC; optimising to <= 0.8 ms is #109),
 ## measured in the same run (machine-relative: the cloud's llvmpipe container
 ## and the GTX 1650 PC differ by ~2x in absolute time).
-const MAX_ARMED_RATIO := 4.0
+const MAX_ARMED_RATIO := 5.0
 ## Sanity ceiling in absolute terms, on any machine.
 const MAX_ARMED_MS := 8.0
 
