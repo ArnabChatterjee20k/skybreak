@@ -19,6 +19,11 @@ const LEAN_SHARPNESS := 10.0
 const FADE_FAR := 1.2
 const FADE_NEAR := 0.3
 const FADED := 0.8
+## KO recoil (#121): on the KO tick the body snaps back from the contact while the sim holds
+## the loser in hitstop, then eases out over KO_RECOIL_OUT seconds as the fall clip takes over.
+const KO_RECOIL_TILT := deg_to_rad(35.0)
+const KO_RECOIL_SHOVE := 0.3
+const KO_RECOIL_OUT := 0.25
 
 @export var body_color := Color(0.9, 0.4, 0.15)
 ## Character model (a CharacterView scene). Empty draws the placeholder capsule.
@@ -52,6 +57,10 @@ var _camera_fade := 0.0
 ## The level's sim, for its floor (found once among the ancestors; levels that call react_to_tick set it).
 var _sim: CombatSim
 var _sim_searched := false
+## Flat unit direction from the KO contact to the body; zero when no recoil plays.
+var _ko_away := Vector3.ZERO
+var _ko_recoil := 0.0
+var _was_knocked_out := false
 
 
 func _ready() -> void:
@@ -120,11 +129,60 @@ func present(blend: float, delta: float) -> void:
 		MAX_DASH_LEAN if dashing else MAX_LEAN)
 	_lean = _lean.lerp(goal, 1.0 - exp(-LEAN_SHARPNESS * delta))
 	_body.basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, _lean.x) * Basis(Vector3.BACK, _lean.y)
+	_watch_for_ko()
+	_apply_ko_recoil(delta)
 	visible = fighter.state != FighterState.State.VANISHING
 	_height_marker.update(position)
 	if _character != null:
 		_character.ground_height = _level_sim().ground_height if _level_sim() != null else Callable()
 		_character.apply_state(fighter, delta)
+
+
+## Snaps the body back from a KO contact at `contact` (world position), from this frame on.
+func start_ko_recoil(contact: Vector3) -> void:
+	var away := fighter.position - contact
+	away.y = 0.0
+	if away.length_squared() < 0.0001:
+		away = Basis(Vector3.UP, fighter.facing_yaw) * Vector3.BACK
+	_ko_away = away.normalized()
+	_ko_recoil = 1.0
+	_was_knocked_out = true
+
+
+## How far the KO recoil is applied now: 1 = full snap, 0 = none.
+func ko_recoil() -> float:
+	return _ko_recoil
+
+
+## Starts the recoil the first frame the fighter is out, at the KO event's contact when the
+## sim still holds it (levels need not forward events to the view).
+func _watch_for_ko() -> void:
+	var out := fighter.is_knocked_out()
+	if out and not _was_knocked_out:
+		var contact := fighter.position + Basis(Vector3.UP, fighter.facing_yaw) * Vector3.FORWARD
+		var sim := _level_sim()
+		var index := sim.fighters.find(fighter) if sim != null else -1
+		if sim != null:
+			for event: Dictionary in sim.events:
+				if event.get("type", -1) == CombatSim.EventType.KO and event.get("target", -1) == index:
+					contact = event.get("position", contact)
+		start_ko_recoil(contact)
+	_was_knocked_out = out
+
+
+func _apply_ko_recoil(delta: float) -> void:
+	if _ko_away == Vector3.ZERO:
+		_body.position = Vector3.ZERO
+		return
+	# Held while the sim freezes the loser; eased out once the fall moves it.
+	if fighter.hitstop_ticks <= 0:
+		_ko_recoil = move_toward(_ko_recoil, 0.0, delta / KO_RECOIL_OUT)
+	var amount := smoothstep(0.0, 1.0, _ko_recoil)
+	var axis := Vector3.UP.cross(_ko_away)
+	_body.basis = Basis(axis, KO_RECOIL_TILT * amount) * _body.basis
+	_body.position = _ko_away * KO_RECOIL_SHOVE * amount
+	if _ko_recoil <= 0.0:
+		_ko_away = Vector3.ZERO
 
 
 ## The CombatSim of the level this view is in (a `sim` property on an ancestor), or null.
