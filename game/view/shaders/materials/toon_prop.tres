@@ -13,3 +13,4 @@ next_pass = SubResource("outline_pass")
 shader = ExtResource("1_toon")
 shader_parameter/specular_enabled = false
 shader_parameter/rim_strength = 0.2
+shader_parameter/light_rim_strength = 0.0

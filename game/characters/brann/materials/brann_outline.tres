@@ -5,4 +5,4 @@
 [resource]
 resource_name = "brann_outline"
 shader = ExtResource("1_outline")
-shader_parameter/outline_width = 3.0
+shader_parameter/outline_width = 2.5

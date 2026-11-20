@@ -91,7 +91,7 @@ static func material(color: Color, glow := false) -> ShaderMaterial:
 	if _outline == null:
 		_outline = ShaderMaterial.new()
 		_outline.shader = OUTLINE
-		_outline.set_shader_parameter("outline_width", 2.4)
+		_outline.set_shader_parameter("outline_width", 2.5)
 	var made := ShaderMaterial.new()
 	made.shader = TOON
 	made.set_shader_parameter("albedo_color", color)
