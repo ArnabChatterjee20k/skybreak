@@ -276,7 +276,7 @@ func _follow_target(target: Vector3, delta: float) -> Vector3:
 	return _target
 
 
-## Pulls the camera in front of terrain and props between it and the player
+## Pulls the camera in front of terrain, props and other fighters between it and the player
 ## (at once), eases back out when they clear, and keeps it above the ground.
 func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	if obstacles == null:
@@ -285,7 +285,8 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	var length := look_from.distance_to(wanted)
 	if length < 0.001:
 		return wanted
-	var safe := maxf(obstacles.clear_fraction(look_from, wanted) * length, obstacle_min_distance)
+	var clear := minf(obstacles.clear_fraction(look_from, wanted), obstacles.body_clear_fraction(look_from, wanted))
+	var safe := maxf(clear * length, obstacle_min_distance)
 	if safe < _clip_length:
 		_clip_length = safe
 	else:

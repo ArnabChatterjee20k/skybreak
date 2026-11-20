@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Gameplay QA harness (T-D31). One command, markdown + JSON report.
 # QA_KEEP_FRAMES=1 keeps all 120 frames of each capture (default: the violation frame + clip.mp4).
-#   tools/qa/run_qa.sh [--quick|--full] [--jobs N] [--ticks N] [--skip-visual] [--out DIR]
+#   tools/qa/run_qa.sh [--quick|--full] [--zone ID] [--jobs N] [--ticks N] [--skip-visual] [--out DIR]
+#       (--zone soaks only that zone's matches, e.g. heartbloom_gardens)
 #       (--out with an earlier run's folder reuses its soak and redoes the other stages)
 #   tools/qa/run_qa.sh --repro '<seed:zone:mode:legends:levels>' --tick T [--fighter N]
 #       (one violation: its checks up to T, then the last 2 s of frames with the camera on fighter N)
@@ -10,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 GODOT="${GODOT:-godot}"
-MODE=quick; JOBS="${QA_JOBS:-8}"; TICKS=""; VISUAL=1; OUT=""; REPRO=""; REPRO_TICK=0; FIGHTER=0
+MODE=quick; JOBS="${QA_JOBS:-8}"; TICKS=""; VISUAL=1; OUT=""; REPRO=""; REPRO_TICK=0; FIGHTER=0; ZONE=""
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		--quick) MODE=quick ;;
@@ -18,6 +19,7 @@ while [[ $# -gt 0 ]]; do
 		--jobs) JOBS="$2"; shift ;;
 		--ticks) TICKS="$2"; shift ;;
 		--skip-visual) VISUAL=0 ;;
+		--zone) ZONE="$2"; shift ;;
 		--out) OUT="$2"; shift ;;
 		--repro) REPRO="$2"; shift ;;
 		--tick) REPRO_TICK="$2"; shift ;;
@@ -60,7 +62,7 @@ if [[ -n "$REPRO" ]]; then
 fi
 
 SHA="$(git rev-parse --short HEAD)"
-NAME="$(date -u +%Y-%m-%d)-$SHA-$MODE"
+NAME="$(date -u +%Y-%m-%d)-$SHA-$MODE${ZONE:+-$ZONE}"
 RUN="${OUT:-reports/qa/$NAME}"
 mkdir -p "$RUN/soak"
 started=$(date +%s)
@@ -71,7 +73,7 @@ pids=()
 if ls "$RUN"/soak/match_*.json >/dev/null 2>&1; then JOBS=0; echo "reusing the soak results in $RUN"; fi
 for ((i = 0; i < JOBS; i++)); do
 	"$GODOT" --headless --path . -s res://game/debug/qa/qa_soak.gd -- soak --matrix "$MODE" \
-		--shard "$i/$JOBS" ${TICKS:+--ticks "$TICKS"} --out "$RUN/soak" > "$RUN/soak/shard_$i.log" 2>&1 &
+		--shard "$i/$JOBS" ${TICKS:+--ticks "$TICKS"} ${ZONE:+--zone "$ZONE"} --out "$RUN/soak" > "$RUN/soak/shard_$i.log" 2>&1 &
 	pids+=($!)
 done
 "$GODOT" --headless --path . -s res://game/debug/qa/qa_soak.gd -- feel --out "$RUN" > "$RUN/feel.log" 2>&1 || true

@@ -18,6 +18,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   out of the Web preset, no Quit on web, `tools/web/match_smoke_test.js` (menu -> vs AI, 30 s).
   Build on the `web-build` branch; deploy to Appwrite Sites from the Mac. Duo's Appwrite
   traffic from the browser is unverified (CORS: add the site as a Web platform if needed).
+- T-D35 [desktop] #107 Heartbloom: the sim floor matches the drawn island outline (`ZoneGround`
+  25 cm outline mask, 0.25 m inset); falls/dives/vanish anchors can no longer pass through an
+  island top (`CombatSim._stop_on_skipped_island`); the camera pulls in front of other fighters;
+  QA `camera_cover` skips camera-faded bodies; `run_qa.sh --zone`.
 - T-D30e [desktop] Weapon holds, view-only port of #70 (supersedes it): `WeaponGrip`, per-build
   holds, clearance solver with carry-over, KO weapon drop, bow reach, `VisualQa`; plus fixed
   one-hand hit-reaction tuck and flight hold, heavies at the side in flight, eased hold changes,
@@ -103,6 +107,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - QA-18 [desktop] Godot 4.7.2 text-to-binary export conversion drops `Packed*Array` values in
   `ZoneData` .tres; re-enable `editor/export/convert_text_resources_to_binary` once fixed
   upstream (smaller pck, faster load).
+- QA-13 [desktop] Landing frame: the first IDLE frame after flight can dip a sole up to 34 cm
+  under the floor (vexa `fight_idle`, `1623:heartbloom_gardens:2v2:lyra,kael,vexa,brann:3235`
+  tick 423). Ground sample is right (island top 272.03 m); the landing blend is not.
+- QA-14 [developer] AI under an island: in 3600-tick soaks an AIDriver fighter can dive under
+  Picnic Meadow and keep descending while its locked target stays on top (3602 1v1 80.1%,
+  2623 66.1%, 2621 87.2%). Gaps > STACK_MAX_HEIGHT are off-screen by design, so this needs an
+  AI fix (climb back) or a framing decision.
 
 - QA-3 [developer] Bug (T-D31): `ZoneMatch` keeps teams only in its own `teams` array and never sets `sim.fighters[i].team`, so in a real 2v2 the sim treats teammates as opponents (friendly fire, the round only ends with one fighter left).
 - QA-4 [developer] Bug (T-D31): `ZoneMatch._make_driver` looks for `next_input`/`setup` on `AIDriver`, which has neither, so every AI slot in a real zone match silently falls back to `WeaponBot`; the T-D23 `FighterAI` never plays there.
