@@ -7,12 +7,16 @@ extends Label
 
 const HOLD_SECONDS := 0.5
 const FADE_SECONDS := 0.25
-const COLOR := Color(1.0, 0.85, 0.25)
+const COLOR := MenuTheme.GOLD
+## Each new count scales in from POP to 1 over POP_SECONDS (as the banners do).
+const POP := 1.3
+const POP_SECONDS := 0.12
 
 var _hold := 0.0
 var _fade := 0.0
 var _shown := 0
 var _last_hits: Array[int] = []
+var _pop_age := POP_SECONDS
 
 
 func _ready() -> void:
@@ -21,10 +25,20 @@ func _ready() -> void:
 	offset_left = -320.0
 	offset_right = -48.0
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	add_theme_font_size_override("font_size", 48)
+	offset_top = -34.0
+	offset_bottom = 34.0
+	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	add_theme_font_override("font", MenuTheme.font())
+	add_theme_font_size_override("font_size", 44)
 	add_theme_color_override("font_color", COLOR)
-	add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.08))
-	add_theme_constant_override("outline_size", 10)
+	add_theme_color_override("font_outline_color", MenuTheme.INK)
+	add_theme_constant_override("outline_size", 12)
+	var chip := MenuTheme.box(Color(MenuTheme.PANEL, 0.88), MenuTheme.INK, 4)
+	chip.content_margin_top = 2
+	chip.content_margin_bottom = 2
+	add_theme_stylebox_override("normal", chip)
 	visible = false
 
 
@@ -42,6 +56,7 @@ func show_combo(fighters: Array, delta: float) -> void:
 		text = text_for(landed)
 		_hold = HOLD_SECONDS
 		_fade = FADE_SECONDS
+		_pop_age = 0.0
 	elif _hold > 0.0:
 		_hold = maxf(_hold - delta, 0.0)
 	else:
@@ -49,6 +64,12 @@ func show_combo(fighters: Array, delta: float) -> void:
 		if _fade <= 0.0:
 			_shown = 0
 	modulate.a = 1.0 if _hold > 0.0 else _fade / FADE_SECONDS
+	_pop_age = minf(_pop_age + delta, POP_SECONDS)
+	# Scaled with the window like MatchHud, anchored at its right edge.
+	pivot_offset = size * Vector2(1.0, 0.5)
+	var pop := lerpf(POP, 1.0, 1.0 - pow(1.0 - _pop_age / POP_SECONDS, 3.0))
+	var view := get_viewport_rect().size if is_inside_tree() else MatchHud.DESIGN
+	scale = Vector2.ONE * pop * MatchHud.design_scale(view)
 	visible = _hold > 0.0 or _fade > 0.0
 
 

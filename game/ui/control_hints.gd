@@ -17,10 +17,11 @@ const BOTTOM_MARGIN := 18.0
 const CHIP_PADDING := 7.0
 const ENTRY_GAP := 20.0
 const STRIP_HEIGHT := 34.0
-const CAP := Color(0.95, 0.95, 0.92, 0.95)
-const INK := Color(0.05, 0.05, 0.08, 0.85)
-const STRIP := Color(0.05, 0.05, 0.08, 0.55)
-const PROMPT := Color(1.0, 0.85, 0.25)
+## The menus' footer look (MenuTheme): gold key caps on a skewed navy strip.
+const CAP := MenuTheme.GOLD
+const INK := MenuTheme.INK
+const STRIP := Color(MenuTheme.PANEL, 0.78)
+const PROMPT := MenuTheme.GOLD
 const GAMEPAD_UNBOUND := "Gamepad controls are coming: play with keyboard + mouse"
 
 ## Set by the level.
@@ -85,7 +86,7 @@ func toggle() -> void:
 
 func _draw() -> void:
 	var scale_factor := MatchHud.design_scale(size)
-	var font := ThemeDB.fallback_font
+	var font := MenuTheme.font()
 	var bottom := size.y - BOTTOM_MARGIN * scale_factor
 	if prompt_visible:
 		var text := fly_down_prompt()
@@ -93,10 +94,11 @@ func _draw() -> void:
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		var y := bottom - (STRIP_HEIGHT + 30.0) * scale_factor
 		var at := Vector2((size.x - width) / 2.0, y)
-		var pad := 12.0 * scale_factor
-		draw_rect(Rect2(at.x - pad, y - font_size * 1.05, width + pad * 2.0, font_size * 1.45), STRIP)
+		var pad := 22.0 * scale_factor
+		var chip := MenuTheme.box(Color(MenuTheme.PANEL, 0.9), PROMPT, maxi(roundi(3 * scale_factor), 2))
+		draw_style_box(chip, Rect2(at.x - pad, y - font_size * 1.1, width + pad * 2.0, font_size * 1.55))
 		draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, maxi(roundi(6 * scale_factor), 2), INK)
-		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, PROMPT)
+		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, MenuTheme.TEXT)
 	var entries := entries_for(gamepad) if strip_visible else [[ControlSettings.key_label(InputBindings.TOGGLE_HINTS), "Controls"]]
 	_draw_strip(entries, font, scale_factor, bottom, not strip_visible)
 
@@ -117,12 +119,14 @@ func _draw_strip(entries: Array, font: Font, scale_factor: float, bottom: float,
 	total -= gap
 	var x := gap if corner else (size.x - total) / 2.0
 	var top := bottom - height
-	draw_rect(Rect2(x - pad * 1.5, top, total + pad * 3.0, height), STRIP)
+	var strip := MenuTheme.box(STRIP, INK, maxi(roundi(3 * scale_factor), 1))
+	draw_style_box(strip, Rect2(x - pad * 1.5, top, total + pad * 3.0, height))
+	var cap_style := MenuTheme.box(CAP, INK, maxi(roundi(2 * scale_factor), 1))
 	var baseline := top + height / 2.0 + font_size * 0.36
 	for i in entries.size():
 		var entry: Array = entries[i]
-		var cap := Rect2(x, top + height * 0.16, widths[i].x, height * 0.68)
-		draw_rect(cap, CAP)
+		var cap := Rect2(x, top + height * 0.14, widths[i].x, height * 0.72)
+		draw_style_box(cap_style, cap)
 		draw_string(font, Vector2(x + pad, baseline), entry[0], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, INK)
 		x += widths[i].x + pad
 		if entry[1] != "":
