@@ -112,6 +112,9 @@ func _run(what: String) -> void:
 			await _advance(2)
 			await _save("idle/f_%04d" % i)
 	if what in ["compare", "all"] and _compare != "":
+		# Respawn so both sides are shot at the same idle tick as the old scene.
+		if what == "all":
+			await _spawn(_scene)
 		for yaw: float in [0.0, 35.0, 180.0]:
 			await _full(yaw, "compare_voxel_%03d" % int(yaw))
 		await _spawn(_compare)
