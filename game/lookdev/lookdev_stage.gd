@@ -7,6 +7,8 @@ extends Node3D
 
 var camera: Camera3D
 var key: DirectionalLight3D
+## The soft ellipse under the feet; a moving subject can carry it along.
+var contact_shadow: MeshInstance3D
 
 
 func _ready() -> void:
@@ -57,11 +59,11 @@ func _environment() -> void:
 func _cyclorama() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var width := 14.0
+	var width := 30.0
 	var back := -3.5
 	var radius := 2.5
 	var profile := PackedVector2Array()  # (z, y) from the front of the floor to the top of the wall
-	profile.append(Vector2(8.0, 0.0))
+	profile.append(Vector2(24.0, 0.0))
 	for k in range(0, 17):
 		var a := PI * 0.5 * k / 16.0
 		profile.append(Vector2(back + radius - sin(a) * radius, radius - cos(a) * radius))
@@ -133,6 +135,7 @@ void fragment() {
 	mat.shader = shader
 	quad.material_override = mat
 	add_child(quad)
+	contact_shadow = quad
 
 
 ## Frames a vertical span [bottom, top] at the given vertical fill, looking
