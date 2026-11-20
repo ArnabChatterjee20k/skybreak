@@ -34,8 +34,12 @@ extends Camera3D
 @export var target_glide_sharpness := 12.0
 ## How fast the camera eases back out after an obstacle pulled it in (m/s).
 @export var obstacle_release_speed := 6.0
+## Below this clear boom (m) the camera tries shifting up or sideways first.
+@export var obstacle_comfort_distance := 3.0
+## How fast that shift eases in and out (m/s).
+@export var obstacle_shift_speed := 5.0
 ## Closest the camera gets pulled toward the player by an obstacle (m).
-@export var obstacle_min_distance := 1.2
+@export var obstacle_min_distance := 1.6
 ## A player jump longer than this in one frame (m) is a teleport, e.g. a vanish
 ## step; normal movement tops out around 1.3 m per frame.
 @export var teleport_distance := 3.0
@@ -92,6 +96,7 @@ var _turn_speed := 0.0
 var _target := Vector3.ZERO
 var _target_gliding := false
 var _clip_length := INF
+var _clip_shift := Vector3.ZERO
 var _last_player := Vector3.ZERO
 const LAG_EXTRA_FOV := 10.0
 const LAG_EXTRA_BOOM := 0.25
@@ -193,7 +198,10 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		var height_gap_widening := widened > base_fov + 0.01
 		# No zoom mid re-lock either: a narrow FOV while the view is still turning
 		# would crop the player out.
-		var zoom := _band == LockOnFraming.Band.FAR and not height_gap_widening and not _relock_turning
+		# Nor while the view still lags its framing or glides to a new target
+		# (a lock switch to someone 60 m away zoomed in before the turn, so
+		# neither fighter was in frame).
+		var zoom := _band == LockOnFraming.Band.FAR and not height_gap_widening and not _relock_turning 			and not _target_gliding and _lag < 0.05
 		fov_goal = zoomed if zoom else widened
 		_remember_facing(player, target)
 		goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, fov_goal, _held_facing)
@@ -282,11 +290,18 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	if obstacles == null:
 		return wanted
 	var look_from := pivot + Vector3.UP * 0.5
+	# Rather than pull right up to the player (a body filling the lens, media-2),
+	# shift the boom up over or out from under what's in the way: try a few
+	# shifted spots, keep the clearest, and ease toward it.
+	var shift_goal := Vector3.ZERO
+	if _clear_distance(look_from, wanted) < obstacle_comfort_distance:
+		shift_goal = _best_shift(look_from, wanted)
+	_clip_shift = _clip_shift.move_toward(shift_goal, obstacle_shift_speed * delta)
+	wanted += _clip_shift
 	var length := look_from.distance_to(wanted)
 	if length < 0.001:
 		return wanted
-	var clear := minf(obstacles.clear_fraction(look_from, wanted), obstacles.body_clear_fraction(look_from, wanted))
-	var safe := maxf(clear * length, obstacle_min_distance)
+	var safe := maxf(_clear_distance(look_from, wanted), obstacle_min_distance)
 	if safe < _clip_length:
 		_clip_length = safe
 	else:
@@ -294,6 +309,32 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	var position := look_from + (wanted - look_from) / length * minf(length, _clip_length)
 	position.y = maxf(position.y, obstacles.ground_at(position) + CameraObstacles.CLEARANCE)
 	return position
+
+
+## Clear distance from look_from toward camera (terrain, props, bodies).
+func _clear_distance(look_from: Vector3, camera: Vector3) -> float:
+	var length := look_from.distance_to(camera)
+	var clear := minf(obstacles.clear_fraction(look_from, camera), obstacles.body_clear_fraction(look_from, camera))
+	return clear * length
+
+
+## The shift (up, sideways, or both) that leaves the most clear boom.
+func _best_shift(look_from: Vector3, wanted: Vector3) -> Vector3:
+	var boom := wanted - look_from
+	var side := boom.cross(Vector3.UP)
+	side = side.normalized() if side.length() > 0.001 else Vector3.RIGHT
+	var best := Vector3.ZERO
+	var best_clear := _clear_distance(look_from, wanted)
+	for shift: Vector3 in [Vector3.UP * 2.0, Vector3.UP * 4.0, side * 3.0, -side * 3.0,
+			Vector3.UP * 2.0 + side * 2.5, Vector3.UP * 2.0 - side * 2.5]:
+		var clear := _clear_distance(look_from, wanted + shift)
+		# Prefer the unshifted boom unless a shift is clearly better.
+		if clear > best_clear + 0.5:
+			best = shift
+			best_clear = clear
+		if best_clear >= obstacle_comfort_distance + 1.0:
+			break
+	return best
 
 
 ## Offsets the camera by the shake; the next frame starts again from the
