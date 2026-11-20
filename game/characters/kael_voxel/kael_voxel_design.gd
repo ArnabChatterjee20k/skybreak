@@ -585,11 +585,23 @@ func build_gauntlet(side: float) -> VoxelGrid:
 			Mat.BRASS, ftag, ADD)
 		g.paint(box, func(p: Vector3): return VoxelSdf.sphere(p, knuckle + Vector3(0, 0.011, 0), FINE_CELL * 0.8),
 			Mat.RIVET, ftag, ADD)
-	var thumb := PackedVector3Array()
-	for part: String in ["Metacarpal", "Proximal", "Distal"]:
-		thumb.append(rest[StringName(prefix + "Thumb" + part)])
-	thumb.append(thumb[2] + (thumb[2] - thumb[1]) * 1.1)
-	_plated_digit(g, box, thumb, 0.023, 0.02, thumb_tag)
+	# Thumb: modelled already tucked, lying along the underside of the index
+	# finger's first segment, and rigid with the hand (the clips' thumb bones
+	# splay it). When the fingers curl it sits across the front of the fist.
+	# Gold, with a seam at the joint and a glove underside.
+	var root: Vector3 = rest[StringName(prefix + "ThumbMetacarpal")] + Vector3(0.0, -0.008, 0.012)
+	var mid := Vector3(0.872 * side, y - 0.03, 0.074)
+	var tip := Vector3(0.93 * side, y - 0.032, 0.066)
+	g.paint(box, func(p: Vector3): return minf(VoxelSdf.capsule(p, root, mid, 0.024, 0.021),
+		VoxelSdf.capsule(p, mid, tip, 0.021, 0.019)), Mat.BRASS, thumb_tag)
+	g.paint(box, func(p: Vector3):
+		return VoxelSdf.sphere(p, mid, 0.024) if absf(absf(p.x) - absf(mid.x)) < FINE_CELL * 0.6 else 1.0,
+		Mat.ENGRAVE, thumb_tag, PAINT)
+	g.paint(box, func(p: Vector3):
+		if p.y > root.y - 0.012:
+			return 1.0
+		return minf(VoxelSdf.capsule(p, root, mid, 0.025, 0.022), VoxelSdf.capsule(p, mid, tip, 0.022, 0.02)),
+		Mat.GLOVE, thumb_tag, PAINT)
 	return g
 
 
