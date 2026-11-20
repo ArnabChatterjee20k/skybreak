@@ -12,7 +12,7 @@ previews are committed in this folder instead.
 
 | File | What |
 |---|---|
-| `shattered_mesa_flythrough_v1.mp4` | 20 s at 1920×1080, 30 fps (600 frames, H.264 CRF 18): low through the south-west hoodoo cluster, over Mesa 4's shoulder, up the open lane, **through the Red Arch**, a turn and climb round the Anvil Mesa, over the surveyor's camp (Kael stands there), out toward the Great Mesa. Dust devils drift on the floor, birds circle the Great Mesa. |
+| `shattered_mesa_flythrough_v1.mp4` | 20 s at 1920×1080, 30 fps (600 frames, H.264 CRF 18, 55 MB): low through the south-west hoodoo cluster, over Mesa 4's shoulder, up the open lane, **through the Red Arch**, a turn and climb round the Anvil Mesa, over the surveyor's camp (Kael stands there), out toward the Great Mesa. Dust devils drift on the floor, birds circle the Great Mesa. |
 | `*_red_arch_{day,dusk,night}.jpg` | the key image: the Red Arch at noon from the sand (Kael tiny at its west foot) |
 | `*_hoodoo_field_{day,dusk}.jpg` | **Kael for scale** beside a 48 m hoodoo in the south-west cluster |
 | `*_anvil_camp_{day,dusk,night}.jpg` | **Kael for scale** at the surveyor's camp on the Anvil Mesa (lean-to, theodolite aimed at the arch, Banded Sun barrel, ledger and stone, lantern) |
