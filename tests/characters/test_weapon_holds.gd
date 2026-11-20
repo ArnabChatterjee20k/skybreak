@@ -142,3 +142,36 @@ func test_deepest_box_matches_box_depth_over_every_pair_exactly() -> void:
 		if float(expected[0]) > 0.0:
 			hits += 1
 	assert_gt(hits, 50, "enough trials overlap")
+
+
+func test_a_bow_in_a_hit_reaction_or_in_flight_is_held_clear_of_the_body() -> void:
+	var cases := {FighterState.State.HITSTUN: MotionLayers.ArmPose.BOW_TUCK,
+		FighterState.State.FLYING: MotionLayers.ArmPose.BOW_FLY}
+	for id: StringName in Roster.ids():
+		for state: FighterState.State in cases:
+			var view := _view(id)
+			var skeleton: Skeleton3D = view.model.get_node("%GeneralSkeleton")
+			var held := WeaponLayer.attach(skeleton, Weapon.Kind.HEARTSTRING_BOW)
+			var poses: Array[Transform3D] = []
+			skeleton.skeleton_updated.connect(func() -> void:
+				poses.resize(skeleton.get_bone_count())
+				for b in poses.size():
+					poses[b] = skeleton.get_bone_global_pose(b))
+			var fighter := FighterState.new()
+			fighter.stats = Roster.character(id).stats
+			fighter.weapons[0] = Weapon.Kind.HEARTSTRING_BOW
+			fighter.active_slot = 0
+			fighter.enter_state(state)
+			if state == FighterState.State.FLYING:
+				fighter.position.y = fighter.stand_height + 5.0
+			for _f in 20:
+				view.apply_state(fighter, 1.0 / 60.0)
+				await get_tree().process_frame
+			var label := "%s %s" % [id, FighterState.State.find_key(state)]
+			assert_eq(view.layers.arm_pose, cases[state], label)
+			var torso := view.body.capsules(func(b: int) -> Transform3D: return poses[b],
+				skeleton.global_transform, [&"pelvis", &"chest", &"head"])
+			var boxes: Array[Transform3D] = []
+			for box in WeaponGrip.part_boxes(held[0]):
+				boxes.append(held[0].global_transform * box)
+			assert_lt(float(BodyCapsules.deepest_box(torso, boxes)[0]), 0.0, "%s: the bow is clear of the torso" % label)

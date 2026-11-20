@@ -184,9 +184,12 @@ static func box_depth(a: Vector3, b: Vector3, r: float, box: Transform3D) -> Arr
 	var contact := box.origin
 	var half := Vector3(box.basis.x.length(), box.basis.y.length(), box.basis.z.length())
 	var samples := 9
+	# Sampled in the box's space (affine, so the samples land on the same segment points).
+	var local_a := inverse * a
+	var local_b := inverse * b
 	for k in samples:
 		var p := a.lerp(b, float(k) / (samples - 1))
-		var local := inverse * p
+		var local := local_a.lerp(local_b, float(k) / (samples - 1))
 		var clamped := local.clamp(-Vector3.ONE, Vector3.ONE)
 		var depth: float
 		var direction: Vector3
@@ -268,9 +271,11 @@ static func deepest_box(capsule_set: Dictionary, boxes: Array[Transform3D]) -> A
 			var deepest := -INF
 			var push := Vector3.ZERO
 			var contact := box.origin
+			var local_a := inverse * a
+			var local_b := inverse * b
 			for k in 9:
 				var p := a.lerp(b, float(k) / 8)
-				var local := inverse * p
+				var local := local_a.lerp(local_b, float(k) / 8)
 				var clamped := local.clamp(-Vector3.ONE, Vector3.ONE)
 				var depth: float
 				if clamped.is_equal_approx(local):

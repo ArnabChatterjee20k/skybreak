@@ -586,11 +586,11 @@ func _update_arms(fighter: FighterState) -> void:
 	var one_hand := WeaponGrip.hands_of(kind).size() == 1 and WeaponGrip.off_hand_of(kind) == Vector3.INF
 	if one_hand and fighter.state == FighterState.State.HITSTUN:
 		# A fixed tuck, eased in: the weapon is already clear of the body while the clip flails.
-		layers.arm_pose = MotionLayers.ArmPose.TUCK
+		layers.arm_pose = MotionLayers.ArmPose.BOW_TUCK if hold == WeaponGrip.Hold.BOW else MotionLayers.ArmPose.TUCK
 		layers.arm_weight = 1.0
 		return
 	if one_hand and layers.flying and not attacking:
-		layers.arm_pose = MotionLayers.ArmPose.FLY
+		layers.arm_pose = MotionLayers.ArmPose.BOW_FLY if hold == WeaponGrip.Hold.BOW else MotionLayers.ArmPose.FLY
 		layers.arm_weight = 1.0
 		return
 	if hold == WeaponGrip.Hold.HEAVY and layers.flying and not attacking:
