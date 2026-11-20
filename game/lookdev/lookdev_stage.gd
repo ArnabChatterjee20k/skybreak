@@ -7,6 +7,9 @@ extends Node3D
 
 var camera: Camera3D
 var key: DirectionalLight3D
+## A much bigger cyclorama, for moving shots that travel and look along the
+## stage (set before adding the stage to the tree).
+var large := false
 ## The soft ellipse under the feet; a moving subject can carry it along.
 var contact_shadow: MeshInstance3D
 
@@ -59,15 +62,15 @@ func _environment() -> void:
 func _cyclorama() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var width := 400.0
+	var width := 400.0 if large else 14.0
 	var back := -3.5
 	var radius := 2.5
 	var profile := PackedVector2Array()  # (z, y) from the front of the floor to the top of the wall
-	profile.append(Vector2(300.0, 0.0))
+	profile.append(Vector2(300.0 if large else 8.0, 0.0))
 	for k in range(0, 17):
 		var a := PI * 0.5 * k / 16.0
 		profile.append(Vector2(back + radius - sin(a) * radius, radius - cos(a) * radius))
-	profile.append(Vector2(back, 200.0))
+	profile.append(Vector2(back, 200.0 if large else 9.0))
 	for i in profile.size() - 1:
 		var a := profile[i]
 		var b := profile[i + 1]

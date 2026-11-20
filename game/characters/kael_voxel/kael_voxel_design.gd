@@ -8,11 +8,13 @@ extends RefCounted
 
 const BODY_CELL := 0.022
 const FINE_CELL := 0.011
+## The head: finer still, so the skull and jaw curves read smoothly.
+const HEAD_CELL := 0.0085
 
 enum Mat {
 	EMPTY, COAT, COAT_DARK, LAPEL, TRIM, TUNIC, PANTS, SCARF, BOOT, BOOT_CUFF, SOLE,
 	HAIR, SKIN, LENS, STRAP, BRASS, RIVET, IRIS, EYE_WHITE, BROW, MOUTH, GLINT,
-	STITCH, BELT, GLOVE, LACE, EMBLEM, BLUSH, ENGRAVE, BUCKLE_DARK, SCARF_FOLD,
+	STITCH, BELT, GLOVE, LACE, EMBLEM, BLUSH, ENGRAVE, BUCKLE_DARK, SCARF_FOLD, LID, SKIN_SHADE,
 }
 enum Tag {
 	TORSO, ARM_L, ARM_R, LEG_L, LEG_R, SKIRT, COLLAR, SCARF_WRAP, SCARF_TAIL, SCARF_FRONT,
@@ -41,6 +43,7 @@ const COLORS := {
 	Mat.LACE: Color(0.82, 0.73, 0.55), Mat.EMBLEM: Color(0.84, 0.68, 0.38),
 	Mat.BLUSH: Color(0.97, 0.70, 0.62), Mat.ENGRAVE: Color(0.45, 0.30, 0.12),
 	Mat.BUCKLE_DARK: Color(0.25, 0.17, 0.08),
+	Mat.LID: Color(0.16, 0.11, 0.10), Mat.SKIN_SHADE: Color(0.86, 0.64, 0.54),
 }
 
 const FILL := VoxelGrid.Mode.FILL
@@ -65,7 +68,7 @@ static func surface_of(mat: int) -> int:
 			return Surf.METAL
 		Mat.LENS:
 			return Surf.GLASS
-		Mat.SKIN, Mat.BLUSH, Mat.MOUTH:
+		Mat.SKIN, Mat.BLUSH, Mat.MOUTH, Mat.SKIN_SHADE, Mat.LID:
 			return Surf.SKIN
 		Mat.GLINT, Mat.EYE_WHITE:
 			return Surf.GLOW
@@ -81,8 +84,11 @@ static func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: flo
 	var base: Color = COLORS.get(mat, Color.MAGENTA)
 	var noise := VoxelSdf.hash3(c, mat) * 2.0 - 1.0
 	var drift := VoxelSdf.hash3(c, mat + 31) * 2.0 - 1.0
-	var col := base * (1.0 + noise * 0.035)
-	col = Color.from_hsv(fposmod(col.h + drift * 0.012, 1.0), clampf(col.s * (1.0 + drift * 0.05), 0.0, 1.0), col.v)
+	# Big cloth panels stay calm (about +-2%); the variation goes to edges and wear.
+	var quiet := mat in [Mat.COAT, Mat.TUNIC, Mat.PANTS, Mat.LAPEL, Mat.SCARF, Mat.SCARF_FOLD]
+	var col := base * (1.0 + noise * (0.02 if quiet else 0.035))
+	col = Color.from_hsv(fposmod(col.h + drift * (0.005 if quiet else 0.012), 1.0),
+		clampf(col.s * (1.0 + drift * (0.02 if quiet else 0.05)), 0.0, 1.0), col.v)
 	if mat == Mat.SCARF and p.z < -0.1:
 		# A touch lighter and warmer toward the tail.
 		col = col.lerp(Color(0.93, 0.47, 0.17), clampf((1.2 - p.y) / 0.7, 0.0, 1.0) * 0.45)
@@ -112,21 +118,21 @@ func build_body() -> VoxelGrid:
 	return g
 
 
-## Coat profile at height y: (half width, half depth, centre z). Broad
-## shoulders, a narrow waist and a slight forward lean.
+## Coat profile at height y: (half width, half depth, centre z), linear
+## between few keys so the panels stay planar: a waist taper, a flat chest
+## block, a chamfered shoulder line.
 static func coat_profile(y: float) -> Vector3:
 	var keys := [
-		[0.76, Vector3(0.200, 0.135, 0.000)], [0.84, Vector3(0.182, 0.126, 0.004)],
-		[0.93, Vector3(0.162, 0.118, 0.010)], [1.01, Vector3(0.186, 0.128, 0.018)],
-		[1.10, Vector3(0.226, 0.146, 0.024)], [1.19, Vector3(0.246, 0.146, 0.018)],
-		[1.25, Vector3(0.230, 0.128, 0.010)], [1.29, Vector3(0.150, 0.100, 0.002)],
-		[1.31, Vector3(0.080, 0.080, 0.000)],
+		[0.76, Vector3(0.198, 0.134, 0.01)], [0.90, Vector3(0.166, 0.120, 0.01)],
+		[1.06, Vector3(0.234, 0.142, 0.01)], [1.20, Vector3(0.244, 0.142, 0.01)],
+		[1.25, Vector3(0.232, 0.130, 0.01)], [1.29, Vector3(0.150, 0.100, 0.0)],
+		[1.31, Vector3(0.080, 0.080, 0.0)],
 	]
 	if y <= keys[0][0]:
 		return keys[0][1]
 	for i in keys.size() - 1:
 		if y <= keys[i + 1][0]:
-			var t := smoothstep(keys[i][0], keys[i + 1][0], y)
+			var t: float = (y - keys[i][0]) / (keys[i + 1][0] - keys[i][0])
 			return (keys[i][1] as Vector3).lerp(keys[i + 1][1], t)
 	return keys[-1][1]
 
@@ -135,7 +141,15 @@ static func coat_sdf(p: Vector3, inset := 0.0) -> float:
 	if p.y < 0.76 or p.y > 1.31:
 		return 1.0
 	var prof := coat_profile(p.y)
-	return VoxelSdf.slice(p.x, p.z - prof.z, prof.x - inset, prof.y - inset, 3.2)
+	return octagon(p.x, p.z - prof.z, prof.x - inset, prof.y - inset)
+
+
+## Chamfered-box slice (an octagon): flat front, back and side planes with
+## 45-degree corners, approximate distance.
+static func octagon(dx: float, dz: float, rx: float, rz: float, chamfer := 1.42) -> float:
+	var ax := absf(dx) / rx
+	var az := absf(dz) / rz
+	return (maxf(maxf(ax, az), (ax + az) / chamfer) - 1.0) * minf(rx, rz)
 
 
 ## Half width of the coat's open front (a V from the collar to the belt).
@@ -175,7 +189,7 @@ func _torso(g: VoxelGrid) -> void:
 		if p.y < 0.835 or p.y > 0.895:
 			return 1.0
 		var prof := coat_profile(p.y)
-		return VoxelSdf.slice(p.x, p.z - prof.z, prof.x + 0.012, prof.y + 0.012, 3.2), Mat.BELT, Tag.TORSO)
+		return octagon(p.x, p.z - prof.z, prof.x + 0.012, prof.y + 0.012), Mat.BELT, Tag.TORSO)
 	var prof_b := coat_profile(0.865)
 	var buckle := Vector3(0.0, 0.866, prof_b.y + prof_b.z + 0.012)
 	var bb := AABB(buckle - Vector3(0.06, 0.05, 0.04), Vector3(0.12, 0.1, 0.08))
@@ -186,33 +200,34 @@ func _torso(g: VoxelGrid) -> void:
 
 
 func _skirt(g: VoxelGrid) -> void:
-	# Coat tails: from the hip to mid-thigh at the back and sides, open at the
-	# front, with soft vertical folds; the tunic hem shows in front.
+	# Coat tails: flat flared panels from the hip to mid-thigh, open at the
+	# front, with crisp vertical fold ridges and a hard, level hem; the tunic
+	# hem shows in front.
 	var box := AABB(Vector3(-0.32, 0.5, -0.25), Vector3(0.64, 0.3, 0.5))
-	var bottom_at := func(angle: float) -> float:
-		return 0.57 + 0.07 * pow(clampf(absf(angle) / PI, 0.0, 1.0), 2.0)
+	var hem := 0.585
 	g.paint(box, func(p: Vector3):
-		if p.y > 0.79:
+		if p.y > 0.79 or p.y < hem:
 			return 1.0
-		var t := clampf((0.79 - p.y) / 0.22, 0.0, 1.0)
 		var angle := atan2(p.x, -p.z)  # 0 at the back
-		if p.y < bottom_at.call(angle) or absf(angle) > PI * 0.80:
+		if absf(angle) > PI * 0.80:
 			return 1.0
-		var fold := 1.0 + 0.045 * sin(angle * 7.0) * t
-		var rx := (0.200 + 0.05 * t) * fold
-		var rz := (0.135 + 0.045 * t) * fold
-		var outer := VoxelSdf.slice(p.x, p.z, rx, rz, 2.6)
-		var inner := VoxelSdf.slice(p.x, p.z, rx - 0.03, rz - 0.03, 2.6)
+		var t := clampf((0.79 - p.y) / 0.2, 0.0, 1.0)
+		var rx := 0.198 + 0.045 * t
+		var rz := 0.134 + 0.045 * t
+		# Fold ridges: narrow bands that stand one voxel proud, growing downward.
+		var ridge := 0.02 * t if absf(sin(angle * 5.0)) > 0.93 else 0.0
+		var outer := octagon(p.x, p.z, rx + ridge, rz + ridge)
+		var inner := octagon(p.x, p.z, rx - 0.03, rz - 0.03)
 		return maxf(outer, -inner), Mat.COAT, Tag.SKIRT)
 	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
 		var angle := atan2(p.x, -p.z)
-		return p.y < 0.79 and (p.y < bottom_at.call(angle) + BODY_CELL * 1.2 or absf(angle) > PI * 0.80 - 0.07), Mat.TRIM, [Mat.COAT])
-	# Tunic hem below the coat's front panels.
+		return p.y < 0.79 and (p.y < hem + BODY_CELL * 1.2 or absf(angle) > PI * 0.80 - 0.07), Mat.TRIM, [Mat.COAT])
+	# Tunic hem below the coat's front panels, cut level.
 	g.paint(box, func(p: Vector3):
-		if p.y > 0.80 or p.y < 0.66 + 0.012 * sin(p.x * 60.0):
+		if p.y > 0.80 or p.y < 0.665:
 			return 1.0
-		var outer := VoxelSdf.slice(p.x, p.z - 0.004, 0.188, 0.126, 2.6)
-		var inner := VoxelSdf.slice(p.x, p.z - 0.004, 0.160, 0.100, 2.6)
+		var outer := octagon(p.x, p.z - 0.01, 0.188, 0.126)
+		var inner := octagon(p.x, p.z - 0.01, 0.160, 0.100)
 		return maxf(outer, -inner), Mat.TUNIC, Tag.SKIRT, ADD)
 
 
@@ -268,24 +283,32 @@ func _arms(g: VoxelGrid) -> void:
 		# Coat sleeve, tapering to the gauntlet cuff.
 		g.paint(box, func(p: Vector3):
 			return VoxelSdf.capsule(p, Vector3(0.18 * side, y, 0.0), Vector3(0.62 * side, y, 0.0), 0.088, 0.070), Mat.COAT, tag)
-		# Shoulder plates: two overlapping brass layers, rims and rivets.
-		var top := Vector3(0.265 * side, 1.278, 0.0)
-		var top_r := Vector3(0.125, 0.105, 0.145)
-		var low := Vector3(0.345 * side, 1.255, 0.0)
-		var low_r := Vector3(0.10, 0.098, 0.128)
-		var top_cut := func(p: Vector3) -> float: return 1.255 - (absf(p.x) - 0.2) * 0.25
-		g.paint(box, func(p: Vector3): return VoxelSdf.ellipsoid(p, top, top_r) if p.y > top_cut.call(p) else 1.0, Mat.BRASS, tag)
-		g.paint(box, func(p: Vector3): return VoxelSdf.ellipsoid(p, low, low_r) if p.y > 1.215 else 1.0, Mat.BRASS, tag, ADD)
-		g.paint_surface(box, func(p: Vector3, _c: Vector3i):
-			var in_top: bool = VoxelSdf.ellipsoid(p, top, top_r) <= 0.0 and p.y > top_cut.call(p)
-			var rim_top: bool = in_top and p.y < top_cut.call(p) + BODY_CELL * 1.1
-			var rim_low: bool = not in_top and VoxelSdf.ellipsoid(p, low, low_r) <= 0.0 and p.y < 1.215 + BODY_CELL * 1.1
-			return rim_top or rim_low, Mat.ENGRAVE, [Mat.BRASS])
-		for k in 5:
-			var a := lerpf(-0.95, 0.95, k / 4.0)
-			var dir := Vector3(sin(a) * 0.30 * side, 0.82, cos(a) * 0.62).normalized()
-			var at := top + dir * top_r
-			g.paint(box, func(p: Vector3): return VoxelSdf.sphere(p, at, BODY_CELL * 0.75), Mat.RIVET, tag)
+		# Shoulder plates: two flat layered lames curved round the arm (flat
+		# ends, so the edges stay crisp), a bright bevelled rim and a rivet
+		# row along each plate's outer edge. The upper plate overlaps the lower.
+		for plate: Array in [[0.27, 0.36, 0.106], [0.17, 0.30, 0.118]]:
+			var x0: float = plate[0]
+			var x1: float = plate[1]
+			var r: float = plate[2]
+			var in_plate := func(p: Vector3) -> bool:
+				var ax := p.x * side  # this side only (both share the box)
+				if ax < x0 or ax > x1:
+					return false
+				var q := Vector2(p.y - y, p.z)
+				var angle := absf(atan2(q.y, q.x))  # 0 straight up
+				return angle < deg_to_rad(100.0) and q.length() <= r and q.length() > r - 0.03
+			g.paint(box, func(p: Vector3): return -1.0 if in_plate.call(p) else 1.0, Mat.BRASS, tag, FILL)
+			g.paint_surface(box, func(p: Vector3, _c: Vector3i):
+				if not in_plate.call(p):
+					return false
+				var q := Vector2(p.y - y, p.z)
+				var edge_x := p.x * side > x1 - BODY_CELL or p.x * side < x0 + BODY_CELL * 0.5
+				var edge_a := absf(atan2(q.y, q.x)) > deg_to_rad(100.0) - BODY_CELL / r * 1.2
+				return edge_x or edge_a, Mat.TRIM, [Mat.BRASS])
+			for k in 7:
+				var a := deg_to_rad(lerpf(-80.0, 80.0, k / 6.0))
+				var at := Vector3((x1 - BODY_CELL * 1.5) * side, y + cos(a) * (r + 0.004), sin(a) * (r + 0.004))
+				g.paint(box, func(p: Vector3): return VoxelSdf.sphere(p, at, BODY_CELL * 0.7), Mat.RIVET, tag, ADD)
 	g.paint_surface(box, func(p: Vector3, _c: Vector3i): return absf(p.x) > 0.585 and absf(p.x) < 0.625, Mat.TRIM, [Mat.COAT])
 
 
@@ -314,10 +337,10 @@ func _collar_and_scarf(g: VoxelGrid) -> void:
 		Mat.SCARF, Tag.SCARF_WRAP)
 	var tail := _scarf_points()
 	var tail_box := AABB(Vector3(-0.15, 0.36, -0.4), Vector3(0.35, 0.99, 0.3))
-	g.paint(tail_box, func(p: Vector3): return _ribbon(p, tail, 0.064, 0.016), Mat.SCARF, Tag.SCARF_TAIL, ADD)
+	g.paint(tail_box, func(p: Vector3): return _ribbon(p, tail, 0.066, 0.012), Mat.SCARF, Tag.SCARF_TAIL, ADD)
 	var front_end := PackedVector3Array([Vector3(-0.055, 1.27, 0.118), Vector3(-0.072, 1.17, 0.17),
 		Vector3(-0.084, 1.06, 0.178)])
-	g.paint(AABB(Vector3(-0.2, 1.0, 0.05), Vector3(0.25, 0.3, 0.2)), func(p: Vector3): return _ribbon(p, front_end, 0.05, 0.015),
+	g.paint(AABB(Vector3(-0.2, 1.0, 0.05), Vector3(0.25, 0.3, 0.2)), func(p: Vector3): return _ribbon(p, front_end, 0.05, 0.012, 2.0),
 		Mat.SCARF, Tag.SCARF_FRONT, ADD)
 	# Fringe: alternate columns hang lower at both ends.
 	for end: Vector3 in [tail[-1], front_end[-1]]:
@@ -328,10 +351,12 @@ func _collar_and_scarf(g: VoxelGrid) -> void:
 			if posmod(col, 2) != 0 or p.y > end.y:
 				return 1.0
 			return VoxelSdf.box(p, Vector3(end.x, end.y - 0.02, end.z), Vector3(hw, 0.022, 0.014)), Mat.SCARF, end_tag, ADD)
-	# Fold lines along the tail.
+	# Crease shading along the tail's pleat valleys.
 	g.paint_surface(tail_box, func(p: Vector3, _c: Vector3i):
-		return p.z < -0.17 and p.y < 1.22 and p.y > tail[-1].y + 0.01 \
-			and absf(p.x - _tail_x(p.y, tail) + 0.024) < BODY_CELL * 0.55, Mat.SCARF_FOLD, [Mat.SCARF])
+		if p.z > -0.17 or p.y > 1.22 or p.y < tail[-1].y + 0.01:
+			return false
+		var u := (p.x - _tail_x(p.y, tail)) / 0.07
+		return absf(fposmod(u * 1.5 + 0.5, 1.0) - 0.5) < 0.09, Mat.SCARF_FOLD, [Mat.SCARF])
 
 
 func _scarf_points() -> PackedVector3Array:
@@ -349,19 +374,32 @@ static func _tail_x(y: float, pts: PackedVector3Array) -> float:
 	return pts[-1].x
 
 
-## A flat band along a polyline (half width across x, half thickness in z),
-## with a gentle wave so it reads as cloth.
-static func _ribbon(p: Vector3, pts: PackedVector3Array, half_w: float, half_t: float) -> float:
+## A flat band of cloth along a polyline: half width across x (growing a
+## little toward the end), half thickness in z, with pleats (a triangle wave
+## across the width, so 2-3 creases run its length). Continuous across the
+## joints; the two ends are cut square.
+static func _ribbon(p: Vector3, pts: PackedVector3Array, half_w: float, half_t: float, pleats := 3.0) -> float:
 	var best := 1e9
-	for i in pts.size() - 1:
+	var last := pts.size() - 2
+	var total := 0.0
+	for i in last + 1:
+		total += pts[i].distance_to(pts[i + 1])
+	var run := 0.0
+	for i in last + 1:
 		var a := pts[i]
 		var ab := pts[i + 1] - a
 		var h := (p - a).dot(ab) / ab.dot(ab)
-		if h < 0.0 or h > 1.0:
+		if (i == 0 and h < 0.0) or (i == last and h > 1.0):
+			run += ab.length()
 			continue
+		h = clampf(h, 0.0, 1.0)
 		var q := p - (a + ab * h)
-		var wave := sin((a.y + ab.y * h) * 22.0) * 0.008
-		best = minf(best, maxf(absf(q.x) - half_w, absf(q.z - wave) - half_t))
+		var along := (run + ab.length() * h) / total
+		var w := half_w * (1.0 + 0.18 * along)
+		var u := q.x / w
+		var pleat := (absf(fposmod(u * pleats * 0.5 + 0.5, 1.0) - 0.5) - 0.25) * 0.024
+		best = minf(best, maxf(absf(q.x) - w, absf(q.z - pleat) - half_t))
+		run += ab.length()
 	return best
 
 
@@ -400,7 +438,7 @@ func _details(g: VoxelGrid) -> void:
 # ---------------------------------------------------------------- head grid
 
 func build_head() -> VoxelGrid:
-	var g := VoxelGrid.new(AABB(Vector3(-0.27, 1.32, -0.31), Vector3(0.54, 0.58, 0.56)), FINE_CELL)
+	var g := VoxelGrid.new(AABB(Vector3(-0.27, 1.32, -0.31), Vector3(0.54, 0.58, 0.56)), HEAD_CELL)
 	var box := AABB(g.origin, Vector3(g.size) * g.cell)
 	var t := Tag.HEAD
 	# Skull and jaw: a rounded cranium blended into a softer, narrower jaw.
@@ -421,8 +459,14 @@ func build_head() -> VoxelGrid:
 		g.paint_surface(box, func(p: Vector3, _c: Vector3i):
 			return p.z > 0.07 and Vector2((p.x - e.x + 0.006 * s) / 0.021, (p.y - e.y + 0.002) / 0.033).length() < 1.0,
 			Mat.IRIS, [Mat.EYE_WHITE, Mat.SKIN])
+		# Upper eyelid: a dark arc over the eye, with a short wing at the outer corner.
 		g.paint_surface(box, func(p: Vector3, _c: Vector3i):
-			return p.z > 0.07 and absf(p.x - e.x) < 0.03 and p.y > e.y + 0.028 and p.y < e.y + 0.042, Mat.BROW, [Mat.SKIN, Mat.EYE_WHITE, Mat.IRIS])
+			if p.z < 0.07:
+				return false
+			var q := Vector2((p.x - e.x) / 0.031, (p.y - e.y) / 0.039)
+			var arc := q.length() > 0.82 and q.length() < 1.12 and q.y > 0.25
+			var wing := p.x * s > e.x * s + 0.022 and p.x * s < e.x * s + 0.036 and absf(p.y - (e.y + 0.022)) < 0.005
+			return arc or wing, Mat.LID, [Mat.SKIN, Mat.EYE_WHITE, Mat.IRIS, Mat.BLUSH])
 		g.paint_surface(box, func(p: Vector3, _c: Vector3i):
 			return p.z > 0.07 and absf(p.x - e.x + 0.008 * s) < 0.006 and absf(p.y - e.y - 0.012) < 0.006, Mat.GLINT, [Mat.IRIS])
 		# Brows: thick, angled up toward the outside (determined, brave).
@@ -434,10 +478,18 @@ func build_head() -> VoxelGrid:
 			Mat.BROW, t)
 		g.paint_surface(box, func(p: Vector3, _c: Vector3i):
 			return p.z > 0.07 and Vector2((p.x - 0.07 * s) / 0.024, (p.y - 1.468) / 0.014).length() < 1.0, Mat.BLUSH, [Mat.SKIN])
-	# Mouth: a small lopsided smirk.
+	# Mouth: a line with one corner ticked up (a confident half smile).
 	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
-		var curve := 1.432 + (0.006 if p.x > 0.008 else 0.0)
-		return p.z > 0.07 and p.x > -0.022 and p.x < 0.026 and absf(p.y - curve) < 0.0055, Mat.MOUTH, [Mat.SKIN])
+		if p.z < 0.07:
+			return false
+		var line := p.x > -0.022 and p.x < 0.02 and absf(p.y - 1.432) < 0.0045
+		var corner := p.x >= 0.016 and p.x < 0.03 and absf(p.y - (1.432 + (p.x - 0.016) * 0.6)) < 0.0045
+		return line or corner, Mat.MOUTH, [Mat.SKIN, Mat.SKIN_SHADE])
+	# A soft shadow beside and under the nose.
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
+		var side := p.x > 0.004 and p.x < 0.02 and p.y > 1.462 and p.y < 1.49
+		var under := absf(p.x) < 0.014 and p.y > 1.452 and p.y < 1.462
+		return p.z > 0.1 and (side or under), Mat.SKIN_SHADE, [Mat.SKIN])
 	_hair(g, box)
 	_goggles(g, box)
 	return g
@@ -568,19 +620,16 @@ func build_gauntlet(side: float) -> VoxelGrid:
 	# Back-of-hand plate and a knuckle guard with four bumps.
 	g.paint(box, func(p: Vector3): return VoxelSdf.box(p, palm + Vector3(0.0, 0.03, 0.0), Vector3(0.05, 0.012, 0.066), 0.01),
 		Mat.BRASS, tag)
-	# Fingers: chunky gloved fingers; the back of each segment is plated in
-	# brass (recoloured, not an extra shell, so curled fingers stay solid) with
-	# a dark seam at every joint.
+	# Fingers: chunky gloved fingers with one brass plate per finger, on the
+	# proximal segment (the face of the fist), and a knuckle block and rivet.
 	for f in 4:
 		var chain := PackedVector3Array()
 		for part: String in ["Proximal", "Intermediate", "Distal"]:
 			chain.append(rest[StringName(prefix + FINGERS[f] + part)])
 		chain.append(chain[2] + (chain[2] - chain[1]) * 1.1)
-		_plated_digit(g, box, chain, 0.0185, 0.0172, FINGER_BASE + (0 if side > 0 else 4) + f)
-		# Knuckle guard: a raised brass block and rivet over each knuckle, on
-		# that finger (so it stays on the knuckle when the hand closes).
-		var knuckle := chain[0] + Vector3(0.006 * side, 0.016, 0.0)
 		var ftag := FINGER_BASE + (0 if side > 0 else 4) + f
+		_plated_digit(g, box, chain, 0.0185, 0.0172, ftag, 1)
+		var knuckle := chain[0] + Vector3(0.006 * side, 0.016, 0.0)
 		g.paint(box, func(p: Vector3): return VoxelSdf.box(p, knuckle, Vector3(0.016, 0.009, 0.0155), 0.004),
 			Mat.BRASS, ftag, ADD)
 		g.paint(box, func(p: Vector3): return VoxelSdf.sphere(p, knuckle + Vector3(0, 0.011, 0), FINE_CELL * 0.8),
@@ -605,12 +654,15 @@ func build_gauntlet(side: float) -> VoxelGrid:
 	return g
 
 
-func _plated_digit(g: VoxelGrid, box: AABB, chain: PackedVector3Array, r0: float, r1: float, tag: int) -> void:
+## A gloved digit along chain; the first plated_segments segments get a brass
+## plate on their back, with a dark seam at each joint.
+func _plated_digit(g: VoxelGrid, box: AABB, chain: PackedVector3Array, r0: float, r1: float, tag: int,
+		plated_segments := 3) -> void:
 	for i in chain.size() - 1:
 		var a := chain[i]
 		var b := chain[i + 1]
 		g.paint(box, func(p: Vector3): return VoxelSdf.capsule(p, a, b, r0, r1), Mat.GLOVE, tag)
-	for i in chain.size() - 1:
+	for i in mini(plated_segments, chain.size() - 1):
 		var a := chain[i]
 		var b := chain[i + 1]
 		var axis := (b - a).normalized()
@@ -659,9 +711,9 @@ func weights(tag: int, p: Vector3) -> Array:
 			_add(w, StringName(prefix + "LowerArm"), 1.0 - t)
 			_add(w, StringName(prefix + "Hand"), t)
 		Tag.THUMB_L, Tag.THUMB_R:
-			# Rigid with the hand: the current clips splay the thumb sideways
-			# (authored for the old, smaller thumb), which cuts through the
-			# plated fist. Laid along the side of the fist it reads cleanly.
+			# Rigid with the hand: modelled already tucked along the index
+			# finger. Blending the tip onto IndexProximal smeared it across the
+			# guard pose, and the clips' thumb bones splay it.
 			_add(w, &"LeftHand" if tag == Tag.THUMB_L else &"RightHand", 1.0)
 	return _pack(w)
 
