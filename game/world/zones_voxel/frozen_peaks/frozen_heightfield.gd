@@ -1,41 +1,37 @@
 class_name FrozenHeightfield
 extends VoxelHeightfield
-## A heightfield whose smooth top uses quads no wider than `max_block_metres`,
-## so a wide valley floor follows the 2 m sim heightmap within ~2 cm (the kit's
-## 32-cell blocks are tuned for gentle island domes).
+## A heightfield whose smooth top is a world-aligned lattice of `lattice`-metre
+## quads instead of the kit's cell quadtree: on the sim's 2 m bilinear
+## heightmap, 1 m quads on the sample grid keep the visible floor within ~2 cm
+## of the sim floor (the kit's 32-cell blocks suit gentle island domes, not a
+## noisy valley). The look stays per cell: the terrain shader picks each
+## pixel's cell from its world position, whatever the triangles are.
 
-var max_block_metres := 1.41
-var _blocks: Array[int] = []
+var lattice := 1.0
 
 
 func _smooth_top(verts: PackedVector3Array, normals: PackedVector3Array, x0: int, z0: int, x1: int, z1: int) -> void:
-	if _blocks.is_empty():
-		var b := maxi(1, floori(max_block_metres / cell))
-		while b > 1:
-			_blocks.append(b)
-			b = maxi(1, b / 4)
-		_blocks.append(1)
-	_fine_block(verts, normals, x0, z0, x1, z1, 0)
-
-
-func _fine_block(verts: PackedVector3Array, normals: PackedVector3Array, x0: int, z0: int, x1: int, z1: int,
-		level: int) -> void:
-	var st := _blocks[level]
-	for bz in range(z0, z1, st):
-		for bx in range(x0, x1, st):
-			var ex := mini(bx + st, x1)
-			var ez := mini(bz + st, z1)
-			var full := true
-			var any := false
-			for z in range(bz, ez):
-				for x in range(bx, ex):
-					if shown[index(x, z)] == NONE:
-						full = false
-					else:
-						any = true
-			if not any:
+	var wx0 := origin.x + x0 * cell
+	var wz0 := origin.y + z0 * cell
+	var wx1 := origin.x + x1 * cell
+	var wz1 := origin.y + z1 * cell
+	# Lattice squares whose centre lies in this chunk belong to it.
+	for j in range(floori(wz0 / lattice - 0.5), ceili(wz1 / lattice)):
+		var cz := (j + 0.5) * lattice
+		if cz < wz0 or cz >= wz1:
+			continue
+		for i in range(floori(wx0 / lattice - 0.5), ceili(wx1 / lattice)):
+			var cx := (i + 0.5) * lattice
+			if cx < wx0 or cx >= wx1:
 				continue
-			if full:
-				_smooth_quad(verts, normals, bx, bz, ex, ez)
-			elif level + 1 < _blocks.size():
-				_fine_block(verts, normals, bx, bz, ex, ez, level + 1)
+			var col := Vector2i(floori((cx - origin.x) / cell), floori((cz - origin.y) / cell))
+			if level_at(col.x, col.y) == NONE:
+				continue
+			var corners: Array[Vector3] = []
+			for c: Vector2 in [Vector2(i, j), Vector2(i + 1, j), Vector2(i + 1, j + 1), Vector2(i, j + 1)]:
+				var w := c * lattice
+				corners.append(Vector3(w.x, smooth_height.call(w.x, w.y), w.y))
+			var n := (corners[2] - corners[0]).cross(corners[1] - corners[3]).normalized()
+			if n.y < 0.0:
+				n = -n
+			_quad(verts, normals, corners[0], corners[1], corners[2], corners[3], n)

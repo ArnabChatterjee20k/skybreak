@@ -8,7 +8,7 @@ extends RefCounted
 ## and ice turn to snow in color(), so a cap never floats.
 
 ## Bump to rebuild the cached meshes after changing a design.
-const VERSION := 5
+const VERSION := 6
 
 enum Mat {
 	EMPTY, SNOW, SNOW_PACKED, ICE, ICE_CLEAR, ICE_DEEP, SLATE, SLATE_DARK, LICHEN,
@@ -270,10 +270,13 @@ static func boulder(v: int, cell: float) -> ArrayMesh:
 		rng.seed = 1700 + v
 		var planes: Array[Vector3] = []
 		var dists: Array[float] = []
-		for k in 11:
-			var n := Vector3(rng.randf_range(-1, 1), rng.randf_range(-0.6, 1.0), rng.randf_range(-1, 1)).normalized()
+		for k in 9:
+			var a := TAU * k / 9.0 + rng.randf_range(-0.2, 0.2)
+			var n := Vector3(cos(a), rng.randf_range(-0.3, 0.9), sin(a)).normalized()
 			planes.append(n)
-			dists.append(Vector3(n.x * half.x, n.y * half.y, n.z * half.z).length() * rng.randf_range(0.78, 0.95))
+			dists.append(Vector3(n.x * half.x, n.y * half.y, n.z * half.z).length() * rng.randf_range(0.6, 0.8))
+		planes.append(Vector3(rng.randf_range(-0.2, 0.2), 1.0, rng.randf_range(-0.2, 0.2)).normalized())
+		dists.append(half.y * rng.randf_range(0.55, 0.75))
 		var flat_bottom := -half.y * 0.75
 		g.paint(bounds, func(p: Vector3) -> float:
 			var d := VoxelSdf.ellipsoid(p, Vector3.ZERO, half)

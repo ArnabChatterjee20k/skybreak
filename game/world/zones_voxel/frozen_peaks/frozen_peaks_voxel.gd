@@ -18,9 +18,14 @@ const FLOOR_HALF := 50.0
 const HERO_RECT := Rect2(-722, -606, 144, 150)
 ## The zone's own terrain (x, z): beyond it a coarse stand-in range.
 const ZONE_RECT := Rect2(-1022, -1022, 840, 980)
-const FAR_CELL := 16.0
+const FAR_CELL := 5.6
+## The finer stand-in ring reaches this far (m) past the zone box.
+const FAR_NEAR := 600.0
 ## Mountain chunks switch to the 2 x T3 tier past this distance (m).
 const MOUNTAIN_LOD := 240.0
+## T2 foothills: this far (m) from the valley line, over this x range.
+const FOOTHILL_HALF := 100.0
+const FOOTHILL_X := Vector2(-800, -495)
 ## Glacier half-width (m) and the crevasse band beside it.
 const GLACIER_HALF := 12.0
 
@@ -63,7 +68,7 @@ func build() -> void:
 	_story_layout()
 	_contact_shade()
 	lantern_materials.append(VoxelProp.materials()[VoxelProp.Surf.GLOW] as ShaderMaterial)
-	var steps: Array[Callable] = [_floor, _mountains, _far_range, _spires, _shelves, _boulders, _crown_teeth,
+	var steps: Array[Callable] = [_floor, _foothills, _mountains, _far_range, _spires, _shelves, _boulders, _crown_teeth,
 		_cairns, _camp, _crevasse_lips, _waterfall, _sastrugi, _snowfall]
 	for step in steps:
 		var s := Time.get_ticks_msec()
@@ -174,6 +179,32 @@ func _is_floor(x: float, z: float) -> bool:
 	return absf(valley_d(cx, cz)) < FLOOR_HALF and cx > -1010.0 and cx < -290.0
 
 
+## Foothills beside the hero floor: T2 steps (terraced drifts), not T3.
+func _is_foothill(x: float, z: float) -> bool:
+	var cx := (floorf((x - ZONE_RECT.position.x) / T3) + 0.5) * T3 + ZONE_RECT.position.x
+	var cz := (floorf((z - ZONE_RECT.position.y) / T3) + 0.5) * T3 + ZONE_RECT.position.y
+	var ad := absf(valley_d(cx, cz))
+	return ad >= FLOOR_HALF and ad < FOOTHILL_HALF and cx > FOOTHILL_X.x and cx < FOOTHILL_X.y
+
+
+func _foothills() -> void:
+	var lo := Vector2(FOOTHILL_X.x - 2.0, centre.y + 30.0 - 70.0 - FOOTHILL_HALF - 2.0)
+	var hi := Vector2(FOOTHILL_X.y + 2.0, centre.y + 30.0 + 70.0 + FOOTHILL_HALF + 2.0)
+	var hf := VoxelHeightfield.new(T2, lo, hi)
+	for z in hf.size.y:
+		for x in hf.size.x:
+			var w := hf.centre(x, z)
+			if not _is_foothill(w.x, w.y):
+				continue
+			var h := ground_at(w.x, w.y)
+			var lv := roundi(h / T2)
+			hf.set_column(x, z, lv, lv - 12, _rock_colour(w, h))
+	var mat := _terrain_material(hf)
+	mat.set_shader_parameter("strata_cells", 4.0)
+	var node := hf.build(self, mat, "Foothills")
+	stats["foothill_quads"] = VoxelHeightfield.count_quads(node)
+
+
 func _floor() -> void:
 	var quads := 0
 	for tier in 2:
@@ -181,7 +212,6 @@ func _floor() -> void:
 		var lo := HERO_RECT.position if tier == 0 else Vector2(ZONE_RECT.position.x, centre.y + 30.0 - 70.0 - FLOOR_HALF - 2.0)
 		var hi := HERO_RECT.end if tier == 0 else Vector2(ZONE_RECT.end.x, centre.y + 30.0 + 70.0 + FLOOR_HALF + 2.0)
 		var hf := FrozenHeightfield.new(cell, lo, hi)
-		hf.max_block_metres = 1.41
 		var rim := ceili(3.0 / cell)
 		for z in hf.size.y:
 			for x in hf.size.x:
@@ -266,7 +296,7 @@ func _mountains() -> void:
 	for z in hf.size.y:
 		for x in hf.size.x:
 			var w := hf.centre(x, z)
-			if _is_floor(w.x, w.y):
+			if _is_floor(w.x, w.y) or _is_foothill(w.x, w.y):
 				continue
 			var h := ground_at(w.x, w.y)
 			var lv := roundi(h / T3)
@@ -279,7 +309,7 @@ func _mountains() -> void:
 	for z in coarse.size.y:
 		for x in coarse.size.x:
 			var w := coarse.centre(x, z)
-			if _is_floor(w.x, w.y):
+			if _is_floor(w.x, w.y) or _is_foothill(w.x, w.y):
 				continue
 			var h := ground_at(w.x, w.y)
 			var lv := roundi(h / coarse.cell)
@@ -309,8 +339,6 @@ func _rock_colour(w: Vector2, h: float) -> Color:
 	var slate := Color("#4A505E") * (0.95 + 0.1 * n)
 	if VoxelSdf.hash3(ci, 29) < 0.008:
 		slate = Color("#5E5C54")
-	elif grade < 2.0 and VoxelSdf.hash3(ci, 31) < 0.3:
-		slate = Color("#C9D0DA")  # old snow in a crack
 	slate.a = 0.0
 	return slate
 
@@ -319,33 +347,39 @@ func _rock_colour(w: Vector2, h: float) -> Color:
 ## terrain is replaced by snowy ridges that rise with distance, so the zone's
 ## edge reads as more mountains in the fog. Look-dev framing only.
 func _far_range() -> void:
-	var lo := Vector2(-2800, -2800)
-	var hi := Vector2(1200, 1200)
-	var hf := VoxelHeightfield.new(FAR_CELL, lo, hi)
 	var noise := FastNoiseLite.new()
 	noise.seed = 991
 	noise.frequency = 0.0022
 	noise.fractal_type = FastNoiseLite.FRACTAL_RIDGED
 	noise.fractal_octaves = 4
-	for z in hf.size.y:
-		for x in hf.size.x:
-			var w := hf.centre(x, z)
-			if ZONE_RECT.grow(-FAR_CELL * 0.5).has_point(w):
-				continue
-			var dist := maxf(absf(w.x - centre.x) - ZONE_RECT.size.x * 0.5, absf(w.y - centre.y) - ZONE_RECT.size.y * 0.5)
-			var ridge := noise.get_noise_2d(w.x, w.y) * 0.5 + 0.5
-			var h := 110.0 + clampf(dist / 500.0, 0.45, 1.0) * 320.0 * pow(ridge, 1.5) + 70.0 * ridge
-			if absf(w.x) < 1020.0 and absf(w.y) < 1020.0:
-				h = maxf(h, ground_at(w.x, w.y))
-			var lv := roundi(h / FAR_CELL)
-			var snowy := ridge > 0.55 or VoxelSdf.hash3(Vector3i(x, 0, z), 5) < 0.4
-			var c := Color("#DCE2EA") if snowy else Color("#4A505E")
-			c.a = 0.0
-			hf.set_column(x, z, lv, lv - 30, c)
-	var mat := _terrain_material(hf)
-	mat.set_shader_parameter("strata_cells", 2.0)
-	var node := hf.build(self, mat, "FarRange")
-	stats["far_quads"] = VoxelHeightfield.count_quads(node)
+	var near := ZONE_RECT.grow(FAR_NEAR)
+	var quads := 0
+	for tier in 2:
+		var cell := FAR_CELL if tier == 0 else FAR_CELL * 4.0
+		var lo := near.position if tier == 0 else Vector2(-2800, -2800)
+		var hi := near.end if tier == 0 else Vector2(1200, 1200)
+		var hf := VoxelHeightfield.new(cell, lo, hi)
+		for z in hf.size.y:
+			for x in hf.size.x:
+				var w := hf.centre(x, z)
+				if ZONE_RECT.grow(-cell * 0.5).has_point(w) or (tier == 1 and near.grow(-cell * 0.5).has_point(w)):
+					continue
+				var dist := maxf(absf(w.x - centre.x) - ZONE_RECT.size.x * 0.5, absf(w.y - centre.y) - ZONE_RECT.size.y * 0.5)
+				var ridge := noise.get_noise_2d(w.x, w.y) * 0.5 + 0.5
+				var h := 110.0 + clampf(dist / 500.0, 0.45, 1.0) * 320.0 * pow(ridge, 1.5) + 70.0 * ridge
+				if absf(w.x) < 1020.0 and absf(w.y) < 1020.0:
+					h = maxf(h, ground_at(w.x, w.y))
+				var lv := roundi(h / cell)
+				var gx := noise.get_noise_2d(w.x + 6.0, w.y) - noise.get_noise_2d(w.x - 6.0, w.y)
+				var snowy := ridge > 0.62 or absf(gx) < 0.04
+				var c := Color("#DCE2EA") if snowy else Color("#4A505E")
+				c.a = 0.0
+				hf.set_column(x, z, lv, lv - (40 if tier == 0 else 12), c)
+		var mat := _terrain_material(hf)
+		mat.set_shader_parameter("strata_cells", 2.0)
+		var node := hf.build(self, mat, "FarRange%d" % tier, 0.0, tier == 0)
+		quads += VoxelHeightfield.count_quads(node)
+	stats["far_quads"] = quads
 
 
 func _terrain_material(hf: VoxelHeightfield) -> ShaderMaterial:
@@ -412,10 +446,10 @@ func _crown_teeth() -> void:
 	var lists: Array = [[], [], []]
 	for k in 11:
 		var a := TAU * k / 11.0 + 0.2
-		var r := 26.0 + 5.0 * sin(k * 2.3)
+		var r := 34.0 + 6.0 * sin(k * 2.3)
 		var p := Vector2(crown.x + cos(a) * r, crown.z + sin(a) * r)
 		var g := ground_at(p.x, p.y)
-		var s := 0.55 + 0.25 * absf(sin(k * 1.7))
+		var s := 1.0 + 0.5 * absf(sin(k * 1.7))
 		var lean := Basis.from_euler(Vector3(sin(a) * 0.18, 0, -cos(a) * 0.18)) * Basis(Vector3.UP, k * 0.9)
 		(lists[k % 3] as Array).append(Transform3D(lean.scaled_local(Vector3.ONE * s), Vector3(p.x, g - 4.0, p.y)))
 	for i in 3:
@@ -682,13 +716,13 @@ func presets() -> Dictionary:
 		"fog_color": Color("#B8C6DA"), "fog_density": 0.0010, "exposure": 0.9, "lantern": 0.25, "aurora": 0.0,
 	}
 	p.dusk = {
-		"sky_top": Color("#3C4478"), "sky_horizon": Color("#C8A0A8"), "sky_below": Color("#A898A8"),
+		"sky_top": Color("#343E70"), "sky_horizon": Color("#B4A4B8"), "sky_below": Color("#9C98AC"),
 		"cloud": Color("#E8C8C0"), "cloud_shadow": Color("#7C7490"), "cloud_cover": 0.3,
-		"sun_dir": Vector3(0.865, -0.204, -0.458), "sun_color": Color("#FFC0A0"), "sun_energy": 2.0,
+		"sun_dir": Vector3(0.865, -0.204, -0.458), "sun_color": Color("#F4C8B4"), "sun_energy": 2.0,
 		"sun_size": 0.035, "moon": false, "stars": 0.15,
 		"rim_color": Color("#FFB890"), "rim_energy": 0.35,
-		"ambient_color": Color("#7A7090"), "ambient_energy": 0.5,
-		"fog_color": Color("#B8B0C0"), "fog_density": 0.0011, "exposure": 0.95, "lantern": 0.8, "aurora": 0.0,
+		"ambient_color": Color("#6E7094"), "ambient_energy": 0.5,
+		"fog_color": Color("#A8A6BC"), "fog_density": 0.0011, "exposure": 0.95, "lantern": 0.8, "aurora": 0.0,
 	}
 	return p
 
@@ -727,8 +761,17 @@ func shots() -> Array[Dictionary]:
 		"fov": 62.0, "kael": [sp, PI * 0.8], "times": all})
 	var c := camp
 	var cy := ground_at(c.x, c.y)
-	out.append({"name": "camp", "from": Vector3(c.x - 3.0, cy + 2.6, c.y + 10.5), "at": Vector3(c.x + 2.5, cy + 0.6, c.y - 0.5),
-		"fov": 55.0, "kael": [c + Vector2(-4.4, 3.4), PI * 0.9], "times": ["night", "day"]})
+	var vdir := (valley_point(60.0, 0.0) - valley_point(50.0, 0.0)).normalized()
+	var tent_yaw := atan2(-vdir.y, vdir.x) + PI * 0.5
+	var front := Vector2(sin(tent_yaw), cos(tent_yaw))  # the tent's open end (+z local)
+	var cside := Vector2(-front.y, front.x)
+	var cf := c + front * 7.5 + cside * 2.0
+	out.append({"name": "camp", "from": Vector3(cf.x, cy + 1.9, cf.y), "at": Vector3(c.x - cside.x * 0.8, cy + 0.6, c.y - cside.y * 0.8),
+		"fov": 55.0, "kael": [c + front * 2.6 + cside * 3.2, atan2(front.x, front.y) + 0.9], "times": ["night", "day"]})
+	# The Ice Crown under the aurora, from the air over the valley.
+	var cv := Vector2(crown.x, crown.z) + (Vector2(-650, -530) - Vector2(crown.x, crown.z)).normalized() * 230.0
+	out.append({"name": "ice_crown", "from": Vector3(cv.x, crown.y - 10.0, cv.y), "at": Vector3(crown.x, crown.y + 25.0, crown.z),
+		"fov": 55.0, "times": ["night", "dusk"]})
 	var fc := first_cairn
 	out.append({"name": "cairn_crevasse", "from": Vector3(fc.x + 3.0, ground_at(fc.x, fc.y) + 1.9, fc.y + 3.5),
 		"at": Vector3(fc.x - 30.0, ground_at(fc.x, fc.y) - 1.0, fc.y - 4.0), "fov": 55.0, "times": ["day"]})
@@ -746,6 +789,13 @@ func shots() -> Array[Dictionary]:
 	var side := Vector2(-toward.y, toward.x)
 	out.append({"name": "spire_axe", "from": Vector3(k.x + toward.x * 10.0 + side.x * 5.0, ky + 3.0, k.y + toward.y * 10.0 + side.y * 5.0),
 		"at": Vector3(best.x, ky + 6.0, best.z), "fov": 55.0, "kael": [k, atan2(-toward.x, -toward.y) + 0.4], "times": ["day", "night"]})
+	# The frozen waterfall on the north cliff, from the valley floor.
+	if stats.has("waterfall"):
+		var wf: Vector2 = stats.waterfall[0]
+		var wv := Vector2(wf.x + 10.0, wf.y + 42.0)
+		out.append({"name": "waterfall", "from": Vector3(wv.x, ground_at(wv.x, wv.y) + 4.0, wv.y),
+			"at": Vector3(wf.x, ground_at(wf.x, wf.y) + 14.0, wf.y - 10.0), "fov": 58.0, "kael": [wv + Vector2(-5.0, -9.0), PI * 0.1],
+			"times": ["night", "day"]})
 	# Shelf Cliffs: the shelf nearest the landmark, from below and in front.
 	var sbest := sim_shelves[0]
 	for xf in sim_shelves:
@@ -758,23 +808,60 @@ func shots() -> Array[Dictionary]:
 	return out
 
 
-## About 20 s: low along the valley through a spire cluster, past the camp,
-## up the cliffs over the shelves, a climb to circle the Ice Crown.
+## About 20 s: high in from the east, down past the camp, low along the
+## valley, then a climb to circle the Ice Crown under the aurora. Control
+## points are lifted until the whole spline clears every sim spire.
 func flight() -> Array[Dictionary]:
-	var pts: Array[Dictionary] = []
 	var lift := func(p: Vector2, h: float) -> Vector3: return Vector3(p.x, ground_at(p.x, p.y) + h, p.y)
-	pts.append({"from": lift.call(valley_point(190.0, 4.0), 9.0), "at": lift.call(valley_point(120.0, -6.0), 4.0), "fov": 58.0})
-	pts.append({"from": lift.call(valley_point(140.0, -4.0), 6.0), "at": lift.call(valley_point(80.0, -14.0), 3.0), "fov": 58.0})
-	pts.append({"from": lift.call(valley_point(95.0, -10.0), 4.5), "at": lift.call(camp, 1.0), "fov": 58.0})
-	pts.append({"from": lift.call(valley_point(62.0, -14.0), 3.5), "at": lift.call(valley_point(10.0, -20.0), 1.5), "fov": 60.0})
-	pts.append({"from": lift.call(valley_point(25.0, -6.0), 4.0), "at": lift.call(valley_point(-40.0, 2.0), 3.0), "fov": 60.0})
-	pts.append({"from": lift.call(valley_point(-15.0, 4.0), 8.0), "at": Vector3(crown.x, crown.y - 70.0, crown.z), "fov": 58.0})
-	pts.append({"from": lift.call(valley_point(-60.0, 10.0), 30.0), "at": Vector3(crown.x, crown.y - 40.0, crown.z), "fov": 56.0})
-	pts.append({"from": Vector3(crown.x + 150.0, crown.y - 30.0, crown.z + 150.0), "at": Vector3(crown.x, crown.y, crown.z), "fov": 56.0})
-	pts.append({"from": Vector3(crown.x + 140.0, crown.y + 10.0, crown.z - 40.0), "at": Vector3(crown.x, crown.y + 5.0, crown.z), "fov": 56.0})
-	pts.append({"from": Vector3(crown.x + 70.0, crown.y + 30.0, crown.z - 120.0), "at": Vector3(crown.x, crown.y + 10.0, crown.z), "fov": 56.0})
-	pts.append({"from": Vector3(crown.x - 40.0, crown.y + 50.0, crown.z - 130.0), "at": Vector3(crown.x, crown.y + 10.0, crown.z), "fov": 56.0})
+	var cr := Vector3(crown.x, crown.y + 20.0, crown.z)
+	var pts: Array[Dictionary] = []
+	pts.append({"from": lift.call(valley_point(170.0, 0.0), 45.0), "at": lift.call(valley_point(60.0, -12.0), 2.0), "fov": 58.0})
+	pts.append({"from": lift.call(valley_point(120.0, -6.0), 16.0), "at": lift.call(camp, 1.0), "fov": 58.0})
+	pts.append({"from": lift.call(valley_point(84.0, -16.0), 5.0), "at": lift.call(camp, 0.8), "fov": 58.0})
+	pts.append({"from": lift.call(valley_point(60.0, -10.0), 3.0), "at": lift.call(valley_point(8.0, -20.0), 1.0), "fov": 60.0})
+	pts.append({"from": lift.call(valley_point(28.0, -4.0), 4.0), "at": lift.call(valley_point(-40.0, 0.0), 3.0), "fov": 60.0})
+	pts.append({"from": lift.call(valley_point(-8.0, 0.0), 9.0), "at": cr, "fov": 58.0})
+	pts.append({"from": lift.call(valley_point(-45.0, -15.0), 45.0), "at": cr, "fov": 56.0})
+	var dirc := (Vector2(-650, -530) - Vector2(crown.x, crown.z)).normalized()
+	for k in 4:
+		var a := atan2(dirc.y, dirc.x) - k * 0.55
+		var r := 150.0 - k * 10.0
+		pts.append({"from": Vector3(crown.x + cos(a) * r, crown.y + 25.0 + k * 6.0, crown.z + sin(a) * r), "at": cr, "fov": 56.0})
+	for it in 40:
+		var hit := _flight_hit(pts)
+		if hit < 0:
+			break
+		for k in [hit, mini(hit + 1, pts.size() - 1)]:
+			pts[k].from = (pts[k].from as Vector3) + Vector3(0, 3.0, 0)
 	return pts
+
+
+## The first control point index whose spline segment passes within 4 m of a
+## sim spire (as a vertical cylinder), or -1.
+func _flight_hit(pts: Array[Dictionary]) -> int:
+	for i in pts.size() - 1:
+		for s in 25:
+			var p := flight_spline(pts, i + s / 25.0)
+			for xf in sim_spires:
+				var sc := xf.basis.get_scale()
+				var base := xf.origin - xf.basis * Vector3(0, 0.5, 0)
+				if p.y > base.y + absf(sc.y) + 4.0:
+					continue
+				if Vector2(p.x - base.x, p.z - base.z).length() < absf(sc.x) * 0.75 + 4.0:
+					return i
+	return -1
+
+
+## Catmull-Rom through pts' "from", as the capture script moves the camera.
+static func flight_spline(pts: Array[Dictionary], u: float) -> Vector3:
+	var i := clampi(floori(u), 0, pts.size() - 2)
+	var t := u - i
+	var p0: Vector3 = pts[maxi(i - 1, 0)].from
+	var p1: Vector3 = pts[i].from
+	var p2: Vector3 = pts[i + 1].from
+	var p3: Vector3 = pts[mini(i + 2, pts.size() - 1)].from
+	return 0.5 * ((2.0 * p1) + (-p0 + p2) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t
+		+ (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t * t * t)
 
 
 func flight_kael() -> Array:
