@@ -45,15 +45,15 @@ Counts from the capture (lavapipe, the real Forward+ pipeline; the software GPU 
 
 | Shot | Visible triangles | Draw calls | Shadow triangles | Shadow draws |
 |---|---|---|---|---|
-| red_arch (day) | 1,455,360 | 230 | 1,656,794 | 119 |
-| hoodoo_field (day) | 994,914 | 143 | 1,334,952 | 81 |
-| anvil_camp (day) | 881,338 | 216 | 762,778 | 74 |
-| spawn_gameplay (day) | 734,878 | 190 | 1,086,264 | 113 |
-| petroglyphs (day) | 1,337,984 | 174 | 2,253,956 | 119 |
-| fallen_hoodoo (day) | 1,308,002 | 380 | 1,227,550 | 69 |
-| overview (day) | 842,992 | 437 | 184,166 | 8 |
+| red_arch (day) | 1,485,414 | 230 | 1,656,794 | 119 |
+| hoodoo_field (day) | 1,008,910 | 143 | 1,334,952 | 81 |
+| anvil_camp (day) | 903,770 | 216 | 762,778 | 74 |
+| spawn_gameplay (day) | 754,616 | 190 | 1,086,264 | 113 |
+| petroglyphs (day) | 1,359,926 | 174 | 2,253,956 | 119 |
+| fallen_hoodoo (day) | 1,332,464 | 380 | 1,227,550 | 69 |
+| overview (day) | 849,030 | 437 | 184,166 | 8 |
 
-Built totals (everything, all tiers): floor 388 k triangles (near tier counted), cliff rock 1.53 M (T2 near + T3 ring),
+Built totals (everything, all tiers): floor 493 k triangles (near tier counted), cliff rock 1.53 M (T2 near + T3 ring),
 hoodoos 1.0 M quads at T2 if every one were at the near tier (they switch to 2×T2 at 110 m and T3 at 260 m),
 220 boulders + 490 talus, 2,600 sage, 57 dead trees. Build: about 110 s cold (cached afterwards: about 1 s).
 
@@ -69,7 +69,7 @@ props, so hoodoos and boulders are face-heavy; shadow casters reach 180 m.
 
 ## Self-critique (ranked, worst first)
 
-1. **Over the perf budget** (above): about 1.5 M visible + 1.7 M shadow triangles at the key shot, 437 draws in the overview; web far over. Props need greedy-merged faces and a shorter T2 range.
+1. **Over the perf budget** (above): about 1.49 M visible + 1.66 M shadow triangles at the key shot, 437 draws in the overview; web far over. Props need greedy-merged faces and a shorter T2 range.
 2. **The Red Arch still reads partly as a gate.** The sim's footprint is two boxes and a beam; corbels round the top corners, but the opening is still mostly rectangular, and the chipped holes in the slabs read as little windows. v2: fewer, larger chips, a thicker, sagging span, irregular leg outlines.
 3. **The mesas are round layer cakes.** The sim's free mesas are circular, and the 2.8 m bands are uniform in thickness, so every mesa looks alike; no caprock overhang lip (the column field can't overhang); the T2 column steps show as vertical fluting on curved walls.
 4. **Hoodoos are too regular:** stacked plates with similar drums; all at T2 (the sheet asks for T1 bases); octagon faces show stair-step fluting.
