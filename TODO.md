@@ -20,6 +20,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   visual tiles (6-7%) because the duel drop's telegraph pillar is now in frame; owner to decide
   whether to re-bless them.
 
+- T-D36 [desktop] Playable web build: exports kept as text resources (Godot 4.7.2's binary
+  conversion emptied zone spawn points, so every exported match crashed), webrtc-native left
+  out of the Web preset, no Quit on web, `tools/web/match_smoke_test.js` (menu -> vs AI, 30 s).
+  Build on the `web-build` branch; deploy to Appwrite Sites from the Mac. Duo's Appwrite
+  traffic from the browser is unverified (CORS: add the site as a Web platform if needed).
 - T-D35 [desktop] #107 Heartbloom: the sim floor matches the drawn island outline (`ZoneGround`
   25 cm outline mask, 0.25 m inset); falls/dives/vanish anchors can no longer pass through an
   island top (`CombatSim._stop_on_skipped_island`); the camera pulls in front of other fighters;
@@ -105,6 +110,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   only ~half, even with the drop 4-9 m away (PRESSURE outscores PICKUP up close, `fighter_ai.gd`
   `_choose_plan`). Raise the duel pickup weight so a typical duel shows a weapon.
 
+- QA-18 [desktop] Godot 4.7.2 text-to-binary export conversion drops `Packed*Array` values in
+  `ZoneData` .tres; re-enable `editor/export/convert_text_resources_to_binary` once fixed
+  upstream (smaller pck, faster load).
 - QA-13 [desktop] Landing frame: the first IDLE frame after flight can dip a sole up to 34 cm
   under the floor (vexa `fight_idle`, `1623:heartbloom_gardens:2v2:lyra,kael,vexa,brann:3235`
   tick 423). Ground sample is right (island top 272.03 m); the landing blend is not.
