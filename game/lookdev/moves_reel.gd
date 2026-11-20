@@ -25,6 +25,8 @@ const S := FighterState.State
 ## silhouette (waist radius ~0.2-0.3 m); plus the striking fist or boot's own radius.
 const BODY_RADIUS := 0.24
 const STRIKER_RADIUS := 0.07
+## Camera target smoothing per tick.
+const CAM_FOLLOW := 0.12
 
 # ---------------------------------------------------------------- poses
 # Skeleton space: +Z his front, +X his left, +Y up. See LookdevPoseOverride.
@@ -1170,12 +1172,15 @@ func _camera() -> void:
 		"orbit":
 			yaw_goal = _cam_yaw + 0.18
 			_cam_yaw = yaw_goal
+	if _cam_mode in ["follow", "side", "close", "dash"]:
+		# Lead by the smoothing's steady-state lag so fast moves stay centred.
+		target += _hero.f.velocity * DT * (1.0 - CAM_FOLLOW) / CAM_FOLLOW
 	if _cam_snap:
 		_cam_target = target
 		_cam_height = height
 		_cam_yaw = yaw_goal
 		_cam_snap = false
-	_cam_target = _cam_target.lerp(target, 0.12)
+	_cam_target = _cam_target.lerp(target, CAM_FOLLOW)
 	_cam_height = lerpf(_cam_height, height, 0.06)
 	_cam_yaw = rad_to_deg(lerp_angle(deg_to_rad(_cam_yaw), deg_to_rad(yaw_goal), 0.06))
 	# Stay on the open side of the cyclorama (the back wall is at -Z).
