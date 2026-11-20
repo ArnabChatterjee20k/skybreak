@@ -69,6 +69,8 @@ const CHEST_C := Vector3(0, 1.40, 0.0)
 const BELLY_C := Vector3(0, 1.04, 0.02)
 const PELVIS_C := Vector3(0, 0.84, 0.0)
 const SHOULDER_Y := 1.48
+## The chest and belly fronts (z): the bib sits a cell proud of them.
+const FRONT_Z := 0.31
 const HEAD_C := Vector3(0, 1.865, 0.035)
 const HEAD_HALF := Vector3(0.135, 0.165, 0.14)
 ## Where the apron skirt hangs: front face z at the belt and its lean.
@@ -79,35 +81,44 @@ var _chest := PackedFloat32Array()
 var _belly := PackedFloat32Array()
 var _pelvis := PackedFloat32Array()
 var _boulder := PackedFloat32Array()
+var _wedge := PackedFloat32Array()
 
 
 func _init(skel: Skeleton3D) -> void:
 	super(skel)
+	# Only axis-aligned faces and 45-degree chamfers: any other slope voxelises
+	# into long uneven terraces, which read as lumpy rather than carved.
 	_chest = planes([
-		[Vector3(0, 0, 1), 0.28], [Vector3(0, 0.15, -1), 0.24], [Vector3(1, 0.12, 0), 0.40],
-		[Vector3(-1, 0.12, 0), 0.40], [Vector3(1, 0, 1), 0.42], [Vector3(-1, 0, 1), 0.42],
-		[Vector3(1, 0.1, -1), 0.40], [Vector3(-1, 0.1, -1), 0.40], [Vector3(0.55, 1, 0), 0.21],
-		[Vector3(-0.55, 1, 0), 0.21], [Vector3(0, 1, 0), 0.25], [Vector3(0, -1, 0), 0.24],
-		[Vector3(0, 1, 1), 0.30], [Vector3(0, 1, -1), 0.28], [Vector3(0, -1, 1.2), 0.36],
+		[Vector3(0, 0, 1), 0.28], [Vector3(0, 0, -1), 0.24], [Vector3(1, 0, 0), 0.40], [Vector3(-1, 0, 0), 0.40],
+		[Vector3(1, 0, 1), 0.431], [Vector3(-1, 0, 1), 0.431], [Vector3(1, 0, -1), 0.403], [Vector3(-1, 0, -1), 0.403],
+		[Vector3(1, 1, 0), 0.40], [Vector3(-1, 1, 0), 0.40], [Vector3(0, 1, 0), 0.25], [Vector3(0, -1, 0), 0.24],
+		[Vector3(0, 1, 1), 0.33], [Vector3(0, 1, -1), 0.31], [Vector3(0, -1, 1), 0.34],
 	])
 	_belly = planes([
-		[Vector3(0, -0.35, 1), 0.31], [Vector3(0, 0, 1), 0.29], [Vector3(0, 0, -1), 0.22],
-		[Vector3(1, -0.1, 0), 0.37], [Vector3(-1, -0.1, 0), 0.37], [Vector3(1, 0, 1.1), 0.40],
-		[Vector3(-1, 0, 1.1), 0.40], [Vector3(1, 0, -1), 0.34], [Vector3(-1, 0, -1), 0.34],
-		[Vector3(0, 1, 0), 0.20], [Vector3(0, -1, 0), 0.16],
+		[Vector3(0, 0, 1), 0.29], [Vector3(0, 0, -1), 0.22], [Vector3(1, 0, 0), 0.37], [Vector3(-1, 0, 0), 0.37],
+		[Vector3(1, 0, 1), 0.417], [Vector3(-1, 0, 1), 0.417], [Vector3(1, 0, -1), 0.375], [Vector3(-1, 0, -1), 0.375],
+		[Vector3(0, 1, 0), 0.20], [Vector3(0, -1, 0), 0.16], [Vector3(0, -1, 1), 0.29],
 	])
 	_pelvis = planes([
-		[Vector3(0, -0.2, 1), 0.24], [Vector3(0, -0.2, -1), 0.22], [Vector3(1, -0.15, 0), 0.34],
-		[Vector3(-1, -0.15, 0), 0.34], [Vector3(1, 0, 1), 0.36], [Vector3(-1, 0, 1), 0.36],
-		[Vector3(1, 0, -1), 0.35], [Vector3(-1, 0, -1), 0.35], [Vector3(0, 1, 0), 0.10],
-		[Vector3(0, -1, 0), 0.16],
+		[Vector3(0, 0, 1), 0.235], [Vector3(0, 0, -1), 0.215], [Vector3(1, 0, 0), 0.33], [Vector3(-1, 0, 0), 0.33],
+		[Vector3(1, 0, 1), 0.357], [Vector3(-1, 0, 1), 0.357], [Vector3(1, 0, -1), 0.343], [Vector3(-1, 0, -1), 0.343],
+		[Vector3(0, 1, 0), 0.10], [Vector3(0, -1, 0), 0.16],
 	])
-	# A left boulder (mirror nx for the right): a flat-topped, faceted rock.
+	# A left boulder (mirror nx for the right): a flat-topped block of big
+	# axis faces and 45-degree facets, its inner top cut away into a deep
+	# notch so the head and a tucked chin clear it.
 	_boulder = planes([
-		[Vector3(0.12, 1, 0.08), 0.15], [Vector3(0.1, 0.75, 0.7), 0.175], [Vector3(-0.1, 0.6, -0.8), 0.185],
-		[Vector3(1, 0.2, 0.05), 0.19], [Vector3(-1, 0.35, 0), 0.18], [Vector3(0.12, -0.05, 1), 0.21],
-		[Vector3(0.05, -0.1, -1), 0.215], [Vector3(0, -1, 0.1), 0.15], [Vector3(0.75, 0.7, -0.1), 0.18],
-		[Vector3(0.6, -0.5, 0.6), 0.2], [Vector3(-0.6, -0.4, -0.7), 0.2],
+		[Vector3(0, 1, 0), 0.14], [Vector3(0, -1, 0), 0.16], [Vector3(1, 0, 0), 0.20], [Vector3(-1, 0, 0), 0.16],
+		[Vector3(0, 0, 1), 0.19], [Vector3(0, 0, -1), 0.22],
+		[Vector3(0, 1, 1), 0.198], [Vector3(0, 1, -1), 0.212], [Vector3(1, 1, 0), 0.198], [Vector3(-1, 1, 0), 0.12],
+		[Vector3(-1, 0, 1), 0.16], [Vector3(1, 0, 1), 0.233], [Vector3(1, 0, -1), 0.255], [Vector3(-1, 0, -1), 0.212],
+		[Vector3(0, -1, 1), 0.191], [Vector3(1, -1, 0), 0.198], [Vector3(-1, -1, 0), 0.184], [Vector3(1, 1, 1), 0.27],
+	])
+	# A smaller rock wedged on the back-outer corner, cut the same way.
+	_wedge = planes([
+		[Vector3(0, 1, 0), 0.05], [Vector3(0, -1, 0), 0.05], [Vector3(1, 0, 0), 0.08], [Vector3(-1, 0, 0), 0.08],
+		[Vector3(0, 0, 1), 0.07], [Vector3(0, 0, -1), 0.07], [Vector3(-1, 1, 0), 0.07], [Vector3(0, 1, 1), 0.07],
+		[Vector3(1, 0, 1), 0.09],
 	])
 
 
@@ -338,7 +349,7 @@ func crack(g: VoxelGrid, bounds: AABB, sdf: Callable, pts: PackedVector2Array, a
 			var h: Vector2 = hit.call(p)
 			if h.x > w:
 				return 1.0
-			var kind := Mat.EMBER_DIM if h.y > 0.8 else (Mat.EMBER_CORE if h.y > 0.3 and h.y < 0.48 else Mat.EMBER)
+			var kind := Mat.EMBER_DIM if h.y > 0.8 else (Mat.EMBER_CORE if h.y > 0.34 and h.y < 0.42 else Mat.EMBER)
 			if kind != m:
 				return 1.0
 			var d: float = sdf.call(p)
@@ -632,8 +643,45 @@ func _apron(g: VoxelGrid) -> void:
 
 # ---------------------------------------------------------------- boulders
 
+static func boulder_center(side: float) -> Vector3:
+	return Vector3(0.44 * side, 1.725, -0.03)
+
+
+## Points on a fist (rest space) that must stay out of the boulders: the
+## palm, the knuckle corners and the thumb.
+static func fist_points(side: float) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for x: float in [0.93, 1.05, 1.13]:
+		for y: float in [-0.08, 0.0, 0.08]:
+			for z: float in [-0.12, 0.0, 0.14]:
+				out.append(Vector3(x * side, SHOULDER_Y + y, z))
+	return out
+
+
+## Points round the forearm (rest space), elbow to wrist cuff.
+static func forearm_points(side: float) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for x: float in [0.70, 0.80, 0.90]:
+		for a in 8:
+			var t := TAU * a / 8.0
+			out.append(Vector3(x * side, SHOULDER_Y + cos(t) * 0.14, sin(t) * 0.14))
+	return out
+
+
+## The boulder's rock (without moss) as a distance in rest space.
+func boulder_sdf(p: Vector3, side: float) -> float:
+	var c := boulder_center(side)
+	var wedge_c := c + Vector3(0.08 * side, 0.13, -0.12)
+	return minf(hull(p, c, _boulder, side), hull(p, wedge_c, _wedge, side))
+
+
+## The outward normal of the boulder facet nearest p (rest space).
+func boulder_normal(p: Vector3, side: float) -> Vector3:
+	return hull_normal(p, boulder_center(side), _boulder, side)
+
+
 func build_boulder(side: float) -> VoxelGrid:
-	var c := Vector3(0.42 * side, 1.715, -0.01)
+	var c := boulder_center(side)
 	var g := VoxelGrid.new(box_of(c, Vector3(0.235, 0.21, 0.245)), FINE_CELL)
 	var box := AABB(g.origin, Vector3(g.size) * g.cell)
 	var tag := Tag.BOULDER_L if side > 0 else Tag.BOULDER_R
@@ -641,14 +689,12 @@ func build_boulder(side: float) -> VoxelGrid:
 	g.paint(box, rock, Mat.BOULDER, tag)
 	# A smaller wedged rock on the back-outer corner.
 	var wedge_c := c + Vector3(0.08 * side, 0.13, -0.12)
-	var wedge := planes([[Vector3(0.3, 1, 0.2), 0.05], [Vector3(-0.5, 0.6, 0.6), 0.06], [Vector3(1, 0, 0.1), 0.08],
-		[Vector3(-1, 0, 0), 0.08], [Vector3(0, 0.1, -1), 0.07], [Vector3(0, -1, 0), 0.05], [Vector3(0.5, 0.2, 1), 0.08]])
-	g.paint(box_of(wedge_c, Vector3(0.11, 0.08, 0.1)), func(p: Vector3): return hull(p, wedge_c, wedge, side),
+	g.paint(box_of(wedge_c, Vector3(0.11, 0.08, 0.1)), func(p: Vector3): return hull(p, wedge_c, _wedge, side),
 		Mat.BOULDER, tag, ADD)
 	# Chisel marks on the facets: short parallel strokes.
 	g.paint_surface(box, func(p: Vector3, cc: Vector3i):
 		var blk := Vector3i(cc.x / 5, cc.y / 5, cc.z / 5)
-		if VoxelSdf.hash3(blk, 41) > 0.3:
+		if VoxelSdf.hash3(blk, 41) > 0.14:
 			return false
 		var l := Vector3i(posmod(cc.x, 5), posmod(cc.y, 5), posmod(cc.z, 5))
 		return (l.x + l.y + l.z) % 5 == 0 and l.y > 0 and l.y < 4, Mat.BOULDER_DARK, [Mat.BOULDER])
@@ -673,7 +719,7 @@ func build_boulder(side: float) -> VoxelGrid:
 		return VoxelSdf.hash3(Vector3i(cc.x / 3, cc.y / 3, cc.z / 3), 53) < 0.3, Mat.MOSS_DARK, [Mat.MOSS])
 	# Lichen dots on the bare rock.
 	g.paint_surface(box, func(_p: Vector3, cc: Vector3i):
-		return VoxelSdf.hash3(cc, 54) < 0.03, Mat.LICHEN, [Mat.BOULDER])
+		return VoxelSdf.hash3(Vector3i(cc.x / 2, cc.y / 2, cc.z / 2), 54) < 0.025, Mat.LICHEN, [Mat.BOULDER])
 	# A thin glowing crack down the outer face.
 	crack(g, box, rock, PackedVector2Array([Vector2(-0.06, 1.82), Vector2(0.0, 1.74), Vector2(-0.04, 1.66),
 		Vector2(0.03, 1.58)]), 0, func(p: Vector3): return p.x * side > c.x * side + 0.12, tag, 0.8)
@@ -957,12 +1003,12 @@ func _lock(g: VoxelGrid, box: AABB, a: Vector3, bend: Vector3, tip: Vector3, r0:
 # ---------------------------------------------------------------- beard + braid grid
 
 func braid_points() -> PackedVector3Array:
-	return PackedVector3Array([Vector3(0, 1.36, 0.352), Vector3(0, 1.22, 0.376), Vector3(0, 1.08, 0.398),
-		Vector3(0, 1.0, 0.405)])
+	return PackedVector3Array([Vector3(0, 1.42, 0.33), Vector3(0, 1.22, 0.40), Vector3(0, 1.08, 0.43),
+		Vector3(0, 1.0, 0.44)])
 
 
 func build_beard() -> VoxelGrid:
-	var g := VoxelGrid.new(AABB(Vector3(-0.2, 0.88, 0.1), Vector3(0.4, 0.8, 0.36)), FINE_CELL)
+	var g := VoxelGrid.new(AABB(Vector3(-0.2, 0.88, 0.1), Vector3(0.4, 0.8, 0.42)), FINE_CELL)
 	var box := AABB(g.origin, Vector3(g.size) * g.cell)
 	var t := Tag.BEARD
 	# The full beard: a wedge of soft lobes from the jaw down onto the chest.
@@ -1001,7 +1047,7 @@ func _braid(g: VoxelGrid, box: AABB) -> void:
 		g.paint(box_of(at, Vector3(0.06, 0.06, 0.05)), func(p: Vector3):
 			var q := basis.inverse() * (p - at)
 			return VoxelSdf.ellipsoid(q, Vector3.ZERO, Vector3(r, r * 0.95, r * 0.8)), Mat.BEARD, t)
-	g.paint_surface(AABB(Vector3(-0.07, 0.95, 0.3), Vector3(0.14, 0.45, 0.15)), func(p: Vector3, c: Vector3i):
+	g.paint_surface(AABB(Vector3(-0.07, 0.95, 0.3), Vector3(0.14, 0.45, 0.2)), func(p: Vector3, c: Vector3i):
 		return g.tags[g.index(c.x, c.y, c.z)] == t and VoxelSdf.hash3(c, 81) < 0.25, Mat.BEARD_DARK, [Mat.BEARD])
 	# Three iron rings break it into segments.
 	for y: float in [1.29, 1.19, 1.11]:
@@ -1112,6 +1158,17 @@ func _pocket_tools(g: VoxelGrid) -> void:
 	var ferrule := r1.lerp(r2, 0.08)
 	g.paint(box_of(ferrule, Vector3(0.03, 0.02, 0.03)), func(p: Vector3):
 		return maxf(Vector2(p.x - ferrule.x, p.z - ferrule.z).length() - 0.02, absf(p.y - ferrule.y) - 0.006), Mat.IRON_NEW, t)
+
+
+## Rigid parts the move scan (game/lookdev/move_scan.gd) checks for clipping:
+## bone -> sdf in rest space. The boulders, the head and the belly (for the braid).
+func clearance_parts() -> Dictionary:
+	return {
+		&"LeftShoulder": func(p: Vector3) -> float: return boulder_sdf(p, 1.0),
+		&"RightShoulder": func(p: Vector3) -> float: return boulder_sdf(p, -1.0),
+		&"Head": func(p: Vector3) -> float: return head_sdf(p),
+		&"Spine": [func(p: Vector3) -> float: return hull(p, BELLY_C, _belly), [&"BeardBraid"]],
+	}
 
 
 # ----------------------------------------------------------------- weights

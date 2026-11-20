@@ -105,3 +105,19 @@ Kael's stack unchanged. Brann notes:
 | Trousers, boots | profile slices; planar soles and toe caps with hobnails | `LEG_L/R` |
 
 The hammer and cannon are pickup weapons built by the weapon layer; they show on his idle pose only.
+
+## v2 self-review (lavapipe; values and colour still need the GPU)
+Ranked, worst first. Stills: `reports/lookdev/brann/voxel_v1_lavapipe_*.png` and `voxel_v2_lavapipe_*.png`.
+
+| # | Problem in v1 | v2 |
+|---|---|---|
+| 1 | Old smooth hammer and cannon stowed on him dominated every angle | Hidden: `BrannVoxelView.stow_old_weapons` (off) skips stowing; voxel weapons are their own lane |
+| 2 | Braid sank into the belly in every move (spring follows the head; 18 cm deep) and was invisible at rest | `_keep_braid_clear` turns it in front of the bib each frame; braid moved forward, root up in the beard. Still swings off the body in profile: a GPU-reel call |
+| 3 | Boulders cut into the head on a chin tuck (10 cm in guard) | Re-cut boulder with a deep inner-top notch, moved out 2 cm: boulder-vs-head clipping gone except sweep (7 cm, head leans into it) |
+| 4 | Fists cocked by the ear went 10–15 cm into the boulders | `_keep_fist_clear` swings the upper arm out; fists and forearms mostly clear. Raised upper-arm roots still enter the boulder underside 5–10 cm, and grab/knockdown/light_2 keep deep spots: needs Brann's clips retimed for the boulders (outside this lane) |
+| 5 | Torso and boulders were lumpy terraces from arbitrary facet slopes | Only axis faces and 45° chamfers (narrow on the torso): flat carved planes. The 45° chamfers still show as step stripes up close |
+| 6 | Speckled chisel marks and lichen noise on the boulders | Halved and clumped |
+| 7 | Ember cracks read as blobs (wide white core) | Core narrowed to a short hot stretch; flat faces keep the seams one cell wide. Glow strength: GPU |
+
+Kept as is: fist size (about 0.28 m across, the sheet's 0.30 m), the apron (stitched hem, pockets, patch, burns read as leather), three-scale detail.
+Checks: `game/lookdev/move_scan.gd` (stretch + clipping over every move) and `game/lookdev/review_capture.gd` (angles, close-ups, guard and move poses).
