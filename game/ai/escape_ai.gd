@@ -99,6 +99,9 @@ func chase(sim: CombatSim, me: FighterState, plan: FighterInput) -> bool:
 		return false
 	plan.held_actions = _A.DASH
 	plan.vertical = [0, 1, -1][rng.randi_range(0, 2)]
+	# With third parties around, over and under chases stack fighters (QA-15): straight only.
+	if sim.fighters.size() > 2:
+		plan.vertical = 0
 	plan.move = Vector2.ZERO
 	return true
 
@@ -121,12 +124,15 @@ func _plan_air_tech(sim: CombatSim, me: FighterState, target: FighterState, i: i
 	var tuning := sim.escape_tuning
 	_tech_tick = tuning.air_tech_first_tick + rng.randi_range(0, AIR_TECH_SLACK[i])
 	_tech_way = [_W.STRAIGHT, _W.STRAIGHT, _W.OVER, _W.UNDER][rng.randi_range(0, 3)]
+	if sim.fighters.size() > 2:
+		_tech_way = _W.STRAIGHT
 	_tech_move = [Vector2(0, -1), Vector2(1, 0), Vector2(-1, 0)][rng.randi_range(0, 2)]
 
 
 ## A chaser coming over, under or straight is visible: better players tech another way.
 func _read_chaser(sim: CombatSim, me: FighterState, target: FighterState, i: int) -> void:
-	if target.escapes.chasing != sim.fighters.find(me) or target.escapes.way != _tech_way:
+	if sim.fighters.size() > 2 or target.escapes.chasing != sim.fighters.find(me) \
+			or target.escapes.way != _tech_way:
 		return
 	if rng.randf() < CHASE_READ[i]:
 		_tech_way = _W.STRAIGHT if _tech_way != _W.STRAIGHT else [_W.OVER, _W.UNDER][rng.randi_range(0, 1)]

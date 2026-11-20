@@ -13,6 +13,14 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
+- T-DEF3 [desktop] Escape tools (defense proposal S1, S2, S3, C1): combo breaker (X in
+  hitstun, 1 burst stock, blows attackers to 5.5 m, 20 f intangible, 5 s cooldown), air tech
+  (Dash + way in knockback ticks 12-24) with the §5.6 chase read, tech roll and neutral/delayed
+  wakeups, perfect block needs a fresh press within 6 f plus the 0.8x view slow. `EscapeRules`,
+  `EscapeTuning`, `EscapeAI` (per-level rates, own rng), `EscapeVfx`, two new cues.
+  Follow-ups: dedicated breaker/tech clips per legend (S4, uses push_block/tech now); HUD
+  "READ"/"BREAK" text pops (T-UX1 owns the HUD); gl_compatibility visual goldens not re-shot.
+
 - T-D36 [desktop] Playable web build: exports kept as text resources (Godot 4.7.2's binary
   conversion emptied zone spawn points, so every exported match crashed), webrtc-native left
   out of the Web preset, no Quit on web, `tools/web/match_smoke_test.js` (menu -> vs AI, 30 s).

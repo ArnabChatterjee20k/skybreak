@@ -7,7 +7,7 @@ extends Resource
 ## Burst stocks one breaker costs.
 @export var breaker_burst_stocks: int = 1
 ## Both fighters freeze this long on the burst (the big moment).
-@export var breaker_hitstop_ticks: int = 12
+@export var breaker_hitstop_ticks: int = 8
 ## Intangible ticks after the freeze; starting an attack ends it early.
 @export var breaker_intangible_ticks: int = 20
 ## The burst pose: the breaker cannot act for this long (intangible throughout).

@@ -58,3 +58,13 @@ log it here.
     fighter 0's knockback goes from (-0.47, 1.41, -1.33) to (-1.01, 1.41, -2.83).
   `tools/diag/det_check.gd` total on Linux changes from `2bb1c571b216b165` to
   `7f2c2af91b6d870f`.
+- **T-DEF3 (escape tools)**: re-blessed. Both sequences match main's goldens up to
+  the first escape the scripted inputs trigger (intended):
+  - `free_for_all`: first differs at index 1085 (sim tick 1086). Fighter 1, in
+    blowback hitstun inside the air-tech window, has a buffered Dash press and
+    now air-techs (AIR_TECH) instead of flying out the rest of its knockback.
+  - `bot_match`: first differs at index 1995 (sim tick 1996). Fighter 0 lands
+    from a spike holding ascend with a direction inside the 10-tick window and
+    tech-rolls (TECH_ROLL) instead of lying for 40 ticks.
+  `tools/diag/det_check.gd` total on Linux changes from `7f2c2af91b6d870f` to
+  `cfad292a6d9e6620` (the escape fields are hashed from tick 0).

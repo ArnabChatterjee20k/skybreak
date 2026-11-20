@@ -5,7 +5,7 @@ extends RefCounted
 
 const E := CombatSim.EventType
 ## Combo breaker: a counter-style burst on the breaker plus a big ring in its colour.
-const BREAKER_EFFECTS: Array[StringName] = [&"anime_burst", &"breaker_ring"]
+const BREAKER_EFFECTS: Array[StringName] = [&"anime_burst", &"aura_flare", &"breaker_ring"]
 const BREAKER_COLOR := Color(1.0, 0.95, 0.75)
 const TECH_COLOR := Color(0.75, 0.9, 1.0)
 const ROLL_DUST := Color(0.8, 0.72, 0.6)

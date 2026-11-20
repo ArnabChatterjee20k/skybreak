@@ -20,7 +20,7 @@ const SCRIPTED_HOLDS: Array[int] = [
 ## Seeds of the 10k-tick matches whose combined record the coverage tests
 ## check. Several matches keep rare outcomes (one or two per match) from
 ## depending on one lucky seed when tuning changes.
-const COVERAGE_SEEDS: Array[int] = [42, 43, 44, 46, 48]
+const COVERAGE_SEEDS: Array[int] = [42, 43, 44, 46, 48, 49]
 ## Chances of the bots' defensive reads (per incoming strike for the block,
 ## else per tick), so blocks, perfect blocks, grabs, techs and push-blocks all
 ## happen: a block tap before a strike lands, a grab against a guard, a light

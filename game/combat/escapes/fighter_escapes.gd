@@ -17,8 +17,6 @@ enum Kind {
 enum Way { NONE, STRAIGHT, OVER, UNDER }
 
 var kind: Kind = Kind.NONE
-## Ticks the current ESCAPING state lasts.
-var duration_ticks: int = 0
 ## Ticks left in which hits, grabs and projectiles pass through.
 var intangible_ticks: int = 0
 ## Ticks left before another combo breaker is allowed.
@@ -37,14 +35,13 @@ var delayed_wakeup: bool = false
 
 
 func state_values() -> Array:
-	return [kind, duration_ticks, intangible_ticks, breaker_cooldown, air_tech_used, way,
+	return [kind, intangible_ticks, breaker_cooldown, air_tech_used, way,
 		chase_target, chase_window, chasing, delayed_wakeup]
 
 
 ## Clears everything for a new round.
 func reset() -> void:
 	kind = Kind.NONE
-	duration_ticks = 0
 	intangible_ticks = 0
 	breaker_cooldown = 0
 	air_tech_used = false
