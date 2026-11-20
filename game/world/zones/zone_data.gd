@@ -5,6 +5,9 @@ extends Resource
 ## Zone gameplay markers live in metadata (see heartbloom_gardens.tres): `petal_whirlwinds`
 ## and `wishing_fountain`.
 
+## Distance between the two fallback spawns (see fighter_spawns).
+const FALLBACK_SPAWN_GAP := 40.0
+
 @export var id: StringName
 @export var display_name: String
 ## Layout centre on the map (x, z) and rough half-size; borders come from ZoneLayout.
@@ -50,6 +53,16 @@ extends Resource
 @export var spawn_points: PackedVector3Array = []
 @export var landmark_names: PackedStringArray = []
 @export var landmark_positions: PackedVector3Array = []
+
+
+## Spawn points, or two FALLBACK_SPAWN_GAP apart across the zone centre when the resource has
+## fewer than two (an export that emptied its packed arrays, T-WEB2), so a match still starts.
+func fighter_spawns() -> PackedVector3Array:
+	if spawn_points.size() >= 2:
+		return spawn_points
+	push_warning("zone %s has %d spawn points, using two around its centre" % [id, spawn_points.size()])
+	var base := spawn_points[0] if spawn_points.size() == 1 else Vector3(centre.x - FALLBACK_SPAWN_GAP * 0.5, 0.0, centre.y)
+	return PackedVector3Array([base, base + Vector3(FALLBACK_SPAWN_GAP, 0.0, 0.0)])
 
 
 func is_floating() -> bool:

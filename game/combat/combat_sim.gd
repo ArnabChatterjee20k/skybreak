@@ -13,6 +13,8 @@ const DEFAULT_TUNING := preload("res://game/combat/default_movement_tuning.tres"
 const DEFAULT_METER_TUNING := preload("res://game/combat/default_meter_tuning.tres")
 const DEFAULT_FIGHTER_STATS := preload("res://game/combat/default_fighter_stats.tres")
 const DEFAULT_HIT_TUNING := preload("res://game/combat/default_hit_tuning.tres")
+const DEFAULT_DODGE_TUNING := preload("res://game/combat/default_dodge_tuning.tres")
+const DEFAULT_KI_TUNING := preload("res://game/combat/ki/default_ki_tuning.tres")
 
 ## What an entry in events reports.
 enum EventType {
@@ -57,6 +59,19 @@ enum EventType {
 	BULLET_ABSORB, ## fighter's dash absorbed repeater bullet id (+2 ki).
 	SWAP_CANCEL, ## fighter swap-cancelled into weapon for 10 ki.
 	DISC_CATCH, ## fighter caught its Orbit Chakram disc id.
+	# Dodge (T-DEF2).
+	DODGE, ## fighter started a dodge: {type, fighter, position, kind (FighterDodge.Kind), side, stale, direction}.
+	PERFECT_DODGE, ## target perfect-dodged attacker's move_id: hit entry plus ki (paid) and projectile.
+	# Ki (T-KI1, KiRules). Entries: {type, fighter, attacker, position, move_id, tick} plus the extras named.
+	KI_FIRE, ## fighter fired a ki blast id (shot: KiRules.Shot).
+	KI_CHARGE, ## fighter held Q through the tap's startup: the charged blast is coming.
+	KI_ABSORB, ## Ki blast id was soaked by fighter's dash (or eaten by a beam, fighter -1).
+	BEAM_START, ## fighter started a beam (move_id): the tell.
+	BEAM_FIRE, ## fighter's beam id fired along direction.
+	BEAM_END, ## fighter's beam id ended at position (whiff: touched nobody).
+	BEAM_CLASH, ## fighter's and target's beams met at position: clash id.
+	CLASH_BEAT, ## fighter pressed in clash id: beat index (-1 off-beat) and push gain.
+	CLASH_END, ## Clash id ended: winner (-1 even), push.
 }
 
 const _DASH := FighterInput.Action.DASH
@@ -146,6 +161,8 @@ var tuning: MovementTuning
 var meter_tuning: MeterTuning
 ## Hit constants (scaling, stun, hitstop, knockback). Configuration, like tuning.
 var hit_tuning: HitTuning
+## Dodge constants (T-DEF2). Configuration, like tuning.
+var dodge_tuning: DodgeTuning = DEFAULT_DODGE_TUNING as DodgeTuning
 ## What happened this tick, for the view (every EventType), in the order it was
 ## resolved. Each entry: {type: EventType, attacker, target, position (contact
 ## point), move_id, damage (display units), hitstop, knockback_type, counter}.
@@ -174,6 +191,10 @@ var last_spawn_kind: Weapon.Kind = Weapon.Kind.NONE
 var spawn_count: int = 0
 ## Thrown and placed gadgets (bombs, mines, decoys), T-D26.
 var gadgets: Array[Gadget] = []
+## Ki beams in flight and beam clashes (T-KI1, KiRules).
+var beams: Array[KiBeam] = []
+var beam_clashes: Array[BeamClash] = []
+var ki_tuning: KiTuning = DEFAULT_KI_TUNING as KiTuning
 
 
 func _init(seed_value: int = 0, movement_tuning: MovementTuning = null,
@@ -224,6 +245,7 @@ func tick(inputs: Array[FighterInput]) -> void:
 	if not round_over:
 		_resolve_hits(frozen)
 	_step_projectiles()
+	KiRules.step(self)
 	WeaponEffects.step_pins(self)
 	WeaponEffects.step_tethers(self)
 	PowerRules.step(self)
@@ -245,6 +267,7 @@ func start_round(round_spawn_points: Array[Vector3] = []) -> void:
 	projectiles = []
 	gadgets = []
 	pickups = []
+	KiRules.reset(self)
 	next_spawn_tick = -1
 	last_spawn_kind = Weapon.Kind.NONE
 	for index in fighters.size():
@@ -287,6 +310,7 @@ func _canonicalize_zeros() -> void:
 	for pickup in pickups:
 		pickup.position = DetMath.canon(pickup.position)
 		pickup.fall_speed += 0.0
+	KiRules.canonicalize(self)
 
 
 ## Hash of everything that defines the sim state; equal hashes mean equal states.
@@ -302,6 +326,7 @@ func state_hash() -> int:
 		parts.append_array(projectile.state_values())
 	for gadget in gadgets:
 		parts.append_array(gadget.state_values())
+	parts.append_array(KiRules.state_values(self))
 	return hash(var_to_bytes(parts))
 
 
@@ -493,6 +518,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		_start_block(index, input)
 		_start_grab(index)
 		_start_attack(index, input, wish)
+		KiRules.start(self, index, input)
 		_start_charging(index)
 	_track_block_press(index, input, state_before)
 	match fighter.state:
@@ -505,6 +531,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		FighterState.State.DASHING:
 			_move_dashing(index, input, wish)
 		FighterState.State.ATTACKING:
+			DodgeRules.track_sidestep(self, index)
 			_move_attacking(fighter)
 			WeaponEffects.move_while_firing(self, fighter, wish)
 		FighterState.State.HITSTUN:
@@ -551,6 +578,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 	if not round_over and not fighter.is_knocked_out():
 		_update_meters(fighter)
 	fighter.state_ticks += 1
+	DodgeRules.step(self, fighter)
 
 
 ## Buffers this tick's presses; with age false (hitstop) older presses keep their age.
@@ -599,7 +627,9 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 				_enter_free_state(fighter)
 			return
 		FighterState.State.GRABBED:
-			if fighter.state_ticks < hit_tuning.grab_tech_ticks and consume_buffered(index, _GRAB):
+			# A grab that caught a dodge's recovery cannot be teched.
+			if fighter.state_ticks < hit_tuning.grab_tech_ticks and not fighter.dodge.punished \
+					and consume_buffered(index, _GRAB):
 				_tech_grab(index)
 			return
 		FighterState.State.THROWING:
@@ -621,14 +651,11 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 	if fighter.state != FighterState.State.DASHING:
 		return
 	match fighter.dash_kind:
-		FighterState.DashKind.STEP:
-			if fighter.state_ticks >= tuning.dash_step_ticks:
-				if input.is_held(_DASH):
-					fighter.dash_kind = FighterState.DashKind.SUSTAINED
-				else:
-					_end_dash(fighter)
+		FighterState.DashKind.DODGE:
+			DodgeRules.finish(self, index, input)
 		FighterState.DashKind.SUSTAINED:
-			if not input.is_held(_DASH):
+			# A flight-dash grown out of a dodge keeps the dodge's frames: no free recovery cancel.
+			if not input.is_held(_DASH) and not DodgeRules.owes_frames(fighter):
 				_end_dash(fighter)
 		FighterState.DashKind.RUSH:
 			var target := fighter.lock_on_target
@@ -644,11 +671,14 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 		_end_dash(fighter)
 
 
-## Starts a buffered vanish step or dash if affordable; a vanish never falls back to a dash.
+## Starts a buffered vanish step, dodge or rush dash; a vanish never falls back to a dash.
+## A dodge can turn into a vanish only while the Shift+E chord is still being pressed.
 func _start_buffered_action(index: int, input: FighterInput, wish: Vector3) -> void:
 	var fighter := fighters[index]
 	var free := _is_free(fighter)
-	var can_vanish := free or fighter.state == FighterState.State.DASHING \
+	var dashing := fighter.state == FighterState.State.DASHING \
+		and (fighter.dash_kind != FighterState.DashKind.DODGE or fighter.state_ticks < INPUT_BUFFER_TICKS)
+	var can_vanish := free or dashing \
 		or fighter.state == FighterState.State.BLOCKING \
 		or can_cancel_into(index, MoveData.CancelLevel.VANISH)
 	if can_vanish and has_vanish_input(index, input.held_actions):
@@ -656,8 +686,9 @@ func _start_buffered_action(index: int, input: FighterInput, wish: Vector3) -> v
 		if _spend_ki(fighter, meter_tuning.vanish_step_ki_cost):
 			consume_vanish_input(index, input.held_actions)
 			_start_vanish(index, input, wish)
-	elif free and is_buffered(index, _DASH) and not input.is_held(_BLOCK):
-		_start_dash(index, input, wish)
+	elif DodgeRules.can_start_from(fighter) and is_buffered(index, _DASH) and not input.is_held(_BLOCK):
+		if not DodgeRules.try_start(self, index, input, wish) and free:
+			_start_dash(index, input, wish)
 
 
 ## Holding block raises the guard; a hit lands on it this same tick.
@@ -860,6 +891,9 @@ func _advance_attack(index: int, input: FighterInput) -> void:
 	if fighter.holding_charge:
 		_hold_charge(fighter, input)
 		return
+	if KiRules.is_ki_move(fighter, fighter.move):
+		KiRules.advance(self, index, input)
+		return
 	fighter.move_tick += 1
 	var move := fighter.move
 	if fighter.move_tick >= fighter.move_total_ticks():
@@ -918,16 +952,14 @@ func _advance_string(index: int) -> void:
 		_begin_light(index, fighter.string_index + 1)
 
 
+## Rush dash toward the locked target (a Shift tap toward it); other taps are dodges (DodgeRules).
 func _start_dash(index: int, input: FighterInput, wish: Vector3) -> void:
 	var fighter := fighters[index]
 	var direction := _steer_direction(fighter, input, wish)
-	if direction == Vector3.ZERO:
-		direction = _neutral_dash_direction(index, input)
-	var rush := _points_at_target(index, direction)
-	if not _spend_ki(fighter, meter_tuning.rush_dash_ki_cost if rush else meter_tuning.dash_ki_cost):
+	if not _spend_ki(fighter, meter_tuning.rush_dash_ki_cost):
 		return
 	consume_buffered(index, _DASH)
-	fighter.dash_kind = FighterState.DashKind.RUSH if rush else FighterState.DashKind.STEP
+	fighter.dash_kind = FighterState.DashKind.RUSH
 	fighter.dash_direction = direction
 	fighter.enter_state(FighterState.State.DASHING)
 
@@ -1023,9 +1055,8 @@ func _move_flying(fighter: FighterState, input: FighterInput, wish: Vector3) -> 
 func _move_dashing(index: int, input: FighterInput, wish: Vector3) -> void:
 	var fighter := fighters[index]
 	match fighter.dash_kind:
-		FighterState.DashKind.STEP:
-			var step_speed := tuning.dash_step_distance / (tuning.dash_step_ticks * TICK_SECONDS)
-			fighter.velocity = fighter.dash_direction * step_speed
+		FighterState.DashKind.DODGE:
+			DodgeRules.move(self, index)
 		FighterState.DashKind.SUSTAINED:
 			var steer := _steer_direction(fighter, input, wish)
 			if steer != Vector3.ZERO:
@@ -1275,6 +1306,8 @@ func _reset_fighter(fighter: FighterState, start: Vector3) -> void:
 	fighter.tether_length = 0.0
 	fighter.combo_starter_percent = 100
 	fighter.powers = FighterPowers.new()
+	fighter.dodge = FighterDodge.new()
+	fighter.dodge.air_left = dodge_tuning.air_dodges
 
 
 ## Finds every hitbox touching an opponent this tick, then applies them in
@@ -1301,7 +1334,7 @@ func _resolve_hits(frozen: Array[bool]) -> void:
 				contacts.append(contact)
 	var struck := 0
 	for contact in contacts:
-		if contact.type != EventType.GRAB:
+		if contact.type != EventType.GRAB and contact.type != EventType.PERFECT_DODGE:
 			struck |= 1 << (contact.target as int)
 	for contact in contacts:
 		# Nothing more lands once the round is decided, or on a fighter already knocked out.
@@ -1318,6 +1351,8 @@ func _resolve_hits(frozen: Array[bool]) -> void:
 				_apply_grab(contact, contacts, struck)
 			EventType.PUSH_BLOCK:
 				_apply_push_block(contact)
+			EventType.PERFECT_DODGE:
+				DodgeRules.apply_perfect(self, contact)
 			_:
 				_apply_hit(contact)
 
@@ -1336,6 +1371,8 @@ func _find_contact(attacker_index: int, target_index: int, shapes: Array[Diction
 		if points[0].distance_squared_to(points[1]) > reach * reach:
 			continue
 		var centre: Vector3 = (shape.start + shape.end) * 0.5
+		if DodgeRules.evades(self, target, attacker.move):
+			return DodgeRules.evaded_contact(self, attacker_index, target_index, points[1])
 		if target.is_invincible_to(target.is_upper_body(centre)):
 			return {}
 		var type := EventType.HIT
@@ -1363,6 +1400,8 @@ func _find_contact(attacker_index: int, target_index: int, shapes: Array[Diction
 			"side": attacker.aim_side,
 			# Contact point: on the hurtbox surface toward the hitbox, or the hitbox centre line inside it.
 			"position": points[1] + (points[0] - points[1]).limit_length(body.radius),
+			# A grab into a dodge's recovery is a counter-hit (S5).
+			"dodge_punish": type == EventType.GRAB and DodgeRules.in_recovery(target),
 		}
 	return {}
 
@@ -1510,7 +1549,11 @@ func _apply_grab(contact: Dictionary, contacts: Array[Dictionary], struck: int) 
 	var to_holder := attacker.position - target.position
 	if Vector2(to_holder.x, to_holder.z).length_squared() > 0.0001:
 		target.facing_yaw = DetMath.atan2(-to_holder.x, -to_holder.z)
-	events.append(_event(EventType.GRAB, contact, 0, 0, MoveData.KnockbackType.NONE))
+	var event := _event(EventType.GRAB, contact, 0, 0, MoveData.KnockbackType.NONE)
+	if contact.get("dodge_punish", false):
+		target.dodge.punished = true
+		event.counter = true
+	events.append(event)
 
 
 ## Ends a hold with the throw: damage as combo hit 1, then blowback along the grabber's aim.
@@ -1535,11 +1578,17 @@ func _throw(index: int) -> void:
 	target.combo_damage = damage
 	_enter_free_state(thrower)
 	var hitstop := move.hitstop_ticks
+	var punished := target.dodge.punished
+	if punished:
+		hitstop += dodge_tuning.recovery_grab_extra_hitstop_ticks
+		target.dodge.punished = false
 	var knocked_out := target.is_knocked_out()
 	if knocked_out:
 		hitstop = maxi(hitstop, hit_tuning.knockout_hitstop_ticks)
 	_freeze(thrower, target, hitstop)
-	events.append(_event(EventType.THROW, contact, damage, hitstop, move.knockback_type))
+	var event := _event(EventType.THROW, contact, damage, hitstop, move.knockback_type)
+	event.counter = punished
+	events.append(event)
 	if knocked_out:
 		events.append(_event(EventType.KO, contact, damage, hitstop, move.knockback_type))
 
@@ -1811,7 +1860,9 @@ func _integrate(index: int) -> void:
 	var step := fighter.velocity * TICK_SECONDS
 	if step == Vector3.ZERO:
 		return
+	# Rushes and dodges go straight (a sidestep draws its own arc, free of the orbit cap).
 	if fighter.state in _ORBIT_STATES and fighter.dash_kind != FighterState.DashKind.RUSH \
+			and fighter.dash_kind != FighterState.DashKind.DODGE \
 			and _move_around_target(index, step):
 		return
 	fighter.position += step
@@ -2399,6 +2450,7 @@ func _step_projectiles() -> void:
 		projectile.age += 1
 		if projectile.effect == Weapon.Effect.DISC and WeaponEffects.steer_disc(self, projectile):
 			continue
+		KiRules.steer(self, projectile)
 		projectile.velocity.y -= projectile.gravity * TICK_SECONDS
 		projectile.position += projectile.velocity * TICK_SECONDS
 		projectile.ticks_left -= 1
@@ -2427,14 +2479,19 @@ func _projectile_contact(projectile: Projectile, from: Vector3) -> bool:
 		var reach: float = projectile.radius + body.radius
 		if points[0].distance_squared_to(points[1]) > reach * reach:
 			continue
+		if DodgeRules.evades(self, target, projectile.move):
+			DodgeRules.evade_projectile(self, projectile, target_index, points[1])
+			continue
 		if target.is_invincible_to(target.is_upper_body(points[0])):
 			continue
-		# A dash soaks up repeater bullets for ki, like tap blasts.
+		# A rush or flight-dash soaks up repeater bullets for ki, like tap blasts.
 		if projectile.weapon == Weapon.Kind.STORM_REPEATER and not projectile.thrown \
-				and target.state == FighterState.State.DASHING:
+				and target.state == FighterState.State.DASHING and target.dash_kind != FighterState.DashKind.DODGE:
 			_add_ki(target, Weapon.DASH_ABSORB_KI * _UNIT)
 			events.append(_weapon_event(EventType.BULLET_ABSORB, target_index, points[1], projectile.weapon,
 				projectile.id))
+			return true
+		if KiRules.absorbs(self, target_index, projectile, points[1]):
 			return true
 		var travel := projectile.velocity
 		var contact := {
@@ -2458,6 +2515,7 @@ func _projectile_contact(projectile: Projectile, from: Vector3) -> bool:
 				projectile.returning = true
 				projectile.hit_mask |= 1 << target_index
 				return false
+			KiRules.reflected(projectile, projectile.owner)
 			projectile.owner = target_index
 			projectile.velocity = -projectile.velocity
 			projectile.position = from

@@ -36,3 +36,9 @@ extends Resource
 @export var hold_out := 0.0
 ## Heavy weapons rest at the side between attacks instead of across the chest.
 @export var heavy_at_side := false
+## Dodge feel (T-DEF2), procedural on top of the clips: lean into a directional dodge, bank into
+## a sidestep, twist through a spot dodge (degrees), and how far the hips drop (m).
+@export var dodge_lean_degrees := 22.0
+@export var dodge_roll_degrees := 26.0
+@export var dodge_twist_degrees := 40.0
+@export var dodge_drop := 0.16

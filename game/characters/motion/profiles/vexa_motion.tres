@@ -18,3 +18,7 @@ hover_bob = 0.025
 hover_bob_hz = 0.6
 flight_arm_scale = 1.1
 dive_pitch = 100.0
+dodge_lean_degrees = 28.0
+dodge_roll_degrees = 34.0
+dodge_twist_degrees = 55.0
+dodge_drop = 0.2

@@ -79,8 +79,8 @@ func test_state_changes_give_dash_flight_and_landing_sounds() -> void:
 	var heard := []
 	_tick(sim, [FighterInput.Action.DASH, 0])
 	heard.append_array(_cues(mapper.observe(sim)))
-	assert_has(heard, &"dash")
-	for _i in 30:
+	assert_has(heard, &"dodge", "a Shift tap is a dodge (T-DEF2)")
+	for _i in 60:
 		_tick(sim, [0, 0], [1, 0])
 		heard.append_array(_cues(mapper.observe(sim)))
 	assert_has(heard, &"flight_start")
@@ -119,3 +119,15 @@ func test_two_mappers_fed_the_same_match_ask_for_the_same_sounds() -> void:
 		logs.append(log)
 	assert_eq(logs[0], logs[1])
 	assert_gt(str(logs[0]).count("hit_"), 0, "the scripted match landed hits")
+
+
+func test_a_perfect_dodge_plays_its_cue_with_the_reverse_tail_layer() -> void:
+	var event := {"type": CombatSim.EventType.PERFECT_DODGE, "position": Vector3.ZERO, "hitstop": 6}
+	assert_has(_cues(CombatAudioMapper.cues_for_event(event)), &"perfect_dodge")
+	var bank: SoundBank = load("res://game/audio/banks/movement_bank.tres")
+	var found := false
+	for cue in bank.cues:
+		if cue.id == &"perfect_dodge":
+			found = true
+			assert_has(cue.layers, &"perfect_dodge_tail")
+	assert_true(found)

@@ -12,6 +12,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `AGENTS.md`. Remaining: CI green on GitHub.
 
 ## In review
+- T-DEF2 dodge [desktop] (`claude/T-DEF2-dodge`): tap Shift = directional / spot / sidestep dodge with
+  i-frames, chain and cooldown, air limits, perfect dodge (attacker freeze, READ pop, +10 ki once per
+  3 s), Sweep tracks sidesteps, recovery grabs are untechable counter-hits; `DodgeTuning`,
+  `DodgePose`, dodge audio cues, training input notes. Goldens re-blessed (dodge fields only).
 - polish batch 3 [desktop] (`claude/polish-batch-3`): media-2 flaws. Lyra UNARMED (#78 follow-up) is
   the design-correct auto-throw of an emptied 12-arrow Ki Bow (regression test added); KO drops its
   burst lines and post-KO trails/rings/smears; Ember Rift lava fissures around the spawns
@@ -29,6 +33,21 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   Merged with main 26019b8 (ART1-c done): `ContactShadows` is the one ground marker per fighter
   (dark disc plus a team-colour rim from 0.4 m that widens and quiets with height, #122's look);
   `HeightMarker` keeps only #122's faint 3-dash tick above 3 m, no disc and no drop line.
+- T-WEB2 [desktop] Web crash `RuntimeError: remainder by zero` on FIGHT: `ZoneMatch.spawn_positions`
+  took `side % points.size()` with no spawn points (Godot 4.7.2's binary export conversion empties
+  packed arrays; #112 already keeps text resources, so main is fine). `ZoneData.fighter_spawns`
+  now falls back to two points across the zone centre, used by `ZoneMatch` and `WorldMap`.
+- T-KI1 [desktop] Ki blasts and beams as sim attacks (GAME_DESIGN §5.8): `KiRules` + per-legend
+  `KiKit` (`game/combat/ki/`): tap Q blast (4 ki), hold Q charged blast (20 ki, not dash-soaked),
+  beam special on 1 (40-60 ki, 24-30 f tell, aim locks 12 f before firing, +30 f whiff recovery),
+  beam ultimate on 4 (2 burst stocks); perfect block reflects blasts, dash soaks tap blasts for
+  2 ki, blocked beams grind 2 guard/tick, beams eat blasts and stop at the first body; Lyra's tap
+  blasts home and her beam splits in three; rhythm beam clash (6 beats on Q/E/F/R, mashing loses
+  ground, ki spends push, winner +50 burst, loser takes the beam). `KiLayer` view (shots, charge
+  orb, beams at sim thickness, clash prompt), ki sounds and charge hum, `AIKi` zoning/beams/tell
+  reading/clash beats, QA ki counts, DetCheck ki duel. Open: beam ultimate cinematic, beam clash
+  camera framing (developer), dedicated ki clips per legend (palm thrust stands in), new ki
+  sounds (existing cues re-pitched), dodge (T-DEF2) i-frames vs beams once it lands.
 - T-UX1 [desktop] Controls and readability (owner feedback "how to get to the ground"): descend
   moves from Left Ctrl to `C` (Ctrl stays a desktop-only alternate, never on the web; Ctrl/Cmd/Alt
   rebinds refused on the web), quick-swap moves from `C` to `Y`; double-tap `C` dives until landing
@@ -122,6 +141,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+- DEF2-1 [desktop] Perfect-dodge view slow (0.85x for 8 frames, local offline only), proposal M2; not
+  built in T-DEF2.
+- DEF2-2 [desktop] An ideal-read spot dodge evades all 12 matrix attacks (like vanish). It is minus
+  against lights and shots, but the proposal wants no option to beat everything: decide on a tracking
+  or long-active answer (or a shorter spot window) with the defense matrix.
+- DEF2-3 [developer] Proposal §5 AI-match dodge metrics (dodged share, dodge success, whiff punish,
+  vanish share) need AI dodging (T-DEF4) and `defense_audit` in `run_qa.sh` (T-DEF6).
 - PB3-1 [developer] AI pickup interest: in 14 seeded 60 s duels a level-3 AI picks up a weapon in
   only ~half, even with the drop 4-9 m away (PRESSURE outscores PICKUP up close, `fighter_ai.gd`
   `_choose_plan`). Raise the duel pickup weight so a typical duel shows a weapon.
