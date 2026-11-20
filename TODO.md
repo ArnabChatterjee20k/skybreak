@@ -89,6 +89,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   beamed once in 60 s on main only by seed luck (seeds 2026-2029 on main: 1, 0, 0, 0 beams;
   with escapes: 0, 0, 0, 0, the duel stays close as techs recover knockback). The beam assert is
   pending when no beam fires; `BEAM_CHANCE` / `target_busy` in `AIKi.zone` need a look.
+  Open: QA-19 [desktop, characters] Brann's Ki Bow string clips his head (up to 10 cm) in
+  bow/shot startup ticks 4-7 when he shoots while FLYING at near-zero pitch; the seed-3
+  shattered_mesa visual QA run reaches it after the escape merge (4 frames, tolerance 1).
+  `test_visual_qa.gd` reports it pending under QA-19 (fails under run_qa.sh strict).
   Open: T-DEF3-pop, Lyra RightUpperArm turns 1.21 rad in one frame entering hitstun hit_light
   (1 frame in QA quick; limit 1.2), characters lane.
 
