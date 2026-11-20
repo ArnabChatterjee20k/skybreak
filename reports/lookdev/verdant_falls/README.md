@@ -15,7 +15,7 @@ soft sun shadows, rim, filmic, glow).
 | `verdant_falls_v1_fallen_giant_day.jpg` | the fallen giant (root plate, hollow end), logs, boulders, ferns |
 | `verdant_falls_v1_overview_day.jpg` | wide overview: lake, basalt cliff, falls, plateau |
 | `verdant_falls_v1_contact.jpg` | contact sheet of the six day stills |
-| `verdant_falls_flythrough_v1.mp4` | 20 s fly-through at 1080p30 (when committed: see below) |
+| `verdant_falls_flythrough_v1.mp4` | 20 s fly-through, 1920×1080, 30 fps, H.264 CRF 21 (600 frames, lavapipe, about 4 s a frame): low over the lake to the falls, up the curtain, along the plateau river, a dive over the lake, a run through the Giant Grove under the walkway, past the shrine, ending on the falls |
 
 The prompt asked for a 720p30 video; the look-dev skill's rule (videos 1080p30 or more) overrides that, so the
 fly-through is 1920×1080 at 30 fps.
@@ -62,7 +62,7 @@ Fixes in order of payoff:
 3. **The falls are a flat, uniformly bright trapezoid.** There's no thickness, the curtain is narrow at the top (the sim's quad), and there's no plunge-pool spray volume. The lake reflection of the falls is an analytic stepped band that still reads as a slab, and there's no ripple ring you can see.
 4. **The value plan is only partly met.** The near moss floor is lighter and more lime (about L\* 60–70) than the sheet's 45–55. The mid-ground frame is dark only under the grove canopies. Far canopies at the T3 LOD go pale and flat. The overview reads mostly mid-light green.
 5. **Canopies read as stacked discs ("mushroom trees")**, especially from above and far away. Their outlines are too round and too regular; they need more clusters, more gaps, and lianas or limbs showing between layers.
-6. **Lake mist puffs show as soft blotches** on the water in the overview and in the fly-through's dive. Their opacity was lowered for the stills, but the first video version still has them stronger.
+6. **The fly-through still grazes the fallen giant's root plate twice** (around 13.6 s and 17.5 s): the camera sweeps very close past it and the plate fills a corner of the frame for a few frames. The opening scatter clip from the first render is fixed. The spray and lake-mist puffs read as soft blotches in the dive (6–8 s) and in the overview. About 7 s of the 20 s stay on the falls.
 7. **The story props are blocky and plain up close.** The shrine's blocks are big unbevelled cubes. The fallen giant is a straight octagonal prism with stripe furrows. The frog guardian reads as a blob at a distance. The toppled heron and the islet don't appear in any hero still.
 8. **Floor scatter**: elephant ears read as floating flat leaves near the camera; ferns are flat stepped stars.
 9. **Atmosphere**: the god-rays are additive cards and show hard edges in some frames; the height mist is subtle; the sky is a plain gradient with few clouds. The sheet's rainbow, butterflies, birds and canopy sway aren't built (sway data is collected, but `animate` doesn't move anything yet).
