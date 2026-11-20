@@ -4,6 +4,17 @@ Golden replays (`replays/`) and visual goldens (`visual/`) for the QA harness
 (T-D31). Re-record with `tools/qa/bless_goldens.sh --replays|--visual|--all`
 only in the PR that intends the change, and log it below.
 
+## Re-bless for #146 T-ART3 anime look + #143 HUD restyle (merge of main 68f6429)
+
+13 of the 14 visual goldens re-blessed with `bless_goldens.sh --visual` on the merged code
+(official Godot 4.7.2 linux x86_64, SHA-512 verified, `rm -rf .godot`, `--headless --import`,
+gl_compatibility 960x540). `zone_verdant_falls.png` is unchanged. Both PRs had re-blessed
+`zone_*` and `heartbloom_*` (binary conflicts); the merge-conflicted PNGs took one side and
+every golden was then re-rendered:
+
+- #146 T-ART3: art bible v2, the global anime grade, rim light and the beam washout fix.
+- #143: the HUD restyle drawn over the frame.
+
 ## Re-bless for #125 T-ART1 zone art pass (merge of main 372bccd)
 
 All 14 visual goldens re-blessed with `bless_goldens.sh --visual` on the merged code
@@ -163,3 +174,12 @@ frames are left out and counted as `foot_slide_skipped_frames`. `qa_report.py`
 tags `metrics.json` with `metric_versions` (`foot_slide_cm_per_frame: 2`), and the
 trend skips a metric whose version differs from the reference report ("re-baselined").
 The first v2 quick report is the new foot-slide reference.
+
+## T-UI1 + T-ART2: merged re-bless
+
+PR #143 (HUD restyle on `MenuTheme`: plates, clock, banners, portraits) and PR #142
+(art round 2: zones, KO beat, model changes) both re-blessed the `heartbloom_*`
+shots. After merging main into #143 all visual goldens were re-rendered on the
+merged code with `bless_goldens.sh --visual` (Godot 4.7.2 linux x86_64). The eight
+`heartbloom_*` shots change because they show the new HUD over the art round 2
+Heartbloom zone; the zone shots changed only by art round 2 noise.
