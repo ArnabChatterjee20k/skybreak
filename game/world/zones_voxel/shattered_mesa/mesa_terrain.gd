@@ -12,7 +12,7 @@ extends RefCounted
 
 const FLOOR_SHADER := preload("res://game/world/zones_voxel/shattered_mesa/mesa_floor.gdshader")
 const ROCK_SHADER := preload("res://game/world/zones_voxel/shattered_mesa/mesa_rock.gdshader")
-const VERSION := 8
+const VERSION := 9
 const CACHE := "user://voxel_zone_cache/shattered_mesa_v%d/" % VERSION
 ## Floor cells whose corners differ by more than this (m) are cliff, not floor.
 const STEEP := 1.1
@@ -176,16 +176,30 @@ func _floor_chunk(i0: int, j0: int, i1: int, j1: int, step: int, ring := false) 
 				continue
 			var p := [_vertex(i, j), _vertex(i + step, j), _vertex(i + step, j + step), _vertex(i, j + step)]
 			var nn := [_normal(i, j), _normal(i + step, j), _normal(i + step, j + step), _normal(i, j + step)]
-			# Split along the flatter diagonal (closer to the bilinear surface).
-			var tri: Array
-			if absf(p[0].y - p[2].y) < absf(p[1].y - p[3].y):
-				tri = [0, 1, 2, 0, 2, 3]
-			else:
-				tri = [0, 1, 3, 1, 2, 3]
-			for k: int in tri:
-				verts.append(p[k])
-				normals.append(nn[k])
-				uvs.append(Vector2(-1000.0, 0.0))
+			# The sim's ground is bilinear in the cell; two triangles miss it by up
+			# to a quarter of the twist, so twisted cells split into n x n
+			# sub-quads on the exact bilinear surface (near tier only).
+			var twist := absf(p[0].y + p[2].y - p[1].y - p[3].y)
+			var sub := 1 if step > 1 else clampi(ceili(sqrt(twist / 0.12)), 1, 8)
+			for sj in sub:
+				for si in sub:
+					var q: Array[Vector3] = []
+					var qn: Array[Vector3] = []
+					for c: Vector2 in [Vector2(si, sj), Vector2(si + 1, sj), Vector2(si + 1, sj + 1), Vector2(si, sj + 1)]:
+						var u := c / float(sub)
+						var top: Vector3 = (p[0] as Vector3).lerp(p[1], u.x)
+						var bottom: Vector3 = (p[3] as Vector3).lerp(p[2], u.x)
+						q.append(top.lerp(bottom, u.y))
+						var nt: Vector3 = (nn[0] as Vector3).lerp(nn[1], u.x)
+						var nb: Vector3 = (nn[3] as Vector3).lerp(nn[2], u.x)
+						qn.append(nt.lerp(nb, u.y).normalized())
+					# Split along the flatter diagonal (closer to the bilinear surface).
+					var tri: Array = [0, 1, 2, 0, 2, 3] if absf(q[0].y - q[2].y) < absf(q[1].y - q[3].y) \
+						else [0, 1, 3, 1, 2, 3]
+					for k: int in tri:
+						verts.append(q[k])
+						normals.append(qn[k])
+						uvs.append(Vector2(-1000.0, 0.0))
 			# Skirts on edges facing a non-floor cell (or the field's end).
 			var sides := [[Vector2i(0, -step), 0, 1], [Vector2i(step, 0), 1, 2], [Vector2i(0, step), 2, 3],
 				[Vector2i(-step, 0), 3, 0]]
