@@ -7,7 +7,7 @@ extends RefCounted
 ## the cell for coarser LOD tiers.
 
 ## Bump after changing any design (the meshes are cached on disk).
-const VERSION := 3
+const VERSION := 5
 const T0 := VoxelZone.T0
 const T1 := VoxelZone.T1
 const T2 := VoxelZone.T2
@@ -23,7 +23,7 @@ const COLORS := {
 	Mat.IVY: Color("#4E6A3E"), Mat.FLOWER_W: Color("#ECE8DC"), Mat.FLOWER_Y: Color("#E4D89A"),
 	Mat.BRONZE: Color("#5A4A34"), Mat.VERDIGRIS: Color("#4AB49A"), Mat.PATINA: Color("#8fb8a4"),
 	Mat.CHAIN: Color("#4a3e30"), Mat.ROCK: Color("#6A5A4E"), Mat.ROOT: Color("#5a4636"),
-	Mat.FLAME: Color("#ffb45a"), Mat.ASH: Color("#5c5650"), Mat.NEST: Color("#8a6e4c"),
+	Mat.FLAME: Color("#f6b870"), Mat.ASH: Color("#5c5650"), Mat.NEST: Color("#8a6e4c"),
 	Mat.FEATHER: Color("#f0ece4"), Mat.SOIL: Color("#5a4838"), Mat.GLYPH: Color("#9a8466"),
 	Mat.STEM: Color("#6a7f48"), Mat.EGG: Color("#e8e0cc"),
 }
@@ -40,7 +40,7 @@ func color(mat: int, p: Vector3, c: Vector3i, n: Vector3, occlusion: float, expo
 		# Bronze gone green: verdigris on exposed faces and in streaks, dark
 		# bronze in the recesses, a little lighter on the upward faces.
 		var streak := VoxelSdf.hash3(Vector3i(c.x, 0, c.z), 41)
-		var green := clampf(0.75 + 0.25 * maxf(n.y, 0.0) - occlusion * 1.4 + (streak - 0.5) * 0.35, 0.0, 1.0)
+		var green := clampf(0.55 + 0.25 * maxf(n.y, 0.0) - occlusion * 1.6 + (streak - 0.5) * 0.45, 0.0, 1.0)
 		if mat == Mat.BRONZE:
 			green *= 0.35
 		var col := COLORS[Mat.BRONZE].lerp(COLORS[Mat.VERDIGRIS], green)
@@ -48,6 +48,10 @@ func color(mat: int, p: Vector3, c: Vector3i, n: Vector3, occlusion: float, expo
 		col *= 0.94 + 0.12 * VoxelSdf.hash3(c, 43)
 		col.a = 1.0
 		return col
+	if mat == Mat.FLAME:
+		var f := Color("#e07a38").lerp(Color("#ffe4a8"), clampf((p.y - 1.45) / 0.7, 0.0, 1.0))
+		f.a = 1.0
+		return f
 	var col := VoxelDesign.default_color(base, mat, c, occlusion, exposure, quiet,
 		mat in [Mat.LIME, Mat.MARBLE, Mat.LIME_DARK, Mat.MARBLE_DARK])
 	if mat in [Mat.MOSS, Mat.IVY, Mat.ROCK, Mat.NEST, Mat.ROOT]:
@@ -517,7 +521,7 @@ func winged_lion() -> ArrayMesh:
 
 ## A bronze brazier on a tripod; lit: a low amber flame and embers, else ash.
 func brazier(lit: bool) -> ArrayMesh:
-	var bounds := AABB(Vector3(-0.8, 0, -0.8), Vector3(1.6, 2.1, 1.6))
+	var bounds := AABB(Vector3(-0.8, 0, -0.8), Vector3(1.6, 2.4, 1.6))
 	var paint := func(g: VoxelGrid) -> void:
 		for k in 3:
 			var a := TAU * k / 3.0
@@ -537,8 +541,11 @@ func brazier(lit: bool) -> ArrayMesh:
 				return maxf(Vector2(p.x, p.z).length() - 0.48, absf(p.y - 1.4) - 0.1), Mat.ASH)
 			g.paint(bounds, func(p: Vector3) -> float:
 				var r := Vector2(p.x, p.z).length()
-				var h := 1.5 + 0.38 * (1.0 - r / 0.42) + 0.12 * VoxelSdf.hash3(g.cell_of(p) * Vector3i(1, 0, 1), 55)
-				return maxf(r - 0.42, maxf(p.y - h, 1.45 - p.y)), Mat.FLAME)
+				var a := atan2(p.z, p.x)
+				var y := clampf((p.y - 1.42) / 0.85, 0.0, 1.0)
+				var tongue := 0.55 + 0.45 * sin(a * 3.0 + y * 4.0)
+				var allowed := 0.36 * pow(1.0 - y, 0.9) * tongue + 0.03 * VoxelSdf.hash3(g.cell_of(p), 55)
+				return maxf(r - allowed, maxf(p.y - 2.27, 1.42 - p.y)), Mat.FLAME)
 		else:
 			g.paint(bounds, func(p: Vector3) -> float:
 				return maxf(Vector2(p.x, p.z).length() - 0.52, absf(p.y - 1.45) - 0.06), Mat.ASH)

@@ -18,7 +18,7 @@ const CAP := 0.6
 const SHELL := 1.4
 const CLOUD_Y := 40.0
 ## LOD ranges (m) where each tier ends.
-const COLUMN_RANGES := [45.0, 130.0, 0.0]
+const COLUMN_RANGES := [35.0, 120.0, 0.0]
 const PROP_RANGES := [50.0, 160.0, 0.0]
 const SMALL_RANGES := [40.0]
 
@@ -66,13 +66,13 @@ func presets() -> Dictionary:
 	# Golden hour, sun still up: deep blue zenith, pale warm horizon, a lighter
 	# cooler haze than the stone, rim 0.35 (sheet's preset notes).
 	p.day = {
-		"sky_top": Color("#3058B0"), "sky_horizon": Color("#E8D8B8"), "sky_below": Color("#F4EEE4"),
+		"sky_top": Color("#2a50a8"), "sky_horizon": Color("#e6d6b8"), "sky_below": Color("#F4EEE4"),
 		"cloud": Color("#fffaf0"), "cloud_shadow": Color("#b8b4c4"), "cloud_cover": 0.3,
 		"sun_dir": z.sun_directions[0], "sun_color": Color("#ffd9a0"), "sun_energy": 2.7,
 		"sun_size": 0.035, "moon": false, "stars": 0.0,
 		"rim_color": Color("#fff0d0"), "rim_energy": 0.35,
 		"ambient_color": Color("#a8a4a8"), "ambient_energy": 0.5,
-		"fog_color": Color("#E4DCD0"), "fog_density": 0.0011, "exposure": 0.92, "lantern": 0.3,
+		"fog_color": Color("#E4DCD0"), "fog_density": 0.00055, "exposure": 0.92, "lantern": 0.3,
 	}
 	p.dusk = {
 		"sky_top": Color("#4a5a96"), "sky_horizon": Color("#f2a868"), "sky_below": Color("#f2d2b4"),
@@ -81,7 +81,7 @@ func presets() -> Dictionary:
 		"sun_size": 0.045, "moon": false, "stars": 0.0,
 		"rim_color": Color("#ffc090"), "rim_energy": 0.4,
 		"ambient_color": Color("#a6888a"), "ambient_energy": 0.5,
-		"fog_color": Color("#e8d0bc"), "fog_density": 0.0012, "exposure": 1.0, "lantern": 0.7,
+		"fog_color": Color("#e8d0bc"), "fog_density": 0.0006, "exposure": 1.0, "lantern": 0.7,
 	}
 	p.night = {
 		"sky_top": Color("#0a1030"), "sky_horizon": Color("#2a3458"), "sky_below": Color("#3a4468"),
@@ -90,7 +90,7 @@ func presets() -> Dictionary:
 		"sun_size": 0.0, "moon": true, "stars": 0.9,
 		"rim_color": Color("#a6c0ff"), "rim_energy": 0.6,
 		"ambient_color": Color("#30395e"), "ambient_energy": 0.6,
-		"fog_color": Color("#283050"), "fog_density": 0.0012, "exposure": 1.15, "lantern": 1.2,
+		"fog_color": Color("#283050"), "fog_density": 0.0006, "exposure": 1.15, "lantern": 1.2,
 	}
 	return p
 
@@ -172,7 +172,7 @@ func _island_top(i: int) -> Node3D:
 	var hf := VoxelHeightfield.new(cell, b.position, b.end)
 	var y := _floor(isl)
 	var level := roundi(y / cell)
-	var lime: Color = SkyholdRuinsDesigns.COLORS[SkyholdRuinsDesigns.Mat.LIME]
+	var lime := Color("#cdbfa2")
 	var deco := _deco_for(i)
 	for z in hf.size.y:
 		for x in hf.size.x:
@@ -187,7 +187,7 @@ func _island_top(i: int) -> Node3D:
 			var patch := sin(w.x * 0.21 + w.y * 0.13) * sin(w.x * 0.07 - w.y * 0.19 + 1.7)
 			var moss := clampf((g - 0.78) * 2.5, 0.0, 1.0) * 0.8 + clampf(patch - 0.4, 0.0, 1.0)
 			var c := lime * (0.96 + 0.08 * VoxelSdf.hash3(Vector3i(x, 0, z), 7))
-			c = c.lerp(Color("#cdb48e"), clampf(0.5 + 0.5 * sin(w.x * 0.05 + w.y * 0.03), 0.0, 1.0) * 0.35)
+			c = c.lerp(Color("#d2bc98"), clampf(0.5 + 0.5 * sin(w.x * 0.05 + w.y * 0.03), 0.0, 1.0) * 0.35)
 			if moss > 0.85 and VoxelSdf.hash3(Vector3i(x, 1, z), 9) < (moss - 0.85) * 2.5:
 				c = Color("#8a9462")
 			c = _decorate(deco, w, c)
@@ -204,8 +204,8 @@ func _island_top(i: int) -> Node3D:
 	mat.set_shader_parameter("rock_color", Color("#b8a27e"))
 	mat.set_shader_parameter("rock_shadow", Color("#8a7458"))
 	mat.set_shader_parameter("soil_color", Color("#7a6650"))
-	mat.set_shader_parameter("joint_color", Color("#7d6a54"))
-	mat.set_shader_parameter("joint_moss", Color("#6f7d4e"))
+	mat.set_shader_parameter("joint_color", Color("#a08c70"))
+	mat.set_shader_parameter("joint_moss", Color("#8a9264"))
 	mat.set_shader_parameter("marble_color", Color("#E6DCC8"))
 	mat.set_shader_parameter("strata_cells", 2.0)
 	mat.set_shader_parameter("crack_amount", 0.3)
@@ -282,11 +282,12 @@ func _island_underside(i: int) -> Node3D:
 	hf.bind(mat)
 	mat.set_shader_parameter("under_top", _floor(isl))
 	mat.set_shader_parameter("under_depth", isl.depth + 8.0)
-	mat.set_shader_parameter("under_color", Color("#6A5A4E"))
-	mat.set_shader_parameter("under_alt", Color("#7a6858"))
-	mat.set_shader_parameter("under_deep", Color("#3E342E"))
+	mat.set_shader_parameter("under_color", Color("#5e5249"))
+	mat.set_shader_parameter("under_alt", Color("#4c423b"))
+	mat.set_shader_parameter("under_deep", Color("#2c2622"))
 	mat.set_shader_parameter("strata_cells", float(slab))
-	mat.set_shader_parameter("crack_amount", 0.35)
+	mat.set_shader_parameter("crack_amount", 0.12)
+	mat.set_shader_parameter("noise_amount", 0.03)
 	return hf.build(self, mat, "Isle%dUnder" % i)
 
 
@@ -310,6 +311,11 @@ func _fangs() -> void:
 				if h < CLOUD_Y - 6.0:
 					continue
 				var a := atan2(w.y - at.y, w.x - at.x)
+				# Crags: lobes and notches round the spire, a split crown.
+				var lobe := 0.5 + 0.5 * sin(a * 3.0 + f * 1.9) * cos(a * 2.0 - f)
+				var notch := VoxelSdf.hash3(Vector3i(floori(a * 7.0 + 7.0), f, 0), 91)
+				var lift := clampf((h - CLOUD_Y) / 80.0, 0.0, 1.0)
+				h = CLOUD_Y + (h - CLOUD_Y) * (0.78 + 0.32 * lobe - 0.12 * notch * lift)
 				var raw := h / T2
 				var band := floori(raw / slab)
 				var wob := sin(a * 5.0 + band * 1.3 + f) * 0.6 + (VoxelSdf.hash3(Vector3i(x / 3, band, z / 3), 77 + f) - 0.5) * 1.4
@@ -327,7 +333,7 @@ func _fangs() -> void:
 		mat.set_shader_parameter("rock_shadow", Color("#33353c"))
 		mat.set_shader_parameter("soil_color", Color("#3a3c44"))
 		mat.set_shader_parameter("strata_cells", 4.0)
-		mat.set_shader_parameter("crack_amount", 1.0)
+		mat.set_shader_parameter("crack_amount", 0.5)
 		var node := hf.build(self, mat, "Fang%d" % f)
 		quads += VoxelHeightfield.count_quads(node)
 		spots["fang%d" % f] = Vector3(at.x, layout.heightmap.ground_height_at(at.x, at.y), at.y)
@@ -463,9 +469,9 @@ func _story() -> void:
 	var wi := layout.islands.find(watch)
 	var fall := _local(watch, -14.0, -12.0)
 	var fall_yaw := watch.yaw + 0.6
-	var lying := Basis(Vector3.UP, fall_yaw) * Basis(Vector3.RIGHT, PI * 0.5)
+	var lying := Basis(Vector3.UP, fall_yaw) * Basis(Vector3.RIGHT, PI * 0.5) * Basis(Vector3.UP, 0.55)
 	# Lying on its face: the figure's front (+z) down, its back 0.5 m up.
-	_add("robed_fallen", Transform3D(lying, Vector3(fall.x, wy + 0.47, fall.y)))
+	_add("robed_fallen", Transform3D(lying, Vector3(fall.x, wy + 0.55, fall.y)))
 	var reach := Vector2(sin(fall_yaw), cos(fall_yaw))
 	var arm_d := 4.0
 	while _gauge(wi, fall + reach * arm_d) < 0.95 and arm_d < 60.0:
@@ -721,9 +727,9 @@ func _place_all() -> void:
 	var specs := {
 		"pier": [func() -> ArrayMesh: return designs.arch_pier(false), [1.0, 2.0, 4.0], PROP_RANGES, 2],
 		"pier_grand": [func() -> ArrayMesh: return designs.arch_pier(true), [1.0, 2.0, 4.0], PROP_RANGES, 2],
-		"arch_top": [func() -> ArrayMesh: return designs.arch_top(false, false), [1.0, 2.0, 4.0], PROP_RANGES, 2],
-		"arch_top_ruined": [func() -> ArrayMesh: return designs.arch_top(true, false), [1.0, 2.0, 4.0], PROP_RANGES, 2],
-		"gate_top": [func() -> ArrayMesh: return designs.arch_top(false, true), [1.0, 2.0, 4.0], [70.0, 200.0, 0.0], 2],
+		"arch_top": [func() -> ArrayMesh: return designs.arch_top(false, false), [2.0, 4.0], [120.0, 0.0], 1],
+		"arch_top_ruined": [func() -> ArrayMesh: return designs.arch_top(true, false), [2.0, 4.0], [120.0, 0.0], 1],
+		"gate_top": [func() -> ArrayMesh: return designs.arch_top(false, true), [1.0, 2.0, 4.0], [60.0, 200.0, 0.0], 2],
 		"watch_stump": [func() -> ArrayMesh: return designs.watch_stump(), [1.0, 4.0], [150.0, 0.0], 1],
 		"robed": [func() -> ArrayMesh: return designs.robed_statue(true, true), [1.0, 3.0], [60.0, 0.0], 1],
 		"robed_fallen": [func() -> ArrayMesh: return designs.robed_statue(false, false), [1.0, 3.0], [60.0, 0.0], 1],
@@ -765,7 +771,8 @@ func _place_all() -> void:
 		else:
 			meshes = designs.tiers(spec[0], spec[1])
 		var list: Array[Transform3D] = _lists[key]
-		VoxelProp.place(self, key.to_pascal_case(), meshes, spec[2], list, spec[3])
+		var tile := 0.0 if key.begins_with("flowers") or key == "feather" else 128.0
+		VoxelProp.place(self, key.to_pascal_case(), meshes, spec[2], list, spec[3], 6.0, tile)
 		var q := []
 		for m in meshes:
 			q.append(VoxelProp.quads(m))
@@ -843,22 +850,22 @@ func flight() -> Array[Dictionary]:
 	var f: Vector3 = spots.fallen
 	var f0: Vector3 = spots.fang0
 	var w := Vector3(watch.centre.x, watch.top, watch.centre.y)
-	var out: Array[Dictionary] = [
-		{"from": Vector3(120, 240, -430), "at": b + Vector3(0, 0, 0)},
+	var mid: Vector3 = (spots.get("chain_a", w) + spots.get("chain_b", w)) * 0.5
+	return [
+		{"from": Vector3(120, 240, -430), "at": b},
 		{"from": b + Vector3(30, 14, 26), "at": b + Vector3(0, 2, 0)},
-		{"from": w + Vector3(70, -30, -10), "at": w + Vector3(0, -20, 0)},
-		{"from": w + Vector3(20, -40, -60), "at": w + Vector3(-30, -20, -40)},
-		{"from": f + Vector3(-10, 10, -36), "at": f + Vector3(0, 1, 0)},
-		{"from": f0 + Vector3(40, 10, 40), "at": f0 + Vector3(0, 10, 0)},
-		{"from": f0 + Vector3(-30, 8, -50), "at": f0 + Vector3(40, 30, -110)},
+		{"from": w + Vector3(85, -25, 20), "at": w + Vector3(0, -35, 0)},
+		{"from": w + Vector3(40, -75, 70), "at": w + Vector3(0, -50, 0)},
+		{"from": w + Vector3(-30, 15, 85), "at": f},
+		{"from": f + Vector3(-10, 5, 22), "at": f + Vector3(0, 1, 0)},
+		{"from": mid + Vector3(5, -4, 28), "at": mid + Vector3(0, -4, 0)},
+		{"from": f0 + Vector3(-10, -55, 62), "at": f0 + Vector3(0, -30, 0)},
+		{"from": f0 + Vector3(60, -25, -10), "at": f0 + Vector3(0, -10, 0)},
+		{"from": Vector3(-30, 185, -760), "at": g + Vector3(0, 10, 0)},
+		{"from": g + za * 45.0 + Vector3(0, 12, 0), "at": g + Vector3(0, 9, 0)},
+		{"from": g + za * 6.0 + Vector3(0, 8, 0), "at": g - za * 30.0 + Vector3(0, 7, 0)},
+		{"from": g - za * 55.0 + Vector3(0, 20, 0), "at": g - za * 200.0 + Vector3(0, 10, 0)},
 	]
-	if spots.has("chain_a"):
-		var mid: Vector3 = (spots.chain_a + spots.chain_b) * 0.5
-		out.append({"from": mid + Vector3(-25, -10, 25), "at": mid + Vector3(0, -3, 0)})
-	out.append({"from": g + za * 45.0 + Vector3(0, 9, 0), "at": g + Vector3(0, 9, 0)})
-	out.append({"from": g + za * 6.0 + Vector3(0, 8, 0), "at": g - za * 30.0 + Vector3(0, 7, 0)})
-	out.append({"from": g - za * 50.0 + Vector3(0, 30, 0), "at": g - za * 140.0 + Vector3(0, -30, 0)})
-	return out
 
 
 func flight_kael() -> Array:
@@ -867,3 +874,29 @@ func flight_kael() -> Array:
 	var xa := Vector3(cos(crown.yaw), 0, -sin(crown.yaw))
 	var k := g + za * 6.0 + xa * 1.5
 	return [Vector2(k.x, k.z), crown.yaw]
+
+
+## True if p is inside (or within margin of) an island's paved shell or
+## underside, an arch, or a Fang Rock: the fly-through must never be.
+func inside_solid(p: Vector3, margin := 2.5) -> bool:
+	for i in layout.islands.size():
+		var isl := layout.islands[i]
+		var q := Vector2(p.x, p.z)
+		var g := _gauge(i, q)
+		if g > 1.0 + margin / isl.radius:
+			continue
+		var reach := clampf((1.0 - g) / 0.86, 0.0, 1.0)
+		var bottom := isl.top - isl.depth * pow(reach, 0.8) - 4.0
+		var top := _floor(isl) + margin
+		if p.y > bottom - margin and p.y < top:
+			return true
+		if isl.arch:
+			var d := q - isl.centre
+			var lx := absf(d.dot(Vector2(cos(isl.yaw), -sin(isl.yaw))))
+			var lz := absf(d.dot(Vector2(sin(isl.yaw), cos(isl.yaw))))
+			var h := p.y - _floor(isl)
+			var grand := 5.0 if isl == crown else 0.0
+			if lz < 2.6 + margin and lx < 10.4 + margin and h < 20.6 + grand + margin \
+					and (lx > SkyholdRuinsDesigns.INTRADOS - margin or h > 15.5 - margin):
+				return true
+	return p.y < layout.heightmap.ground_height_at(p.x, p.z) + margin * 2.0

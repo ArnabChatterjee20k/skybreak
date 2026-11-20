@@ -116,11 +116,12 @@ vec4 flag_at(vec2 w) {
 		float joint = step(fract(a) * 1.9, j) + step(abs(band - 1.9), j * 0.8);
 		return vec4(hash3(ivec3(int(floor(a)), 3, 7)), min(joint, 1.0), 1.0, hash3(ivec3(int(floor(a)), 4, 7)));
 	}
-	float row_h = 0.97;
-	float row = floor(l.y / row_h);
-	float flag_w = 1.25 + 0.55 * hash3(ivec3(int(row), 0, 9));
-	float u = l.x / flag_w + hash3(ivec3(int(row), 1, 9)) * 3.0;
-	float joint = step(fract(l.y / row_h) * row_h, j) + step(fract(u) * flag_w, j);
+	// Rows run along the voxel grid (world x), so joints stay straight cells.
+	float row_h = 0.968;
+	float row = floor(w.y / row_h);
+	float flag_w = 1.232 + 0.528 * floor(hash3(ivec3(int(row), 0, 9)) * 3.0) / 2.0;
+	float u = w.x / flag_w + hash3(ivec3(int(row), 1, 9)) * 3.0;
+	float joint = step(fract(w.y / row_h) * row_h, j * 0.99) + step(fract(u) * flag_w, j * 0.99);
 	return vec4(hash3(ivec3(int(row), int(floor(u)), 11)), min(joint, 1.0), 0.0, hash3(ivec3(int(row), int(floor(u)), 12)));
 }
 
@@ -180,14 +181,15 @@ void fragment() {
 			vec2 fc = (floor(world_pos.xz / pave_cell) + 0.5) * pave_cell;
 			vec4 f = flag_at(fc);
 			vec3 base = to_linear(texel.rgb);
-			vec3 stone = mix(base, base * to_linear(marble_color) / max(to_linear(vec3(0.83, 0.75, 0.59)), vec3(0.01)), f.z);
+			vec3 stone = mix(base, base * marble_color / max(to_linear(vec3(0.8, 0.75, 0.64)), vec3(0.01)), f.z);
 			stone *= 0.9 + 0.2 * f.x;
 			stone = mix(stone, stone * vec3(1.02, 1.0, 0.95), step(0.8, f.x));
 			ivec2 pc = ivec2(floor(world_pos.xz / pave_cell));
 			float h = hash3(ivec3(pc.x, 17, pc.y));
 			float moss_k = texel.a;
-			vec3 joint = mix(to_linear(joint_color), to_linear(joint_moss), step(0.55 - moss_k * 0.5, h));
-			albedo = mix(stone, joint * (0.85 + 0.3 * h), f.y);
+			vec3 joint = mix(joint_color, joint_moss, step(0.55 - moss_k * 0.5, h));
+			float far_k = 1.0 - smoothstep(25.0, 110.0, length(world_pos - CAMERA_POSITION_WORLD));
+			albedo = mix(stone, mix(stone * 0.8, joint * (0.85 + 0.3 * h), far_k), f.y);
 			// Wild cells in the joints: tiny white and butter flowers.
 			if (f.y > 0.5 && h > 0.985 - moss_k * 0.03) {
 				albedo = h > 0.993 ? vec3(0.83, 0.8, 0.72) : vec3(0.78, 0.69, 0.32);
