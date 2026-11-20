@@ -272,3 +272,23 @@ func test_a_body_around_the_pivot_does_not_block_the_boom() -> void:
 	obstacles.set_bodies(PackedVector3Array([Vector3(0, 10, 0)]), Vector3(1.0, 1.8, 1.0))
 	assert_eq(obstacles.body_clear_fraction(Vector3(0, 10, 0), Vector3(0, 11, 6)), 1.0)
 	assert_lt(obstacles.body_clear_fraction(Vector3(0, 10, 5), Vector3(0, 10, -5)), 0.5)
+
+
+func test_a_low_wall_close_behind_lifts_the_camera_instead_of_pulling_onto_the_player() -> void:
+	# media-2: obstacles pulled the camera to ~1.4 m, a body filling the lens.
+	var player := Vector3(0, 10, 0)
+	var target := Vector3(0, 10, -12)
+	var free := _locked_camera(CameraObstacles.new())
+	_settle(free, player, target, 120)
+	var boom := (free.global_position - player)
+	var flat := Vector3(boom.x, 0, boom.z).normalized()
+	# A chest-high wall 1.5 m behind the player: the straight boom hits it, a
+	# boom lifted 2 m clears it.
+	var wall_centre := player + flat * 1.5
+	var obstacles := CameraObstacles.new()
+	obstacles.add_box(AABB(Vector3(wall_centre.x - 4, 8.5, wall_centre.z - 0.4), Vector3(8, 1.9, 0.8)))
+	var camera := _locked_camera(obstacles)
+	_settle(camera, player, target, 180)
+	assert_false(obstacles.is_inside(camera.global_position))
+	assert_gt(camera.global_position.distance_to(player), 2.7,
+		"shifted over the wall rather than parked on the player")
