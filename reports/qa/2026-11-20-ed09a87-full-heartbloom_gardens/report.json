@@ -1,0 +1,301 @@
+{
+  "status": {
+    "Invariant soak (sim)": "PASS",
+    "Invariant soak (view)": "FAIL",
+    "Scenario library": "PASS",
+    "Golden replays": "PASS",
+    "Visual goldens": "NOT RUN",
+    "Feel metrics trend": "PASS"
+  },
+  "matches": 36,
+  "top": [
+    {
+      "check": "foot_ground",
+      "count": 1,
+      "detail": "lowest sole -34.0 cm off the visible ground (IDLE, clip fight_idle)",
+      "fighter": 2,
+      "first_tick": 423,
+      "legend": "vexa",
+      "limit": 0.05,
+      "weapon": "blade",
+      "worst_tick": 423,
+      "worst_value": -0.339715582439453,
+      "match": "1623:heartbloom_gardens:2v2:lyra,kael,vexa,brann:3235",
+      "seed": 1623,
+      "zone": "heartbloom_gardens",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '1623:heartbloom_gardens:2v2:lyra,kael,vexa,brann:3235' --tick 423 --fighter 2",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/1623_heartbloom_gardens_2v2_lyra-kael-vexa-brann_3235_t423/frame_00423.png",
+      "clip": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/1623_heartbloom_gardens_2v2_lyra-kael-vexa-brann_3235_t423/clip.mp4"
+    },
+    {
+      "check": "bow_string_head",
+      "count": 5,
+      "detail": "bow string 4.9 cm from the head centre (draw 0, ATTACKING)",
+      "fighter": 3,
+      "first_tick": 997,
+      "legend": "brann",
+      "limit": 0.1,
+      "weapon": "bow",
+      "worst_tick": 997,
+      "worst_value": 0.0493474677205086,
+      "match": "3613:heartbloom_gardens:ffa4:lyra,kael,vexa,brann:2533",
+      "seed": 3613,
+      "zone": "heartbloom_gardens",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '3613:heartbloom_gardens:ffa4:lyra,kael,vexa,brann:2533' --tick 997 --fighter 3",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/3613_heartbloom_gardens_ffa4_lyra-kael-vexa-brann_2533_t997/frame_00997.png",
+      "clip": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/3613_heartbloom_gardens_ffa4_lyra-kael-vexa-brann_2533_t997/clip.mp4"
+    },
+    {
+      "check": "camera_on_screen",
+      "count": 1,
+      "detail": "both locked fighters on screen in 83.1% of 1580 locked frames",
+      "fighter": 0,
+      "first_tick": 1800,
+      "legend": "vexa",
+      "limit": 0.95,
+      "weapon": "",
+      "worst_tick": 1800,
+      "worst_value": 0.831012658227848,
+      "match": "2621:heartbloom_gardens:2v2:vexa,brann,lyra,kael:5533",
+      "seed": 2621,
+      "zone": "heartbloom_gardens",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '2621:heartbloom_gardens:2v2:vexa,brann,lyra,kael:5533' --tick 1800 --fighter 0",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/2621_heartbloom_gardens_2v2_vexa-brann-lyra-kael_5533_t1800/frame_01800.png",
+      "clip": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/2621_heartbloom_gardens_2v2_vexa-brann-lyra-kael_5533_t1800/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 1,
+      "detail": "lowest sole +5.3 cm off the visible ground (BLOCKING, clip guard)",
+      "fighter": 2,
+      "first_tick": 638,
+      "legend": "lyra",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 638,
+      "worst_value": 0.0533532939249994,
+      "match": "3611:heartbloom_gardens:ffa4:vexa,brann,lyra,kael:2555",
+      "seed": 3611,
+      "zone": "heartbloom_gardens",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '3611:heartbloom_gardens:ffa4:vexa,brann,lyra,kael:2555' --tick 638 --fighter 2",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/3611_heartbloom_gardens_ffa4_vexa-brann-lyra-kael_2555_t638/frame_00638.png",
+      "clip": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/3611_heartbloom_gardens_ffa4_vexa-brann-lyra-kael_2555_t638/clip.mp4"
+    },
+    {
+      "check": "bow_string_head",
+      "count": 3,
+      "detail": "bow string 8.8 cm from the head centre (draw 0, MOVING)",
+      "fighter": 1,
+      "first_tick": 1772,
+      "legend": "kael",
+      "limit": 0.1,
+      "weapon": "bow",
+      "worst_tick": 1793,
+      "worst_value": 0.0876483246684074,
+      "match": "3613:heartbloom_gardens:ffa4:lyra,kael,vexa,brann:2533",
+      "seed": 3613,
+      "zone": "heartbloom_gardens",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '3613:heartbloom_gardens:ffa4:lyra,kael,vexa,brann:2533' --tick 1793 --fighter 1",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/3613_heartbloom_gardens_ffa4_lyra-kael-vexa-brann_2533_t1793/frame_01793.png",
+      "clip": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/3613_heartbloom_gardens_ffa4_lyra-kael-vexa-brann_2533_t1793/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 1,
+      "detail": "lowest sole +5.1 cm off the visible ground (BLOCKING, clip guard)",
+      "fighter": 2,
+      "first_tick": 1034,
+      "legend": "brann",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 1034,
+      "worst_value": 0.0508576661489428,
+      "match": "2610:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:4342",
+      "seed": 2610,
+      "zone": "heartbloom_gardens",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '2610:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:4342' --tick 1034 --fighter 2",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/2610_heartbloom_gardens_ffa4_kael-vexa-brann-lyra_4342_t1034/frame_01034.png",
+      "clip": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/2610_heartbloom_gardens_ffa4_kael-vexa-brann-lyra_4342_t1034/clip.mp4"
+    },
+    {
+      "check": "bow_string_head",
+      "count": 3,
+      "detail": "bow string 9.0 cm from the head centre (draw 0, MOVING)",
+      "fighter": 3,
+      "first_tick": 1765,
+      "legend": "kael",
+      "limit": 0.1,
+      "weapon": "heartstring",
+      "worst_tick": 1765,
+      "worst_value": 0.0904206112027168,
+      "match": "1621:heartbloom_gardens:2v2:vexa,brann,lyra,kael:2345",
+      "seed": 1621,
+      "zone": "heartbloom_gardens",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '1621:heartbloom_gardens:2v2:vexa,brann,lyra,kael:2345' --tick 1765 --fighter 3",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/1621_heartbloom_gardens_2v2_vexa-brann-lyra-kael_2345_t1765/frame_01765.png",
+      "clip": "2026-11-20-ed09a87-full-heartbloom_gardens/captures/1621_heartbloom_gardens_2v2_vexa-brann-lyra-kael_2345_t1765/clip.mp4"
+    }
+  ],
+  "metrics": {
+    "hitstop_consistency": 0.5696257615317668,
+    "pops_per_fighter_minute": 0.0,
+    "finger_pops_per_fighter_minute": 0.0,
+    "foot_slide_cm_per_frame": 0.007551620925023036,
+    "foot_error_p95_cm": 1.1684406728019463,
+    "camera_jerk_p95": 0.010215277072145711,
+    "locked_on_screen_share": 0.987272347158691,
+    "sim_ms_per_tick": 0.7666678549382716,
+    "view_ms_per_frame": 0.6762856327160494,
+    "metric_versions": {
+      "foot_slide_cm_per_frame": 2
+    },
+    "latency_ticks": {
+      "brann": {
+        "grab@air": 10,
+        "grab@ground": 10,
+        "heavy@air": 19,
+        "heavy@ground": 19,
+        "light@air": 9,
+        "light@ground": 9
+      },
+      "kael": {
+        "grab@air": 8,
+        "grab@ground": 8,
+        "heavy@air": 15,
+        "heavy@ground": 15,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "lyra": {
+        "grab@air": 9,
+        "grab@ground": 9,
+        "heavy@air": 16,
+        "heavy@ground": 16,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "vexa": {
+        "grab@air": 7,
+        "grab@ground": 7,
+        "heavy@air": 12,
+        "heavy@ground": 12,
+        "light@air": 5,
+        "light@ground": 5
+      }
+    }
+  },
+  "trend": [
+    [
+      "hitstop_consistency",
+      0.5696257615317668,
+      0.5340582808968172,
+      0.06659850040190923,
+      false
+    ],
+    [
+      "pops_per_fighter_minute",
+      0.0,
+      24.26347971095053,
+      -1.0,
+      false
+    ],
+    [
+      "finger_pops_per_fighter_minute",
+      0.0,
+      27.78527753513857,
+      -1.0,
+      false
+    ],
+    [
+      "foot_slide_cm_per_frame",
+      0.007551620925023036,
+      0.8563585519017193,
+      "rebaselined",
+      false
+    ],
+    [
+      "foot_error_p95_cm",
+      1.1684406728019463,
+      10.756936064121888,
+      -0.8913779290090696,
+      false
+    ],
+    [
+      "camera_jerk_p95",
+      0.010215277072145711,
+      0.013776319761601617,
+      -0.2584901302437469,
+      false
+    ],
+    [
+      "locked_on_screen_share",
+      0.987272347158691,
+      0.9793219973270098,
+      0.008118218372895964,
+      false
+    ],
+    [
+      "sim_ms_per_tick",
+      0.7666678549382716,
+      3.5276666556437393,
+      -0.7826699828024517,
+      false
+    ],
+    [
+      "view_ms_per_frame",
+      0.6762856327160494,
+      3.2459152535273366,
+      -0.7916502496541986,
+      false
+    ]
+  ],
+  "visual": null,
+  "scenarios": {
+    "tests": 38,
+    "passing": 38,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "goldens": {
+    "tests": 9,
+    "passing": 9,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "sim_summary": {},
+  "view_summary": {
+    "bow_string_head": {
+      "matches": 2,
+      "frames": 11,
+      "pending": false
+    },
+    "foot_ground": {
+      "matches": 3,
+      "frames": 3,
+      "pending": false
+    },
+    "camera_on_screen": {
+      "matches": 1,
+      "frames": 1,
+      "pending": false
+    }
+  }
+}

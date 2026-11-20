@@ -1,0 +1,236 @@
+{
+  "status": {
+    "Invariant soak (sim)": "PASS",
+    "Invariant soak (view)": "FAIL",
+    "Scenario library": "PASS",
+    "Golden replays": "PASS",
+    "Visual goldens": "NOT RUN",
+    "Feel metrics trend": "PASS"
+  },
+  "matches": 21,
+  "top": [
+    {
+      "check": "bow_string_head",
+      "count": 19,
+      "detail": "bow string 8.7 cm from the head centre (draw 0, MOVING)",
+      "fighter": 1,
+      "first_tick": 1900,
+      "legend": "kael",
+      "limit": 0.1,
+      "weapon": "bow",
+      "worst_tick": 1982,
+      "worst_value": 0.0869114995002747,
+      "match": "110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523",
+      "seed": 110,
+      "zone": "frozen_peaks",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523' --tick 1982 --fighter 1",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-quick/captures/110_frozen_peaks_ffa4_lyra-kael-vexa-brann_3523_t1982/frame_01982.png",
+      "clip": "2026-11-20-ed09a87-quick/captures/110_frozen_peaks_ffa4_lyra-kael-vexa-brann_3523_t1982/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 2,
+      "detail": "lowest sole +6.6 cm off the visible ground (BLOCKING, clip guard)",
+      "fighter": 0,
+      "first_tick": 1178,
+      "legend": "lyra",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 1181,
+      "worst_value": 0.0661217976698936,
+      "match": "110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523",
+      "seed": 110,
+      "zone": "frozen_peaks",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523' --tick 1181 --fighter 0",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-quick/captures/110_frozen_peaks_ffa4_lyra-kael-vexa-brann_3523_t1181/frame_01181.png",
+      "clip": "2026-11-20-ed09a87-quick/captures/110_frozen_peaks_ffa4_lyra-kael-vexa-brann_3523_t1181/clip.mp4"
+    },
+    {
+      "check": "bow_string_head",
+      "count": 2,
+      "detail": "bow string 7.7 cm from the head centre (draw 0, ATTACKING)",
+      "fighter": 2,
+      "first_tick": 2003,
+      "legend": "lyra",
+      "limit": 0.1,
+      "weapon": "bow",
+      "worst_tick": 2004,
+      "worst_value": 0.0766481682658195,
+      "match": "104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243",
+      "seed": 104,
+      "zone": "verdant_falls",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243' --tick 2004 --fighter 2",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-quick/captures/104_verdant_falls_ffa4_vexa-brann-lyra-kael_2243_t2004/frame_02004.png",
+      "clip": "2026-11-20-ed09a87-quick/captures/104_verdant_falls_ffa4_vexa-brann-lyra-kael_2243_t2004/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 1,
+      "detail": "lowest sole +10.2 cm off the visible ground (IDLE, clip fight_idle)",
+      "fighter": 2,
+      "first_tick": 1902,
+      "legend": "brann",
+      "limit": 0.05,
+      "weapon": "lance",
+      "worst_tick": 1902,
+      "worst_value": 0.102102599994488,
+      "match": "102:stormfall_city:2v2:kael,vexa,brann,lyra:4455",
+      "seed": 102,
+      "zone": "stormfall_city",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '102:stormfall_city:2v2:kael,vexa,brann,lyra:4455' --tick 1902 --fighter 2",
+      "pending": false,
+      "image": "2026-11-20-ed09a87-quick/captures/102_stormfall_city_2v2_kael-vexa-brann-lyra_4455_t1902/frame_01902.png",
+      "clip": "2026-11-20-ed09a87-quick/captures/102_stormfall_city_2v2_kael-vexa-brann-lyra_4455_t1902/clip.mp4"
+    }
+  ],
+  "metrics": {
+    "hitstop_consistency": 0.62004662004662,
+    "pops_per_fighter_minute": 0.0,
+    "finger_pops_per_fighter_minute": 0.0,
+    "foot_slide_cm_per_frame": 0.03258428850216632,
+    "foot_error_p95_cm": 0.8549737629378978,
+    "camera_jerk_p95": 0.010449993047153659,
+    "locked_on_screen_share": 0.9879195228014763,
+    "sim_ms_per_tick": 0.7482514484126984,
+    "view_ms_per_frame": 0.6289237698412699,
+    "metric_versions": {
+      "foot_slide_cm_per_frame": 2
+    },
+    "latency_ticks": {
+      "brann": {
+        "grab@air": 10,
+        "grab@ground": 10,
+        "heavy@air": 19,
+        "heavy@ground": 19,
+        "light@air": 9,
+        "light@ground": 9
+      },
+      "kael": {
+        "grab@air": 8,
+        "grab@ground": 8,
+        "heavy@air": 15,
+        "heavy@ground": 15,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "lyra": {
+        "grab@air": 9,
+        "grab@ground": 9,
+        "heavy@air": 16,
+        "heavy@ground": 16,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "vexa": {
+        "grab@air": 7,
+        "grab@ground": 7,
+        "heavy@air": 12,
+        "heavy@ground": 12,
+        "light@air": 5,
+        "light@ground": 5
+      }
+    }
+  },
+  "trend": [
+    [
+      "hitstop_consistency",
+      0.62004662004662,
+      0.6955187231430325,
+      -0.10851196464612177,
+      false
+    ],
+    [
+      "pops_per_fighter_minute",
+      0.0,
+      0.0,
+      null,
+      false
+    ],
+    [
+      "finger_pops_per_fighter_minute",
+      0.0,
+      0.0,
+      null,
+      false
+    ],
+    [
+      "foot_slide_cm_per_frame",
+      0.03258428850216632,
+      0.007800249234868435,
+      "rebaselined",
+      false
+    ],
+    [
+      "foot_error_p95_cm",
+      0.8549737629378978,
+      4.627295714808758,
+      -0.8152325211890563,
+      false
+    ],
+    [
+      "camera_jerk_p95",
+      0.010449993047153659,
+      0.01232581678777932,
+      -0.15218656685579532,
+      false
+    ],
+    [
+      "locked_on_screen_share",
+      0.9879195228014763,
+      0.9943203223316093,
+      -0.006437361669450282,
+      false
+    ],
+    [
+      "sim_ms_per_tick",
+      0.7482514484126984,
+      1.463658333333333,
+      -0.4887799759192217,
+      false
+    ],
+    [
+      "view_ms_per_frame",
+      0.6289237698412699,
+      1.0998769841269838,
+      -0.4281871710039721,
+      false
+    ]
+  ],
+  "visual": null,
+  "scenarios": {
+    "tests": 38,
+    "passing": 38,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "goldens": {
+    "tests": 9,
+    "passing": 9,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "sim_summary": {},
+  "view_summary": {
+    "foot_ground": {
+      "matches": 2,
+      "frames": 3,
+      "pending": false
+    },
+    "bow_string_head": {
+      "matches": 2,
+      "frames": 21,
+      "pending": false
+    }
+  }
+}

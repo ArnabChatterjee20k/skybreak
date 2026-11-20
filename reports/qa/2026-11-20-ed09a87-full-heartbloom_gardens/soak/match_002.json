@@ -1,0 +1,57 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 8
+		},
+		"bow/projectile+counter": {
+			"10": 1
+		},
+		"launcher": {
+			"7": 1
+		},
+		"light_1+counter": {
+			"7": 3,
+			"9": 4
+		},
+		"light_2": {
+			"3": 2,
+			"5": 4
+		},
+		"light_3": {
+			"5": 2,
+			"8": 4
+		}
+	},
+	"id": "1602:heartbloom_gardens:1v1:brann,lyra:55",
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1602,
+	"sim_ms_per_tick": 0.544975,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0108938571065664,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.07975611863935,
+		"foot_slide_cm_per_frame": 0.000657659487416457,
+		"foot_slide_frames": 269,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.98932384341637,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.555289444444444,
+	"violations": [],
+	"wall_seconds": 14.665,
+	"zone": "heartbloom_gardens"
+}

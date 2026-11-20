@@ -1,0 +1,90 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 3
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"heartstring/projectile": {
+			"5": 2
+		},
+		"launcher": {
+			"8": 4,
+			"20": 1
+		},
+		"light_1": {
+			"3": 4,
+			"4": 7,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 8,
+			"8": 1,
+			"9": 1
+		},
+		"light_2": {
+			"3": 9,
+			"4": 7,
+			"5": 1
+		},
+		"light_3": {
+			"3": 2,
+			"4": 6,
+			"5": 7,
+			"8": 1
+		},
+		"spike": {
+			"8": 1
+		}
+	},
+	"id": "1621:heartbloom_gardens:2v2:vexa,brann,lyra,kael:2345",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		3,
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 1621,
+	"sim_ms_per_tick": 0.943608333333333,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0104828188195825,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.973259564341333,
+		"foot_slide_cm_per_frame": 0.00201675384399232,
+		"foot_slide_frames": 546,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.993928354584092,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.829674444444444,
+	"violations": [
+		{
+			"check": "bow_string_head",
+			"count": 3,
+			"detail": "bow string 9.0 cm from the head centre (draw 0, MOVING)",
+			"fighter": 3,
+			"first_tick": 1765,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "heartstring",
+			"worst_tick": 1765,
+			"worst_value": 0.0904206112027168
+		}
+	],
+	"wall_seconds": 13.813,
+	"zone": "heartbloom_gardens"
+}

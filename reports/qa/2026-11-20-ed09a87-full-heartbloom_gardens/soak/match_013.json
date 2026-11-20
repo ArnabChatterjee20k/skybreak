@@ -1,0 +1,63 @@
+{
+	"hitstops": {
+		"lance/light_1+counter": {
+			"8": 5
+		},
+		"lance/light_2": {
+			"4": 5
+		},
+		"lance/light_3": {
+			"7": 4
+		},
+		"launcher": {
+			"7": 2
+		},
+		"light_1": {
+			"3": 3,
+			"5": 5
+		},
+		"light_1+counter": {
+			"7": 1
+		},
+		"light_2": {
+			"3": 2,
+			"5": 5
+		},
+		"light_3": {
+			"3": 2,
+			"8": 5
+		}
+	},
+	"id": "2601:heartbloom_gardens:1v1:vexa,brann:55",
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2601,
+	"sim_ms_per_tick": 0.48746,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0104952976107597,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.19296415094254,
+		"foot_slide_cm_per_frame": 0.00146820076614469,
+		"foot_slide_frames": 266,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.998731769181991,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.521577777777778,
+	"violations": [],
+	"wall_seconds": 13.731,
+	"zone": "heartbloom_gardens"
+}

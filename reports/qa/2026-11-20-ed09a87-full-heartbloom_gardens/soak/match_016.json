@@ -1,0 +1,85 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 6
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"launcher": {
+			"8": 3
+		},
+		"light_1": {
+			"3": 6,
+			"4": 6,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 4,
+			"8": 3,
+			"9": 3
+		},
+		"light_2": {
+			"3": 9,
+			"4": 4,
+			"5": 3
+		},
+		"light_3": {
+			"3": 6,
+			"4": 3,
+			"8": 3
+		},
+		"repeater/projectile": {
+			"1": 48
+		}
+	},
+	"id": "2610:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:4342",
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		3,
+		4,
+		2
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 2610,
+	"sim_ms_per_tick": 0.957090555555556,
+	"ticks": 1800,
+	"view": {
+		"camera_jerk_p95": 0.0103997113183141,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.14196520698897,
+		"foot_slide_cm_per_frame": 0.0160505570583273,
+		"foot_slide_frames": 575,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.992571428571429,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.739154444444444,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +5.1 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 2,
+			"first_tick": 1034,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1034,
+			"worst_value": 0.0508576661489428
+		}
+	],
+	"wall_seconds": 13.836,
+	"zone": "heartbloom_gardens"
+}

@@ -1,0 +1,7 @@
+1623:heartbloom_gardens:2v2:lyra,kael,vexa,brann:3235 423 1623_heartbloom_gardens_2v2_lyra-kael-vexa-brann_3235_t423 2
+3613:heartbloom_gardens:ffa4:lyra,kael,vexa,brann:2533 997 3613_heartbloom_gardens_ffa4_lyra-kael-vexa-brann_2533_t997 3
+2621:heartbloom_gardens:2v2:vexa,brann,lyra,kael:5533 1800 2621_heartbloom_gardens_2v2_vexa-brann-lyra-kael_5533_t1800 0
+3611:heartbloom_gardens:ffa4:vexa,brann,lyra,kael:2555 638 3611_heartbloom_gardens_ffa4_vexa-brann-lyra-kael_2555_t638 2
+3613:heartbloom_gardens:ffa4:lyra,kael,vexa,brann:2533 1793 3613_heartbloom_gardens_ffa4_lyra-kael-vexa-brann_2533_t1793 1
+2610:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:4342 1034 2610_heartbloom_gardens_ffa4_kael-vexa-brann-lyra_4342_t1034 2
+1621:heartbloom_gardens:2v2:vexa,brann,lyra,kael:2345 1765 1621_heartbloom_gardens_2v2_vexa-brann-lyra-kael_2345_t1765 3
