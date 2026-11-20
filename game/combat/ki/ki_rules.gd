@@ -357,7 +357,7 @@ static func _push_blocker(sim: CombatSim, beam: KiBeam, target_index: int, conta
 	var along := Vector3(beam.direction.x, 0.0, beam.direction.z)
 	target.velocity = along.normalized() * tuning.beam_block_push_speed if along.length_squared() > 0.0001 \
 		else Vector3.ZERO
-	if beam.block_ticks % tuning.beam_block_event_every == 0:
+	if beam.block_ticks % maxi(tuning.beam_block_event_every, 1) == 0:
 		sim.events.append(sim._event(CombatSim.EventType.BLOCK, contact, 0, 0, MoveData.KnockbackType.NONE))
 
 

@@ -20,7 +20,7 @@ extends Resource
 @export var beam_block_stun_ticks: int = 6
 ## Speed (m/s) a blocked beam pushes the blocker along it.
 @export var beam_block_push_speed: float = 7.0
-## A blocked beam repeats its BLOCK event (sound, spark) this often.
+## A blocked beam repeats its BLOCK event (sound, spark) this often (0 counts as every tick).
 @export var beam_block_event_every: int = 8
 ## Extra recovery when a beam ends without touching anyone.
 @export var beam_whiff_extra_recovery_ticks: int = 30

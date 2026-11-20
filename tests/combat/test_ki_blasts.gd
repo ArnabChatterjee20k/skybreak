@@ -237,6 +237,17 @@ func test_blocking_a_beam_grinds_the_guard_and_pushes_without_a_hit() -> void:
 	assert_lt(_sim.fighters[1].position.z, -15.5, "pushed back along the beam")
 
 
+func test_a_zero_block_event_interval_repeats_every_tick_instead_of_trapping() -> void:
+	_start(Vector3(0, 0, -15))
+	# An integer % 0 traps the web build (T-WEB2); 0 is treated as every tick.
+	_sim.ki_tuning = _sim.ki_tuning.duplicate()
+	_sim.ki_tuning.beam_block_event_every = 0
+	_drive(1, A.SPECIAL_1, A.BLOCK)
+	_drive(60, 0, A.BLOCK)
+	assert_eq(_count(E.HIT), 0)
+	assert_gt(_count(E.BLOCK), 20, "a BLOCK event on every blocked tick (8x fewer by default)")
+
+
 func test_lyras_beam_splits_into_three_rays() -> void:
 	_start(Vector3(0, 0, -20), LYRA_STATS)
 	_drive(1, A.SPECIAL_1)
