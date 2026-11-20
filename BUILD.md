@@ -1,37 +1,20 @@
 # Skybreak web build
 
-- Source: `ca58d8dc1636d6fea12b16f8005d99c7cc1d4646` (branch `claude/T-D36-web-build`, PR for T-D36; base main 66b15ce)
+- Source: `7d98be187b525f732bb78bef3ce679ad2faae521` (`origin/main`, merge of PR #125 T-ART1-zone-look)
 - Godot: 4.7.2.stable.official.ed1daf0bf, official `web_nothreads_release` template
-  (export_templates.tpz SHA-512 checked against SHA512-SUMS.txt), `Web` preset, release
-- Archive: `skybreak-web.tar.gz`, 43958063 bytes, sha256 `4ad389af836bfa810b9c346360d20a76d78ba11093574387ddd95cae90766cd7`; `index.html` at the root,
-  no .gz/.br copies. Upload as-is to Appwrite Sites (static, no COOP/COEP headers needed).
+  (export_templates.tpz SHA-512 verified by `tools/web/build_web.sh`), `Web` preset, release,
+  `editor/export/convert_text_resources_to_binary=false`
+- Archive: `skybreak-web.tar.gz`, 44066240 bytes (42.0 MiB), sha256
+  `d868d2a88ef2ad5ea5a05e02eebe406dfb5abd773d99f2b287347066ec7fb902`; `index.html` at the root,
+  no .gz/.br copies. Upload as-is to a static host (no COOP/COEP headers needed).
+- Unpacked: 82,150,136 bytes (index.wasm 39,514,754; index.pck 42,307,320; index.js 279,815).
 
-## Files (bytes raw / gzip -9)
+## Smoke tests (headless Chromium, SwiftShader WebGL2, plain static server, no special headers)
 
-| file | raw | gzip |
-|---|---:|---:|
-| index.wasm | 39,514,754 | 10,084,297 |
-| index.pck | 42,176,840 | 33,647,790 |
-| index.js | 279,815 | 68,400 |
-| index.html + worklets + icons | 48,247 | 36,735 |
-| **total** | **82.0 MB (78.2 MiB)** | **43.8 MB (41.8 MiB)** |
-
-## Smoke test (headless Chromium, SwiftShader WebGL2, plain static server, no special headers)
-
-`node tools/web/match_smoke_test.js <dir>` -> **PASS**
-
-- Boots with no console errors or warnings from the game (only Chromium's
-  "GPU stall due to ReadPixels" driver notices, caused by the screenshots).
-  `crossOriginIsolated` false, as expected for the single-threaded build.
-- Load: click-to-start -> engine running in 11.6-15.5 s from localhost (78.2 MB served uncompressed).
-- Front-end menu appears; Play (vs AI) -> Choose your legend -> Choose your zone -> Fight! starts a
-  Kael vs Vexa match on Shattered Mesa; 30 s of keyboard/mouse input with screenshots at 5/15/30 s:
-  HUD (names, health, meters, round timer), FIGHT! banner, both fighters and the lock-on ring visible.
-- Frame time: not meaningful here; SwiftShader renders on the CPU at about 1-2 fps. Measure on a real GPU.
-
-## Online (Duo)
-
-WebRTC is built into the web export: two in-browser `WebRtcTransport`s opened both data channels and
-exchanged packets. Appwrite (sign-in, lobby, signalling) could not be reached from the test sandbox, so
-it is unverified from the browser; if DevTools shows CORS errors, add the site's hostname as a Web
-platform in the Appwrite project.
+- `node tools/web/match_smoke_test.js build/web` -> **PASS**: menu -> Play (vs AI) -> zone -> Fight,
+  30 s of input, screenshots at 5/15/30 s, no console errors. Engine running 18.0 s after start click.
+  The 30 s screenshot shows Kael vs Vexa on the mesa, HUD, timer 98, lock-on ring and the control hint bar.
+- `node tools/web/descend_smoke_test.js build/web` (T-UX1) -> **PASS**: hints shown, fly-down prompt
+  appeared, double-tap C landed (prompt pixels 69 -> 1).
+- Frame time is not meaningful here (software GL, ~1-2 fps); measure on a real GPU.
+- Not tested: online Duo (Appwrite unreachable from the sandbox).
