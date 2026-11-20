@@ -52,7 +52,7 @@ const WEARS: Array = [Mat.STOLE, Mat.SCROLL, Mat.BRASS, Mat.RIVET, Mat.LEATHER, 
 const NOISY: Array = [Mat.STOLE, Mat.SCROLL, Mat.BRASS, Mat.LEATHER, Mat.LEATHER_DARK, Mat.GLOVE]
 
 ## Astrolabe rings: major radius, band half width (radial) and half depth.
-const RINGS := [Vector3(0.15, 0.011, 0.011), Vector3(0.12, 0.011, 0.0055), Vector3(0.09, 0.0105, 0.0055)]
+const RINGS := [Vector3(0.15, 0.0165, 0.011), Vector3(0.12, 0.0165, 0.011), Vector3(0.09, 0.0155, 0.011)]
 ## Where the rings float in rest skeleton space: behind her left shoulder.
 const ASTROLABE_CENTER := Vector3(0.31, 1.42, -0.34)
 
@@ -157,6 +157,8 @@ static func skirt_radii(y: float) -> Vector2:
 
 
 const SKIRT_HEM := 0.44
+## Centre of the body grid's voxel column nearest x = 0 (the skirt's front split).
+const SPLIT_X := -0.009
 
 
 ## The skirt's outer surface without folds (for parts laid over it).
@@ -167,14 +169,42 @@ static func skirt_sdf(p: Vector3) -> float:
 	return octagon(p.x, p.z, r.x, r.y)
 
 
-## Cape midline z at height y (behind the coat, clearing the skirt), its half
-## width, and how far the sides wrap forward.
-static func cape_mid_z(y: float) -> float:
-	return _keys(y, [[1.31, -0.12], [1.12, -0.152], [0.80, -0.232], [0.44, -0.296], [0.08, -0.318]])
-
-
+## The cape (all planar): its half width at height y (narrow where the arms
+## swing past, flaring below the hands), the inner face's depth behind the
+## body, and four flat pleat planes per side, stepped in whole voxels.
 static func cape_half_w(y: float) -> float:
-	return _keys(y, [[1.31, 0.16], [1.20, 0.21], [0.08, 0.45]])
+	return _keys(y, [[1.31, 0.15], [1.12, 0.175], [0.86, 0.215], [0.08, 0.45]])
+
+
+## Inner face z down the centre at height y, before the pleat steps.
+static func cape_base_z(y: float) -> float:
+	return _keys(y, [[1.31, -0.112], [1.18, -0.142], [1.0, -0.168], [0.80, -0.2], [0.44, -0.248], [0.08, -0.29]])
+
+
+## How much of the cape at height y rides with the pelvis instead of its chain.
+static func cape_hips_share(y: float) -> float:
+	return 0.35 * smoothstep(1.08, 0.86, y) * smoothstep(0.42, 0.66, y)
+
+
+## Pleat plane across the cape (0 centre panel, 1 box pleat, 2 and 3 the
+## sides wrapping forward).
+static func cape_strip(x: float, y: float) -> int:
+	var u := absf(x) / cape_half_w(y)
+	return 0 if u < 0.3 else (1 if u < 0.6 else (2 if u < 0.82 else 3))
+
+
+## Inner face z at (x, y): the box pleat stands one voxel back, the sides step
+## forward one and two voxels below the hands; each plane's depth snaps to
+## the voxel grid on its own phase, so the steps down the length stagger.
+static func cape_inner_z(x: float, y: float) -> float:
+	var strip := cape_strip(x, y)
+	var z := cape_base_z(y)
+	var wrap := clampf((0.98 - y) / 0.14, 0.0, 1.0)
+	var steps: Array[float] = [0.0, -1.0, roundf(wrap), roundf(wrap * 2.0)]
+	var phases: Array[float] = [0.0, 0.5, 0.25, 0.75]
+	z += steps[strip] * BODY_CELL
+	var phase := phases[strip] * BODY_CELL
+	return snappedf(z + phase, BODY_CELL) - phase + BODY_CELL * 0.5
 
 
 ## Width of the navy facing along the lining's sides.
@@ -182,34 +212,27 @@ static func facing_w(y: float) -> float:
 	return _keys(y, [[1.31, 0.04], [0.08, 0.15]])
 
 
-static func cape_z(x: float, y: float) -> float:
-	var hw := cape_half_w(y)
-	return cape_mid_z(y) + maxf(absf(x) - hw * 0.45, 0.0) * 0.4
-
-
 ## The Wayfinder Star (original emblem) in its own 2D frame (unit = r): an
 ## eight-point star whose lower point runs on as a plumb line with a bob,
 ## inside a circle broken at the upper right (u > 0 is the viewer's right).
+## Strokes never thin below one line_w, so it holds at the body cell.
 static func wayfinder(q: Vector2, r: float, line_w: float) -> bool:
-	if q.length() < r * 0.2:
+	if q.length() < r * 0.24:
 		return true
 	for k in 8:
-		var a := k * PI / 4.0
-		var d := Vector2(cos(a), sin(a))
+		var d := Vector2(cos(k * PI / 4.0), sin(k * PI / 4.0))
 		var along := q.dot(d)
-		var length := r if k % 2 == 0 else r * 0.58
-		if k == 6:
-			length = r * 2.2  # the plumb line
-			if along > r and along < length and absf(q.x) < line_w * 0.55:
-				return true
-			if Vector2(q.x, q.y + r * 2.2).length() < line_w * 1.3:
-				return true
-		var half := (0.24 if k % 2 == 0 else 0.2) * r * (1.0 - along / (r if k % 2 == 0 else r * 0.58))
-		if along > 0.0 and along < length and absf(q.cross(d)) < maxf(half, line_w * 0.3):
+		var length := r if k % 2 == 0 else r * 0.62
+		var base := (0.3 if k % 2 == 0 else 0.22) * r
+		if along > 0.0 and along < length and absf(q.cross(d)) < maxf(base * (1.0 - along / length), line_w * 0.5):
 			return true
-	var ring := q.length()
+	# The plumb line down from the lower point, and its bob.
+	if q.y < -r and q.y > -r * 2.0 and absf(q.x) < line_w * 0.5:
+		return true
+	if Vector2(q.x, q.y + r * 2.1).length() < line_w * 1.1:
+		return true
 	var angle := rad_to_deg(atan2(q.y, q.x))
-	return absf(ring - r * 1.3) < line_w * 0.55 and not (angle > 18.0 and angle < 62.0)
+	return absf(q.length() - r * 1.38) < line_w * 0.5 and not (angle > 15.0 and angle < 65.0)
 
 
 # ---------------------------------------------------------------- body grid
@@ -260,8 +283,9 @@ func _skirt(g: VoxelGrid) -> void:
 		if p.y > 0.80 or p.y < SKIRT_HEM:
 			return 1.0
 		var angle := atan2(p.x, -p.z)  # 0 at the back
-		var split := lerpf(0.0, 0.2, clampf((0.66 - p.y) / 0.22, 0.0, 1.0))
-		if absf(angle) > PI - split:
+		# The split: one voxel column at the top (y 0.6), opening toward the hem.
+		var split := lerpf(0.0, 0.03, clampf((0.6 - p.y) / 0.16, 0.0, 1.0))
+		if p.z > 0.0 and p.y < 0.6 and absf(p.x - SPLIT_X) < BODY_CELL * 0.5 + split:
 			return 1.0
 		var r := skirt_radii(p.y)
 		var t := clampf((0.78 - p.y) / 0.3, 0.0, 1.0)
@@ -373,34 +397,38 @@ func _collar(g: VoxelGrid) -> void:
 
 
 func _cape(g: VoxelGrid) -> void:
-	# One planar panel two voxels thick (outer navy, inner cerulean lining),
-	# an A-line from the shoulders to the ankles, sides wrapping forward a
-	# little, five fold ridges standing one voxel proud, a hard level hem.
+	# Planar pleated panel two voxels thick (navy outside, cerulean lining
+	# inside) from the shoulders to the ankles; each pleat plane is flat, the
+	# fold ridges are where the planes step; a hard level hem.
 	var box := AABB(Vector3(-0.47, 0.07, -0.37), Vector3(0.94, 1.26, 0.29))
-	var folds := [Vector2(-0.286, 0.5), Vector2(-0.154, 0.66), Vector2(0.154, 0.66), Vector2(0.286, 0.5), Vector2(0.0, 0.6)]
 	g.paint(box, func(p: Vector3):
-		if p.y < 0.08 or p.y > 1.31:
+		if p.y < 0.08 or p.y > 1.31 or absf(p.x) > cape_half_w(p.y):
 			return 1.0
-		var hw := cape_half_w(p.y)
-		if absf(p.x) > hw:
-			return 1.0
-		var zc := cape_z(p.x, p.y)
-		var back := zc - BODY_CELL
-		for f: Vector2 in folds:
-			# Straight fold ridges, one column wide, starting lower further out.
-			if p.y < f.y and absf(p.x - f.x) < BODY_CELL * 0.5 and absf(p.x) < hw - BODY_CELL:
-				back -= BODY_CELL
-				break
-		return -1.0 if p.z >= back and p.z < zc + BODY_CELL else 1.0, Mat.CAPE, Tag.CAPE, ADD)
-	g.paint(box, func(p: Vector3): return -1.0 if p.z >= cape_z(p.x, p.y) else 1.0, Mat.LINING, Tag.CAPE, PAINT)
+		var zi := cape_inner_z(p.x, p.y)
+		# Where a pleat plane steps, its edge folds back to meet the next
+		# plane (a fold return), so the cape never shows daylight between them.
+		var lo := zi
+		for dx: float in [-BODY_CELL, BODY_CELL]:
+			if absf(p.x + dx) <= cape_half_w(p.y):
+				lo = minf(lo, cape_inner_z(p.x + dx, p.y))
+		return -1.0 if p.z < zi and p.z >= lo - BODY_CELL * 2.0 else 1.0, Mat.CAPE, Tag.CAPE, ADD)
+	var lining := func(p: Vector3) -> bool: return p.z >= cape_inner_z(p.x, p.y) - BODY_CELL
+	g.paint(box, func(p: Vector3): return -1.0 if lining.call(p) else 1.0, Mat.LINING, Tag.CAPE, PAINT)
+	# Crease shade on the outside where a pleat plane steps in.
+	g.paint_surface(box, func(p: Vector3, c: Vector3i):
+		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or lining.call(p):
+			return false
+		var here := cape_strip(p.x, p.y)
+		var beside := cape_strip(p.x + BODY_CELL * signf(p.x), p.y)
+		return here != beside and (here == 0 or here == 2), Mat.COAT_DARK, [Mat.CAPE])
 	# A navy facing down both sides of the lining (so at rest only a strip of
 	# cerulean shows past her; it opens up in flight) with a pale piping line.
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
-		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or p.z < cape_z(p.x, p.y):
+		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or not lining.call(p):
 			return false
 		return absf(p.x) > cape_half_w(p.y) - facing_w(p.y), Mat.CAPE, [Mat.LINING])
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
-		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or p.z < cape_z(p.x, p.y):
+		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or not lining.call(p):
 			return false
 		return absf(absf(p.x) - (cape_half_w(p.y) - facing_w(p.y))) < BODY_CELL * 0.5, Mat.STARLINE, [Mat.LINING, Mat.CAPE])
 	# The lining shows as piping along the hem on the outside.
@@ -408,10 +436,14 @@ func _cape(g: VoxelGrid) -> void:
 		return g.tags[g.index(c.x, c.y, c.z)] == Tag.CAPE and p.y < 0.08 + BODY_CELL, Mat.LINING, [Mat.CAPE])
 	# Emblem embroidered on the outer back (viewed from behind, u = -x is right).
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
-		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or p.z > cape_z(p.x, p.y) - BODY_CELL * 0.5:
+		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or lining.call(p):
 			return false
-		return wayfinder(Vector2(-p.x, p.y - 0.9), 0.15, BODY_CELL * 1.6), Mat.EMBLEM, [Mat.CAPE])
+		return wayfinder(Vector2(-p.x, p.y - EMBLEM_Y), EMBLEM_R, BODY_CELL), Mat.EMBLEM, [Mat.CAPE, Mat.COAT_DARK])
 	_star_map(g, box)
+
+
+const EMBLEM_Y := 0.94
+const EMBLEM_R := 0.12
 
 
 ## The constellation map on the lining: dots (glowing) joined by pale lines,
@@ -426,7 +458,7 @@ func _star_map(g: VoxelGrid, box: AABB) -> void:
 	]
 	var unfinished := func(p: Vector3) -> bool: return p.x > 0.14 and p.y < 0.42
 	var inner := func(p: Vector3, c: Vector3i) -> bool:
-		return g.tags[g.index(c.x, c.y, c.z)] == Tag.CAPE and p.z >= cape_z(p.x, p.y)
+		return g.tags[g.index(c.x, c.y, c.z)] == Tag.CAPE and p.z >= cape_inner_z(p.x, p.y) - BODY_CELL
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
 		if not inner.call(p, c) or unfinished.call(p):
 			return false
@@ -610,29 +642,45 @@ func _lock(g: VoxelGrid, box: AABB, a: Vector3, bend: Vector3, tip: Vector3, r0:
 
 # ---------------------------------------------------------------- hat grids
 
-## The brim: a flat fine-cell disc two voxels thick, its outer edge turned up
-## two voxels, a stitched ring inside the edge and star lights set in it.
+## The brim's underside at radius r: flat, with the outer third one voxel
+## lower (a planar tier, so the brim reads as curving down, not as a card).
+static func brim_base(r: float) -> float:
+	return HAT_Y - (FINE_CELL if r > BRIM_R * 0.62 else 0.0)
+
+
+## The brim: fine-cell planar tiers, three voxels thick round the crown and
+## two further out, the outer edge turned up three voxels, a stitched ring
+## inside the edge and star lights set in it.
 func build_brim() -> VoxelGrid:
-	var g := VoxelGrid.new(AABB(Vector3(-0.475, HAT_Y, -0.475), Vector3(0.95, 0.06, 0.95)), FINE_CELL)
+	var g := VoxelGrid.new(AABB(Vector3(-0.475, HAT_Y - FINE_CELL, -0.475), Vector3(0.95, 0.07, 0.95)), FINE_CELL)
 	var box := AABB(g.origin, Vector3(g.size) * g.cell)
 	g.paint(box, func(p: Vector3):
 		var r := Vector2(p.x, p.z).length()
 		if r > BRIM_R:
 			return 1.0
-		if p.y < HAT_Y + FINE_CELL * 2.0:
-			return -1.0
-		return -1.0 if r > BRIM_R - FINE_CELL * 2.0 and p.y < HAT_Y + FINE_CELL * 4.0 else 1.0, Mat.HAT, Tag.HAT)
+		var h := p.y - brim_base(r)
+		if h < 0.0:
+			return 1.0
+		var thick := 3.0 if r < 0.24 else 2.0
+		if r > BRIM_R - FINE_CELL * 2.0:
+			thick = 5.0
+		return -1.0 if h < FINE_CELL * thick else 1.0, Mat.HAT, Tag.HAT)
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
 		var r := Vector2(p.x, p.z).length()
-		return p.y > HAT_Y + FINE_CELL and p.y < HAT_Y + FINE_CELL * 2.0 and absf(r - (BRIM_R - FINE_CELL * 4.5)) < FINE_CELL * 0.6 \
+		var h := p.y - brim_base(r)
+		return h > FINE_CELL and h < FINE_CELL * 2.0 and absf(r - (BRIM_R - FINE_CELL * 4.5)) < FINE_CELL * 0.6 \
 			and posmod(c.x + c.z, 3) != 0, Mat.STITCH, [Mat.HAT])
+	# A dark crease where the tiers meet.
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
+		var r := Vector2(p.x, p.z).length()
+		return absf(r - BRIM_R * 0.62) < FINE_CELL * 0.7 and p.y > HAT_Y, Mat.COAT_DARK, [Mat.HAT])
 	# Star lights: a bright core with four dim arms, seven round the brim.
 	for s: Vector2 in [Vector2(-60, 0.80), Vector2(-24, 0.64), Vector2(18, 0.84), Vector2(52, 0.66),
 			Vector2(108, 0.78), Vector2(160, 0.70), Vector2(-128, 0.74)]:
 		var a := deg_to_rad(s.x)
 		var at := Vector2(sin(a), cos(a)) * BRIM_R * s.y
 		g.paint_surface(box, func(p: Vector3, _c: Vector3i):
-			if p.y < HAT_Y + FINE_CELL:
+			if p.y < brim_base(Vector2(p.x, p.z).length()) + FINE_CELL:
 				return false
 			var d := Vector2(p.x, p.z) - at
 			return absf(d.x) < FINE_CELL * 1.0 and absf(d.y) < FINE_CELL * 1.0 or \
@@ -714,6 +762,10 @@ static func wayfinder_star(q: Vector2, r: float) -> bool:
 
 # ------------------------------------------------- stole and clasp (fine grid)
 
+## Front face of the stole where it hangs free.
+const STOLE_Z := 0.142
+
+
 func build_front() -> VoxelGrid:
 	var g := VoxelGrid.new(AABB(Vector3(-0.2, 0.6, 0.0), Vector3(0.4, 0.7, 0.32)), FINE_CELL)
 	var box := AABB(g.origin, Vector3(g.size) * g.cell)
@@ -728,8 +780,12 @@ func build_front() -> VoxelGrid:
 			var tip := 0.66 if posmod(int(floor(ax / FINE_CELL)), 2) == 0 else 0.67
 			if p.y < tip:
 				return 1.0
+			# Lies on the robe over the shoulders and where the skirt flares;
+			# in between it hangs as one flat plane.
 			var d: float = robe.call(p)
-			return -1.0 if d > 0.016 and d <= 0.034 else 1.0, Mat.STOLE, Tag.STOLE, ADD)
+			var on_robe := d > 0.016 and d <= 0.034
+			var hangs := p.y < 1.17 and d > 0.004 and p.z >= STOLE_Z - FINE_CELL * 1.6 and p.z < STOLE_Z
+			return -1.0 if (on_robe and (p.y >= 1.17 or p.z >= STOLE_Z - FINE_CELL * 1.6)) or hangs else 1.0, Mat.STOLE, Tag.STOLE, ADD)
 		# Inked latitude lines and a dashed meridian; the left strip carries a compass rose.
 		g.paint_surface(box, func(p: Vector3, c: Vector3i):
 			var ax := p.x * side
@@ -985,22 +1041,33 @@ func weights(tag: int, p: Vector3) -> Array:
 		Tag.LEG_L, Tag.LEG_R:
 			_leg_w(p, w, "Left" if tag == Tag.LEG_L else "Right")
 		Tag.SKIRT:
-			var k := 0.6 * smoothstep(0.8, SKIRT_HEM, p.y) * smoothstep(0.0, 0.14, absf(p.x))
+			# The front and sides follow the thighs; the back (under the cape) far less,
+			# so a high kick doesn't tear the back panels.
+			# The front panels are cut apart at the split, so each follows its
+			# thigh right up to the split edge; the back is one piece, so it
+			# blends across the middle.
+			# The split is one voxel column wide, centred on SPLIT_X.
+			var sx := p.x - SPLIT_X
+			var cut := smoothstep(0.0, 0.1, p.z) * smoothstep(0.66, 0.6, p.y)
+			var across := smoothstep(0.0, lerpf(0.14, BODY_CELL * 0.5, cut), absf(sx))
+			var k := 0.6 * smoothstep(0.8, SKIRT_HEM, p.y) * across * lerpf(0.3, 1.0, smoothstep(-0.12, 0.02, p.z))
+			# Right by the top of the split both sides meet, so the legs fade in below it.
+			var near_split := smoothstep(0.0, 0.1, p.z) * (1.0 - smoothstep(0.03, 0.12, absf(sx)))
+			k *= lerpf(1.0, smoothstep(0.615, 0.5, p.y), near_split)
 			_add(w, &"Hips", 1.0 - k)
-			_add(w, &"LeftUpperLeg" if p.x > 0.0 else &"RightUpperLeg", k)
+			_add(w, &"LeftUpperLeg" if sx > 0.0 else &"RightUpperLeg", k)
 		Tag.CAPE:
 			var chain := _cape_chain()
 			var tmp := {}
 			_chain_w(Vector3(chain[1].x, p.y, p.z), tmp, chain,
 				[&"UpperChest", &"Scarf1", &"Scarf2", &"Scarf3", &"Scarf4", &"Scarf5"])
-			var k := 0.3 * smoothstep(0.62, 0.2, p.y) * smoothstep(0.22, 0.4, absf(p.x))
 			# Round the hips the cape rides with the pelvis a little, so a
-			# hips-back stance doesn't push the coat through it.
-			var hips := 0.35 * smoothstep(1.08, 0.86, p.y) * smoothstep(0.42, 0.66, p.y)
+			# hips-back stance doesn't push the coat through it. Legs and
+			# forearms are kept out by LyraCapeClearance swinging the chain.
+			var hips := cape_hips_share(p.y)
 			for b: StringName in tmp:
-				_add(w, b, tmp[b] * (1.0 - k) * (1.0 - hips))
-			_add(w, &"Hips", hips * (1.0 - k))
-			_add(w, &"LeftUpperLeg" if p.x > 0.0 else &"RightUpperLeg", k)
+				_add(w, b, tmp[b] * (1.0 - hips))
+			_add(w, &"Hips", hips)
 		Tag.HEAD, Tag.HAT:
 			_add(w, &"Head", 1.0)
 		Tag.HAIR:
