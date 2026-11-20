@@ -860,12 +860,12 @@ func flight() -> Array[Dictionary]:
 		{"from": w + Vector3(-30, 15, 85), "at": f},
 		{"from": f + Vector3(-10, 5, 22), "at": f + Vector3(0, 1, 0)},
 		{"from": mid + Vector3(5, -4, 28), "at": mid + Vector3(0, -4, 0)},
-		{"from": f0 + Vector3(-10, -55, 62), "at": f0 + Vector3(0, -30, 0)},
-		{"from": f0 + Vector3(60, -25, -10), "at": f0 + Vector3(0, -10, 0)},
+		{"from": f0 + Vector3(20, -50, 70), "at": f0 + Vector3(0, -30, 0)},
+		{"from": f0 + Vector3(50, -40, -5), "at": f0 + Vector3(0, -10, 0)},
 		{"from": Vector3(-30, 185, -760), "at": g + Vector3(0, 10, 0)},
 		{"from": g + za * 45.0 + Vector3(0, 12, 0), "at": g + Vector3(0, 9, 0)},
 		{"from": g + za * 6.0 + Vector3(0, 8, 0), "at": g - za * 30.0 + Vector3(0, 7, 0)},
-		{"from": g - za * 55.0 + Vector3(0, 20, 0), "at": g - za * 200.0 + Vector3(0, 10, 0)},
+		{"from": g - za * 55.0 + Vector3(0, 27, 0), "at": g - za * 160.0 + Vector3(0, -50, 0)},
 	]
 
 

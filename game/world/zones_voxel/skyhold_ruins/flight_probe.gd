@@ -12,7 +12,7 @@ func _initialize() -> void:
 	for k in 600:
 		var u := float(k) / 599.0 * float(pts.size() - 1)
 		var p: Vector3 = capture._spline(pts, "from", u)
-		if zone.inside_solid(p):
+		if zone.inside_solid(p, float(OS.get_environment("MARGIN")) if OS.get_environment("MARGIN") != "" else 2.5):
 			bad += 1
 			print("frame %d (u %.2f): inside at %s" % [k, u, p])
 	print("spots: ", zone.spots)
