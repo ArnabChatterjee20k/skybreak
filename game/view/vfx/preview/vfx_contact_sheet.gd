@@ -6,7 +6,7 @@ const CELL := Vector2i(480, 300)
 const COLUMNS := 5
 ## Seconds into each effect when the cell is captured.
 const SHOT_AT := {
-	&"ki_blast": 0.15, &"ki_beam": 0.75, &"ko_dome": 0.3, &"lightning": 0.08, &"petals": 0.5,
+	&"ki_blast": 0.15, &"ki_beam": 0.75, &"ko_burst": 0.3, &"lightning": 0.08, &"petals": 0.5,
 	&"aura_flare": 0.18, &"landing_dust": 0.2, &"guard_shatter": 0.12,
 }
 

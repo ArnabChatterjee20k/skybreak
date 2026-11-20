@@ -30,10 +30,12 @@ const EMBER_FLARE := 3.0
 const EMBER_CHARGE_TICKS := 70
 const LAYER_BONES: Array[StringName] = [&"Hips", &"Spine", &"Chest", &"UpperChest"]
 ## Stowed signature weapons: bone, grip position in the model's rest space,
-## then tilt (about Z), pitch (about X) and spin (about the weapon's long axis), degrees.
+## then tilt (about Z), pitch (about X) and spin (about the weapon's long axis), degrees,
+## and an optional scale.
 const STOWED := {
 	Weapon.Kind.TITAN_HAMMER: [&"UpperChest", Vector3(0.36, 0.62, -0.42), 42.0, 0.0, 90.0],
-	Weapon.Kind.SCATTER_CANNON: [&"Hips", Vector3(-0.44, 0.95, 0.02), 0.0, -90.0, 0.0],
+	# Holstered flat on his right hip, muzzle back and a little down, well clear of the ground (#98).
+	Weapon.Kind.SCATTER_CANNON: [&"Hips", Vector3(-0.5, 0.92, 0.06), 0.0, -15.0, 0.0, 0.8],
 }
 const STOWED_SCALE := 1.0
 
@@ -201,7 +203,8 @@ func _stow_weapons() -> void:
 		_skeleton.add_child(attachment)
 		var turn := Basis(Vector3.BACK, deg_to_rad(entry[2])) * Basis(Vector3.RIGHT, deg_to_rad(entry[3])) \
 			* Basis(Vector3.UP, deg_to_rad(entry[4]))
-		var place := Transform3D(turn.scaled(Vector3.ONE * STOWED_SCALE), entry[1])
+		var size: float = entry[5] if entry.size() > 5 else 1.0
+		var place := Transform3D(turn.scaled(Vector3.ONE * STOWED_SCALE * size), entry[1])
 		var weapon := WeaponModels.build(kind)
 		weapon.transform = _skeleton.get_bone_global_rest(bone).affine_inverse() * place * weapon.transform
 		attachment.add_child(weapon)

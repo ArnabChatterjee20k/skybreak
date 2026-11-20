@@ -6,7 +6,7 @@ extends RefCounted
 static func build(parent: Node3D, kit: PropKit, zone: ZoneData, layout: ZoneLayout) -> void:
 	var zi := layout.index_of(zone.id)
 	var c := zone.centre
-	var stone := kit.material("sky_stone", Color(0.66, 0.6, 0.54), {"strata": 0.4, "strata_spacing": 5.0})
+	var stone := kit.material("sky_stone", Color(0.72, 0.64, 0.54))
 	var grass := kit.material("sky_grass", Color(0.36, 0.62, 0.26))
 	var marble := kit.material("sky_marble", Color(0.88, 0.85, 0.78))
 	# Islands as spheres (x, y, z, radius) kept apart by tight 14-40 m gaps.

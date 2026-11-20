@@ -389,3 +389,51 @@ func test_an_ai_costs_at_most_0_05_ms_per_tick() -> void:
 	var per_ai_ms := float(spent) / ticks / 2.0 / 1000.0
 	gut.p("AI cost: %.4f ms per AI per tick" % per_ai_ms)
 	assert_lte(per_ai_ms, 0.05)
+
+
+# --- PB3-1: up close the pickup plan used to lose to PRESSURE every time ---
+
+func _close_duel_with_a_drop(seed_value: int) -> CombatSim:
+	var sim := CombatSim.new(seed_value)
+	sim.add_fighter(Vector3(0, 1, 0))
+	sim.add_fighter(Vector3(0, 1, -3))  # 3 m: well inside PRESSURE range
+	sim.lock_everyone_onto_nearest()
+	var pickup := WeaponPickup.new()
+	pickup.id = 999
+	pickup.kind = Weapon.Kind.STORM_BLADE
+	pickup.position = Vector3(6, sim.floor_height() + 0.6, 1)  # nearer to fighter 0
+	pickup.phase = WeaponPickup.Phase.GROUNDED
+	pickup.ticks_left = 100000
+	sim.pickups.append(pickup)
+	return sim
+
+
+func test_unarmed_up_close_a_reachable_drop_outscores_pressure() -> void:
+	var sim := _close_duel_with_a_drop(5)
+	var ai := FighterAI.new(0, 3, 5)
+	var me := sim.fighters[0]
+	var pressure := ai.profile.aggression + 0.25
+	assert_gt(ai._pickup_score(sim, me, sim.fighters[1], 3.0), pressure,
+		"an unarmed level-3 fighter goes for a drop it reaches first")
+
+
+func test_no_pickup_run_while_the_opponent_swings_at_point_blank() -> void:
+	var sim := _close_duel_with_a_drop(5)
+	var ai := FighterAI.new(0, 5, 5)
+	var target := sim.fighters[1]
+	target.state = FighterState.State.ATTACKING
+	assert_eq(ai._pickup_score(sim, sim.fighters[0], target, 2.0), 0.0, "no suicidal grab mid-combo")
+
+
+func test_level_3_grabs_a_nearby_drop_in_a_close_duel_on_most_seeds() -> void:
+	var grabbed := 0
+	for trial in 10:
+		var sim := _close_duel_with_a_drop(900 + trial)
+		var ai := FighterAI.new(0, 3, FighterAI.seed_for(900 + trial, 0))
+		for _tick in 300:  # 5 s
+			var inputs: Array[FighterInput] = [ai.next_input(sim), FighterInput.new()]
+			sim.tick(inputs)
+			if sim.fighters[0].held_weapon() != Weapon.Kind.NONE or sim.fighters[0].weapon_count() > 0:
+				grabbed += 1
+				break
+	assert_gte(grabbed, 7, "grabbed the drop within 5 s in %d of 10 close duels" % grabbed)

@@ -1,7 +1,7 @@
 class_name MatchVfx
 extends Node3D
 ## The T-D27 effects layer: reads CombatSim.events and fighter state (read-only) and
-## plays pooled effects: heavy-hit bursts, guard-break shatter, KO finisher, zone
+## plays pooled effects: heavy-hit bursts, guard-break shatter, KO contact burst, zone
 ## extras, swing smears, dash/vanish afterimages, speed lines, sonic rings, landing
 ## dust and aura flares. CombatFeedback forwards each tick's events to react().
 
@@ -44,6 +44,8 @@ const SMEAR_BY_WEAPON := {
 const SPARK_STANDOFF := 0.4
 ## Effect scale when more than two fighters share the screen (FFA).
 const CROWD_SCALE := 0.8
+## Rendered frames the KO impact frame holds (ART_BIBLE §7: the 1-frame KO impact frame).
+const KO_IMPACT_FRAMES := 1
 
 ## Read-only. Found among the ancestors (the arena's `sim`) when not set.
 var sim: CombatSim
@@ -202,7 +204,7 @@ static func effects_for(event: Dictionary, zone: StringName) -> Array[StringName
 		E.GUARD_BREAK:
 			found.append(&"guard_shatter")
 		E.KO:
-			found.append(&"ko_dome")
+			found.append(&"ko_burst")
 			if zone == &"stormfall_city":
 				found.append(&"lightning")
 	if hit and (move.begins_with("ki_blast") or move.begins_with("charged_blast") or move.begins_with("beam")):
@@ -275,8 +277,8 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 		match kind:
 			&"guard_shatter", &"petals", &"sparkles":
 				spawn(kind, spark, Color.TRANSPARENT, size)
-			&"ko_dome":
-				spawn(kind, where, color.lerp(Color.WHITE, 0.5))
+			&"ko_burst":
+				spawn(kind, spark, color.lerp(Color.WHITE, 0.4), size)
 			&"lightning":
 				spawn(kind, Vector3(where.x, where.y - FEET, where.z), Color.TRANSPARENT, 1.0, _facing_camera(where))
 			_:
@@ -290,9 +292,8 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 		&"lines":
 			_screen.burst_lines(center, Color(1.0, 0.85, 0.85), 0.3)
 		&"ko":
-			# One clean beat: flash and colour pop, no speed lines over the contact point.
-			_screen.flash(VfxScreen.MAX_FLASH_FRAMES, 0.4)
-			_screen.color_pop(VfxScreen.SKY_POP, 0.6, 0.25)
+			# The one KO beat (#121): a single impact frame centred on the contact, no flash or grade.
+			_screen.impact(color, center, KO_IMPACT_FRAMES)
 
 
 func _combo_hits(target: int) -> int:

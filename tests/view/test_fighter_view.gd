@@ -126,3 +126,36 @@ func test_the_test_arena_draws_p1_kael_against_p2_vexa() -> void:
 	assert_eq(p2.find_children("*", "VexaView", true, false).size(), 1, "P2 draws Vexa's view")
 	assert_eq(arena.sim.fighters[0].stats.move_set.resource_path, "res://game/combat/moves/kael/kael_move_set.tres")
 	assert_eq(arena.sim.fighters[1].stats.move_set.resource_path, "res://game/combat/moves/vexa/vexa_move_set.tres")
+
+func test_a_ko_snaps_the_body_back_from_the_contact_on_the_ko_frame() -> void:
+	# #121: the sim holds the loser in hitstop; the view reacts on the KO frame anyway.
+	_state.position = Vector3(0, 1, 0)
+	_view.remember_previous_tick()
+	_state.health = 0
+	_state.hitstop_ticks = 20
+	_view.present(1.0, 1.0 / 60.0)
+	assert_almost_eq(_view.ko_recoil(), 1.0, 0.001)
+	var body: Node3D = _view.get_child(0)
+	# No KO event in reach: the contact is taken in front, so the body tips back (+Z).
+	assert_gt(_body_up().z, 0.4, "the top of the body tips away from the hit")
+	assert_gt(body.position.z, 0.2, "and the body is shoved back")
+
+
+func test_the_ko_recoil_holds_through_hitstop_then_eases_out() -> void:
+	_state.health = 0
+	_state.hitstop_ticks = 20
+	for i in 10:
+		_view.present(1.0, 1.0 / 60.0)
+	assert_almost_eq(_view.ko_recoil(), 1.0, 0.001, "held while frozen")
+	_state.hitstop_ticks = 0
+	for i in int(FighterView.KO_RECOIL_OUT * 60.0) + 2:
+		_view.present(1.0, 1.0 / 60.0)
+	assert_eq(_view.ko_recoil(), 0.0)
+	assert_eq((_view.get_child(0) as Node3D).position, Vector3.ZERO)
+
+
+func test_the_ko_recoil_points_away_from_the_ko_contact() -> void:
+	_state.health = 0
+	_view.start_ko_recoil(_state.position + Vector3(2, 0, 0))
+	_view.present(1.0, 1.0 / 60.0)
+	assert_lt(_body_up().x, -0.4, "hit from +X, tips toward -X")

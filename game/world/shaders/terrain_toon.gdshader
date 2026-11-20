@@ -135,7 +135,8 @@ vec2 clumps(vec2 p, float density, float radius) {
 	return vec2(body, max(rim - body, 0.0)) * on;
 }
 
-vec3 zone_colour(int i, float h, float rock_mix, float lip) {
+// `glow` gets the city's fake wet-street neon reflections, drawn as emission.
+vec3 zone_colour(int i, float h, float rock_mix, float lip, inout vec3 glow) {
 	vec4 p = zone_params[i];
 	float t = clamp((h - p.x) / max(p.y - p.x, 1.0), 0.0, 1.0);
 	vec3 ground = mix(to_linear(zone_low[i].rgb), to_linear(zone_high[i].rgb), t);
@@ -157,6 +158,15 @@ vec3 zone_colour(int i, float h, float rock_mix, float lip) {
 		float dash = step(0.5, fract(dot(world_pos.xz, vec2(1.0)) / 6.0));
 		float centre = (1.0 - aa_step(0.18, min(lane.x, lane.y))) * street * dash * detail_fade(world_pos.xz / 0.4);
 		ground = mix(ground, vec3(0.75, 0.68, 0.35), centre * 0.7);
+		// Wet streets: dark rain puddles holding long neon streaks, as if reflecting the signs.
+		float puddle = aa_step(0.66, value_noise(world_pos.xz / 3.5 + 3.0)) * (1.0 - rock_mix);
+		vec2 lot = floor((world_pos.xz + 6.0) / 12.0);
+		float pick = hash12(lot);
+		vec3 neon = pick < 0.5 ? vec3(1.0, 0.18, 0.7) : vec3(0.15, 0.9, 1.0);
+		vec2 sp = vec2(world_pos.x / 0.9, world_pos.z / 6.0);
+		float streak = aa_step(0.72, value_noise(sp + pick * 40.0)) * detail_fade(sp);
+		ground = mix(ground, ground * vec3(0.42, 0.44, 0.58), puddle);
+		glow = neon * puddle * (0.04 + 0.32 * streak) * detail_fade(world_pos.xz / 3.0);
 	} else if (pattern == 2) {
 		// Snow: wind-carved sastrugi ridges with blue-grey lee sides, faded where they would alias.
 		float phase = dot(world_pos.xz, vec2(0.83, 0.56)) / 2.6 + value_noise(world_pos.xz / 9.0) * 4.0;
@@ -211,10 +221,13 @@ void fragment() {
 	float edge = 1.0 - smoothstep(sw * 0.8, sw * 1.8, abs(slope - cliff_slope));
 	float lip = (1.0 - rock_mix) * (1.0 - smoothstep(0.0, 0.1, cliff_slope - slope)) * (1.0 - edge);
 	vec3 col = vec3(0.0);
+	vec3 glow = vec3(0.0);
 	float total = 0.0;
 	for (int i = 0; i < 6; i++) {
 		if (weights[i] > 0.002) {
-			col += weights[i] * zone_colour(i, world_pos.y, rock_mix, lip);
+			vec3 zone_glow = vec3(0.0);
+			col += weights[i] * zone_colour(i, world_pos.y, rock_mix, lip, zone_glow);
+			glow += weights[i] * zone_glow;
 			total += weights[i];
 		}
 	}
@@ -227,6 +240,7 @@ void fragment() {
 	vec3 ink = to_linear(ink_color.rgb);
 	col = mix(col, ink, max(edge * mix(0.3, 0.85, near), rim * 0.7));
 	ALBEDO = col;
+	EMISSION = glow / max(total, 0.001);
 	ROUGHNESS = 1.0;
 	SPECULAR = 0.0;
 }
