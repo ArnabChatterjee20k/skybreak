@@ -35,6 +35,17 @@ func show_clash(sim: CombatSim, clash: BeamClash) -> void:
 	queue_redraw()
 
 
+## The key bound to a beat's action (rebindable), else the default letter.
+static func letter_for(button: int) -> String:
+	var action: StringName = InputBindings.FIGHTER_ACTIONS.get(button, &"")
+	if action != &"" and InputMap.has_action(action):
+		for event in InputMap.action_get_events(action):
+			var key := event as InputEventKey
+			if key != null:
+				return OS.get_keycode_string(key.physical_keycode if key.physical_keycode != KEY_NONE else key.keycode)
+	return KEY_LETTERS.get(button, "?")
+
+
 ## The beats still to come as [ticks until the beat, letter], for tests.
 func upcoming() -> Array:
 	var out: Array = []
@@ -43,7 +54,7 @@ func upcoming() -> Array:
 	for k in _clash.beat_ticks.size():
 		var until := _clash.beat_ticks[k] - _tick
 		if until >= -4 and until <= LOOKAHEAD_TICKS:
-			out.append([until, KEY_LETTERS.get(_clash.beat_buttons[k], "?")])
+			out.append([until, letter_for(_clash.beat_buttons[k])])
 	return out
 
 
@@ -71,8 +82,9 @@ func _draw() -> void:
 			color = color.darkened(0.6)
 		draw_circle(centre, 24.0, color)
 		draw_arc(centre, 24.0, 0.0, TAU, 32, Color.WHITE, 3.0)
-		draw_string(font, centre + Vector2(-9, 11), KEY_LETTERS.get(button, "?"), HORIZONTAL_ALIGNMENT_CENTER,
-			-1, 30, Color(0.05, 0.05, 0.08))
+		var letter := letter_for(button)
+		draw_string(font, centre + Vector2(-24, 11), letter, HORIZONTAL_ALIGNMENT_CENTER, 48, 30 if letter.length() == 1 else 16,
+			Color(0.05, 0.05, 0.08))
 	# Push bar: your side fills from the left.
 	var bar := Rect2(origin + Vector2(0, LANE_SIZE.y + 12), Vector2(LANE_SIZE.x, 14))
 	draw_rect(bar, Color(0.2, 0.2, 0.25, 0.8))
