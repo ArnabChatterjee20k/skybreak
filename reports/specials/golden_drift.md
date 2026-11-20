@@ -35,3 +35,22 @@ T-KI1 put its `KI_*`/`BEAM_*` events ahead of the special events in `CombatSim.E
 | pickups_heartbloom | 681 | SPECIAL_START(f0 vexa_shade_flicker) | f0 vexa momentum 0 decoy 0 used 1 |
 
 Every first drift is the first special press, the tick the renumbered event first appears. The goldens were then re-blessed on the merged code: the AIs now also throw ki (`ffa4_all_legends`, `pickups_heartbloom`), and Kael and Vexa use their kits on 1/2/3 instead of the ki beam.
+
+## After the rush-arrival and AI fixes
+
+Rushes now stop 1.1 m from their target. Replaying the goldens blessed above:
+
+| golden | first drift (tick) | events on that tick | special state then |
+|---|---|---|---|
+| duel_kael_mirror | none | | |
+| duel_vexa_vs_lyra | none | | |
+| duel_brann_vs_kael | none | | |
+| duel_lyra_vs_brann_airborne | none | | |
+| duel_low_level_mirror | none | | |
+| combos_level5 | 1391 |  | f0 kael momentum 10 decoy 0 used 2 |
+| ffa4_all_legends | 750 | HIT(f1 vexa_razor_waltz) | f0 kael momentum 10 decoy 0 used 1; f1 vexa momentum 0 decoy 0 used 1 |
+| teams_2v2 | 203 | HIT(f2 vexa_razor_waltz) | f0 kael momentum 0 decoy 0 used 0; f2 vexa momentum 0 decoy 0 used 2 |
+| ko_and_second_round | none | | |
+| pickups_heartbloom | none | | |
+
+Only goldens with a Razor Waltz (or a Comet Drive) that ran on past its target drift, on that move's tick. Re-blessed. `pickups_heartbloom` moved from seed 23 to 24: with the new Vexa AI, seed 23 no longer picks anything up in 1800 ticks (the bless tool asks for a spec change).
