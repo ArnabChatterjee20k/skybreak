@@ -11,6 +11,7 @@ uniform sampler2D macro_tex : filter_linear, source_color;
 uniform vec2 macro_origin;
 uniform vec2 macro_size;
 uniform float cell = 0.088;
+uniform float floor_gain = 0.74;
 uniform vec3 pebble : source_color = vec3(0.6, 0.45, 0.37);
 uniform vec3 crack : source_color = vec3(0.62, 0.52, 0.42);
 
@@ -43,7 +44,7 @@ void fragment() {
 	} else {
 		vec2 uv = (world_pos.xz - macro_origin) / macro_size;
 		vec4 m = texture(macro_tex, uv);
-		albedo = m.rgb;
+		albedo = m.rgb * floor_gain;
 		ivec2 c = ivec2(floor(world_pos.xz / cell));
 		float h = s_hash(ivec3(c.x, 0, c.y));
 		albedo *= 1.0 + (h * 2.0 - 1.0) * 0.03;
@@ -54,7 +55,7 @@ void fragment() {
 		albedo *= 1.0 + sandy * (1.0 - m.a) * (rip * 0.035 - 0.017);
 		// Pebbles: lone darker cells, a few lighter.
 		float pb = s_hash(ivec3(c.x, 5, c.y));
-		if (pb < 0.006 + 0.03 * m.a) {
+		if (pb < (0.006 + 0.03 * m.a) * sandy) {
 			albedo = mix(albedo, s_linear(pebble) * (0.8 + 0.4 * h), 0.75);
 		} else if (pb > 0.996) {
 			albedo *= 1.1;
@@ -72,8 +73,8 @@ void fragment() {
 			}
 		}
 		// Lichen spots on high caprock (the accent, rare).
-		if (world_pos.y > 34.0 && s_hash(ivec3(c.x / 6, 9, c.y / 6)) < 0.05 && h < 0.4) {
-			albedo = mix(albedo, s_linear(lichen), 0.8);
+		if (world_pos.y > 34.0 && s_hash(ivec3(c.x / 4, 9, c.y / 4)) < 0.012 && h < 0.3) {
+			albedo = mix(albedo, s_linear(lichen), 0.6);
 		}
 	}
 	NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);

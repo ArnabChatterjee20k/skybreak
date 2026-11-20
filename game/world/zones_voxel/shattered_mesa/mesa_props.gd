@@ -5,7 +5,7 @@ extends RefCounted
 ## scrub, talus, dead trees and the story props are visual-only and stay off
 ## the open floor lines (low, or beside landmarks).
 
-const VERSION := 2
+const VERSION := 5
 enum Mat { NONE, LIGHT, DARK, PALE, CAP, LICHEN, SAND, SAGE, SAGE_DARK, WOOD, CANVAS, ROPE, IRON, BRASS,
 	GLOW, LEDGER, VARNISH, GLYPH, WATER, BUCKET }
 const COLORS := {
@@ -32,6 +32,7 @@ var hoodoo_hero := Transform3D.IDENTITY
 var hoodoo_hero_r := 5.0
 var _pillars: Array[Transform3D] = []
 var _boulders: Array[Transform3D] = []
+var _talus: Array[Transform3D] = []
 var _arch: Transform3D
 var _cell_scale := 1.0
 
@@ -92,7 +93,7 @@ func color(mat: int, p: Vector3, c: Vector3i, n: Vector3, occlusion: float, expo
 		rock or mat in [Mat.WOOD, Mat.CANVAS, Mat.BUCKET])
 	if rock:
 		# +-6% on rock, darker toward the foot of each piece.
-		col *= 0.94 + 0.12 * VoxelSdf.hash3(c, 211)
+		col *= 0.97 + 0.06 * VoxelSdf.hash3(c, 211)
 		if n.y < -0.5:
 			col *= 0.7
 	if mat == Mat.LICHEN:
@@ -180,8 +181,13 @@ func _red_arch() -> void:
 			var j1 := (VoxelSdf.hash3(Vector3i(i, 1, int(x0)), 5) - 0.5) * 0.9
 			var j2 := (VoxelSdf.hash3(Vector3i(i, 2, int(x0)), 5) - 0.5) * 0.9
 			var j3 := (VoxelSdf.hash3(Vector3i(i, 3, int(x0)), 5) - 0.5) * 0.7
-			var lo := Vector3(x0 - flare + j1, y0, -leg_d - flare * 0.6 + j3)
-			var hi := Vector3(x1 + flare + j2, y1, leg_d + flare * 0.6 - j3)
+			# Corbels: the upper bands reach into the opening, so it reads as an arc.
+			var k := clampf((y0 - leg_top * 0.45) / (span_lo - leg_top * 0.45), 0.0, 1.0)
+			var corbel := 12.0 * k * k
+			var in_lo := corbel if x0 > 0.0 else 0.0
+			var in_hi := corbel if x0 < 0.0 else 0.0
+			var lo := Vector3(x0 - flare + j1 - in_lo, y0, -leg_d - flare * 0.6 + j3)
+			var hi := Vector3(x1 + flare + j2 + in_hi, y1, leg_d + flare * 0.6 - j3)
 			var mat := Mat.LIGHT if i % 2 == 0 else Mat.DARK
 			if VoxelSdf.hash3(Vector3i(i, 7, 0), 9) > 0.8:
 				mat = Mat.PALE
@@ -191,9 +197,9 @@ func _red_arch() -> void:
 			# Chipped corners: a few cells knocked out per band edge.
 			g.paint(AABB(lo, hi - lo), func(p: Vector3) -> float:
 				var e := minf(minf(p.x - lo.x, hi.x - p.x), minf(p.z - lo.z, hi.z - p.z))
-				return -1.0 if e < 0.4 and VoxelSdf.hash3(Vector3i((p / 0.7).floor()), 13) < 0.3 else 1.0,
+				return -1.0 if e < 0.4 and VoxelSdf.hash3(Vector3i((p / 1.05).floor()), 13) < 0.16 else 1.0,
 				0, -1, VoxelGrid.Mode.CARVE)
-		_lichen(g, AABB(Vector3(x0 - 4, 0, -leg_d - 3), Vector3(x1 - x0 + 8, leg_top + 4, 2 * leg_d + 6)), 0.12)
+		_lichen(g, AABB(Vector3(x0 - 4, 0, -leg_d - 3), Vector3(x1 - x0 + 8, leg_top + 4, 2 * leg_d + 6)), 0.05)
 	var paint_span := func(g: VoxelGrid) -> void:
 		var nb := ceili((span_hi - span_lo) / band) + 1
 		for i in nb:
@@ -213,15 +219,18 @@ func _red_arch() -> void:
 			var h := (hi - lo) * 0.5
 			# Soffit: the lowest bands step down only beside the legs (corbels).
 			g.paint(AABB(lo, hi - lo), func(p: Vector3) -> float:
-				if y0 < span_lo and absf(p.x) < 0.34 * sx - 2.0 * float(1 - i + 1):
+				if y0 < span_lo - 0.1 and absf(p.x) < 22.0:
 					return 1.0
-				return VoxelSdf.box(p, c, h), mat)
+				# Depth swells and thins along the span; the top dips in the middle.
+				var dz := 0.9 * sin(p.x * 0.11 + float(i)) + 0.5 * sin(p.x * 0.37)
+				var dip := 1.4 * (1.0 - absf(p.x) / (0.55 * sx)) if top else 0.0
+				return maxf(VoxelSdf.box(p, c, h + Vector3(0, 0, dz)), p.y - (y1 - dip)), mat)
 			g.paint(AABB(lo, hi - lo), func(p: Vector3) -> float:
 				var e := minf(minf(p.x - lo.x, hi.x - p.x), minf(p.z - lo.z, hi.z - p.z))
-				return -1.0 if e < 0.4 and VoxelSdf.hash3(Vector3i((p / 0.7).floor()), 17) < 0.3 else 1.0,
+				return -1.0 if e < 0.4 and VoxelSdf.hash3(Vector3i((p / 1.05).floor()), 17) < 0.16 else 1.0,
 				0, -1, VoxelGrid.Mode.CARVE)
 		_lichen(g, AABB(Vector3(-0.56 * sx, span_lo - 4, -span_d - 2), Vector3(1.12 * sx, span_hi - span_lo + 6,
-			2 * span_d + 4)), 0.1)
+			2 * span_d + 4)), 0.05)
 	var xf := Transform3D(Basis(Vector3.UP, yaw), base)
 	var leg_bounds := func(l: Array) -> AABB:
 		return AABB(Vector3(l[0] - 5.0, 0, -leg_d - 4.0), Vector3(l[1] - l[0] + 10.0, leg_top + 3.0, 2.0 * leg_d + 8.0))
@@ -250,6 +259,7 @@ func _red_arch() -> void:
 			talus.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * s),
 				Vector3(w.x, ground(w.x, w.z) - 0.25 * s, w.z)))
 	_place_boulders(talus, "ArchTalus")
+	_talus.append_array(talus)
 	stats.arch_quads = 0
 
 
@@ -295,7 +305,7 @@ func _hoodoo_paint(v: int) -> Callable:
 		g.paint(AABB(Vector3(-cr - 1, cy, -cr - 1), Vector3(2 * cr + 2, cap_h, 2 * cr + 2)),
 			func(p: Vector3) -> float: return maxf(octagon(p, Vector3(0.4, 0, -0.2), cr - (0.4 if p.y > cy + cap_h - 0.5 else 0.0)),
 				maxf(cy - p.y, p.y - cy - cap_h)), Mat.CAP)
-		_lichen(g, AABB(Vector3(-r0 - 2, 0, -r0 - 2), Vector3(2 * r0 + 4, height + 1, 2 * r0 + 4)), 0.08)
+		_lichen(g, AABB(Vector3(-r0 - 2, 0, -r0 - 2), Vector3(2 * r0 + 4, height + 1, 2 * r0 + 4)), 0.035)
 
 
 func _hoodoo_tiers(v: int) -> Array[ArrayMesh]:
@@ -401,7 +411,7 @@ func _boulder_paint(v: int) -> Callable:
 		if v % 2 == 1:
 			g.paint(AABB(-half - Vector3.ONE * 0.2, half * 2.0 + Vector3.ONE * 0.4), func(p: Vector3) -> float:
 				return -1.0 if p.y < -half.y * 0.35 else 1.0, Mat.VARNISH, -1, VoxelGrid.Mode.PAINT)
-		_lichen(g, AABB(-half - Vector3.ONE, half * 2.0 + Vector3.ONE * 2.0), 0.22)
+		_lichen(g, AABB(-half - Vector3.ONE, half * 2.0 + Vector3.ONE * 2.0), 0.06)
 
 
 var _boulder_meshes: Array = []
@@ -426,7 +436,7 @@ func _place_boulders(list: Array[Transform3D], node_name: String) -> void:
 		var l: Array[Transform3D] = []
 		l.assign(by[v])
 		if not l.is_empty():
-			VoxelProp.place(root, "%s%d" % [node_name, v], _boulder_tiers(v), [55.0, 160.0, 0.0], l, 2)
+			VoxelProp.place(root, "%s%d" % [node_name, v], _boulder_tiers(v), [55.0, 160.0, 0.0], l, 2, 6.0, 96.0)
 
 
 func _boulder_field() -> void:
@@ -460,7 +470,19 @@ func _boulder_field() -> void:
 				Vector3(p.x, g - 0.3 * s, p.y)))
 			placed += 1
 	_place_boulders(talus, "Talus")
+	_talus.append_array(talus)
 	stats.talus = talus.size()
+
+
+## Whether a camera at p is clear of hoodoos and boulders.
+func camera_clear(p: Vector3) -> bool:
+	for xf in _pillars:
+		if Vector2(p.x - xf.origin.x, p.z - xf.origin.z).length() < xf.basis.x.length() * 0.8 + 2.0:
+			return false
+	for xf in _boulders + _talus:
+		if xf.origin.distance_to(p) < xf.basis.get_scale().length() * 4.0 + 1.5:
+			return false
+	return true
 
 
 func _near_spawn(p: Vector2, r: float) -> bool:
@@ -512,7 +534,7 @@ func _scrub() -> void:
 	for v in 4:
 		var l: Array[Transform3D] = []
 		l.assign(lists[v])
-		VoxelProp.place(root, "Sage%d" % v, sage[v], [70.0, 170.0], l, 1)
+		VoxelProp.place(root, "Sage%d" % v, sage[v], [70.0, 170.0], l, 1, 6.0, 96.0)
 	stats.scrub = count
 	var tree_paint := func(g: VoxelGrid) -> void:
 		var limbs := [[Vector3(0, 0, 0), Vector3(0.2, 2.0, 0.1), 0.2, 0.16], [Vector3(0.2, 2.0, 0.1), Vector3(-0.9, 3.6, 0.3), 0.14, 0.07],
@@ -602,9 +624,9 @@ func _camp() -> void:
 		g.paint(AABB(Vector3(-1.6, 0, -1.2), Vector3(3.2, 2.0, 2.3)), func(p: Vector3) -> float:
 			var t := (p.z + 1.1) / 2.1
 			var y := t * 1.88 + 0.04 * sin(p.x * 3.0)
-			return maxf(absf(p.y - y) - 0.05, maxf(absf(p.x) - 1.55, absf(t - 0.5) - 0.5)), Mat.CANVAS)
+			return maxf(absf(p.y - y) - 0.09, maxf(absf(p.x) - 1.55, absf(t - 0.5) - 0.5)), Mat.CANVAS)
 		g.paint_surface(AABB(Vector3(-1.6, 0, -1.2), Vector3(3.2, 2.0, 2.3)), func(p: Vector3, c: Vector3i) -> bool:
-			return fposmod(p.x + 1.55, 0.75) < 0.05, Mat.ROPE, [Mat.CANVAS])
+			return fposmod(p.x + 1.55, 1.03) < 0.03, Mat.ROPE, [Mat.CANVAS])
 		# A bedroll under it.
 		g.paint(AABB(Vector3(-1, 0, -0.6), Vector3(2, 0.3, 1)), func(p: Vector3) -> float:
 			return VoxelSdf.box(p, Vector3(-0.2, 0.1, -0.1), Vector3(0.8, 0.1, 0.32), 0.05), Mat.ROPE)
@@ -803,7 +825,7 @@ func _cairns() -> void:
 		var mesa: Array = TerrainShape.MESAS[i]
 		var mc: Vector2 = c + mesa[0]
 		var toward := (Vector2(arch_centre.x, arch_centre.z) - mc).normalized()
-		var p: Vector2 = mc + toward * (mesa[1] * 0.45)
+		var p: Vector2 = mc + toward.rotated(1.3) * (mesa[1] * 0.4)
 		var at := _find_top(p, mc)
 		var mi := _single(tiers[i % 2], at, float(i) * 1.3, -0.02)
 		spots.append(mi.position)

@@ -15,14 +15,15 @@ var props: MesaProps
 
 
 func _init() -> void:
+	name = "ShatteredMesa"
 	map = load(WorldMap.HEIGHTMAP_PATH)
 	zone = ZONE
 
 
 func build() -> void:
 	var c := zone.centre
-	terrain = MesaTerrain.new(map, c - zone.extent, c + zone.extent, c - Vector2(720, 700),
-		Vector2(1012, 1012))
+	terrain = MesaTerrain.new(map, c - zone.extent, c + zone.extent, Vector2(-1022, -1022),
+		Vector2(1022, 1022))
 	terrain.build(self)
 	stats.merge(terrain.stats)
 	props = MesaProps.new(self)
@@ -67,7 +68,7 @@ func presets() -> Dictionary:
 	p.day.ambient_color = Color("#b4b8c8")
 	p.day.ambient_energy = 0.5
 	p.day.fog_color = Color("#C8D0DC")
-	p.day.fog_density = 0.0011
+	p.day.fog_density = 0.0007
 	p.day.exposure = 0.9
 	p.day.lantern = 0.3
 	# Dusk: low deep-orange sun, rose ambient, long shadows; fog stays neutral.
@@ -80,7 +81,7 @@ func presets() -> Dictionary:
 	p.dusk.sun_size = 0.05
 	p.dusk.ambient_color = Color("#a08ea8")
 	p.dusk.fog_color = Color("#d8c4b8")
-	p.dusk.fog_density = 0.0012
+	p.dusk.fog_density = 0.0008
 	# Night: cool moonlight, fog kept off violet.
 	p.night.sky_horizon = Color("#2c3a5c")
 	p.night.fog_color = Color("#283448")
@@ -107,15 +108,16 @@ func shots() -> Array[Dictionary]:
 	var away := (hp - Vector2(560, 700)).normalized()
 	var kh := hp + away.rotated(0.9) * (props.hoodoo_hero_r + 3.0)
 	var hcam := kh + away.rotated(0.9) * 16.0 + away.rotated(2.4) * 9.0
-	out.append({"name": "hoodoo_field", "from": Vector3(hcam.x, ground_at(hcam.x, hcam.y) + 2.4, hcam.y),
+	var hfrom := _clear(Vector3(hcam.x, 0, hcam.y), Vector3(kh.x, 0, kh.y), 2.4)
+	out.append({"name": "hoodoo_field", "from": hfrom,
 		"at": Vector3(kh.x, ground_at(kh.x, kh.y) + 9.0, kh.y) - Vector3(away.x, 0, away.y) * 8.0, "fov": 60.0,
 		"kael": [kh, atan2(away.rotated(0.9).x, away.rotated(0.9).y)], "times": ["day", "dusk"]})
 	# The Anvil Mesa's top: the surveyor's camp, Kael beside it, the arch beyond.
 	var camp: Vector3 = props.camp_at
 	var to_arch := (Vector2(arch.x, arch.z) - Vector2(camp.x, camp.z)).normalized()
-	var cam2 := Vector2(camp.x, camp.z) - to_arch * 11.0 + to_arch.orthogonal() * 5.0
+	var cam2 := Vector2(camp.x, camp.z) - to_arch * 7.5 + to_arch.orthogonal() * 3.5
 	var kc := Vector2(camp.x, camp.z) + to_arch.orthogonal() * -2.6 + to_arch * 1.5
-	out.append({"name": "anvil_camp", "from": Vector3(cam2.x, camp.y + 3.2, cam2.y),
+	out.append({"name": "anvil_camp", "from": Vector3(cam2.x, camp.y + 2.4, cam2.y),
 		"at": Vector3(camp.x, camp.y + 0.6, camp.z) + Vector3(to_arch.x, 0, to_arch.y) * 6.0, "fov": 60.0,
 		"kael": [kc, atan2(to_arch.x, to_arch.y)], "times": ["day", "dusk"]})
 	# Overview from above the plateau: the Great Mesa, the Anvil, the arch, the field.
@@ -129,32 +131,71 @@ func shots() -> Array[Dictionary]:
 	return out
 
 
-## A 20 s flight: low across the sand through the hoodoo field, up and through
-## the Red Arch, over the Anvil Mesa's camp, out over the Great Mesa.
+## A camera spot near `from` (rotated about `at`) clear of hoodoos and boulders, `up` m over the ground.
+func _clear(from: Vector3, at: Vector3, up: float) -> Vector3:
+	for k in 24:
+		var o := Vector2(from.x - at.x, from.z - at.z).rotated(0.13 * float(k) * (1.0 if k % 2 == 0 else -1.0))
+		var p := Vector3(at.x + o.x, 0, at.z + o.y)
+		p.y = ground_at(p.x, p.z) + up
+		if props.camera_clear(p):
+			return p
+	return Vector3(from.x, ground_at(from.x, from.z) + up, from.z)
+
+
+## A 20 s flight: low between the hoodoos in the south-west cluster, up the
+## open lane between the mesas, through the Red Arch, over the next mesa and
+## round the Anvil Mesa's camp, ending on the Great Mesa. Heights follow the
+## ground (clearance over the highest ground within 12 m); the path is checked
+## against the hoodoos by flight_check.gd.
 func flight() -> Array[Dictionary]:
 	var arch := props.arch_centre
 	var f := props.arch_forward
 	var camp: Vector3 = props.camp_at
-	var gap := arch + Vector3(0, 26, 0)
-	return [
-		{"from": Vector3(600, 24, 790), "at": Vector3(560, 26, 640), "fov": 62.0},
-		{"from": Vector3(582, 22, 720), "at": Vector3(555, 24, 600), "fov": 62.0},
-		{"from": Vector3(560, 24, 650), "at": Vector3(560, 28, 520), "fov": 62.0},
-		{"from": Vector3(560, 30, 575), "at": gap + f * 30.0, "fov": 62.0},
-		{"from": gap + f * 85.0, "at": gap, "fov": 62.0},
-		{"from": gap + f * 30.0, "at": gap - f * 40.0, "fov": 64.0},
-		{"from": gap - f * 30.0 + Vector3(0, 6, 0), "at": camp + Vector3(0, 10, 0), "fov": 62.0},
-		{"from": camp + Vector3(-60, 40, -70), "at": camp, "fov": 58.0},
-		{"from": camp + Vector3(-14, 18, -12), "at": camp + Vector3(0, 1, 0), "fov": 58.0},
-		{"from": camp + Vector3(-70, 30, 30), "at": Vector3(400, 90, 540), "fov": 58.0},
-		{"from": Vector3(480, 140, 520), "at": Vector3(400, 96, 540), "fov": 58.0},
-		{"from": Vector3(430, 170, 600), "at": Vector3(330, 90, 480), "fov": 58.0},
+	var gap := arch + Vector3(0, 27, 0)
+	var route := [
+		[Vector2(452, 742), 5.0], [Vector2(470, 672), 6.0], [Vector2(540, 632), 10.0], [Vector2(598, 598), 9.0],
+		[Vector2(594, 515), 11.0], [Vector2(600, 445), 14.0], [Vector2(gap.x + f.x * 60.0, gap.z + f.z * 60.0), 0.0],
+		[Vector2(gap.x, gap.z), 0.0], [Vector2(gap.x - f.x * 45.0, gap.z - f.z * 45.0), 0.0], [Vector2(645, 342), 16.0],
+		[Vector2(694, 352), 42.0], [Vector2(camp.x + 14.0, camp.z - 34.0), 20.0], [Vector2(camp.x - 22.0, camp.z + 6.0), 12.0],
+		[Vector2(camp.x - 60.0, camp.z + 70.0), 60.0], [Vector2(530, 525), 70.0],
 	]
+	var out: Array[Dictionary] = []
+	for i in route.size():
+		var xz: Vector2 = route[i][0]
+		var y := _lift(xz, route[i][1])
+		if i >= 6 and i <= 8:
+			y = gap.y + (2.0 if i == 6 else 0.0)
+		out.append({"from": Vector3(xz.x, y, xz.y), "fov": 64.0})
+	for i in out.size():
+		var ahead: Vector3 = out[mini(i + 2, out.size() - 1)].from
+		var nxt: Vector3 = out[mini(i + 1, out.size() - 1)].from
+		var at: Vector3 = (ahead + nxt) * 0.5 + Vector3(0, -2.0, 0)
+		if i >= 5 and i <= 7:
+			at = gap - f * 60.0
+		elif i == 11 or i == 12:
+			at = camp + Vector3(0, 1, 0)
+		elif i >= 13:
+			at = Vector3(400, 92, 540)
+		if (at - out[i].from).length() < 5.0:
+			at = out[i].from + (out[i].from - out[maxi(i - 1, 0)].from)
+		out[i]["at"] = at
+	return out
+
+
+## Height for a flight point: `clear` m over the highest ground within 12 m.
+func _lift(xz: Vector2, clear: float) -> float:
+	var top := ground_at(xz.x, xz.y)
+	for k in 8:
+		var o := Vector2.from_angle(k * TAU / 8.0) * 12.0
+		top = maxf(top, ground_at(xz.x + o.x, xz.y + o.y))
+	return top + clear
 
 
 func flight_kael() -> Array:
 	var camp: Vector3 = props.camp_at
-	return [Vector2(camp.x - 2.0, camp.z + 1.5), PI * 0.6]
+	var to_arch := (Vector2(props.arch_centre.x, props.arch_centre.z) - Vector2(camp.x, camp.z)).normalized()
+	var k := Vector2(camp.x, camp.z) + to_arch.orthogonal() * -2.6 + to_arch * 1.5
+	return [k, atan2(to_arch.x, to_arch.y)]
 
 
 func animate(t: float) -> void:

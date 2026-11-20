@@ -51,7 +51,7 @@ vec3 strata_wall(vec3 p, vec3 n, float c) {
 	// Lichen crusts on north faces, in clumps.
 	if (n.z < -0.5) {
 		ivec3 clump = ivec3(floor(p / (c * 4.0)));
-		if (s_hash(clump + ivec3(0, 0, 61)) < 0.12 && s_hash(ci + ivec3(0, 0, 67)) < 0.55) {
+		if (s_hash(clump + ivec3(0, 0, 61)) < 0.05 && s_hash(ci + ivec3(0, 0, 67)) < 0.55) {
 			tone = s_linear(lichen) * (0.85 + 0.25 * s_hash(ci));
 		}
 	}

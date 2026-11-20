@@ -12,7 +12,7 @@ extends RefCounted
 
 const FLOOR_SHADER := preload("res://game/world/zones_voxel/shattered_mesa/mesa_floor.gdshader")
 const ROCK_SHADER := preload("res://game/world/zones_voxel/shattered_mesa/mesa_rock.gdshader")
-const VERSION := 3
+const VERSION := 6
 const CACHE := "user://voxel_zone_cache/shattered_mesa_v%d/" % VERSION
 ## Floor cells whose corners differ by more than this (m) are cliff, not floor.
 const STEEP := 1.1
@@ -20,10 +20,14 @@ const STEEP := 1.1
 const BAND_CELLS := 8
 ## Skirt under every floor edge that meets a cliff: covers the band snap.
 const SKIRT := 3.4
+## How far past the zone box the ring keeps rock cliffs (m).
+const INNER_MARGIN := 224.0
+## Macro colour texel (m).
+const MACRO := 2.0
 ## Near tiers end here (m); far tiers start.
 const NEAR_END := 330.0
 ## Floor chunk side in 2 m samples.
-const FLOOR_CHUNK := 32
+const FLOOR_CHUNK := 48
 
 var map: TerrainHeightmap
 ## Zone box (world x, z) built at near detail; the ring around it is far only.
@@ -31,6 +35,10 @@ var near_min := Vector2.ZERO
 var near_max := Vector2.ZERO
 var ring_min := Vector2.ZERO
 var ring_max := Vector2.ZERO
+## Inside this box (around the zone) the ring keeps cliffs as T3 rock; beyond it,
+## the whole map is a smooth 8 m backdrop (cliffs included, no rock columns).
+var inner_min := Vector2.ZERO
+var inner_max := Vector2.ZERO
 var stats := {}
 var floor_material: ShaderMaterial
 var rock_materials: Array[ShaderMaterial] = []
@@ -45,6 +53,8 @@ func _init(heightmap: TerrainHeightmap, zone_min: Vector2, zone_max: Vector2, ri
 	near_max = (zone_max / 2.8).ceil() * 2.8
 	ring_min = (ring_lo / 2.8).floor() * 2.8
 	ring_max = (ring_hi / 2.8).ceil() * 2.8
+	inner_min = (near_min - Vector2.ONE * INNER_MARGIN).max(ring_min)
+	inner_max = (near_max + Vector2.ONE * INNER_MARGIN).min(ring_max)
 
 
 ## Height of the sim's ground (bilinear, as ZoneGround).
@@ -112,53 +122,66 @@ func _floor(root: Node3D) -> int:
 	node.name = "Floor"
 	root.add_child(node)
 	var tris := 0
+	var chunks: Array = []
+	var n0 := _sample_of(near_min)
+	var n1 := _sample_of(near_max)
+	for cj in range(n0.y, n1.y, FLOOR_CHUNK):
+		for ci in range(n0.x, n1.x, FLOOR_CHUNK):
+			chunks.append([ci, cj, mini(ci + FLOOR_CHUNK, n1.x), mini(cj + FLOOR_CHUNK, n1.y), true])
 	var s0 := _sample_of(ring_min)
 	var s1 := _sample_of(ring_max)
-	var span := FLOOR_CHUNK
-	for cj in range(s0.y, s1.y, span):
-		for ci in range(s0.x, s1.x, span):
-			var centre := map.sample_position(ci + span / 2, cj + span / 2)
-			var near := _in_near(centre)
-			for tier in ([1, 4] if near else [4]):
-				var key := "floor_%d_%d_%d" % [ci, cj, tier]
-				var mesh := _cached(key, func() -> ArrayMesh: return _floor_chunk(ci, cj, mini(ci + span, s1.x),
-					mini(cj + span, s1.y), tier))
-				if mesh == null:
-					continue
-				var mi := MeshInstance3D.new()
-				mi.name = key
-				mi.mesh = mesh
-				mi.material_override = floor_material
-				# Flat treads under a high sun: let the rock and props cast.
-				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				if near:
-					mi.visibility_range_begin = 0.0 if tier == 1 else NEAR_END
-					mi.visibility_range_end = NEAR_END if tier == 1 else 0.0
-				node.add_child(mi)
-				if tier == 1 or not near:
-					tris += mesh.surface_get_array_len(0) / 3
+	var big := FLOOR_CHUNK * 4
+	for cj in range(s0.y, s1.y, big):
+		for ci in range(s0.x, s1.x, big):
+			chunks.append([ci, cj, mini(ci + big, s1.x), mini(cj + big, s1.y), false])
+	for ch: Array in chunks:
+		var ci: int = ch[0]
+		var cj: int = ch[1]
+		var near: bool = ch[4]
+		for tier in ([1, 4] if near else [4]):
+			var key := "floor_%d_%d_%d%s" % [ci, cj, tier, "" if near else "r"]
+			var mesh := _cached(key, func() -> ArrayMesh: return _floor_chunk(ci, cj, ch[2], ch[3], tier, not near))
+			if mesh == null:
+				continue
+			var mi := MeshInstance3D.new()
+			mi.name = key
+			mi.mesh = mesh
+			mi.material_override = floor_material
+			# Flat treads under a high sun: let the rock and props cast.
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			if near:
+				mi.visibility_range_begin = 0.0 if tier == 1 else NEAR_END
+				mi.visibility_range_end = NEAR_END if tier == 1 else 0.0
+			node.add_child(mi)
+			if tier == 1 or not near:
+				tris += mesh.surface_get_array_len(0) / 3
 	return tris
 
 
 ## Floor triangles of samples [i0, i1) x [j0, j1) at `step` samples per cell,
 ## with skirts down every edge that meets a cliff cell.
-func _floor_chunk(i0: int, j0: int, i1: int, j1: int, step: int) -> ArrayMesh:
+func _floor_chunk(i0: int, j0: int, i1: int, j1: int, step: int, ring := false) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var uvs := PackedVector2Array()
 	var n := map.size
 	for j in range(j0, j1, step):
 		for i in range(i0, i1, step):
+			if ring and not _in_box(map.sample_position(i, j) + Vector2.ONE * step, inner_min, inner_max):
+				_backdrop_cell(verts, normals, uvs, i, j, step)
+				continue
 			if not _floor_cell(i, j, step):
+				continue
+			if ring and _in_near(map.sample_position(i, j) + Vector2.ONE * step):
 				continue
 			var p := [_vertex(i, j), _vertex(i + step, j), _vertex(i + step, j + step), _vertex(i, j + step)]
 			var nn := [_normal(i, j), _normal(i + step, j), _normal(i + step, j + step), _normal(i, j + step)]
 			# Split along the flatter diagonal (closer to the bilinear surface).
 			var tri: Array
 			if absf(p[0].y - p[2].y) < absf(p[1].y - p[3].y):
-				tri = [0, 2, 1, 0, 3, 2]
+				tri = [0, 1, 2, 0, 2, 3]
 			else:
-				tri = [0, 3, 1, 1, 3, 2]
+				tri = [0, 1, 3, 1, 2, 3]
 			for k: int in tri:
 				verts.append(p[k])
 				normals.append(nn[k])
@@ -194,6 +217,21 @@ func _floor_chunk(i0: int, j0: int, i1: int, j1: int, step: int) -> ArrayMesh:
 	return mesh
 
 
+func _in_box(w: Vector2, lo: Vector2, hi: Vector2) -> bool:
+	return w.x >= lo.x and w.y >= lo.y and w.x < hi.x and w.y < hi.y
+
+
+## A backdrop cell: two triangles, cliffs or not (far from the zone).
+func _backdrop_cell(verts: PackedVector3Array, normals: PackedVector3Array, uvs: PackedVector2Array, i: int, j: int,
+		step: int) -> void:
+	var p := [_vertex(i, j), _vertex(i + step, j), _vertex(i + step, j + step), _vertex(i, j + step)]
+	var nn := [_normal(i, j), _normal(i + step, j), _normal(i + step, j + step), _normal(i, j + step)]
+	for k: int in [0, 1, 2, 0, 2, 3]:
+		verts.append(p[k])
+		normals.append(nn[k])
+		uvs.append(Vector2(-1000.0, 0.0))
+
+
 func _vertex(i: int, j: int) -> Vector3:
 	var w := map.sample_position(i, j)
 	return Vector3(w.x, map.height_at_sample(i, j), w.y)
@@ -215,7 +253,7 @@ func _rock(root: Node3D) -> int:
 	# Near: T2 over the zone box. Far: T3 over the zone box (LOD) and the ring.
 	tris += _rock_field(node, "near", VoxelZone.T2, near_min, near_max, 1, 0.0, NEAR_END, true)
 	_rock_field(node, "far", VoxelZone.T3, near_min, near_max, 4, NEAR_END, 0.0, false)
-	tris += _rock_field(node, "ring", VoxelZone.T3, ring_min, ring_max, 4, 0.0, 0.0, false, true)
+	tris += _rock_field(node, "ring", VoxelZone.T3, inner_min, inner_max, 4, 0.0, 0.0, false, true)
 	return tris
 
 
@@ -224,7 +262,7 @@ func _rock(root: Node3D) -> int:
 func _rock_field(node: Node3D, key: String, cell: float, lo: Vector2, hi: Vector2, step: int,
 		begin: float, end: float, shadows: bool, ring := false) -> int:
 	var hf := VoxelHeightfield.new(cell, lo + Vector2.ONE * cell * 0.01, hi - Vector2.ONE * cell * 0.01)
-	hf.chunk = roundi(89.6 / cell)
+	hf.chunk = roundi((179.2 if ring else 89.6) / cell)
 	var band := BAND_CELLS * VoxelZone.T2
 	var band_cells := band / cell
 	var mat := ShaderMaterial.new()
@@ -294,7 +332,7 @@ func _macro_texture() -> ImageTexture:
 	var path := CACHE + "macro.res"
 	if ResourceLoader.exists(path):
 		return load(path) as ImageTexture
-	var size := Vector2i((ring_max - ring_min).ceil())
+	var size := Vector2i(((ring_max - ring_min) / MACRO).ceil())
 	var img := Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
 	var dune := FastNoiseLite.new()
 	dune.seed = 91
@@ -340,7 +378,7 @@ func _macro_texture() -> ImageTexture:
 	var drift := Color("#D6C2A2")
 	for y in size.y:
 		for x in size.x:
-			var w := ring_min + Vector2(x + 0.5, y + 0.5)
+			var w := ring_min + Vector2(x + 0.5, y + 0.5) * MACRO
 			var h := height(w.x, w.y)
 			var di := Vector2i(floori((w.x - map.origin.x) / 2.0) - s0.x, floori((w.y - map.origin.y) / 2.0) - s0.y)
 			var d := float(dist[clampi(di.y, 0, dh - 1) * dw + clampi(di.x, 0, dw - 1)]) * 2.0
@@ -365,8 +403,8 @@ func _macro_texture() -> ImageTexture:
 			else:
 				# High treads: caprock with sand pockets; edges polished lighter.
 				c = cap.lerp(cap_light, clampf(pn + 0.3, 0.0, 1.0) * 0.6)
-				var pocket := clampf((patch.get_noise_2d(w.x * 0.5 + 70.0, w.y * 0.5) - 0.05) * 3.0, 0.0, 1.0)
-				c = c.lerp(drift, pocket * 0.85)
+				var pocket := clampf((patch.get_noise_2d(w.x * 1.6 + 70.0, w.y * 1.6) - 0.15) * 2.0, 0.0, 1.0)
+				c = c.lerp(drift, pocket * 0.5)
 				if d < 4.0:
 					c = c.lerp(cap_light * 1.12, (1.0 - d / 4.0) * 0.4)
 				var blend := clampf((h - 30.0) / 6.0, 0.0, 1.0)
