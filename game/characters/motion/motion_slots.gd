@@ -11,6 +11,9 @@ const MOVES := {
 	&"rising": &"rising", &"spike": &"spike", &"sweep": &"sweep_low", &"push_block": &"push_block",
 	&"charged_smash_1": &"charged_smash_1", &"charged_smash_2": &"charged_smash_2",
 	&"charged_smash_3": &"charged_smash_3", &"grab": &"grab",
+	# Ki (T-KI1): the two-handed palm thrust reads as pushing energy out; beams hold it.
+	&"ki_blast": &"push_block", &"charged_blast": &"push_block", &"beam": &"push_block",
+	&"beam_ultimate": &"push_block",
 	# Specials (T-SP1): each borrows the take whose silhouette reads as its tell, retimed onto its phases.
 	&"kael_comet_drive": &"charged_smash_2", &"kael_comet_drive_rise": &"rising",
 	&"kael_comet_drive_dive": &"spike", &"kael_gale_counter": &"push_block", &"kael_gale_riposte": &"smash",

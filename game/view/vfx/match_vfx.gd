@@ -63,6 +63,8 @@ var _prev_position := PackedVector3Array()
 var _prev_velocity := PackedVector3Array()
 var _sonic_ready := PackedInt32Array()
 var _was_fast := PackedByteArray()
+## Ki blasts, beams and clash prompts (T-KI1).
+var ki_layer := KiLayer.new()
 
 
 func _ready() -> void:
@@ -73,6 +75,8 @@ func _ready() -> void:
 		_pools[kind] = pool
 	_screen = VfxScreen.new()
 	add_child(_screen)
+	ki_layer.vfx = self
+	add_child(ki_layer)
 
 
 ## Plays this tick's effects. Call once per sim tick, after sim.tick().
@@ -88,6 +92,8 @@ func react(events: Array[Dictionary]) -> void:
 	specials.react(self, sim, events)
 	if sim != null:
 		_watch_fighters()
+		ki_layer.sim = sim
+		ki_layer.react(events)
 
 
 ## Perfect dodge (T-DEF2): a bright white-blue afterimage where the dodger was, crisp speed lines
@@ -167,6 +173,13 @@ func spawn(kind: StringName, where: Vector3, color: Color = Color.TRANSPARENT, e
 func play_ki_blast(from: Vector3, to: Vector3, color: Color, speed: float = 45.0) -> KiBlastEffect:
 	var blast := (_pools[&"ki_blast"] as VfxPool).spawn() as KiBlastEffect
 	blast.launch(from, to - from, color, from.distance_to(to) / speed, speed)
+	return blast
+
+
+## A ki blast held in flight at `at`; the caller moves it (KiLayer follows the sim).
+func hold_ki_blast(at: Vector3, color: Color) -> KiBlastEffect:
+	var blast := (_pools[&"ki_blast"] as VfxPool).spawn() as KiBlastEffect
+	blast.launch(at, Vector3.ZERO, color, 10.0, 0.0)
 	return blast
 
 

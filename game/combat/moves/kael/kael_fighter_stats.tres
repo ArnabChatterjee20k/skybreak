@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="FighterStats" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="FighterStats" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://game/combat/fighter_stats.gd" id="1_stats"]
 [ext_resource type="Resource" path="res://game/combat/moves/kael/kael_move_set.tres" id="2_moves"]
-[ext_resource type="Resource" path="res://game/combat/specials/kits/kael_special_kit.tres" id="3_kit"]
+[ext_resource type="Resource" path="res://game/combat/ki/kits/kael_ki_kit.tres" id="3_ki"]
+[ext_resource type="Resource" path="res://game/combat/specials/kits/kael_special_kit.tres" id="4_kit"]
 
 [resource]
 script = ExtResource("1_stats")
@@ -13,4 +14,5 @@ second_vanish_counter_ki_cost = 40
 hurtbox_radius = 0.5
 hurtbox_height = 2.0
 move_set = ExtResource("2_moves")
-special_kit = ExtResource("3_kit")
+ki_kit = ExtResource("3_ki")
+special_kit = ExtResource("4_kit")

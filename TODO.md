@@ -35,6 +35,30 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   visual tiles (6-7%) because the duel drop's telegraph pillar is now in frame; owner to decide
   whether to re-bless them.
 
+- T-ART1 [desktop] Zone art pass, Brawlhalla-clean look in all 7 zones: terrain reads zone
+  colours as sRGB (they were 3x too bright), 3-band ramp, crisp per-zone ground detail
+  (cracks, grass tufts, basalt, streets, sastrugi), inked cliff lips and silhouettes, prop ink
+  outlines, fog only on the far backdrop, a contact shadow under each fighter, re-tuned
+  palettes. Open: ART1-a Frozen Peaks snow still reads blue-lilac under Filmic (white = 1);
+  ART1-b a tonemap pass (Filmic white / AgX) would need a fighter look review.
+  Merged with main 26019b8 (ART1-c done): `ContactShadows` is the one ground marker per fighter
+  (dark disc plus a team-colour rim from 0.4 m that widens and quiets with height, #122's look);
+  `HeightMarker` keeps only #122's faint 3-dash tick above 3 m, no disc and no drop line.
+- T-WEB2 [desktop] Web crash `RuntimeError: remainder by zero` on FIGHT: `ZoneMatch.spawn_positions`
+  took `side % points.size()` with no spawn points (Godot 4.7.2's binary export conversion empties
+  packed arrays; #112 already keeps text resources, so main is fine). `ZoneData.fighter_spawns`
+  now falls back to two points across the zone centre, used by `ZoneMatch` and `WorldMap`.
+- T-KI1 [desktop] Ki blasts and beams as sim attacks (GAME_DESIGN §5.8): `KiRules` + per-legend
+  `KiKit` (`game/combat/ki/`): tap Q blast (4 ki), hold Q charged blast (20 ki, not dash-soaked),
+  beam special on 1 (40-60 ki, 24-30 f tell, aim locks 12 f before firing, +30 f whiff recovery),
+  beam ultimate on 4 (2 burst stocks); perfect block reflects blasts, dash soaks tap blasts for
+  2 ki, blocked beams grind 2 guard/tick, beams eat blasts and stop at the first body; Lyra's tap
+  blasts home and her beam splits in three; rhythm beam clash (6 beats on Q/E/F/R, mashing loses
+  ground, ki spends push, winner +50 burst, loser takes the beam). `KiLayer` view (shots, charge
+  orb, beams at sim thickness, clash prompt), ki sounds and charge hum, `AIKi` zoning/beams/tell
+  reading/clash beats, QA ki counts, DetCheck ki duel. Open: beam ultimate cinematic, beam clash
+  camera framing (developer), dedicated ki clips per legend (palm thrust stands in), new ki
+  sounds (existing cues re-pitched), dodge (T-DEF2) i-frames vs beams once it lands.
 - T-UX1 [desktop] Controls and readability (owner feedback "how to get to the ground"): descend
   moves from Left Ctrl to `C` (Ctrl stays a desktop-only alternate, never on the web; Ctrl/Cmd/Alt
   rebinds refused on the web), quick-swap moves from `C` to `Y`; double-tap `C` dives until landing

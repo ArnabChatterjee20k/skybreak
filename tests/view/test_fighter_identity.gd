@@ -74,6 +74,14 @@ func test_arena_fighters_keep_their_team_rims() -> void:
 				"%s rim tinted" % view.name)
 
 
+func test_height_marker_draws_no_ring_of_its_own() -> void:
+	var marker := HeightMarker.new()
+	add_child_autofree(marker)
+	assert_eq(marker.get_child_count(), HeightMarker.DASHES, "only the dashed tick: the ground disc and ring are ContactShadows'")
+	for child in marker.get_children():
+		assert_true((child as MeshInstance3D).mesh is BoxMesh, "%s is a dash, not a disc" % child.name)
+
+
 func test_height_marker_shows_only_when_airborne() -> void:
 	var marker := HeightMarker.new()
 	add_child_autofree(marker)
@@ -93,10 +101,18 @@ func test_ground_marker_has_no_line_up_to_the_fighter() -> void:
 		assert_lt(top, -40.0 + 2.0, "%s stays within 2 m of the ground" % mesh.name)
 
 
-func test_ground_marker_widens_and_fades_with_height() -> void:
-	assert_lt(HeightMarker.disc_radius(1.0), HeightMarker.disc_radius(30.0))
-	assert_gt(HeightMarker.disc_alpha(1.0), HeightMarker.disc_alpha(30.0))
-	assert_almost_eq(HeightMarker.disc_radius(500.0), HeightMarker.RADIUS_HIGH, 0.001, "capped")
+func test_height_marker_tick_hides_near_the_ground() -> void:
+	var marker := HeightMarker.new()
+	add_child_autofree(marker)
+	marker.update(Vector3(0, HeightMarker.FEET_BELOW_CENTRE + HeightMarker.TICK_ABOVE - 0.5, 0))
+	assert_false(marker.visible, "the contact shadow's ring alone marks a low hop")
+
+
+func test_ground_marker_widens_and_quiets_with_height() -> void:
+	assert_lt(ContactShadows.disc_size(1.0), ContactShadows.disc_size(30.0))
+	assert_gt(ContactShadows.ring_strength(2.0), ContactShadows.ring_strength(30.0))
+	assert_almost_eq(ContactShadows.ring_strength(500.0), ContactShadows.RING_STRENGTH * ContactShadows.RING_HIGH, 0.001, "capped")
+	assert_eq(ContactShadows.RING_ABOVE, HeightMarker.SHOW_ABOVE)
 
 
 func test_feet_height_measures_from_the_feet() -> void:

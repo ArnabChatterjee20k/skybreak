@@ -24,6 +24,12 @@ static func kit_of(fighter: FighterState) -> SpecialKit:
 	return fighter.stats.special_kit if fighter.stats else null
 
 
+## True when the fighter's kit has a special on key slot (1-3): no other system reads that key.
+static func owns_key(fighter: FighterState, slot: int) -> bool:
+	var kit := kit_of(fighter)
+	return kit != null and kit.special_for(slot) != null
+
+
 ## The special the fighter is performing, or null.
 static func current(fighter: FighterState) -> SpecialMove:
 	if fighter.state != _S.ATTACKING or fighter.move == null:
