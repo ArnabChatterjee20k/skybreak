@@ -378,8 +378,8 @@ func _terrain() -> void:
 			var k := VoxelSdf.hash3(Vector3i(int(b.x), 2, int(b.y)), 23)
 			# Crown: obsidian, ash-dusted on flatter tops; outer slopes ash-grey.
 			var crown := clampf(1.0 - absf(r - rim) / 40.0, 0.0, 1.0)
-			var c := ash.darkened(0.45).lerp(obsidian.lightened(0.15), crown)
-			c = c.lerp(ash.darkened(0.15), 0.3 * k * (1.0 - crown))
+			var c := Color("#5E5A5E").lerp(obsidian.lightened(0.15), crown)
+			c = c.lerp(Color("#7A7476"), 0.45 * k * (1.0 - crown))
 			c *= 0.9 + 0.15 * k
 			c.a = 0.0
 			t3.set_column(x, z, roundi(top / T3), roundi(top / T3) - 30, c)
@@ -697,7 +697,7 @@ func _plume() -> void:
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = EmberRiftDesigns.puff(v)
-		mm.instance_count = 24
+		mm.instance_count = 40
 		var node := MultiMeshInstance3D.new()
 		node.name = "Plume%d" % v
 		node.multimesh = mm
@@ -712,12 +712,12 @@ func _place_puffs(t: float) -> void:
 		var mm := _puffs[v].multimesh
 		for k in mm.instance_count:
 			var i := k * 3 + v
-			var u := fposmod(float(i) / 72.0 + t * 0.006, 1.0)
+			var u := fposmod(float(i) / 120.0 + t * 0.006, 1.0)
 			var y := 36.0 + u * 330.0
 			var drift := Vector2(110.0, -85.0) * pow(u, 1.4)
 			var wob := Vector2(sin(i * 2.3), cos(i * 1.7)) * (9.0 + 34.0 * u)
-			var s := 0.7 + u * 2.8
-			mm.set_instance_transform(k, Transform3D(Basis(Vector3.UP, i * 1.9).scaled(Vector3(s, s * 0.85, s)),
+			var s := 0.6 + u * 2.6
+			mm.set_instance_transform(k, Transform3D(Basis.from_euler(Vector3(sin(i * 1.3) * 0.5, i * 1.9, cos(i * 0.7) * 0.5)).scaled(Vector3(s, s, s)),
 				Vector3(centre.x + drift.x + wob.x, y, centre.y + drift.y + wob.y)))
 
 
@@ -746,7 +746,7 @@ func _place_blobs(t: float) -> void:
 			var i := k * 2 + v
 			var u := fposmod(float(i) / 72.0 + t * 0.55, 1.0)
 			var a := i * 2.399
-			var spread := 0.6 + 4.5 * smoothstep(0.55, 1.0, u)
+			var spread := 0.6 + 9.0 * smoothstep(0.55, 1.0, u)
 			# Up the column, then out and down as droplets.
 			var y := 25.0 * sin(minf(u / 0.62, 1.0) * PI * 0.5) - 30.0 * pow(maxf(u - 0.62, 0.0), 2.0)
 			var s := (1.25 - u * 0.7) * (0.8 + 0.4 * fposmod(i * 0.618, 1.0))
@@ -857,10 +857,10 @@ func presets() -> Dictionary:
 	p.day.merge({
 		"sky_top": Color("#6C7688"), "sky_horizon": Color("#BCB2AA"), "sky_below": Color("#8A8280"),
 		"cloud": Color("#CCC4BE"), "cloud_shadow": Color("#8C8488"), "cloud_cover": 0.5,
-		"sun_dir": Vector3(-0.41, -0.76, 0.51), "sun_color": Color("#FFE6CC"), "sun_energy": 2.3, "sun_size": 0.02,
+		"sun_dir": Vector3(-0.41, -0.76, 0.51), "sun_color": Color("#FFE6CC"), "sun_energy": 1.9, "sun_size": 0.02,
 		"rim_color": Color("#FFE0C8"), "rim_energy": 0.4,
 		"ambient_color": Color("#A89A98"), "ambient_energy": 0.55,
-		"fog_color": Color("#8A8282"), "fog_density": 0.0011, "exposure": 0.95, "lantern": 0.5, "name": "day",
+		"fog_color": Color("#8A8282"), "fog_density": 0.0011, "exposure": 0.82, "lantern": 0.5, "name": "day",
 	}, true)
 	p.dusk.merge({
 		"sky_top": Color("#3C3450"), "sky_horizon": Color("#B87458"), "sky_below": Color("#5E4844"),
@@ -877,7 +877,7 @@ func presets() -> Dictionary:
 		"moon": false, "stars": 0.12,
 		"rim_color": Color("#FFB890"), "rim_energy": 0.45,
 		"ambient_color": Color("#2C2A38"), "ambient_energy": 0.8,
-		"fog_color": Color("#3A2A2C"), "fog_density": 0.0014, "exposure": 1.25, "lantern": 1.3, "name": "night",
+		"fog_color": Color("#2E2833"), "fog_density": 0.0014, "exposure": 1.2, "lantern": 1.3, "name": "night",
 	}, true)
 	return p
 
@@ -952,7 +952,7 @@ func shots() -> Array[Dictionary]:
 			"fov": 52.0, "kael": [Vector2(kp.x, kp.z), byaw - PI * 0.5], "kael_y": br.y - 0.2, "times": ["dusk"]})
 	var sp := _spire_cluster()
 	out.append({"name": "spire_forest", "from": Vector3(sp.x, ground_at(sp.x, sp.z) + 1.7, sp.z),
-		"at": Vector3(sp.x, 0, sp.z) + _spire_look(sp), "fov": 62.0, "times": ["day"]})
+		"at": Vector3(sp.x, 0, sp.z) + _spire_look(sp), "fov": 70.0, "times": ["day", "night"]})
 	out.append({"name": "overview", "from": Vector3(660, 205, -815), "at": Vector3(655, 40, -470), "fov": 60.0,
 		"times": ["night", "day"]})
 	var sp0: Vector3 = zone.spawn_points[0]
@@ -978,7 +978,7 @@ func _spire_cluster() -> Vector3:
 			best = s.origin
 	# Stand off the spire's foot, outside every spire.
 	for k in 16:
-		var off := Vector2.from_angle(k * TAU / 16.0) * 14.0
+		var off := Vector2.from_angle(k * TAU / 16.0) * 26.0
 		var p := Vector2(best.x, best.z) + off
 		var free := true
 		for o in spires:
@@ -996,7 +996,7 @@ func _spire_look(at: Vector3) -> Vector3:
 		if d.length() < 45.0:
 			sum += Vector3(d.x, 0, d.y).normalized()
 	var dir := sum.normalized() if sum.length() > 0.1 else Vector3(0, 0, -1)
-	return dir * 20.0 + Vector3(0, ground_at(at.x, at.z) + 22.0, 0)
+	return dir * 30.0 + Vector3(0, ground_at(at.x, at.z) + 26.0, 0)
 
 
 func flight() -> Array[Dictionary]:
@@ -1009,8 +1009,8 @@ func flight() -> Array[Dictionary]:
 		{"from": Vector3(645, 80, -665), "at": Vector3(650, 42, -560), "fov": 58.0},
 		{"from": Vector3(640, 50, -610), "at": Vector3(660, 40, -525), "fov": 56.0},
 		{"from": Vector3(650, 40, -570), "at": Vector3(665, 45, -510), "fov": 56.0},
-		{"from": Vector3(690, 48, -545), "at": Vector3(660, 70, -515), "fov": 56.0},
-		{"from": Vector3(705, 62, -500), "at": Vector3(660, 85, -520), "fov": 56.0},
+		{"from": Vector3(718, 52, -566), "at": Vector3(660, 72, -518), "fov": 56.0},
+		{"from": Vector3(728, 66, -490), "at": Vector3(660, 85, -522), "fov": 56.0},
 		{"from": vb + Vector3(24, 10, 18), "at": vb + Vector3(0, 10, 0), "fov": 56.0},
 		{"from": Vector3(620, 46, -430), "at": Vector3(560, 46, -395), "fov": 56.0},
 		{"from": Vector3(560, 58, -392), "at": Vector3(notch.x, 62, notch.z), "fov": 56.0},

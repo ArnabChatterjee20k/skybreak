@@ -501,16 +501,16 @@ static func cairn() -> ArrayMesh:
 
 ## A T3 smoke puff for the plume: flat-ish lumps, grey above, warm below.
 static func puff(v: int) -> ArrayMesh:
-	var bounds := AABB(Vector3(-14, -6, -14), Vector3(28, 14, 28))
+	var bounds := AABB(Vector3(-15, -10, -15), Vector3(30, 21, 30))
 	var paint := func(g: VoxelGrid) -> void:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = 2800 + v
-		for k in 6:
-			var c := Vector3(rng.randf_range(-6, 6), rng.randf_range(-1, 2), rng.randf_range(-6, 6))
-			var r := rng.randf_range(4.0, 7.0)
+		for k in 8:
+			var c := Vector3(rng.randf_range(-6, 6), rng.randf_range(-4, 4), rng.randf_range(-6, 6))
+			var r := rng.randf_range(3.5, 6.5)
 			g.paint(AABB(c - Vector3.ONE * r, Vector3.ONE * r * 2), func(p: Vector3) -> float:
-				return VoxelSdf.ellipsoid(p, c, Vector3(r, r * 0.7, r)), Mat.SMOKE, -1, VoxelGrid.Mode.ADD)
-	return _mesh("puff%d" % v, bounds, T3, paint)
+				return VoxelSdf.ellipsoid(p, c, Vector3(r, r * 0.9, r)), Mat.SMOKE, -1, VoxelGrid.Mode.ADD)
+	return _mesh("puff_b%d" % v, bounds, T3, paint)
 
 
 ## One molten blob of a geyser column (T1, glowing).
@@ -519,6 +519,7 @@ static func blob(v: int) -> ArrayMesh:
 	var bounds := AABB(-Vector3.ONE * s * 1.2, Vector3.ONE * s * 2.4)
 	var paint := func(g: VoxelGrid) -> void:
 		g.paint(bounds, func(p: Vector3) -> float:
-			return VoxelSdf.box(p, Vector3.ZERO, Vector3(s, s * 0.85, s), s * 0.35), Mat.LAVA)
-		g.paint_surface(bounds, func(_p: Vector3, c: Vector3i) -> bool: return VoxelSdf.hash3(c, 36) < 0.25, Mat.EMBER)
-	return _mesh("blob%d" % v, bounds, T1, paint)
+			return VoxelSdf.box(p, Vector3.ZERO, Vector3(s, s * 0.85, s), s * 0.35), Mat.EMBER)
+		g.paint_surface(bounds, func(_p: Vector3, c: Vector3i) -> bool: return VoxelSdf.hash3(c, 36) < 0.3, Mat.LAVA)
+		g.paint_surface(bounds, func(p: Vector3, c: Vector3i) -> bool: return p.y > s * 0.5 and VoxelSdf.hash3(c, 37) < 0.35, Mat.CRUST)
+	return _mesh("blob_b%d" % v, bounds, T1, paint)
