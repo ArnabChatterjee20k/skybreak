@@ -39,7 +39,7 @@ func _ready() -> void:
 	column.custom_minimum_size = Vector2(620, 0)
 	column.add_theme_constant_override("separation", 14)
 	add_child(column)
-	for entry: Dictionary in ENTRIES:
+	for entry: Dictionary in entries():
 		var b := make_button(entry.text, _choose.bind(entry.id), 50)
 		b.custom_minimum_size = Vector2(560 - column.get_child_count() * 14, 86)
 		b.focus_entered.connect(_show_blurb.bind(entry))
@@ -96,6 +96,11 @@ func first_focus() -> Control:
 
 func go_back() -> void:
 	pass  # Nothing behind the title menu.
+
+
+## The menu entries; the web build has no Quit (closing the tab does that).
+static func entries(is_web: bool = OS.has_feature("web")) -> Array:
+	return ENTRIES.filter(func(entry: Dictionary) -> bool: return not (is_web and entry.id == &"quit"))
 
 
 ## True once an online lobby scene exists.
