@@ -4,6 +4,17 @@ Golden replays (`replays/`) and visual goldens (`visual/`) for the QA harness
 (T-D31). Re-record with `tools/qa/bless_goldens.sh --replays|--visual|--all`
 only in the PR that intends the change, and log it below.
 
+## Re-bless for #146 T-ART3 anime look + #143 HUD restyle (merge of main 68f6429)
+
+13 of the 14 visual goldens re-blessed with `bless_goldens.sh --visual` on the merged code
+(official Godot 4.7.2 linux x86_64, SHA-512 verified, `rm -rf .godot`, `--headless --import`,
+gl_compatibility 960x540). `zone_verdant_falls.png` is unchanged. Both PRs had re-blessed
+`zone_*` and `heartbloom_*` (binary conflicts); the merge-conflicted PNGs took one side and
+every golden was then re-rendered:
+
+- #146 T-ART3: art bible v2, the global anime grade, rim light and the beam washout fix.
+- #143: the HUD restyle drawn over the frame.
+
 ## Re-bless for #125 T-ART1 zone art pass (merge of main 372bccd)
 
 All 14 visual goldens re-blessed with `bless_goldens.sh --visual` on the merged code

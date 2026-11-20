@@ -21,6 +21,8 @@ const STORM := Color(0.72, 0.8, 1.0)
 ## KO burst sprite sizes (m): the star stays inside the loser's body height, the ring a bit wider.
 const KO_STAR := 1.4
 const KO_RING := 1.5
+## Power-up flare shell radii (m); it grows to 1.35x over its life.
+const AURA_FLARE_SHELL := Vector3(0.75, 1.1, 0.75)
 
 
 static func kinds() -> Array[StringName]:
@@ -91,9 +93,10 @@ static func _fill(effect: VfxEffect, kind: StringName) -> void:
 		&"aura_flare":
 			effect.lifetime = 0.6
 			effect.default_color = WARM
+			# About the fighter's own size (ART_BIBLE §7), so the caster still reads through it.
 			var shell := effect.add_mesh(&"flare", VfxKit.sphere())
-			shell.scale = Vector3(1.0, 1.5, 1.0)
-			var floor_ring := effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(5, 5)))
+			shell.scale = AURA_FLARE_SHELL
+			var floor_ring := effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(3.2, 3.2)))
 			floor_ring.position = Vector3(0.0, -0.95, 0.0)
 			floor_ring.rotation = Vector3(-PI / 2.0, 0.0, 0.0)
 			effect.add_particles(&"streak", &"rise", 22, 0.5, Vector2(0.1, 0.9))

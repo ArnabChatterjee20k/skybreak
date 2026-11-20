@@ -58,6 +58,7 @@ func _ready() -> void:
 	sky_material.shader = SKY_SHADER
 	environment_node.environment.sky.sky_material = sky_material
 	_move_to_world_layers()
+	LookGrade.apply(environment_node.environment)
 	atmosphere.setup(layout, environment_node.environment, sun, sky_material, rim_light)
 	atmosphere.night_materials.append_array(_night_materials)
 	set_time_of_day(start_time_of_day)

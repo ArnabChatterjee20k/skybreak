@@ -31,6 +31,10 @@ uniform vec4 rim_color : source_color = vec4(1.0, 0.96, 0.9, 1.0);
 uniform float rim_width : hint_range(0.0, 1.0) = 0.3;
 uniform float rim_softness : hint_range(0.0, 0.5) = 0.05;
 uniform float rim_strength : hint_range(0.0, 4.0) = 0.35;
+// Light rim (ART_BIBLE §2): a crisp band on silhouette edges that face a directional light,
+// so the zone's back light outlines the body in its own colour.
+uniform float light_rim_width : hint_range(0.0, 1.0) = 0.42;
+uniform float light_rim_strength : hint_range(0.0, 4.0) = 1.1;
 group_uniforms;
 // Per fighter (set on the MeshInstance3D): blends the rim toward its energy colour.
 instance uniform vec4 rim_energy_color : source_color = vec4(0.3, 0.85, 1.0, 1.0);
@@ -73,6 +77,14 @@ void light() {
 		// Omni/spot: banded by angle, smooth range falloff, no tint so fill lights don't glow.
 		lit = band_ramp(n_dot_l) * ATTENUATION;
 		DIFFUSE_LIGHT += light_in * lit;
+	}
+
+	if (LIGHT_IS_DIRECTIONAL && light_rim_strength > 0.0) {
+		float fresnel = 1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0);
+		float edge = 1.0 - light_rim_width;
+		float band = smoothstep(edge - 0.03, edge + 0.03, fresnel);
+		float behind = smoothstep(0.0, 0.25, n_dot_l) * smoothstep(-0.2, 0.35, -dot(VIEW, LIGHT));
+		SPECULAR_LIGHT += light_in * band * behind * light_rim_strength * ATTENUATION;
 	}
 
 	if (specular_enabled) {

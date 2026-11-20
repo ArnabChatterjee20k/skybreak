@@ -25,3 +25,22 @@ func test_the_hand_orb_shrinks_to_a_muzzle_while_firing() -> void:
 	var orb := beam.meshes()[1]
 	assert_lte(orb.scale.x * (orb.mesh as QuadMesh).size.x, 2.0 * KiBeamEffect.CHARGE_RADIUS * 0.5,
 		"no sphere engulfing the caster")
+
+
+func test_a_free_tip_is_at_most_one_and_a_half_beam_widths() -> void:
+	for width in [0.5, 1.0, 2.5, 4.0]:
+		var sizes := KiBeamEffect.tip_sizes(width, false)
+		var diameter := 2.0 * KiBeamEffect.BEAM_RADIUS * width
+		assert_lte(maxf(sizes.x, sizes.y), 1.5 * diameter, "width %s" % width)
+		assert_gt(sizes.x, diameter, "the head still reads past the body")
+
+
+func test_the_beam_core_keeps_its_colour() -> void:
+	assert_lte(float(VfxKit.LOOKS[&"beam"].core_whiteness), 0.5, "a white core washes out the energy colour")
+	assert_lte(float(VfxKit.LOOKS[&"beam_tip"].core_whiteness), 0.5)
+
+
+func test_firing_a_beam_puts_no_ring_on_the_caster() -> void:
+	for type in [CombatSim.EventType.BEAM_START, CombatSim.EventType.BEAM_FIRE]:
+		var plan = CombatFeedback.plan_for({"type": type})
+		assert_false(CombatFeedback.SHOCKWAVE in plan.effects, "event %d" % type)

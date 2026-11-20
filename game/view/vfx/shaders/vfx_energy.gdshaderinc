@@ -61,6 +61,11 @@ void vertex() {
 	} else {
 		VERTEX *= size;
 	}
+	if (shape == 6) {
+		// Beam root tapers out of the hands over its first metres, so the caster stays visible.
+		float metres = VERTEX.y * length(MODEL_MATRIX[1].xyz);
+		VERTEX.xz *= mix(0.3, 1.0, smoothstep(0.0, 2.2, metres));
+	}
 }
 
 void fragment() {
@@ -120,6 +125,8 @@ void fragment() {
 		float bands = vfx_noise3(vec3(UV.x * 6.0, UV.y * 18.0 - TIME * scroll_speed, seed * 10.0));
 		float ripples = 0.5 + 0.5 * sin(UV.y * 60.0 - TIME * scroll_speed * 6.0);
 		alpha = smoothstep(0.0, 0.5, facing) * (0.55 + 0.3 * bands + 0.15 * ripples);
+		// Fades right at the lens: an over-shoulder camera looks down the beam's length.
+		alpha *= smoothstep(1.5, 4.5, length(VERTEX));
 		core = smoothstep(0.86, 0.99, facing);
 	} else if (shape == 7) {
 		// Lightning: UV.y along the bolt, a jagged centre line that re-rolls 20 times a second.

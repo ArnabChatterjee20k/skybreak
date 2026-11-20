@@ -307,7 +307,8 @@ func test_beam_charges_fires_and_lights_the_scene() -> void:
 	assert_false(beam.find_children("*", "MeshInstance3D", false, false).any(
 		func(m: Node) -> bool: return m.visible and (m as MeshInstance3D).mesh is ArrayMesh), "no body while charging")
 	beam.advance(0.4)
-	assert_gt(light.light_energy, 1.0, "the beam lights its surroundings")
+	assert_gt(light.light_energy, 0.4, "the beam lights its surroundings")
+	assert_lte(light.light_energy, 0.6 * 1.5 + 0.001, "but never washes out the caster (ART_BIBLE §7)")
 	assert_true(beam.find_children("*", "MeshInstance3D", false, false).any(
 		func(m: Node) -> bool: return m.visible and (m as MeshInstance3D).mesh is ArrayMesh), "the body is out")
 	beam.advance(1.2)

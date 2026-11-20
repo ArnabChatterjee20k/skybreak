@@ -5,4 +5,4 @@
 [resource]
 resource_name = "kael_outline"
 shader = ExtResource("1_outline")
-shader_parameter/outline_width = 2.0
+shader_parameter/outline_width = 2.5

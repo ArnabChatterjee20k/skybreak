@@ -143,9 +143,15 @@ vec3 zone_colour(int i, float h, float rock_mix, float lip, inout vec3 glow) {
 	vec3 rock_base = to_linear(zone_rock[i].rgb);
 	float ground_mask = 1.0 - rock_mix;
 	int pattern = int(p.w + 0.5);
-	// Large flat two-tone patches with crisp edges.
-	float patches = aa_step(0.56, value_noise(world_pos.xz / 26.0 + float(i) * 7.0));
-	ground *= mix(1.0, 0.86, patches);
+	// Painted variation (ART_BIBLE §6): a broad warm/cool and value drift, soft patches and
+	// mid-frequency brush mottling, so no stretch of ground reads as one flat fill.
+	float macro = value_noise(world_pos.xz / 38.0 + float(i) * 7.0);
+	ground *= mix(0.9, 1.08, macro);
+	ground = mix(ground * vec3(0.94, 0.98, 1.05), ground * vec3(1.06, 1.0, 0.93), smoothstep(0.3, 0.7, macro));
+	float patches = smoothstep(0.42, 0.68, value_noise(world_pos.xz / 17.0 + float(i) * 3.0));
+	ground *= mix(1.0, 0.9, patches);
+	float brush = value_noise(world_pos.xz / 5.5 + 13.0) * 0.6 + value_noise(world_pos.xz / 2.2 + 29.0) * 0.4;
+	ground *= mix(1.0, mix(0.86, 1.1, brush), detail_fade(world_pos.xz / 2.2) * 0.85 + 0.15);
 	if (pattern == 1) {
 		// City: darker streets on a 48 m block grid with a pale kerb line.
 		vec2 g = abs(fract((world_pos.xz + 6.0) / 48.0) - 0.5) * 48.0;
@@ -176,8 +182,8 @@ vec3 zone_colour(int i, float h, float rock_mix, float lip, inout vec3 glow) {
 	} else if (pattern == 3) {
 		// Cracked hardpan: dark crack lines on 6 m plates, pebbles between.
 		vec2 cp = world_pos.xz / 6.0;
-		float crack = 1.0 - aa_step(0.035, crack_distance(cp));
-		ground = mix(ground, ground * 0.62, crack * detail_fade(cp * 12.0));
+		float crack = 1.0 - aa_step(0.015, crack_distance(cp));
+		ground = mix(ground, ground * 0.88, crack * detail_fade(cp * 16.0));
 		vec2 pebble = clumps(world_pos.xz / 2.2, 0.35, 0.12);
 		float fade = detail_fade(world_pos.xz / 0.3);
 		ground = mix(ground, ground * 1.18, pebble.x * fade);
@@ -193,8 +199,9 @@ vec3 zone_colour(int i, float h, float rock_mix, float lip, inout vec3 glow) {
 	} else if (pattern == 5) {
 		// Basalt: dark cooled plates with thick seams.
 		vec2 cp = world_pos.xz / 4.5;
-		float seam = 1.0 - aa_step(0.05, crack_distance(cp));
-		ground = mix(ground, ground * 0.45, seam * detail_fade(cp * 10.0));
+		// Seams are a soft step darker, never black lines (owner review, T-ART3).
+		float seam = 1.0 - aa_step(0.022, crack_distance(cp));
+		ground = mix(ground, ground * 0.84, seam * detail_fade(cp * 16.0));
 	}
 	// Bright lip along the top of every cliff edge.
 	ground = mix(ground, ground * 1.22, lip);
@@ -238,7 +245,7 @@ void fragment() {
 	float facing = clamp(dot(normalize(NORMAL), VIEW), 0.0, 1.0);
 	float rim = (1.0 - smoothstep(0.12, 0.2, facing)) * rock_mix * near;
 	vec3 ink = to_linear(ink_color.rgb);
-	col = mix(col, ink, max(edge * mix(0.3, 0.85, near), rim * 0.7));
+	col = mix(col, ink, max(edge * mix(0.2, 0.6, near), rim * 0.5));
 	ALBEDO = col;
 	EMISSION = glow / max(total, 0.001);
 	ROUGHNESS = 1.0;

@@ -6,14 +6,20 @@ extends VfxEffect
 const CHARGE_RADIUS := 0.9
 const BEAM_RADIUS := 0.75
 const RELEASE_SECONDS := 0.25
-## Tip orb size (m) at full width; the beam's head, not a flare over the target.
-const TIP_SIZE := 2.0
+## Tip orb size as a share of the beam's diameter (ART_BIBLE §7): the head is
+## a little wider than the body, never a flare that swallows the frame. A free tip has no ring.
+const TIP_SHARE := 1.3
+const TIP_RING_SHARE := 0.0
 ## Clash point (m): orb, star and ring each stay about 1-1.5 m, so both fighters read.
 const CLASH_ORB := 1.2
 const CLASH_STAR := 1.5
 const CLASH_RING := 1.0
 ## Hand orb while firing, as a share of the charge size: a muzzle, not a sphere around the caster.
 const MUZZLE_SHARE := 0.3
+## Halo thickness as a share of the body's.
+const HALO_SHARE := 1.45
+## Light energy at full width; enough to tint the caster, not to wash them out.
+const LIGHT_ENERGY := 0.6
 
 var charge_time := 0.6
 var sustain_time := 1.2
@@ -45,7 +51,7 @@ func _init() -> void:
 	_charge = add_sprite(&"orb", 2.0 * CHARGE_RADIUS)
 	_body = add_mesh(&"beam", VfxKit.beam_cylinder())
 	_halo = add_mesh(&"beam_halo", VfxKit.beam_cylinder())
-	_tip = add_sprite(&"orb", 1.0)
+	_tip = add_sprite(&"beam_tip", 1.0)
 	_tip_ring = add_sprite(&"ring", 1.0)
 	_clash_spikes = add_sprite(&"spikes", 1.0)
 	_motes = add_particles(&"mote", &"twinkle", 20, 0.4, Vector2(0.2, 0.2), false)
@@ -111,7 +117,7 @@ func _advanced(_delta: float) -> void:
 	_charge_glow.scale = Vector3.ONE * hand
 	_motes.emitting = not firing
 	_light.global_position = (_from + _to) * 0.5 if firing else _from
-	_light.light_energy = (0.6 * charge if not firing else 1.2 * width)
+	_light.light_energy = (0.6 * charge if not firing else LIGHT_ENERGY * width)
 
 
 func _place_body(width: float) -> void:
@@ -127,16 +133,18 @@ func _place_body(width: float) -> void:
 	_body.visible = visible_width > 0.01
 	_halo.visible = _body.visible
 	_tip.visible = _body.visible
-	_tip_ring.visible = _body.visible
+	_tip_ring.visible = false
 	_clash_spikes.visible = _body.visible and clashing
 	if not _body.visible:
 		return
 	_body.transform = to_local * Transform3D(beam_basis, _from)
-	_halo.transform = to_local * Transform3D(beam_basis.scaled_local(Vector3(1.8, 1.0, 1.8)), _from)
+	_halo.transform = to_local * Transform3D(beam_basis.scaled_local(Vector3(HALO_SHARE, 1.0, HALO_SHARE)), _from)
 	var pulse := 1.0 + 0.15 * sin(_age * 55.0)
 	var sizes := tip_sizes(visible_width, clashing)
+	_tip_ring.visible = sizes.y > 0.01
 	_tip.transform = to_local * Transform3D(Basis.from_scale(Vector3.ONE * sizes.x * pulse), _to)
-	_tip_ring.transform = to_local * Transform3D(Basis.from_scale(Vector3.ONE * sizes.y * pulse), _to)
+	if _tip_ring.visible:
+		_tip_ring.transform = to_local * Transform3D(Basis.from_scale(Vector3.ONE * sizes.y * pulse), _to)
 	_clash_spikes.transform = to_local * Transform3D(Basis.from_scale(Vector3.ONE * sizes.z * pulse), _to)
 
 
@@ -146,7 +154,8 @@ static func tip_sizes(visible_width: float, clash: bool) -> Vector3:
 	var fade := clampf(visible_width, 0.0, 1.0)
 	if clash:
 		return Vector3(CLASH_ORB, CLASH_RING, CLASH_STAR) * fade
-	return Vector3(TIP_SIZE, TIP_SIZE * 1.4, 0.0) * visible_width
+	var diameter := 2.0 * BEAM_RADIUS * visible_width
+	return Vector3(TIP_SHARE, TIP_RING_SHARE, 0.0) * diameter
 
 
 func _set_progress(_value: float) -> void:

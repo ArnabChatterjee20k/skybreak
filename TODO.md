@@ -19,6 +19,19 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   visual goldens re-blessed (HUD only). Open: on the web build `SystemFont` falls back to the default
   face for menus and HUD alike; bundling a licensed heavy display font would fix both.
 
+- T-ART3 [desktop] Anime-arena look (owner direction 2026-11-20, hybrid B + D): art bible v2
+  (`docs/ART_BIBLE.md`), fighter light rim + one 2.5 px outline, ACES grade with controlled bloom
+  (Filmic fallback on the web renderer), three-stop skies with painted cloud bands, aerial
+  perspective, painted ground variation with toned-down cracks, beam washout fix (no caster ring,
+  tip capped to the beam width, coloured core, tapered root), smaller power-up flare and clash ring.
+  Follow-ups:
+  - T-ART3a [developer] Render benchmark on the GTX 1650 before/after (Skyhold p95 must stay
+    <= 6.3 ms): the cloud session has no GPU; the new costs are the glow pass, the sky noise and
+    three value-noise taps in the terrain shader.
+  - T-ART3b [desktop] Dense mid-ground silhouettes near the fight per zone (ART_BIBLE §5): more
+    rocks, trees and ruins at 10-60 m; props only, no collision or ground height changes.
+  - T-ART3c [developer] Camera: B framing (25-35% height) and D side-on exchange shots (35-40%),
+    ART_BIBLE §9; the look stills use a stand-in camera in `look_capture.gd`.
 - T-ART2 [desktop] Art round 2 (#99, #135, #137, #120, #138, #118, #121, #98, #124): crisp opaque
   Skyhold cloud sea and lighter haze, Heartbloom lawn shader (petals, stepping-stone walk, no fan
   shading), Stormfall neon night city with skyline and wet-street neon, shaded Ember spires, no prop

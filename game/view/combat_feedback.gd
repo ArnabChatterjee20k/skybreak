@@ -167,9 +167,10 @@ static func plan_for(event: Dictionary) -> Dictionary:
 			plan.color = KI_COLOR
 			plan.scale = 0.3
 		E.BEAM_START, E.BEAM_FIRE:
-			plan.effects = [SHOCKWAVE]
+			# No ring at the caster (T-ART3): it blew out the frame; the beam's muzzle is the beat.
+			plan.effects = [SPARK_LIGHT]
 			plan.color = KI_COLOR
-			plan.scale = 0.5 if event.type == E.BEAM_START else 0.8
+			plan.scale = 0.3
 			plan.shake = 0.0 if event.type == E.BEAM_START else 0.15
 		E.BEAM_CLASH, E.CLASH_END:
 			# Kept compact: the beams' own clash point is the beat (ART_BIBLE §7).
