@@ -8,6 +8,7 @@ extends SceneTree
 ## In the browser: tools/web/controls_audit_web.sh (runs it as the main loop).
 
 const UNIT := FighterState.METER_UNIT
+const MENU_SETTLE_FRAMES := 60
 const LMB := -MOUSE_BUTTON_LEFT
 const RMB := -MOUSE_BUTTON_RIGHT
 const MMB := -MOUSE_BUTTON_MIDDLE
@@ -80,7 +81,8 @@ func _process(_delta: float) -> bool:
 	_frame += 1
 	match _phase:
 		"menu":
-			if _frame == 3:
+			# Give the front end (and the wasm build's first frames) time to settle.
+			if _frame == MENU_SETTLE_FRAMES:
 				_front.screens[&"main"].buttons[&"vs_ai"].pressed.emit()
 				var select = _front.screens[&"character_select"]
 				select.slots[0].character = StringName(_legends[0])
