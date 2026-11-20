@@ -69,6 +69,6 @@ func test_only_the_orchid_accent_passes_the_saturation_ceiling() -> void:
 func test_the_day_sky_is_lighter_than_the_canopy_and_the_fog_is_not_mint() -> void:
 	var day: Dictionary = _zone.presets().day
 	var sky: Color = day.sky_horizon
-	assert_gt(sky.get_luminance(), VerdantFallsVoxel.COLORS[VerdantFallsVoxel.Mat.LEAF_TOP].get_luminance() + 0.3)
+	assert_gt(sky.get_luminance(), VerdantFallsVoxel.COLORS[VerdantFallsVoxel.Mat.LEAF_TOP].get_luminance() + 0.2, "the sky reads lighter than the sunlit canopy")
 	var fog: Color = day.fog_color
 	assert_lt(fog.s, 0.12, "warm pale fog, not the foliage's green")

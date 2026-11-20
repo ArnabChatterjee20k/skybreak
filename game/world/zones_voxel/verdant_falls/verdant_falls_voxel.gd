@@ -1045,7 +1045,7 @@ func _single(meshes: Array, ranges: Array, xf: Transform3D, node_name: String) -
 ## with the Falling Leaf emblem and fresh orchids, a frog guardian, roots
 ## through the stones; its heron guardian lies toppled in the lake shallows.
 func _shrine() -> void:
-	var g := _max_ground(shrine_at, 4.0) - 0.1
+	var g := _shrine_floor()
 	var yaw := atan2(spawns[1].x - shrine_at.x, spawns[1].y - shrine_at.y)
 	_single(_lod(_shrine_mesh, 4.0), [80.0, 0.0], Transform3D(Basis(Vector3.UP, yaw), Vector3(shrine_at.x, g, shrine_at.y)), "Shrine")
 	# The toppled heron: the nearest shallows toward the lake (north).
@@ -1058,6 +1058,12 @@ func _shrine() -> void:
 	_single(_lod(_heron_mesh, 4.0), [80.0, 0.0], Transform3D(Basis(Vector3.UP, 1.1) * Basis(Vector3.FORWARD, PI * 0.5 - 0.15),
 		Vector3(w.x, hy + 0.35, w.y)), "HeronToppled")
 	stats["heron_at"] = w
+
+
+## The shrine's base: halfway between the slope's low and high sides, so the
+## uphill blocks sink into the moss and the downhill side shows its foundation.
+func _shrine_floor() -> float:
+	return lerpf(_min_ground(shrine_at, 4.0), _max_ground(shrine_at, 4.0), 0.6) - 0.15
 
 
 ## Highest floor under a footprint of radius r.
@@ -1482,7 +1488,7 @@ func _marks_mesh() -> ArrayMesh:
 func _mist() -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = MIST_SHADER
-	mat.set_shader_parameter("opacity", 0.09)
+	mat.set_shader_parameter("opacity", 0.045)
 	_mist_mats.append(mat)
 	var spray := ShaderMaterial.new()
 	spray.shader = MIST_SHADER
@@ -1714,7 +1720,7 @@ func shots() -> Array[Dictionary]:
 	var cam := shrine_at + Vector2(sin(yaw + 0.3), cos(yaw + 0.3)) * 11.5
 	out.append({"name": "shrine", "from": Vector3(cam.x, ground_at(cam.x, cam.y) + 3.4, cam.y),
 		"at": Vector3(shrine_at.x, ground_at(shrine_at.x, shrine_at.y) + 1.6, shrine_at.y), "fov": 52.0,
-		"kael": [front, yaw], "kael_y": _max_ground(shrine_at, 4.0) - 0.1 + 0.52, "times": ["day"]})
+		"kael": [front, yaw], "kael_y": _shrine_floor() + 0.52, "times": ["day"]})
 	# 3. The Giant Grove: buttress roots and the walkway overhead, Kael at the roots.
 	if grove_pair.size() == 2:
 		var a := tree_base(grove_pair[0])
