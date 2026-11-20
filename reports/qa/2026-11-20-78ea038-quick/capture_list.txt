@@ -1,0 +1,3 @@
+117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343 268 117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t268 2
+110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523 1181 110_frozen_peaks_ffa4_lyra-kael-vexa-brann_3523_t1181 0
+114:shattered_mesa:2v2:kael,vexa,brann,lyra:3355 2126 114_shattered_mesa_2v2_kael-vexa-brann-lyra_3355_t2126 0

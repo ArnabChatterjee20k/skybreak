@@ -306,6 +306,10 @@ static func _repeater(root: Node3D) -> void:
 static func _scatter(root: Node3D) -> void:
 	_box(root, Vector3(0.1, 0.22, 0.13), LEATHER, Vector3(0, 0, 0.04), Vector3(-15, 0, 0))
 	_box(root, Vector3(0.2, 0.22, 0.36), DARK_GOLD, Vector3(0, 0.17, -0.06))
-	_cylinder(root, 0.1, 0.5, GOLD, Vector3(0, 0.2, -0.45), Vector3(-90, 0, 0), 0.19)
-	_torus(root, 0.15, 0.21, CHARCOAL, Vector3(0, 0.2, -0.7), Vector3(90, 0, 0))
+	# An iron barrel with a short flared muzzle and bands: a cannon, not a solid gold cone (#98).
+	_cylinder(root, 0.1, 0.44, CHARCOAL, Vector3(0, 0.2, -0.42), Vector3(-90, 0, 0), 0.12)
+	_cylinder(root, 0.12, 0.1, CHARCOAL, Vector3(0, 0.2, -0.67), Vector3(-90, 0, 0), 0.17)
+	_torus(root, 0.13, 0.19, GOLD, Vector3(0, 0.2, -0.72), Vector3(90, 0, 0))
+	_torus(root, 0.1, 0.15, GOLD, Vector3(0, 0.2, -0.32), Vector3(90, 0, 0))
+	_box(root, Vector3(0.05, 0.03, 0.3), EMBER, Vector3(0, 0.33, -0.45), Vector3.ZERO, true)
 	_sphere(root, 0.07, EMBER, Vector3(0, 0.32, -0.02), true)

@@ -28,6 +28,8 @@ const DUST_COLOR := Color(0.8, 0.72, 0.6)
 const ITEM_COLOR := Color(1.0, 0.8, 0.3)
 ## Ki blast and beam events (T-KI1).
 const KI_COLOR := Color(0.95, 0.97, 1.0)
+## Shockwave scale for a beam clash starting and ending.
+const CLASH_SHOCKWAVE_SCALE := 0.6
 ## Most one-shot sparks alive at once; past it, minor sparks are skipped.
 const MAX_LIVE_SPARKS := 6
 
@@ -130,7 +132,7 @@ static func plan_for(event: Dictionary) -> Dictionary:
 			plan.effects = [GUARD_BREAK]
 			plan.shake = 0.6
 		E.KO:
-			plan.effects = [SPARK_HEAVY]
+			# The contact burst is MatchVfx's ko_burst: one beat, not two stacked sparks.
 			plan.shake = 0.9
 		E.PUSH_BLOCK:
 			plan.effects = [SHOCKWAVE]
@@ -177,9 +179,10 @@ static func plan_for(event: Dictionary) -> Dictionary:
 			plan.scale = 0.5 if event.type == E.BEAM_START else 0.8
 			plan.shake = 0.0 if event.type == E.BEAM_START else 0.15
 		E.BEAM_CLASH, E.CLASH_END:
+			# Kept compact: the beams' own clash point is the beat (ART_BIBLE §7).
 			plan.effects = [SHOCKWAVE]
 			plan.color = KI_COLOR
-			plan.scale = 1.4
+			plan.scale = CLASH_SHOCKWAVE_SCALE
 			plan.shake = 0.35 if event.type == E.BEAM_CLASH else 0.45
 	if event.get("type", -1) == E.PROJECTILE_HIT and event.get("weapon", -1) == Weapon.Kind.NONE:
 		plan.color = KI_COLOR # A ki shot, not an item.

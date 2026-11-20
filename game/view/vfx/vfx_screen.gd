@@ -18,6 +18,8 @@ var _length := PackedFloat32Array([1, 1, 1, 1])
 var _peak := PackedFloat32Array([1, 1, 1, 1])
 ## Impact frames hold for whole rendered frames, not seconds.
 var _impact_frames := 0
+## Process frame impact() ran in: that frame is drawn with it, so counting starts on the next.
+var _impact_started := -1
 var _flash_frames := 0
 var _flash_length := 1
 
@@ -49,6 +51,7 @@ func impact(color: Color, center: Vector2, frames: int = 2) -> void:
 	_param(Mode.IMPACT, "color", color)
 	_param(Mode.IMPACT, "center", center)
 	_impact_frames = maxi(frames, 1)
+	_impact_started = Engine.get_process_frames()
 	_peak[Mode.IMPACT] = 0.85
 	_rects[Mode.IMPACT].visible = true
 	_param(Mode.IMPACT, &"amount", 0.85)
@@ -83,11 +86,12 @@ func show_all() -> void:
 
 
 func _process(delta: float) -> void:
-	advance(delta)
+	advance(delta, Engine.get_process_frames() == _impact_started)
 
 
-func advance(delta: float) -> void:
-	if _impact_frames > 0:
+## Steps the overlays one rendered frame; hold_impact keeps a just-started impact frame up.
+func advance(delta: float, hold_impact := false) -> void:
+	if _impact_frames > 0 and not hold_impact:
 		_impact_frames -= 1
 		if _impact_frames == 0:
 			_rects[Mode.IMPACT].visible = false

@@ -7,6 +7,9 @@ extends MenuScreen
 signal fight_requested
 
 const ROUND_CHOICES: Array[int] = [1, 3, 5]
+## Zone card name size and the smallest it shrinks to for long names.
+const CARD_NAME_SIZE := 24
+const CARD_NAME_MIN := 16
 
 var zone_ids: Array[StringName] = []
 var selected: StringName = &""
@@ -165,6 +168,16 @@ func _fight() -> void:
 	fight_requested.emit()
 
 
+## Largest card-name font size (CARD_NAME_SIZE down to CARD_NAME_MIN) whose text, outline included, fits width.
+static func fitted_font_size(label: Label, width: float) -> int:
+	var font := label.get_theme_font(&"font")
+	var outline := label.get_theme_constant(&"outline_size")
+	for size in range(CARD_NAME_SIZE, CARD_NAME_MIN - 1, -1):
+		if font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + outline <= width:
+			return size
+	return CARD_NAME_MIN
+
+
 func _zone_card(id: StringName) -> Button:
 	var card := Button.new()
 	card.custom_minimum_size = Vector2(320, 140)
@@ -188,7 +201,7 @@ func _zone_card(id: StringName) -> Button:
 	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade.show_behind_parent = true
 	card.add_child(fade)
-	var name_label := MenuTheme.label(ZoneCatalog.display_name(id).to_upper(), 24, MenuTheme.TEXT, 8)
+	var name_label := MenuTheme.label(ZoneCatalog.display_name(id).to_upper(), CARD_NAME_SIZE, MenuTheme.TEXT, 8)
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_label.clip_text = true
 	name_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -198,6 +211,11 @@ func _zone_card(id: StringName) -> Button:
 	name_label.offset_bottom = -6
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(name_label)
+	# Long names (HEARTBLOOM GARDENS) shrink to fit the card instead of trailing off.
+	var fit := func() -> void:
+		name_label.add_theme_font_size_override("font_size", fitted_font_size(name_label, name_label.size.x))
+	name_label.resized.connect(fit)
+	visibility_changed.connect(fit)
 	if id == ZoneCatalog.ROMANTIC_ZONE:
 		name_label.add_theme_color_override("font_color", MenuTheme.ROSE.lightened(0.35))
 		var heart := HeartDrift.new()
