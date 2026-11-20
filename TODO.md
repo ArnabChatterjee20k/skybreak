@@ -13,15 +13,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In review
 
-- T-D30e [desktop] Weapon holds, view-only port of #70 (supersedes it): `WeaponGrip`, per-build
-  holds, clearance solver with carry-over, KO weapon drop, bow reach, `VisualQa`; plus fixed
-  one-hand hit-reaction tuck and flight hold, heavies at the side in flight, eased hold changes,
-  clear-then-limit rounds after the turn cap, a short equip moment. Open: VisualQa
-  weapon_vs_holder 9 and bow_vs_head 14 (3 zones x seeds 1-3), not 0; armed layers cost
-  ~2.9-3.3 ms for 4 fighters here (target 0.5 ms; unarmed 0.54-0.78 vs main 0.47); VisualQa
-  ground_contact / fighter_vs_fighter tracked under QA-12 / QA-11; the strip's flight column
-  renders upright (preview does not reach the flight body).
-
 - QA-11 [desktop] `fighter_overlap` measures pushboxes (`Pushboxes.gap`, skipping the pairs
   `Pushboxes.collide` lets through) instead of hurtboxes. Quick soak: sim invariants PASS, no real
   pushbox overlap left (was 5/21 matches, 128 frames).
@@ -99,6 +90,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 - QA-12 [desktop] Bug (T-D22d): foot_ground still fails in 18/21 quick matches (545 frames, down from 3190). T-D22e (`claude/T-D22e-foot-grounding`): 542 -> 19 frames in a local replay of the quick matrix, all 19 in QA-12c. T-D34 quick run on 93ca66b: 3 frames in 2/21, both view-side: Brann's first IDLE frame after a vanish reappears (+10.2 cm, Stormfall t1902) and Lyra's `guard` +6.6 cm on flat Frozen Peaks ground (t1178-1181). Owner: characters (T-D22 motion).
 - QA-13 [developer] Bug (T-D22d): `ZoneMatch` never calls `FighterView.react_to_tick`, so in real matches nobody flinches at hits or looks at the lock-on target (FighterView now finds the sim's floor itself).
 - QA-9 [desktop] Bug (T-D31): a held bow's string passes within 1.5–8 cm of the head centre (Brann blocking, attacking or in blockstun; Kael dashing), 7 of 252 full-soak matches.
+- QA-18 [developer] Bug (#107): the sim's island rim reaches past the drawn rim. `ZoneGround._island_top`
+  takes the nearest sample at the rim, so a fighter can land up to one cell (about 1 m) beyond the
+  visible island edge and stand on air; `QaViewChecks` then measures the terrain far below (+285 m
+  on Heartbloom, 2621 2v2 t819-824). Fix in the sim (re-bless replays, det_check, Windows check) or
+  extend the island mesh to the sim footprint.
 - QA-17 [desktop] Bug (T-D30e): a VisualQa seed plays a different match depending on what ran earlier in the process (Frozen Peaks s2: 9860 samples in `visual_qa_run.gd`, 10055 for the test alone, 10886 in the full GUT suite). The AI seeds lazily from `sim.rng.seed`, so some other state leaks between scripts; find it so GUT and the runner agree.
 - QA-10 [desktop] Bug (QA re-baseline): the Skyhold Ruins cloud sea renders differently on every run (SSIM 0.944, 4.2% tiles between two renders of the same commit), so `zone_skyhold_ruins` sits just above the visual-golden threshold on noise alone. Make the cloud layer's time deterministic in the QA shots.
 - [desktop] Bug (found in T-D22b): `WeaponMoves.move_set(kind, unarmed)` caches by weapon kind only, so the first fighter to arm a kind (e.g. Vexa) fixes its unarmed grab/push_block for everyone after. Key the cache by the unarmed set too.
@@ -184,6 +180,13 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+
+- T-D30e [desktop] Weapon holds, view-only port of #70, merged in #102 (`66b15ce`), #70 closed
+  as superseded: `WeaponGrip`, per-build holds, clearance solver with carry-over, bow holds for
+  hit reactions and flight, drawn-string solve, KO weapon drop, `VisualQa`. VisualQa
+  weapon_vs_holder 0 and bow_vs_head 0 (3 zones x seeds 1-3); armed layers 1.6-1.9 ms for 4
+  fighters against the 2.0 ms bound (thin headroom; it measured 2.1-2.5 ms on a slower
+  container); quick QA on 66b15ce shows no weapon_vs_holder, bow_vs_head or pop failures.
 
 - T-D33 [desktop] (#94, merged) Sim correctness bugs from the QA harness: QA-6 (a grab placed the target at
   the hold point after its step without clamping it to the arena or the terrain, so it read
