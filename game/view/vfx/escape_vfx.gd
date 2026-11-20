@@ -32,6 +32,10 @@ static func plan_for(event: Dictionary, shockwave: PackedScene, spark: PackedSce
 			return {"effects": [shockwave], "color": TECH_COLOR, "scale": 0.45, "shake": 0.0, "impact_frames": 0}
 		E.TECH_ROLL:
 			return {"effects": [shockwave], "color": ROLL_DUST, "scale": 0.35, "shake": 0.05, "impact_frames": 0}
+		E.CHASE:
+			return {"effects": [shockwave], "color": TECH_COLOR, "scale": 0.3, "shake": 0.0, "impact_frames": 0}
+		E.WAKEUP:
+			return {"effects": [shockwave], "color": ROLL_DUST, "scale": 0.25, "shake": 0.0, "impact_frames": 0}
 	return {}
 
 
