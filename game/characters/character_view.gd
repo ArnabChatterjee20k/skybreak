@@ -652,11 +652,14 @@ func _hold_weapon(kind: Weapon.Kind) -> void:
 	if kind == Weapon.Kind.NONE:
 		# Empty hands: the arm eases out of the last hold (arm_pose NONE); nothing left to clear.
 		layers.weapon_boxes = [] as Array[Transform3D]
+		layers.weapon_drawn_boxes = [] as Array[Transform3D]
 		return
 	var skeleton := model.get_node("%GeneralSkeleton") as Skeleton3D
 	var hands := WeaponGrip.hands_of(kind)
 	layers.weapon_hand = hands[0] if hands.size() == 1 else &""
 	layers.weapon_boxes = WeaponGrip.clearance_boxes(kind) if hands.size() == 1 else ([] as Array[Transform3D])
+	var bow := hands.size() == 1 and WeaponGrip.clearance_boxes(kind).size() != WeaponGrip.model_boxes(kind).size()
+	layers.weapon_drawn_boxes = WeaponGrip.model_boxes(kind) if bow else ([] as Array[Transform3D])
 	layers.weapon_off_hand = WeaponGrip.off_hand_of(kind)
 	if hands.size() == 1:
 		layers.weapon_grip = WeaponGrip.grip_transform(skeleton, kind, hands[0])

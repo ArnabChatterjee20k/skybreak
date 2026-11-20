@@ -165,6 +165,8 @@ var arm_phase := 0.0
 var weapon_hand := &""
 var weapon_grip := Transform3D.IDENTITY
 var weapon_boxes: Array[Transform3D] = []
+## A bow's boxes without its resting string: once drawn, the solver keeps the drawn string off the head instead.
+var weapon_drawn_boxes: Array[Transform3D] = []
 var weapon_off_hand := Vector3.INF
 ## The off hand's palm socket in its bone's space (see WeaponGrip.hand_socket).
 var off_hand_socket := Transform3D.IDENTITY
@@ -959,15 +961,19 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3, swing := true) -> v
 		names = names.filter(func(n: StringName) -> bool: return not n.begins_with("lower_arm"))
 	var tested := _clear_capsules(names)
 	var key_bones := _clear_bones(tested, main)
-	if _clear_valid and _pose_of(rotations, key_bones) == _clear_rotations:
+	# A drawn bow: its string runs to the string hand, so the solver tests that string against the head.
+	var string_chain := _arm_chain(&"RightHand") if weapon_hand == &"LeftHand" else []
+	var drawn := not weapon_drawn_boxes.is_empty() and not string_chain.is_empty() and bow_at_anchor()
+	if not drawn and _clear_valid and _pose_of(rotations, key_bones) == _clear_rotations:
 		_world_cache.clear()
 		return
+	var own := weapon_drawn_boxes if drawn else weapon_boxes
 	for pass_index in CLEARANCE_PASSES + 1:
 		_world_cache.clear()
 		var hand := _world_at(rotations, hips, main[2])
 		var weapon := hand * weapon_grip
 		var boxes: Array[Transform3D] = []
-		for box in weapon_boxes:
+		for box in own:
 			boxes.append(weapon * box)
 		var capsules := {}
 		for entry: Array in tested:
@@ -975,6 +981,16 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3, swing := true) -> v
 			var b: Vector3 = _world_at(rotations, hips, entry[2]).origin if entry[2] >= 0 else from * (entry[3] as Vector3)
 			capsules[entry[0]] = [from.origin, b, entry[4]]
 		var hit := BodyCapsules.deepest_box(capsules, boxes)
+		if drawn and capsules.has(&"head"):
+			var nock := (_world_at(rotations, hips, string_chain[2]) * off_hand_socket).origin
+			var tip := WeaponGrip.BOW_TIP
+			# Both halves of the string, and the nocked arrow from the nock out through the grip.
+			var arrow := (weapon.origin - nock).normalized() * BowString.ARROW_LENGTH * weapon.basis.get_scale().z
+			var strings: Array[Transform3D] = [_segment_box(weapon * tip, nock),
+				_segment_box(weapon * Vector3(tip.x, -tip.y, tip.z), nock), _segment_box(nock, nock + arrow)]
+			var string_hit := BodyCapsules.deepest_box({&"head": capsules[&"head"]}, strings)
+			if float(string_hit[0]) > float(hit[0]):
+				hit = string_hit
 		weapon_overlap = maxf(float(hit[0]), 0.0)
 		if float(hit[0]) <= -CLEARANCE_GAP:
 			_clear_rotations = _pose_of(rotations, key_bones)
@@ -1000,6 +1016,16 @@ func _clearance(rotations: Array[Quaternion], hips: Vector3, swing := true) -> v
 		var target := hand.origin + push * maxf(depth - moved, CLEARANCE_MARGIN)
 		_reach_hand(rotations, hips, main, target, hand_rotation, 1.0)
 		_grip_off_hand(rotations, hips, 1.0)
+
+
+## A thin box (unit-cube transform) along the segment a to b, as thick as a bow string.
+static func _segment_box(a: Vector3, b: Vector3) -> Transform3D:
+	var along := b - a
+	var length := maxf(along.length(), 0.001)
+	var y := along / length
+	var x := y.cross(Vector3.UP if absf(y.y) < 0.95 else Vector3.RIGHT).normalized()
+	var r := BowString.STRING_RADIUS
+	return Transform3D(Basis(x * r, y * length * 0.5, x.cross(y) * r), (a + b) * 0.5)
 
 
 ## The body's capsules the clearance tests, in BodyCapsules order: [name, bone, end bone, offset, radius].
