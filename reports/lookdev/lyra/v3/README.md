@@ -39,3 +39,6 @@ Lavapipe renders: code review only, not for judging colour (skill rule 4). Left 
 | 0.30 m front / 0.38 m back | 87 |
 
 The fix belongs in the reel staging (`game/lookdev/moves_reel.gd`, outside this lane): push the pair apart on head-to-head distance, including the hat, as well as on pushboxes. The same applies to strikes against the hat. On knockdown, the brim also goes 0.19 m into the floor (0.29 m in v2).
+
+## GUT (full suite, v3 with kit-fixes-dev applied locally)
+1530 tests in 133 scripts: 1524 passing, 0 failing, 11 risky/pending (the known QA-11/QA-12 issues), 255,527 asserts, exit 0.
