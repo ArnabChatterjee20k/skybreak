@@ -130,8 +130,15 @@ func _full(yaw: float, name: String) -> void:
 func _head(name: String) -> void:
 	_pivot.rotation.y = deg_to_rad(-28.0)
 	var head := _bone_position(&"Head") + Vector3(0, 0.17, 0)
+	# Frame from the chin to the figure's real top (tall ears, hats, hair
+	# spikes), and wide enough for a brim; a normal head keeps the 0.62 m span.
+	var chin := head.y - 0.4  # below the chin: the -6° pitch eats the bottom margin
+	var extent := _figure_top_and_width(head)
+	var top := maxf(head.y + 0.31, extent.x + 0.04)
+	var span := maxf(top - chin, extent.y / (16.0 / 9.0) * 1.15)
+	var centre := Vector3(head.x, (chin + top) * 0.5, head.z)
 	_stage.camera.fov = 24.0
-	_stage.frame(head, 0.62, 0.9, -6.0)
+	_stage.frame(centre, maxf(span, 0.62), 0.9, -6.0)
 	await _save(name)
 	_stage.camera.fov = 30.0
 
@@ -145,6 +152,30 @@ func _hand(name: String) -> void:
 	_stage.frame(hand, 0.42, 0.8, -8.0, 0.0)
 	await _save(name)
 	_stage.camera.fov = 30.0
+
+
+## The figure's highest point (x) and its widest extent around the head (y),
+## in world space: the rest-pose vertices above the neck and within 0.6 m of
+## the head (ears, hat, hair; not the T-posed arms), carried by the Head pose.
+func _figure_top_and_width(head: Vector3) -> Vector2:
+	var skeleton := _view.model.get_node("%GeneralSkeleton") as Skeleton3D
+	var hb := skeleton.find_bone(&"Head")
+	var rest := skeleton.get_bone_global_rest(hb).origin
+	var pose := skeleton.global_transform * skeleton.get_bone_global_pose(hb) 		* skeleton.get_bone_global_rest(hb).affine_inverse()
+	var top := head.y
+	var width := 0.0
+	for mi: MeshInstance3D in skeleton.find_children("*", "MeshInstance3D", true, false):
+		if mi.mesh == null or not mi.visible:
+			continue
+		for si in mi.mesh.get_surface_count():
+			var verts: PackedVector3Array = mi.mesh.surface_get_arrays(si)[Mesh.ARRAY_VERTEX]
+			for v in verts:
+				if v.y < rest.y - 0.08 or Vector2(v.x - rest.x, v.z - rest.z).length() > 0.6:
+					continue
+				var w := pose * v
+				top = maxf(top, w.y)
+				width = maxf(width, absf(w.x - head.x) * 2.0)
+	return Vector2(top, width)
 
 
 func _bone_position(bone: StringName) -> Vector3:
