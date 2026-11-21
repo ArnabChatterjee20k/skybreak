@@ -142,6 +142,10 @@ func bind(material: ShaderMaterial) -> void:
 ## (opt-in): a conservative occluder per chunk (chunk_occluder) in a sibling node
 ## "<node_name>Occluders", so props and terrain hidden behind it skip the main
 ## pass (where the viewport culls occlusion).
+## Benchmark switch: every build gets terrain occluders (local GPU check).
+static var force_occluders := false
+
+
 func build(parent: Node3D, material: Material, node_name: String, visibility_end := 0.0,
 		cast_shadow := true, occluders := false) -> Node3D:
 	var root := Node3D.new()
@@ -161,7 +165,7 @@ func build(parent: Node3D, material: Material, node_name: String, visibility_end
 			if not cast_shadow:
 				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			root.add_child(mi)
-			if occluders:
+			if occluders or force_occluders:
 				var occ := chunk_occluder(cx * chunk, cz * chunk)
 				if occ != null:
 					if occ_root == null:

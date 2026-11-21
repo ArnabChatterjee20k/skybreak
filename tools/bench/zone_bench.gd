@@ -5,6 +5,12 @@ extends SceneTree
 ##   godot --path . --resolution 1920x1080 --disable-vsync -s res://tools/bench/zone_bench.gd -- \
 ##       [--zones=all|heartbloom,frozen_peaks,...] [--tiers=high,medium,low,web] [--samples=48]
 ##       [--frames=3] [--time=dusk] [--fighters=4] [--json=<file>] [--breakdown]
+##       [--verbose] [--capture=<dir>] [--terrain-occluders]
+## Prints avg/p95/p99/max GPU and CPU render ms (use >= 100 samples for a real
+## p99). --verbose prints every sample with its GPU ms. --capture saves a JPG per
+## sample (after its timing is read) to <dir>/<zone>_<tier>/ for a visual check.
+## --terrain-occluders forces VoxelHeightfield occluders on every build and turns
+## viewport occlusion culling on (opt-in kit feature; see reports/perf/README.md).
 ## --breakdown estimates, at the worst sample, which node groups draw (frustum
 ## and visibility range tested per instance node, surfaces counted as draws).
 ## Counts don't depend on resolution, so a small window under lavapipe gives
@@ -52,9 +58,9 @@ func _run() -> void:
 		for tier_name in tiers:
 			var r := await _measure(zone_name, tier_name)
 			_results.append(r)
-			print("%-15s %-6s tris avg %8d p95 %8d max %8d | draws avg %4d p95 %4d max %4d | shadow tris p95 %8d draws p95 %4d | GPU avg %6.2f p95 %6.2f | CPU avg %6.2f p95 %6.2f ms"
+			print("%-15s %-6s tris avg %8d p95 %8d max %8d | draws avg %4d p95 %4d max %4d | shadow tris p95 %8d draws p95 %4d | GPU avg %6.2f p95 %6.2f p99 %6.2f max %6.2f | CPU avg %6.2f p95 %6.2f p99 %6.2f ms"
 				% [zone_name, tier_name, r.tris.avg, r.tris.p95, r.tris.max, r.draws.avg, r.draws.p95, r.draws.max,
-				r.shadow_tris.p95, r.shadow_draws.p95, r.gpu.avg, r.gpu.p95, r.cpu.avg, r.cpu.p95])
+				r.shadow_tris.p95, r.shadow_draws.p95, r.gpu.avg, r.gpu.p95, r.gpu.p99, r.gpu.max, r.cpu.avg, r.cpu.p95, r.cpu.p99])
 			if tier_name == "medium" and (r.tris.p95 > MEDIUM_TRIS or r.draws.p95 > MEDIUM_DRAWS):
 				pass_all = false
 	if _args.has("json"):
@@ -76,6 +82,10 @@ func _measure(zone_name: String, tier_name: String) -> Dictionary:
 	root.add_child(world)
 	var t0 := Time.get_ticks_msec()
 	VoxelQuality.tier = tier
+	if _args.has("terrain-occluders"):
+		VoxelHeightfield.force_occluders = true
+		root.use_occlusion_culling = true
+	print("  building %s %s" % [zone_name, tier_name])
 	var zone := (load(ZONES[zone_name]) as GDScript).new() as VoxelZone
 	world.add_child(zone)
 	zone.build()
@@ -120,9 +130,15 @@ func _measure(zone_name: String, tier_name: String) -> Dictionary:
 		series.gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(rid))
 		series.cpu.append(RenderingServer.viewport_get_measured_render_time_cpu(rid)
 			+ RenderingServer.get_frame_setup_time_cpu())
+		if _args.has("capture"):
+			var dir: String = _args.capture.path_join("%s_%s" % [zone_name, tier_name])
+			DirAccess.make_dir_recursive_absolute(dir)
+			root.get_texture().get_image().save_jpg(dir.path_join("s_%03d.jpg" % s), 0.9)
+		if s % 12 == 0:
+			print("  %s %s sample %d gpu %.2f ms" % [zone_name, tier_name, s, series.gpu[-1]])
 		if _args.has("verbose"):
-			print("  %s %s sample %d: %d tris %d draws, shadow %d tris %d draws" % [zone_name, tier_name, s,
-				series.tris[-1], series.draws[-1], series.shadow_tris[-1], series.shadow_draws[-1]])
+			print("  %s %s sample %d: %d tris %d draws, shadow %d tris %d draws, gpu %.2f ms" % [zone_name, tier_name, s,
+				series.tris[-1], series.draws[-1], series.shadow_tris[-1], series.shadow_draws[-1], series.gpu[-1]])
 	if _args.has("breakdown"):
 		var worst: int = series.tris.find(series.tris.max())
 		var u := float(worst) / float(samples - 1) * float(pts.size() - 1)
@@ -224,6 +240,7 @@ static func _summary(values: Array) -> Dictionary:
 	for x: float in v:
 		total += x
 	return {"avg": total / maxf(1.0, v.size()), "p95": v[clampi(int(ceil(v.size() * 0.95)) - 1, 0, v.size() - 1)],
+		"p99": v[clampi(int(ceil(v.size() * 0.99)) - 1, 0, v.size() - 1)],
 		"max": v[-1]}
 
 
