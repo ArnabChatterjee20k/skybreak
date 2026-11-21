@@ -66,11 +66,16 @@ static func build(kind: Weapon.Kind) -> Node3D:
 ## is tagged by a VoxelArmory or voxel_everywhere is on, otherwise build(kind). With no
 ## holder (pickups, thrown weapons) the art style decides.
 static func build_for(kind: Weapon.Kind, holder: Node = null) -> Node3D:
-	var voxel := voxel_everywhere or (holder != null and bool(holder.get_meta(VOXEL_META, false))) \
-		or (holder == null and ArtStyle.is_voxel())
-	if voxel and VoxelWeapons.has(kind):
+	if is_voxel_for(kind, holder):
 		return VoxelWeapons.build(kind)
 	return build(kind)
+
+
+## Whether build_for draws kind's voxel model for this holder.
+static func is_voxel_for(kind: Weapon.Kind, holder: Node = null) -> bool:
+	var voxel := voxel_everywhere or (holder != null and bool(holder.get_meta(VOXEL_META, false))) \
+		or (holder == null and ArtStyle.is_voxel())
+	return voxel and VoxelWeapons.has(kind)
 
 
 ## Centre of the model's meshes, for framing and pickups.
