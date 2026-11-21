@@ -88,7 +88,8 @@ static func source_hash_for(builder_path: String) -> String:
 
 
 ## Packs a built zone (in the tree, build() done) into a PackedScene with its
-## state. The zone is left as it was.
+## state. Its meshes lose their cached face images and their user:// cache paths,
+## so pack a zone that is about to be freed.
 static func pack(zone: VoxelZone, zone_id: StringName, tier: GraphicsSettings.Quality, builder_path: String,
 		build_ms: int) -> PackedScene:
 	var metas := {}
@@ -104,25 +105,56 @@ static func pack(zone: VoxelZone, zone_id: StringName, tier: GraphicsSettings.Qu
 		"version": VERSION, "zone": zone_id, "tier": int(tier), "source_hash": source_hash_for(builder_path),
 		"build_ms": build_ms, "state": state,
 	})
-	# The cached-mesh face images duplicate the face textures; loaded bakes never need them.
+	# The cached-mesh face images duplicate the face textures and loaded bakes never need
+	# them; they stay stripped (resources are written at save time, after pack()).
 	var stripped: Array[ArrayMesh] = []
 	for n in zone.find_children("*", "Node", true, false):
 		n.owner = zone
 		for m in _meshes_of(n):
 			if m.has_meta("faces") and not m in stripped:
 				stripped.append(m)
-	var faces := {}
+	# Meshes from VoxelProp's user:// disk cache would be saved as links to that cache
+	# (machine-local, and without their materials): embed them instead.
+	_embed_local(zone)
 	for m in stripped:
-		faces[m] = m.get_meta("faces")
 		m.remove_meta("faces")
 	var scene := PackedScene.new()
 	var err := scene.pack(zone)
-	for m in stripped:
-		m.set_meta("faces", faces[m])
 	zone.remove_meta(META)
 	for m: StringName in metas:
 		zone.set_meta(m, metas[m])
 	return scene if err == OK else null
+
+
+static func _embed_local(zone: Node) -> void:
+	var seen := {}
+	for n in zone.find_children("*", "Node", true, false):
+		var found: Array[Resource] = []
+		if n is MeshInstance3D:
+			found.append((n as MeshInstance3D).mesh)
+		if n is MultiMeshInstance3D and (n as MultiMeshInstance3D).multimesh != null:
+			found.append((n as MultiMeshInstance3D).multimesh)
+			found.append((n as MultiMeshInstance3D).multimesh.mesh)
+		if n is GeometryInstance3D:
+			found.append((n as GeometryInstance3D).material_override)
+		for r in found:
+			_embed(r, seen)
+
+
+static func _embed(r: Resource, seen: Dictionary) -> void:
+	if r == null or seen.has(r):
+		return
+	seen[r] = true
+	if r.resource_path != "" and not r.resource_path.begins_with("res://"):
+		r.resource_path = ""
+	if r is Mesh:
+		for s in (r as Mesh).get_surface_count():
+			_embed((r as Mesh).surface_get_material(s), seen)
+	elif r is ShaderMaterial:
+		for p in (r as ShaderMaterial).shader.get_shader_uniform_list() if (r as ShaderMaterial).shader else []:
+			var v: Variant = (r as ShaderMaterial).get_shader_parameter(p.name)
+			if v is Resource:
+				_embed(v, seen)
 
 
 static func _meshes_of(n: Node) -> Array[ArrayMesh]:
