@@ -1,8 +1,8 @@
 # QA-24 / QA-22 on fix/voxel-soles-perf
 
 Lavapipe stills (1920x1080 rendered, 960 px previews): guard at the boots (`feet_090` side,
-`feet_035` 3/4) and knockdown (`knockdown_090`, `knockdown_035`). The Brann knockdown still was still
-rendering at hand-off and is missing.
+`feet_035` 3/4) and knockdown (`knockdown_090`, `knockdown_035`).
+
 
 Per legend, 1v1 mirror soaks (heartbloom, stormfall, frozen peaks; 2400 ticks; headless):
 
