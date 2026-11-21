@@ -77,7 +77,7 @@ func _run() -> void:
 		for id: StringName in [scenario[1], &"brann"]:
 			var body := Node3D.new()
 			world.add_child(body)
-			var view := Roster.character(id).scene.instantiate() as CharacterView
+			var view := Roster.character(id).scene_for().instantiate() as CharacterView
 			body.add_child(view)
 			bodies.append(body)
 			views.append(view)
