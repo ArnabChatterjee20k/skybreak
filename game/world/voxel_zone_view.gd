@@ -84,7 +84,7 @@ func show_zone(built: VoxelZone, id: StringName, tier: GraphicsSettings.Quality)
 	zone.animate(0.0)
 
 
-## The quality tier's LOD ranges and shadows (WEB counts as LOW, with the kit's WEB sun).
+## The quality tier's LOD ranges and shadows (WEB counts as LOW).
 func apply_quality(tier: GraphicsSettings.Quality) -> void:
 	var values: Dictionary = QUALITY.get(tier, QUALITY[GraphicsSettings.Quality.LOW])
 	RenderingServer.directional_soft_shadow_filter_set_quality(values.filter)
@@ -92,10 +92,6 @@ func apply_quality(tier: GraphicsSettings.Quality) -> void:
 	stage.sun.directional_shadow_max_distance = values.shadow_distance
 	stage.sun.directional_shadow_blend_splits = values.blend_splits
 	stage.env.ssao_enabled = values.ssao
-	if tier == GraphicsSettings.Quality.WEB:
-		# The kit's web sun: one shadow split (one shadow pass on Compatibility), 80 m.
-		stage.apply_quality(tier)
-		RenderingServer.directional_soft_shadow_filter_set_quality(values.filter)
 	scale_lod_ranges(zone, values.lod_scale, values.far_tier_shadows)
 
 
