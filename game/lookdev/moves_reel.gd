@@ -1135,11 +1135,15 @@ func _beam_mesh() -> MeshInstance3D:
 
 ## A fading translucent copy of Kael's current pose (dodge / dash afterimage).
 func _afterimage(color: Color) -> void:
+	if DisplayServer.get_name() == "headless":
+		return  # no skinning on the dummy renderer, and nothing to see
 	var ghost := Node3D.new()
 	_stage.add_child(ghost)
 	for node in _hero.view.model.find_children("*", "MeshInstance3D", true, false):
 		var mi := node as MeshInstance3D
-		if mi.mesh == null or not mi.visible or mi.skin == null:
+		if mi.mesh == null or not mi.is_visible_in_tree() or mi.skin == null:
+			continue
+		if not (mi.get_node_or_null(mi.skeleton) is Skeleton3D):
 			continue
 		var baked := mi.bake_mesh_from_current_skeleton_pose()
 		if baked == null:
