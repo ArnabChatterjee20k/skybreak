@@ -1140,6 +1140,14 @@ func _contacts() -> void:
 		def.f.position += push_dir * deepest
 		def.body.position = def.f.position
 		if not guard.is_empty():
+			# A horizontal push clears an oblique arm overlap only partly; repeat.
+			var back := away.normalized() if away.length() > 0.001 else push_dir
+			for it in 8:
+				var left := _arm_overlap(att, def)
+				if left <= 0.002:
+					break
+				def.f.position += back * left
+				def.body.position = def.f.position
 			_guard_overlap = maxf(_guard_overlap, _arm_overlap(att, def))
 		if not att.landed:
 			att.landed = true

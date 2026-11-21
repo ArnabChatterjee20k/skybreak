@@ -19,6 +19,7 @@ transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, -1, 0)
 
 [node name="ScarfLag" type="SkeletonModifier3D" parent="Model/KaelChunkyBody/KaelChunky/GeneralSkeleton"]
 script = ExtResource("4_scarf")
+hang = 0.3
 
 [node name="VoxelBody" type="Node" parent="."]
 script = ExtResource("5_voxel")
