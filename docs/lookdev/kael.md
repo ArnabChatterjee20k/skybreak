@@ -63,3 +63,10 @@ A young **sky-knight adventurer**: the all-rounder, brave and a little reckless.
 4. **A restrained palette with subtle per-voxel variation and wear.**
 5. **A real reference** for proportions.
 6. **Storytelling details:** stowed logs, exhaust smoke, a unit number.
+
+## v3 (fixes to v2, everything else kept)
+- **Scarf tail:** its own grid at the fine cell (1.1 cm). A flat band that bends back and forth in depth (1.5 fold periods, so three bends), sways a little sideways, gathers narrower at each fold, tapers over its last third to a V point and breaks into fringe of uneven length. Darker bands in the fold valleys. Skinned on Scarf1-5 only, so `ScarfLag` swings and lags the whole tail. No twist across its width: a twisted band draws diagonal stair lines.
+- **Coat:** narrow chamfers (two or three cells instead of a third of the panel), the profile stepping in two-cell rows, so the panels are planar with no vertical ribbing. The coat tails have four deliberate fold ridges (two on the back, one per side). Sleeves are chamfered prisms, one step narrower below the elbow. Cloth renders with no edge lift and a softer bevel tilt.
+- **Fist:** plain glove fingers, one square brass plate per finger on the proximal segment, and one knuckle ridge with a worn top across the back-of-hand plate. No finger rivets, knuckle blocks or engraved seams.
+- **Rig:** toe caps in front of the ankle no longer blend into the shin (a pre-existing stretch in kicks and push-block).
+- **Stretch scan:** `stretch_scan.gd --moves=res://game/combat/moves/kael/` checks idle, guard, flight, hitstun and five frames of every move.

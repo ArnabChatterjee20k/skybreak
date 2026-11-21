@@ -15,7 +15,7 @@ const HEAD_CELL := 0.0085
 enum Mat {
 	EMPTY, COAT, COAT_DARK, LAPEL, TRIM, TUNIC, PANTS, SCARF, BOOT, BOOT_CUFF, SOLE,
 	HAIR, SKIN, LENS, STRAP, BRASS, RIVET, IRIS, EYE_WHITE, BROW, MOUTH, GLINT,
-	STITCH, BELT, GLOVE, LACE, EMBLEM, BLUSH, ENGRAVE, BUCKLE_DARK, SCARF_FOLD, LID, SKIN_SHADE,
+	STITCH, BELT, GLOVE, LACE, EMBLEM, BLUSH, ENGRAVE, BUCKLE_DARK, SCARF_FOLD, LID, SKIN_SHADE, SCARF_LIT,
 }
 enum Tag {
 	TORSO, ARM_L, ARM_R, LEG_L, LEG_R, SKIRT, COLLAR, SCARF_WRAP, SCARF_TAIL, SCARF_FRONT,
@@ -31,6 +31,7 @@ const COLORS := {
 	Mat.LAPEL: Color(0.14, 0.40, 0.42), Mat.TRIM: Color(0.76, 0.60, 0.33),
 	Mat.TUNIC: Color(0.16, 0.16, 0.18), Mat.PANTS: Color(0.19, 0.20, 0.24),
 	Mat.SCARF: Color(0.86, 0.36, 0.11), Mat.SCARF_FOLD: Color(0.70, 0.27, 0.08),
+	Mat.SCARF_LIT: Color(0.93, 0.45, 0.16),
 	Mat.BOOT: Color(0.52, 0.30, 0.16),
 	Mat.BOOT_CUFF: Color(0.60, 0.37, 0.21), Mat.SOLE: Color(0.15, 0.11, 0.09),
 	Mat.HAIR: Color(0.86, 0.88, 0.92), Mat.SKIN: Color(0.96, 0.79, 0.67),
@@ -47,11 +48,19 @@ const COLORS := {
 }
 
 func build_grids() -> Array[VoxelGrid]:
-	return [build_body(), build_head(), build_gauntlet(1.0), build_gauntlet(-1.0)]
+	return [build_body(), build_head(), build_gauntlet(1.0), build_gauntlet(-1.0), build_scarf_tail()]
 
 
 func soft_materials() -> Array:
 	return [Mat.COAT, Mat.TUNIC, Mat.PANTS, Mat.SCARF, Mat.BOOT, Mat.HAIR, Mat.SKIN, Mat.GLOVE, Mat.LAPEL]
+
+
+## The kit's surfaces, with cloth calmer: no edge lift and a softer bevel
+## tilt, so the voxel steps on big coat panels don't draw light stripes.
+func surface_params() -> Array:
+	var params := super()
+	params[Surf.CLOTH] = {"roughness_value": 0.86, "specular_value": 0.3, "bevel_tilt": 0.14, "edge_lift": 0.0}
+	return params
 
 
 func surface_of(mat: int) -> int:
@@ -77,13 +86,23 @@ func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exp
 	var noise := VoxelSdf.hash3(c, mat) * 2.0 - 1.0
 	var drift := VoxelSdf.hash3(c, mat + 31) * 2.0 - 1.0
 	# Big cloth panels stay calm (about +-2%); the variation goes to edges and wear.
-	var quiet := mat in [Mat.COAT, Mat.TUNIC, Mat.PANTS, Mat.LAPEL, Mat.SCARF, Mat.SCARF_FOLD]
+	var quiet := mat in [Mat.COAT, Mat.TUNIC, Mat.PANTS, Mat.LAPEL, Mat.SCARF, Mat.SCARF_FOLD, Mat.SCARF_LIT]
 	var col := base * (1.0 + noise * (0.02 if quiet else 0.035))
 	col = Color.from_hsv(fposmod(col.h + drift * (0.005 if quiet else 0.012), 1.0),
 		clampf(col.s * (1.0 + drift * (0.02 if quiet else 0.05)), 0.0, 1.0), col.v)
-	if mat == Mat.SCARF and p.z < -0.1:
-		# A touch lighter and warmer toward the tail.
-		col = col.lerp(Color(0.93, 0.47, 0.17), clampf((1.2 - p.y) / 0.7, 0.0, 1.0) * 0.45)
+	if mat in [Mat.SCARF, Mat.SCARF_FOLD, Mat.SCARF_LIT] and p.z < -0.1:
+		# The tail: a touch lighter and warmer toward the end, with its fold
+		# valleys darker and crests lighter than the cloth around them.
+		var cloth := COLORS[Mat.SCARF] * (col.v / maxf(base.v, 0.001))
+		col = cloth.lerp(Color(0.93, 0.47, 0.17), clampf((1.2 - p.y) / 0.7, 0.0, 1.0) * 0.45)
+		if mat == Mat.SCARF_FOLD:
+			col = col.darkened(0.26)
+		elif mat == Mat.SCARF_LIT:
+			col = col.lightened(0.15)
+		if p.z < -0.19 and p.y < 1.23 and absf(p.x - SCARF_X) < SCARF_HALF_W:
+			# Each panel turned slightly the other way: a soft tone across its width.
+			var turn := 1.0 if scarf_panel(p.y) % 2 == 0 else -1.0
+			col = col * (1.0 + 0.04 * turn * (p.x - SCARF_X) / SCARF_HALF_W)
 	if mat == Mat.COAT:
 		# The darker band low in the coat tail's folds.
 		col = col.lerp(COLORS[Mat.COAT_DARK], clampf((0.74 - p.y) / 0.2, 0.0, 1.0) * 0.25)
@@ -91,7 +110,8 @@ func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exp
 	var shade := 1.0 - occlusion * 0.6
 	col = Color(col.r * lerpf(1.0, tint.r, occlusion), col.g * lerpf(1.0, tint.g, occlusion),
 		col.b * lerpf(1.0, tint.b, occlusion)) * shade
-	if mat in [Mat.BRASS, Mat.RIVET, Mat.BOOT, Mat.BOOT_CUFF, Mat.TRIM, Mat.SCARF, Mat.BELT, Mat.GLOVE]:
+	if mat in [Mat.BRASS, Mat.RIVET, Mat.BOOT, Mat.BOOT_CUFF, Mat.TRIM, Mat.SCARF, Mat.SCARF_FOLD, Mat.SCARF_LIT,
+			Mat.BELT, Mat.GLOVE]:
 		col = col.lerp(col.lightened(0.35), exposure * 0.7)
 	col.a = 1.0
 	return col
@@ -132,13 +152,17 @@ static func coat_profile(y: float) -> Vector3:
 static func coat_sdf(p: Vector3, inset := 0.0) -> float:
 	if p.y < 0.76 or p.y > 1.31:
 		return 1.0
-	var prof := coat_profile(p.y)
+	# The profile changes in two-cell rows, so the panels step in clean rows.
+	var prof := coat_profile(snappedf(p.y, BODY_CELL * 2.0))
 	return octagon(p.x, p.z - prof.z, prof.x - inset, prof.y - inset)
 
 
 ## Chamfered-box slice (an octagon): flat front, back and side planes with
-## 45-degree corners, approximate distance.
-static func octagon(dx: float, dz: float, rx: float, rz: float, chamfer := 1.42) -> float:
+## 45-degree corners, approximate distance. The default chamfer is narrow (two
+## or three cells on the coat), so a 45-degree staircase never runs the
+## length of a panel as vertical ribbing.
+const COAT_CHAMFER := 1.82
+static func octagon(dx: float, dz: float, rx: float, rz: float, chamfer := COAT_CHAMFER) -> float:
 	var ax := absf(dx) / rx
 	var az := absf(dz) / rz
 	return (maxf(maxf(ax, az), (ax + az) / chamfer) - 1.0) * minf(rx, rz)
@@ -206,9 +230,11 @@ func _skirt(g: VoxelGrid) -> void:
 		var t := clampf((0.79 - p.y) / 0.2, 0.0, 1.0)
 		var rx := 0.198 + 0.045 * t
 		var rz := 0.134 + 0.045 * t
-		# Fold ridges: narrow bands that stand one voxel proud, growing downward.
-		var ridge := 0.02 * t if absf(sin(angle * 5.0)) > 0.93 else 0.0
-		var outer := octagon(p.x, p.z, rx + ridge, rz + ridge)
+		# A few deliberate fold ridges on the flat back and side faces, one
+		# cell proud, starting below the belt.
+		var outer := octagon(p.x, p.z, rx, rz)
+		if p.y < 0.75 and coat_tail_ridge(p, rx, rz):
+			outer = octagon(p.x, p.z, rx + BODY_CELL, rz + BODY_CELL)
 		var inner := octagon(p.x, p.z, rx - 0.03, rz - 0.03)
 		return maxf(outer, -inner), Mat.COAT, Tag.SKIRT)
 	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
@@ -221,6 +247,16 @@ func _skirt(g: VoxelGrid) -> void:
 		var outer := octagon(p.x, p.z - 0.01, 0.188, 0.126)
 		var inner := octagon(p.x, p.z - 0.01, 0.160, 0.100)
 		return maxf(outer, -inner), Mat.TUNIC, Tag.SKIRT, ADD)
+
+
+## True on a coat-tail fold ridge: two vertical strips on the back face and
+## one on each side face, kept clear of the chamfers.
+static func coat_tail_ridge(p: Vector3, rx: float, rz: float) -> bool:
+	var on_back := p.z < -rz * 0.6
+	var on_side := absf(p.x) > rx * 0.6
+	if on_back and absf(absf(p.x) - 0.075) < BODY_CELL:
+		return true
+	return on_side and not on_back and absf(p.z + 0.01) < BODY_CELL
 
 
 func _legs(g: VoxelGrid) -> void:
@@ -272,9 +308,14 @@ func _arms(g: VoxelGrid) -> void:
 	var y := 1.268
 	for side: float in [1.0, -1.0]:
 		var tag := Tag.ARM_L if side > 0 else Tag.ARM_R
-		# Coat sleeve, tapering to the gauntlet cuff.
+		# Coat sleeve: a chamfered prism, one step narrower below the elbow,
+		# so its flats stay flat (a voxelised cylinder ribs).
 		g.paint(box, func(p: Vector3):
-			return VoxelSdf.capsule(p, Vector3(0.18 * side, y, 0.0), Vector3(0.62 * side, y, 0.0), 0.088, 0.070), Mat.COAT, tag)
+			var ax := p.x * side
+			if ax < 0.16 or ax > 0.62:
+				return 1.0
+			var r := 0.086 if ax < 0.44 else 0.075
+			return octagon(p.y - y, p.z, r, r, 1.6), Mat.COAT, tag)
 		# Shoulder plates: two flat layered lames curved round the arm (flat
 		# ends, so the edges stay crisp), a bright bevelled rim and a rivet
 		# row along each plate's outer edge. The upper plate overlaps the lower.
@@ -327,28 +368,117 @@ func _collar_and_scarf(g: VoxelGrid) -> void:
 	g.paint(box, func(p: Vector3): return VoxelSdf.torus(p, Vector3(0, 1.295, 0.0), axis, 0.104, 0.046), Mat.SCARF, Tag.SCARF_WRAP)
 	g.paint(box, func(p: Vector3): return VoxelSdf.ellipsoid(p, Vector3(0.1, 1.285, -0.14), Vector3(0.066, 0.054, 0.05)),
 		Mat.SCARF, Tag.SCARF_WRAP)
-	var tail := _scarf_points()
-	var tail_box := AABB(Vector3(-0.15, 0.36, -0.4), Vector3(0.35, 0.99, 0.3))
-	g.paint(tail_box, func(p: Vector3): return _ribbon(p, tail, 0.066, 0.012), Mat.SCARF, Tag.SCARF_TAIL, ADD)
 	var front_end := PackedVector3Array([Vector3(-0.055, 1.27, 0.118), Vector3(-0.072, 1.17, 0.17),
 		Vector3(-0.084, 1.06, 0.178)])
 	g.paint(AABB(Vector3(-0.2, 1.0, 0.05), Vector3(0.25, 0.3, 0.2)), func(p: Vector3): return _ribbon(p, front_end, 0.05, 0.012, 2.0),
 		Mat.SCARF, Tag.SCARF_FRONT, ADD)
-	# Fringe: alternate columns hang lower at both ends.
-	for end: Vector3 in [tail[-1], front_end[-1]]:
-		var end_tag := Tag.SCARF_TAIL if end.z < 0.0 else Tag.SCARF_FRONT
-		var hw := 0.062 if end.z < 0.0 else 0.048
-		g.paint(AABB(end - Vector3(0.1, 0.08, 0.05), Vector3(0.2, 0.1, 0.1)), func(p: Vector3):
-			var col := int(floor((p.x - end.x) / BODY_CELL))
-			if posmod(col, 2) != 0 or p.y > end.y:
-				return 1.0
-			return VoxelSdf.box(p, Vector3(end.x, end.y - 0.02, end.z), Vector3(hw, 0.022, 0.014)), Mat.SCARF, end_tag, ADD)
-	# Crease shading along the tail's pleat valleys.
-	g.paint_surface(tail_box, func(p: Vector3, _c: Vector3i):
-		if p.z > -0.17 or p.y > 1.22 or p.y < tail[-1].y + 0.01:
-			return false
-		var u := (p.x - _tail_x(p.y, tail)) / 0.07
-		return absf(fposmod(u * 1.5 + 0.5, 1.0) - 0.5) < 0.09, Mat.SCARF_FOLD, [Mat.SCARF])
+	# Fringe on the front end: alternate columns hang lower.
+	var end := front_end[-1]
+	g.paint(AABB(end - Vector3(0.1, 0.08, 0.05), Vector3(0.2, 0.1, 0.1)), func(p: Vector3):
+		var col := int(floor((p.x - end.x) / BODY_CELL))
+		if posmod(col, 2) != 0 or p.y > end.y:
+			return 1.0
+		return VoxelSdf.box(p, Vector3(end.x, end.y - 0.02, end.z), Vector3(0.048, 0.022, 0.014)), Mat.SCARF, Tag.SCARF_FRONT, ADD)
+
+
+# ------------------------------------------------------------ scarf tail grid
+
+## The long tail down his back, at the fine cell: a folded cloth ribbon built
+## from flat panels that sit exactly on the voxel grid (so no panel steps into
+## terraces), joined by soft two-rows-per-cell chamfered folds that alternate
+## out and in. Its edges run straight down the voxel columns at a constant
+## width, it narrows by a cell each side near the end and breaks into a short
+## fringe only at the tip. Skinned by height along Scarf1-5, so every row moves
+## as one piece and ScarfLag swings the whole ribbon.
+func build_scarf_tail() -> VoxelGrid:
+	var g := VoxelGrid.new(AABB(Vector3(-0.04, 0.30, -0.40), Vector3(0.36, 1.06, 0.32)), FINE_CELL)
+	var box := AABB(g.origin, Vector3(g.size) * g.cell)
+	g.paint(box, scarf_tail_sdf, Mat.SCARF, Tag.SCARF_TAIL)
+	# Fold shading: darker in each fold's valley, lighter on each crest.
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i): return scarf_fold_shade(p.y) < -0.5, Mat.SCARF_FOLD, [Mat.SCARF])
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i): return scarf_fold_shade(p.y) > 0.5, Mat.SCARF_LIT, [Mat.SCARF])
+	return g
+
+
+## The ribbon's half width: 9 fine cells, edges on cell boundaries.
+const SCARF_HALF_W := FINE_CELL * 4.5
+## Near the end: 7 cells.
+const SCARF_END_HALF_W := FINE_CELL * 3.5
+## Two cells thick, centred on a cell boundary.
+const SCARF_HALF_T := FINE_CELL
+## Centre column: a fine-cell centre of the tail grid (origin x -0.04).
+const SCARF_X := -0.04 + FINE_CELL * 16.5
+## Tail grid origin z: panel depths are cell boundaries counted from it.
+const SCARF_Z0 := -0.40
+const SCARF_TOP := 1.275
+const SCARF_END := 0.50
+## Panels, top down: [depth in cells from SCARF_Z0, height of the fold below it].
+## The first sits inside the knot; then out (crest), in (valley), out, in.
+const SCARF_PANELS := [[21, 1.245], [18, 1.13], [14, 0.97], [17, 0.81], [13, 0.655], [15, -1.0]]
+## Fringe below the end: [first column, last column, length] across the 7 end columns.
+const SCARF_FRINGE := [[-3, -2, 0.046], [0, 0, 0.034], [2, 3, 0.041]]
+
+
+## Depth of the ribbon's centre plane at height y: flat on each panel, a 1:2
+## chamfer across each fold (one cell deeper every two rows).
+static func scarf_depth(y: float) -> float:
+	var z := SCARF_Z0 + FINE_CELL * float(SCARF_PANELS[0][0])
+	for i in SCARF_PANELS.size() - 1:
+		var fold: float = SCARF_PANELS[i][1]
+		var step := FINE_CELL * float(SCARF_PANELS[i + 1][0] - SCARF_PANELS[i][0])
+		var span := absf(step) * 2.0
+		z += step * clampf((fold + span * 0.5 - y) / span, 0.0, 1.0)
+	return z
+
+
+## Signed distance to the tail ribbon (only the sign is used by the grid).
+static func scarf_tail_sdf(p: Vector3) -> float:
+	var hw := SCARF_END_HALF_W if p.y < SCARF_END + 0.11 else SCARF_HALF_W
+	var u := (p.x - SCARF_X) / hw
+	var d := maxf(absf(p.x - SCARF_X) - hw, absf(p.z - scarf_depth(p.y)) - SCARF_HALF_T)
+	d = maxf(d, p.y - SCARF_TOP)
+	# The end: a shallow V a cell deep, then the fringe tabs below it.
+	var cut := SCARF_END - FINE_CELL * (1.0 - absf(u)) - p.y
+	if cut > 0.0:
+		var col := int(floor((p.x - SCARF_X) / FINE_CELL + 0.5))
+		var hang := 0.0
+		for tab: Array in SCARF_FRINGE:
+			if col >= tab[0] and col <= tab[1]:
+				hang = tab[2]
+		d = maxf(d, cut - hang)
+	return d
+
+
+## The tail's centreline in rest pose, sampled every fine cell down its height.
+func scarf_tail_line() -> PackedVector3Array:
+	var out := PackedVector3Array()
+	var y := SCARF_TOP
+	while y >= SCARF_END:
+		out.append(Vector3(SCARF_X, y, scarf_depth(y)))
+		y -= FINE_CELL
+	return out
+
+
+## -1 in a fold's valley (under an inward fold, in the overhang's shadow), +1
+## on a crest (the top of the panel an outward fold pushes out), 0 elsewhere.
+static func scarf_fold_shade(y: float) -> float:
+	for i in range(1, SCARF_PANELS.size() - 1):
+		var fold: float = SCARF_PANELS[i][1]
+		var step: int = SCARF_PANELS[i + 1][0] - SCARF_PANELS[i][0]
+		var half := FINE_CELL * absf(step)
+		if step < 0 and absf(y - fold) <= half * 0.5:
+			return 1.0
+		if step > 0 and y <= fold and y > fold - half - FINE_CELL * 1.5:
+			return -1.0
+	return 0.0
+
+
+## Which panel (0 at the top) height y falls on, for the alternating twist tone.
+static func scarf_panel(y: float) -> int:
+	for i in SCARF_PANELS.size() - 1:
+		if y > SCARF_PANELS[i][1]:
+			return i
+	return SCARF_PANELS.size() - 1
 
 
 func _scarf_points() -> PackedVector3Array:
@@ -357,13 +487,6 @@ func _scarf_points() -> PackedVector3Array:
 		pts.append(rest[b] + Vector3(0.05, 0, 0.03))
 	pts.append(pts[-1] + (pts[-1] - pts[-2]) * 0.55)
 	return pts
-
-
-static func _tail_x(y: float, pts: PackedVector3Array) -> float:
-	for i in pts.size() - 1:
-		if y <= pts[i].y and y >= pts[i + 1].y:
-			return lerpf(pts[i].x, pts[i + 1].x, (pts[i].y - y) / (pts[i].y - pts[i + 1].y))
-	return pts[-1].x
 
 
 ## A flat band of cloth along a polyline: half width across x (growing a
@@ -609,35 +732,37 @@ func build_gauntlet(side: float) -> VoxelGrid:
 	# Hand: a leather glove, palm block about 1.4x.
 	var palm := Vector3(0.842 * side, y + 0.002, 0.0)
 	g.paint(box, func(p: Vector3): return VoxelSdf.box(p, palm, Vector3(0.056, 0.034, 0.072), 0.018), Mat.GLOVE, tag)
-	# Back-of-hand plate and a knuckle guard with four bumps.
-	g.paint(box, func(p: Vector3): return VoxelSdf.box(p, palm + Vector3(0.0, 0.03, 0.0), Vector3(0.05, 0.012, 0.066), 0.01),
+	# Back-of-hand plate, and one knuckle ridge across its front edge with a
+	# brighter top (the worn striking edge).
+	g.paint(box, func(p: Vector3): return VoxelSdf.box(p, palm + Vector3(0.0, 0.03, 0.0), Vector3(0.05, 0.012, 0.066), 0.006),
 		Mat.BRASS, tag)
-	# Fingers: chunky gloved fingers with one brass plate per finger, on the
-	# proximal segment (the face of the fist), and a knuckle block and rivet.
+	var ridge := palm + Vector3(0.036 * side, 0.044, 0.0)
+	g.paint(box, func(p: Vector3): return VoxelSdf.box(p, ridge, Vector3(0.0115, 0.009, 0.068), 0.003), Mat.BRASS, tag)
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
+		return p.y > ridge.y + 0.002 and absf(p.x - ridge.x) < 0.012, Mat.RIVET, [Mat.BRASS])
+	# Fingers: plain gloved fingers, each with one flat brass plate on the
+	# back of its proximal segment (the face of the fist), cut square.
 	for f in 4:
 		var chain := PackedVector3Array()
 		for part: String in ["Proximal", "Intermediate", "Distal"]:
 			chain.append(rest[StringName(prefix + FINGERS[f] + part)])
 		chain.append(chain[2] + (chain[2] - chain[1]) * 1.1)
 		var ftag := FINGER_BASE + (0 if side > 0 else 4) + f
-		_plated_digit(g, box, chain, 0.0185, 0.0172, ftag, 1)
-		var knuckle := chain[0] + Vector3(0.006 * side, 0.016, 0.0)
-		g.paint(box, func(p: Vector3): return VoxelSdf.box(p, knuckle, Vector3(0.016, 0.009, 0.0155), 0.004),
-			Mat.BRASS, ftag, ADD)
-		g.paint(box, func(p: Vector3): return VoxelSdf.sphere(p, knuckle + Vector3(0, 0.011, 0), FINE_CELL * 0.8),
-			Mat.RIVET, ftag, ADD)
+		_plated_digit(g, box, chain, 0.0185, 0.0172, ftag, 0)
+		var a := chain[0]
+		var b := chain[1]
+		var plate := a.lerp(b, 0.5) + Vector3(0.0, 0.012, 0.0)
+		var half := Vector3(absf(b.x - a.x) * 0.5 + 0.004, 0.0085, 0.0155)
+		g.paint(box, func(p: Vector3): return VoxelSdf.box(p, plate, half, 0.003), Mat.BRASS, ftag)
 	# Thumb: modelled already tucked, lying along the underside of the index
 	# finger's first segment, and rigid with the hand (the clips' thumb bones
 	# splay it). When the fingers curl it sits across the front of the fist.
-	# Gold, with a seam at the joint and a glove underside.
+	# Gold, with a glove underside.
 	var root: Vector3 = rest[StringName(prefix + "ThumbMetacarpal")] + Vector3(0.0, -0.008, 0.012)
 	var mid := Vector3(0.872 * side, y - 0.03, 0.074)
 	var tip := Vector3(0.93 * side, y - 0.032, 0.066)
 	g.paint(box, func(p: Vector3): return minf(VoxelSdf.capsule(p, root, mid, 0.024, 0.021),
 		VoxelSdf.capsule(p, mid, tip, 0.021, 0.019)), Mat.BRASS, thumb_tag)
-	g.paint(box, func(p: Vector3):
-		return VoxelSdf.sphere(p, mid, 0.024) if absf(absf(p.x) - absf(mid.x)) < FINE_CELL * 0.6 else 1.0,
-		Mat.ENGRAVE, thumb_tag, PAINT)
 	g.paint(box, func(p: Vector3):
 		if p.y > root.y - 0.012:
 			return 1.0
@@ -692,9 +817,9 @@ func weights(tag: int, p: Vector3) -> Array:
 			_add(w, &"Hips", 1.0 - k)
 			_add(w, &"LeftUpperLeg" if p.x > 0.0 else &"RightUpperLeg", k)
 		Tag.SCARF_TAIL:
-			var pts := _scarf_points()
-			pts.insert(0, Vector3(0.1, 1.32, -0.15))
-			_chain_w(p, w, pts, [&"UpperChest", &"Scarf1", &"Scarf2", &"Scarf3", &"Scarf4", &"Scarf5"])
+			# All on the scarf chain (an UpperChest blend at the root stretched
+			# when ScarfLag swung Scarf1 hard), by height, not by nearest bone.
+			_scarf_tail_w(p, w)
 		Tag.HEAD:
 			_add(w, &"Head", 1.0)
 		Tag.GAUNT_L, Tag.GAUNT_R:
@@ -708,6 +833,16 @@ func weights(tag: int, p: Vector3) -> Array:
 			# guard pose, and the clips' thumb bones splay it.
 			_add(w, &"LeftHand" if tag == Tag.THUMB_L else &"RightHand", 1.0)
 	return _pack(w)
+
+
+## Linear blends between the scarf bones' midpoints, keyed by rest height
+## only, so a whole row of the ribbon (width and thickness) moves together.
+func _scarf_tail_w(p: Vector3, w: Dictionary) -> void:
+	var chain := _scarf_points()
+	var keys := []
+	for i in 5:
+		keys.append([-(chain[i].y + chain[i + 1].y) * 0.5, ["Scarf1", "Scarf2", "Scarf3", "Scarf4", "Scarf5"][i]])
+	_piecewise(-p.y, keys, w, false)
 
 
 func _torso_w(p: Vector3, w: Dictionary, tag: int) -> void:
@@ -742,6 +877,13 @@ func _leg_w(p: Vector3, w: Dictionary, prefix: String) -> void:
 	_piecewise(p.y, [[0.10, prefix + "Foot"], [0.18, prefix + "LowerLeg"], [0.38, prefix + "LowerLeg"],
 		[0.50, prefix + "UpperLeg"], [0.66, prefix + "UpperLeg"], [0.78, "Hips"]], tmp, true)
 	var foot := StringName(prefix + "Foot")
+	# The toe cap in front of the ankle stays off the shin: a shin/toe blend
+	# there stretched when kicks point the foot.
+	var shin := StringName(prefix + "LowerLeg")
+	if tmp.has(shin):
+		var off: float = tmp[shin] * smoothstep(0.03, 0.09, p.z) * (1.0 - smoothstep(0.17, 0.27, p.y))
+		tmp[shin] -= off
+		tmp[foot] = tmp.get(foot, 0.0) + off
 	if tmp.has(foot):
 		var toes: float = smoothstep(0.09, 0.17, p.z) * tmp[foot]
 		tmp[foot] -= toes
