@@ -1,0 +1,167 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.335 - Forward+ - Using Device #0: Unknown - llvmpipe (LLVM 20.1.2, 256 bits)
+Zone benchmark: llvmpipe (LLVM 20.1.2, 256 bits), vulkan, 480x270
+  building frozen_peaks high
+  frozen_peaks high sample 0 gpu 2389.98 ms
+  frozen_peaks high sample 0: 1747906 tris 333 draws, shadow 933682 tris 160 draws, gpu 2389.98 ms
+  frozen_peaks high sample 1: 1716608 tris 325 draws, shadow 957506 tris 162 draws, gpu 2227.88 ms
+  frozen_peaks high sample 2: 1683424 tris 317 draws, shadow 923164 tris 160 draws, gpu 1860.07 ms
+  frozen_peaks high sample 3: 1634828 tris 297 draws, shadow 942618 tris 160 draws, gpu 1718.50 ms
+  frozen_peaks high sample 4: 1517344 tris 269 draws, shadow 1020180 tris 161 draws, gpu 1616.18 ms
+  frozen_peaks high sample 5: 1470822 tris 252 draws, shadow 999904 tris 159 draws, gpu 1457.79 ms
+  frozen_peaks high sample 6: 1409088 tris 228 draws, shadow 1074480 tris 161 draws, gpu 1364.92 ms
+  frozen_peaks high sample 7: 1269822 tris 186 draws, shadow 1051518 tris 157 draws, gpu 1099.82 ms
+  frozen_peaks high sample 8: 1121020 tris 147 draws, shadow 1035024 tris 152 draws, gpu 870.28 ms
+  frozen_peaks high sample 9: 1029436 tris 126 draws, shadow 978292 tris 149 draws, gpu 846.12 ms
+  frozen_peaks high sample 10: 1047746 tris 133 draws, shadow 965528 tris 149 draws, gpu 896.60 ms
+  frozen_peaks high sample 11: 1254692 tris 205 draws, shadow 962220 tris 151 draws, gpu 1051.52 ms
+  frozen_peaks high sample 12 gpu 1377.49 ms
+  frozen_peaks high sample 12: 1413372 tris 257 draws, shadow 980858 tris 160 draws, gpu 1377.49 ms
+  frozen_peaks high sample 13: 1491924 tris 302 draws, shadow 946120 tris 159 draws, gpu 1304.80 ms
+  frozen_peaks high sample 14: 1494138 tris 304 draws, shadow 942576 tris 154 draws, gpu 1513.75 ms
+  frozen_peaks high sample 15: 1474352 tris 302 draws, shadow 907650 tris 146 draws, gpu 1375.31 ms
+  frozen_peaks high sample 16: 1450184 tris 285 draws, shadow 967358 tris 167 draws, gpu 1169.23 ms
+  frozen_peaks high sample 17: 1378600 tris 248 draws, shadow 1108244 tris 190 draws, gpu 1167.54 ms
+  frozen_peaks high sample 18: 1416184 tris 267 draws, shadow 1058664 tris 192 draws, gpu 1192.63 ms
+  frozen_peaks high sample 19: 1424948 tris 292 draws, shadow 963144 tris 174 draws, gpu 1427.74 ms
+  frozen_peaks high sample 20: 1141012 tris 231 draws, shadow 612502 tris 90 draws, gpu 1416.84 ms
+  frozen_peaks high sample 21: 1062958 tris 165 draws, shadow 522028 tris 75 draws, gpu 904.53 ms
+  frozen_peaks high sample 22: 1056636 tris 150 draws, shadow 468902 tris 66 draws, gpu 781.36 ms
+  frozen_peaks high sample 23: 984318 tris 139 draws, shadow 338728 tris 56 draws, gpu 654.61 ms
+  frozen_peaks high sample 24 gpu 585.69 ms
+  frozen_peaks high sample 24: 879072 tris 124 draws, shadow 227178 tris 50 draws, gpu 585.69 ms
+  frozen_peaks high sample 25: 870014 tris 120 draws, shadow 208072 tris 46 draws, gpu 506.20 ms
+  frozen_peaks high sample 26: 879944 tris 119 draws, shadow 276034 tris 55 draws, gpu 540.52 ms
+  frozen_peaks high sample 27: 872632 tris 117 draws, shadow 263516 tris 53 draws, gpu 486.89 ms
+  frozen_peaks high sample 28: 839106 tris 114 draws, shadow 188942 tris 50 draws, gpu 527.07 ms
+  frozen_peaks high sample 29: 813064 tris 102 draws, shadow 171752 tris 44 draws, gpu 426.21 ms
+  frozen_peaks high sample 30: 482008 tris 91 draws, shadow 155082 tris 38 draws, gpu 486.13 ms
+  frozen_peaks high sample 31: 494750 tris 93 draws, shadow 147608 tris 32 draws, gpu 466.86 ms
+  frozen_peaks high sample 32: 491318 tris 98 draws, shadow 132320 tris 29 draws, gpu 481.53 ms
+  frozen_peaks high sample 33: 482514 tris 98 draws, shadow 122190 tris 27 draws, gpu 554.97 ms
+  frozen_peaks high sample 34: 479034 tris 96 draws, shadow 124394 tris 27 draws, gpu 600.72 ms
+  frozen_peaks high sample 35: 483480 tris 95 draws, shadow 136922 tris 30 draws, gpu 557.92 ms
+  frozen_peaks high sample 36 gpu 540.36 ms
+  frozen_peaks high sample 36: 483780 tris 94 draws, shadow 135288 tris 31 draws, gpu 540.36 ms
+  frozen_peaks high sample 37: 453966 tris 86 draws, shadow 128928 tris 30 draws, gpu 488.86 ms
+  frozen_peaks high sample 38: 456258 tris 86 draws, shadow 136240 tris 32 draws, gpu 523.51 ms
+  frozen_peaks high sample 39: 457724 tris 88 draws, shadow 127742 tris 30 draws, gpu 480.41 ms
+  frozen_peaks high sample 40: 457340 tris 88 draws, shadow 124742 tris 29 draws, gpu 577.97 ms
+  frozen_peaks high sample 41: 469898 tris 95 draws, shadow 124656 tris 29 draws, gpu 568.02 ms
+  frozen_peaks high sample 42: 461888 tris 97 draws, shadow 116688 tris 27 draws, gpu 534.16 ms
+  frozen_peaks high sample 43: 492058 tris 107 draws, shadow 123776 tris 28 draws, gpu 578.24 ms
+  frozen_peaks high sample 44: 825890 tris 120 draws, shadow 128330 tris 29 draws, gpu 644.03 ms
+  frozen_peaks high sample 45: 846152 tris 132 draws, shadow 132650 tris 30 draws, gpu 624.50 ms
+  frozen_peaks high sample 46: 873754 tris 147 draws, shadow 137716 tris 31 draws, gpu 911.52 ms
+  frozen_peaks high sample 47: 930244 tris 160 draws, shadow 145506 tris 33 draws, gpu 725.49 ms
+  breakdown at the worst sample (group: draws, tris, shadow-casting tris, nodes; occlusion not applied):
+   top by draws:
+    FloorT2/FrozenPeaks                        55     75460         0   55
+    Foothills/FrozenPeaks                      53    569478    569478   53
+    MountainsFar/FrozenPeaks                   30     99598         0   30
+    FloorT1/FrozenPeaks                        21     28398         0   21
+    FarRange0/FrozenPeaks                      19     59614     59614   19
+    Spires3/Spires3                            16     31370     14176   16
+    Spires2/Spires2                            15     20020      9796   15
+    FarRange1/FrozenPeaks                      11     40960         0   11
+    Mountains/FrozenPeaks                      11     23840     23840   11
+    Boulders1/Boulders1                         9      4752         0    9
+    Boulders4/Boulders4                         8      3840         0    8
+    FrozenPeaks/@Node3D@5                       8     13496     13496    8
+   top by tris:
+    Foothills/FrozenPeaks                      53    569478    569478   53
+    MountainsFar/FrozenPeaks                   30     99598         0   30
+    FloorT2/FrozenPeaks                        55     75460         0   55
+    FarRange0/FrozenPeaks                      19     59614     59614   19
+    FarRange1/FrozenPeaks                      11     40960         0   11
+    Spires3/Spires3                            16     31370     14176   16
+    FloorT1/FrozenPeaks                        21     28398         0   21
+    Mountains/FrozenPeaks                      11     23840     23840   11
+    Spires2/Spires2                            15     20020      9796   15
+    FrozenWaterfall/FrozenPeaks                 1     19862     19862    1
+    FrozenPeaks/@Node3D@5                       8     13496     13496    8
+    Boulders2/Boulders2                         7      4994         0    7
+frozen_peaks    high   tris avg   999317 p95  1683424 max  1747906 | draws avg  173 p95  317 max  333 | shadow tris p95  1058664 draws p95  174 | GPU avg 939.65 p95 1860.07 p99 2389.98 max 2389.98 | CPU avg   0.97 p95   1.63 p99   1.81 ms
+  building frozen_peaks medium
+  frozen_peaks medium sample 0 gpu 990.61 ms
+  frozen_peaks medium sample 0: 1736538 tris 332 draws, shadow 905330 tris 158 draws, gpu 990.61 ms
+  frozen_peaks medium sample 1: 1715556 tris 325 draws, shadow 957506 tris 162 draws, gpu 1032.46 ms
+  frozen_peaks medium sample 2: 1683424 tris 315 draws, shadow 923164 tris 160 draws, gpu 1004.75 ms
+  frozen_peaks medium sample 3: 1629906 tris 294 draws, shadow 939740 tris 159 draws, gpu 1028.09 ms
+  frozen_peaks medium sample 4: 1504184 tris 266 draws, shadow 1004484 tris 157 draws, gpu 1025.49 ms
+  frozen_peaks medium sample 5: 1462276 tris 247 draws, shadow 997026 tris 158 draws, gpu 943.16 ms
+  frozen_peaks medium sample 6: 1395402 tris 225 draws, shadow 1058928 tris 158 draws, gpu 1093.29 ms
+  frozen_peaks medium sample 7: 1259862 tris 185 draws, shadow 1045762 tris 156 draws, gpu 934.20 ms
+  frozen_peaks medium sample 8: 1111274 tris 145 draws, shadow 1030334 tris 151 draws, gpu 1032.14 ms
+  frozen_peaks medium sample 9: 1022348 tris 125 draws, shadow 973602 tris 148 draws, gpu 1130.90 ms
+  frozen_peaks medium sample 10: 1045382 tris 134 draws, shadow 965528 tris 149 draws, gpu 890.67 ms
+  frozen_peaks medium sample 11: 1248086 tris 201 draws, shadow 962220 tris 151 draws, gpu 955.52 ms
+  frozen_peaks medium sample 12 gpu 970.36 ms
+  frozen_peaks medium sample 12: 1405722 tris 255 draws, shadow 971062 tris 158 draws, gpu 970.36 ms
+  frozen_peaks medium sample 13: 1485982 tris 297 draws, shadow 936324 tris 157 draws, gpu 1040.52 ms
+  frozen_peaks medium sample 14: 1483488 tris 297 draws, shadow 932780 tris 152 draws, gpu 1101.34 ms
+  frozen_peaks medium sample 15: 1461996 tris 295 draws, shadow 907650 tris 146 draws, gpu 1184.88 ms
+  frozen_peaks medium sample 16: 1433516 tris 275 draws, shadow 967358 tris 167 draws, gpu 984.74 ms
+  frozen_peaks medium sample 17: 1361896 tris 238 draws, shadow 1108244 tris 190 draws, gpu 1025.65 ms
+  frozen_peaks medium sample 18: 1386772 tris 250 draws, shadow 1058664 tris 192 draws, gpu 1089.22 ms
+  frozen_peaks medium sample 19: 1400698 tris 281 draws, shadow 963144 tris 174 draws, gpu 1008.76 ms
+  frozen_peaks medium sample 20: 1125470 tris 225 draws, shadow 599390 tris 88 draws, gpu 1029.33 ms
+  frozen_peaks medium sample 21: 1047550 tris 164 draws, shadow 504018 tris 72 draws, gpu 682.90 ms
+  frozen_peaks medium sample 22: 1046716 tris 150 draws, shadow 464004 tris 65 draws, gpu 675.72 ms
+  frozen_peaks medium sample 23: 983266 tris 139 draws, shadow 338728 tris 56 draws, gpu 606.15 ms
+  frozen_peaks medium sample 24 gpu 622.12 ms
+  frozen_peaks medium sample 24: 880094 tris 125 draws, shadow 227178 tris 50 draws, gpu 622.12 ms
+  frozen_peaks medium sample 25: 869388 tris 120 draws, shadow 208072 tris 46 draws, gpu 521.32 ms
+  frozen_peaks medium sample 26: 859104 tris 119 draws, shadow 253728 tris 51 draws, gpu 527.01 ms
+  frozen_peaks medium sample 27: 851792 tris 117 draws, shadow 241210 tris 49 draws, gpu 540.95 ms
+  frozen_peaks medium sample 28: 812434 tris 114 draws, shadow 159548 tris 45 draws, gpu 472.70 ms
+  frozen_peaks medium sample 29: 798760 tris 102 draws, shadow 156002 tris 41 draws, gpu 346.25 ms
+  frozen_peaks medium sample 30: 467046 tris 91 draws, shadow 138730 tris 35 draws, gpu 419.47 ms
+  frozen_peaks medium sample 31: 471946 tris 93 draws, shadow 122510 tris 28 draws, gpu 346.84 ms
+  frozen_peaks medium sample 32: 473040 tris 98 draws, shadow 112120 tris 26 draws, gpu 405.62 ms
+  frozen_peaks medium sample 33: 463688 tris 98 draws, shadow 101458 tris 24 draws, gpu 531.44 ms
+  frozen_peaks medium sample 34: 454298 tris 96 draws, shadow 97106 tris 23 draws, gpu 476.63 ms
+  frozen_peaks medium sample 35: 458744 tris 95 draws, shadow 109634 tris 26 draws, gpu 472.55 ms
+  frozen_peaks medium sample 36 gpu 457.74 ms
+  frozen_peaks medium sample 36: 459044 tris 94 draws, shadow 108000 tris 27 draws, gpu 457.74 ms
+  frozen_peaks medium sample 37: 435688 tris 86 draws, shadow 108728 tris 27 draws, gpu 372.27 ms
+  frozen_peaks medium sample 38: 437980 tris 86 draws, shadow 116040 tris 29 draws, gpu 479.29 ms
+  frozen_peaks medium sample 39: 439818 tris 89 draws, shadow 107542 tris 27 draws, gpu 419.61 ms
+  frozen_peaks medium sample 40: 431372 tris 89 draws, shadow 94746 tris 24 draws, gpu 447.08 ms
+  frozen_peaks medium sample 41: 442568 tris 95 draws, shadow 94660 tris 24 draws, gpu 460.99 ms
+  frozen_peaks medium sample 42: 434558 tris 97 draws, shadow 86692 tris 22 draws, gpu 435.84 ms
+  frozen_peaks medium sample 43: 463168 tris 108 draws, shadow 91590 tris 23 draws, gpu 487.23 ms
+  frozen_peaks medium sample 44: 802982 tris 120 draws, shadow 102700 tris 25 draws, gpu 529.39 ms
+  frozen_peaks medium sample 45: 829154 tris 132 draws, shadow 113576 tris 27 draws, gpu 434.25 ms
+  frozen_peaks medium sample 46: 856756 tris 147 draws, shadow 118642 tris 28 draws, gpu 637.26 ms
+  frozen_peaks medium sample 47: 913246 tris 160 draws, shadow 126432 tris 30 draws, gpu 643.41 ms
+  breakdown at the worst sample (group: draws, tris, shadow-casting tris, nodes; occlusion not applied):
+   top by draws:
+    FloorT2/FrozenPeaks                        55     75460         0   55
+    Foothills/FrozenPeaks                      53    569478    569478   53
+    MountainsFar/FrozenPeaks                   30     99598         0   30
+    FloorT1/FrozenPeaks                        21     28398         0   21
+    FarRange0/FrozenPeaks                      19     59614     59614   19
+    Spires3/Spires3                            16     21342         0   16
+    Spires2/Spires2                            15     18968      9796   15
+    FarRange1/FrozenPeaks                      11     40960         0   11
+    Mountains/FrozenPeaks                      11     23840     23840   11
+    Boulders1/Boulders1                         9      4752         0    9
+    Boulders4/Boulders4                         8      3840         0    8
+    FrozenPeaks/@Node3D@863                     8     13496     13496    8
+   top by tris:
+    Foothills/FrozenPeaks                      53    569478    569478   53
+    MountainsFar/FrozenPeaks                   30     99598         0   30
+    FloorT2/FrozenPeaks                        55     75460         0   55
+    FarRange0/FrozenPeaks                      19     59614     59614   19
+    FarRange1/FrozenPeaks                      11     40960         0   11
+    FloorT1/FrozenPeaks                        21     28398         0   21
+    Mountains/FrozenPeaks                      11     23840     23840   11
+    Spires3/Spires3                            16     21342         0   16
+    FrozenWaterfall/FrozenPeaks                 1     19862     19862    1
+    Spires2/Spires2                            15     18968      9796   15
+    FrozenPeaks/@Node3D@863                     8     13496     13496    8
+    Boulders2/Boulders2                         7      4994         0    7
+frozen_peaks    medium tris avg   984249 p95  1683424 max  1736538 | draws avg  171 p95  315 max  332 | shadow tris p95  1058664 draws p95  174 | GPU avg 728.09 p95 1101.34 p99 1184.88 max 1184.88 | CPU avg   0.94 p95   1.40 p99   1.89 ms
+Medium budget (p95 <= 300000 tris, <= 250 draws): FAIL
+EXIT 1
