@@ -14,7 +14,7 @@ extends RefCounted
 ## a quadtree of quads (big where the whole block exists), walls only at the rim.
 
 ## Chunk side in world metres (at least MIN_CHUNK cells): one draw call and
-## one frustum-cull test each.
+## one frustum-cull test each. The build uses VoxelQuality's terrain_chunk.
 const CHUNK_METRES := 32.0
 const MIN_CHUNK := 32
 const NONE := -2147483648
@@ -45,7 +45,7 @@ func _init(cell_size: float, world_min: Vector2, world_max: Vector2, is_down := 
 	hidden.resize(size.x * size.y)
 	hidden.fill(NONE)
 	colours.resize(size.x * size.y * 4)
-	chunk = maxi(MIN_CHUNK, ceili(CHUNK_METRES / cell))
+	chunk = maxi(MIN_CHUNK, ceili(float(VoxelQuality.value("terrain_chunk")) / cell))
 
 
 func index(x: int, z: int) -> int:

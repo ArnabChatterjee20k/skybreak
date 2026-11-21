@@ -34,7 +34,7 @@ static var merge_faces := true
 ## bump version when the design changes. soft: materials smooth() may clean.
 static func mesh(key: String, version: int, bounds: AABB, cell: float, paint: Callable, color: Callable,
 		surface: Callable, soft := []) -> ArrayMesh:
-	var path := CACHE_DIR + "%s_c%d_v%d%s.res" % [key, roundi(cell * 1000.0), version, "_m1" if merge_faces else ""]
+	var path := CACHE_DIR + "%s_c%d_v%d%s.res" % [key, roundi(cell * 1000.0), version, "_m2" if merge_faces else ""]
 	if use_cache and ResourceLoader.exists(path):
 		var cached := load(path) as ArrayMesh
 		if cached != null:
@@ -114,21 +114,30 @@ static func place(parent: Node3D, node_name: String, meshes: Array[ArrayMesh], r
 		if not tiles.has(key):
 			tiles[key] = [] as Array[Transform3D]
 		(tiles[key] as Array[Transform3D]).append(xf)
+	# Quality tier: scaled ranges, fewer shadow tiers, no shadows from clutter.
+	var scale: float = VoxelQuality.value("clutter_range" if float(ranges[0]) > 0.0 and float(ranges[0]) < 60.0
+		else "range_scale")
+	var cap: int = VoxelQuality.value("shadow_tiers")
+	if cap > 0:
+		shadow_tiers = mini(shadow_tiers, cap)
+	if meshes[0].get_aabb().get_longest_axis_size() < float(VoxelQuality.value("clutter_size")):
+		shadow_tiers = 0
 	for key: Vector2i in tiles:
 		var list: Array[Transform3D] = tiles[key]
 		var begin := 0.0
 		for t in meshes.size():
+			var end := float(ranges[t]) * scale
 			var node := _multimesh(meshes[t], list)
 			node.name = "%s_%d_%d_t%d" % [node_name, key.x, key.y, t]
 			# Hard switches, no margins: with fading off, Godot treats margins as
 			# hysteresis, and after a camera cut a tile can sit in neither tier.
 			node.visibility_range_begin = begin
-			node.visibility_range_end = float(ranges[t])
+			node.visibility_range_end = end
 			node.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if t < shadow_tiers \
 				else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			root.add_child(node)
-			begin = float(ranges[t])
+			begin = end
 	return root
 
 

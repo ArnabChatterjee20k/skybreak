@@ -130,9 +130,10 @@ static func _write_face(texels: PackedByteArray, f: int, colors: PackedColorArra
 		texels.append(_ao_level(ao[f * 16 + k]) | (4 if edges[f * 16 + k] > 0.5 else 0))
 
 
-## Godot stores vertex colours as 8-bit unorm, truncated: the same quantisation.
+## The source mesh's colours are already 8-bit (Godot stores vertex colours as
+## unorm8), read back as k / 255: rounding recovers k exactly.
 static func _byte(x: float) -> int:
-	return int(clampf(x, 0.0, 1.0) * 255.0)
+	return clampi(roundi(x * 255.0), 0, 255)
 
 
 static func _ao_level(x: float) -> int:

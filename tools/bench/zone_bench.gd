@@ -4,7 +4,9 @@ extends SceneTree
 ## calls and CPU/GPU render ms per tier (avg, p95, max over the path).
 ##   godot --path . --resolution 1920x1080 --disable-vsync -s res://tools/bench/zone_bench.gd -- \
 ##       [--zones=all|heartbloom,frozen_peaks,...] [--tiers=high,medium,low,web] [--samples=48]
-##       [--frames=3] [--time=dusk] [--fighters=4] [--json=<file>]
+##       [--frames=3] [--time=dusk] [--fighters=4] [--json=<file>] [--breakdown]
+## --breakdown estimates, at the worst sample, which node groups draw (frustum
+## and visibility range tested per instance node, surfaces counted as draws).
 ## Counts don't depend on resolution, so a small window under lavapipe gives
 ## the real counts; only the owner's GPU gives meaningful ms.
 ## Exits 1 if any zone misses the medium budget (MEDIUM_TRIS, MEDIUM_DRAWS at p95).
@@ -73,9 +75,8 @@ func _measure(zone_name: String, tier_name: String) -> Dictionary:
 	var world := Node3D.new()
 	root.add_child(world)
 	var t0 := Time.get_ticks_msec()
+	VoxelQuality.tier = tier
 	var zone := (load(ZONES[zone_name]) as GDScript).new() as VoxelZone
-	if "quality" in zone:
-		zone.set("quality", tier)
 	world.add_child(zone)
 	zone.build()
 	var build_ms := Time.get_ticks_msec() - t0
@@ -83,10 +84,7 @@ func _measure(zone_name: String, tier_name: String) -> Dictionary:
 	world.add_child(stage)
 	stage.setup(zone.presets(), zone.cloud_sea())
 	stage.lantern_materials = zone.lantern_materials
-	if stage.has_method("apply_quality"):
-		stage.call("apply_quality", tier)
-	else:
-		VoxelStage.shadow_quality()
+	stage.apply_quality(tier)
 	stage.apply(_args.get("time", "dusk"))
 	_add_fighters(world, zone, int(_args.get("fighters", "4")))
 	var cam := Camera3D.new()
@@ -125,6 +123,12 @@ func _measure(zone_name: String, tier_name: String) -> Dictionary:
 		if _args.has("verbose"):
 			print("  %s %s sample %d: %d tris %d draws, shadow %d tris %d draws" % [zone_name, tier_name, s,
 				series.tris[-1], series.draws[-1], series.shadow_tris[-1], series.shadow_draws[-1]])
+	if _args.has("breakdown"):
+		var worst: int = series.tris.find(series.tris.max())
+		var u := float(worst) / float(samples - 1) * float(pts.size() - 1)
+		cam.global_position = _spline(pts, "from", u)
+		cam.look_at(_spline(pts, "at", u), Vector3.UP)
+		_breakdown(zone, cam)
 	var out := {"zone": zone_name, "tier": tier_name, "build_ms": build_ms}
 	for k: String in series:
 		out[k] = _summary(series[k])
@@ -132,6 +136,54 @@ func _measure(zone_name: String, tier_name: String) -> Dictionary:
 	await process_frame
 	await process_frame
 	return out
+
+
+## Prints the node groups that draw from cam (tile and tier suffixes folded).
+func _breakdown(zone: Node, cam: Camera3D) -> void:
+	var groups := {}
+	var planes := cam.get_frustum()
+	var stack: Array[Node] = [zone]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		var gi := n as GeometryInstance3D
+		if gi == null or not gi.is_visible_in_tree():
+			continue
+		var aabb := gi.global_transform * gi.get_aabb()
+		var d := cam.global_position.distance_to(aabb.get_center())
+		if d < gi.visibility_range_begin or (gi.visibility_range_end > 0.0 and d >= gi.visibility_range_end):
+			continue
+		var inside := true
+		for pl in planes:
+			var c := aabb.get_center()
+			var e := aabb.size * 0.5
+			if pl.distance_to(c) > absf(pl.normal.x) * e.x + absf(pl.normal.y) * e.y + absf(pl.normal.z) * e.z:
+				inside = false
+				break
+		if not inside:
+			continue
+		var mesh: Mesh = null
+		var count := 1
+		if gi is MeshInstance3D:
+			mesh = (gi as MeshInstance3D).mesh
+		elif gi is MultiMeshInstance3D:
+			mesh = (gi as MultiMeshInstance3D).multimesh.mesh
+			count = (gi as MultiMeshInstance3D).multimesh.instance_count
+		if mesh == null:
+			continue
+		var tris := 0
+		for s in mesh.get_surface_count():
+			var il: int = mesh.surface_get_array_index_len(s)
+			tris += (il if il > 0 else mesh.surface_get_array_len(s)) / 3
+		var key := String(n.name).get_slice("_", 0) + "/" + String(n.get_parent().name).get_slice("_", 0)
+		var shadow := gi.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var g: Array = groups.get(key, [0, 0, 0, 0])
+		groups[key] = [g[0] + mesh.get_surface_count(), g[1] + tris * count, g[2] + (tris * count if shadow else 0), g[3] + 1]
+	var keys := groups.keys()
+	keys.sort_custom(func(a: String, b: String) -> bool: return groups[a][0] > groups[b][0])
+	print("  breakdown at the worst sample (group: draws, tris, shadow-casting tris, nodes):")
+	for k: String in keys.slice(0, 25):
+		print("    %-40s %4d %9d %9d %4d" % [k, groups[k][0], groups[k][1], groups[k][2], groups[k][3]])
 
 
 ## Stand-ins for the fighters (voxel Kael) round the first shot's subject, so

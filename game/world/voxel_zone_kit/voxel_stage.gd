@@ -122,6 +122,22 @@ static func shadow_quality(atlas := 4096) -> void:
 	RenderingServer.directional_shadow_atlas_set_size(atlas, true)
 
 
+## Shadow and post costs for a quality tier (VoxelQuality): shadow distance,
+## splits (the near split keeps its metres, so contact shadows stay as
+## sharp), atlas size and SSAO. Call after setup().
+func apply_quality(quality: GraphicsSettings.Quality) -> void:
+	var v: Dictionary = VoxelQuality.VALUES[quality]
+	var dist: float = v.shadow_distance
+	sun.directional_shadow_max_distance = dist
+	if int(v.shadow_splits) == 1:
+		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+	else:
+		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+		sun.directional_shadow_split_1 = clampf(float(v.near_split) / dist, 0.05, 0.9)
+	env.ssao_enabled = v.ssao
+	shadow_quality(v.shadow_atlas)
+
+
 ## Applies a preset by name (or a Dictionary of values).
 func apply(preset: Variant) -> void:
 	var p: Dictionary = presets[preset] if preset is String else preset
