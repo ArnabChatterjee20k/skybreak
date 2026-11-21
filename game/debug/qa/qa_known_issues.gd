@@ -8,6 +8,8 @@ const ISSUES := {
 	&"T-D29": "No fighter-fighter pushboxes on main: fighters can overlap and pass through each other.",
 	&"QA-11": "Drawn bodies overlap: sim pushboxes are slimmer than the drawn core bodies (pushbox sizing lane).",
 	&"QA-12": "Drawn soles off the visible ground in a few standing frames (foot grounding lane).",
+	&"QA-19": "Brann's bow string clips his head drawing a Ki Bow shot while flying (characters lane).",
+	&"VOXEL-BAKES": "Zone bakes (~600 MB for 7 zones x 4 tiers) are generated locally with tools/voxel_zone_bake.gd, not committed: the owner picks their storage.",
 }
 
 

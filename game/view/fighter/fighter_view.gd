@@ -66,7 +66,7 @@ var _was_knocked_out := false
 func _ready() -> void:
 	character = Roster.character(character_id) if character_id != &"" else null
 	if character != null:
-		character_scene = character.scene
+		character_scene = character.scene_for()
 		if palette.is_empty():
 			palette = character.palette_for(slot)
 	_body = Node3D.new()

@@ -1,0 +1,136 @@
+{
+	"hitstops": {
+		"beam": {
+			"14": 1
+		},
+		"blade/breaker": {
+			"8": 3
+		},
+		"blade/breaker+counter": {
+			"12": 1
+		},
+		"blade/light_1": {
+			"4": 1
+		},
+		"blade/light_1+counter": {
+			"8": 1
+		},
+		"blade/light_2": {
+			"4": 2
+		},
+		"blade/light_3": {
+			"4": 2
+		},
+		"breaker": {
+			"7": 3,
+			"8": 5,
+			"10": 2,
+			"20": 1
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"ki_blast": {
+			"4": 3
+		},
+		"ki_blast+counter": {
+			"8": 1
+		},
+		"light_1": {
+			"3": 10,
+			"4": 3,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 3,
+			"8": 1,
+			"9": 1
+		},
+		"light_2": {
+			"3": 11,
+			"4": 4,
+			"5": 1
+		},
+		"light_3": {
+			"3": 4,
+			"4": 3,
+			"5": 6,
+			"8": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 1,
+		"blasts": 8,
+		"charged": 3,
+		"clashes": 0,
+		"ki_hits": 5,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		3,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 117,
+	"sim_ms_per_tick": 1.431255,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00976572092622519,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.06329215496714,
+		"foot_slide_cm_per_frame": 0.0464686117521002,
+		"foot_slide_frames": 562,
+		"foot_slide_skipped_frames": 2,
+		"locked_on_screen_share": 0.992573176059415,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.16180958333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 7,
+			"detail": "lowest sole +30.7 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 268,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 268,
+			"worst_value": 0.306939897841517
+		},
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole +5.4 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 3,
+			"first_tick": 2201,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2206,
+			"worst_value": 0.0543085659387401
+		}
+	],
+	"wall_seconds": 20.062,
+	"zone": "frozen_peaks"
+}

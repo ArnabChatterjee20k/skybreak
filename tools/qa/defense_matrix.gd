@@ -16,13 +16,15 @@ const RANGED_GAP := 10.0
 const WATCH_TICKS := 150
 const FREE: Array[FighterState.State] = [S.IDLE, S.MOVING, S.FLYING, S.FALLING, S.BLOCKING]
 
-## Attack name -> {press, move (planar), vertical, weapon, gap, hold}
+## Attack name -> {press, move (planar), vertical (attacker's, first 2 ticks), weapon, gap, hold}
 const ATTACKS := {
 	"light_1": {"press": A.LIGHT},
 	"smash": {"press": A.HEAVY},
 	"breaker": {"press": A.HEAVY, "move": Vector2(0, 1)},
 	"sweep": {"press": A.HEAVY, "move": Vector2(1, 0)},
 	"launcher": {"press": A.HEAVY, "move": Vector2(0, -1)},
+	# Spike (heavy + descend): bounces the defender into a knockdown, the tech-roll setup.
+	"spike": {"press": A.HEAVY, "vertical": -1},
 	"charged_smash_3": {"press": A.HEAVY, "hold": 70},
 	"grab": {"press": A.GRAB},
 	"blade_light": {"press": A.LIGHT, "weapon": Weapon.Kind.STORM_BLADE},
@@ -48,6 +50,10 @@ const OPTIONS := {
 	"rising_reversal": {"press": A.HEAVY, "vertical": 1, "lead": 5},
 	"jab_mash": {"press": A.LIGHT, "lead": 6},
 	"grab_tech": {"tech": true},
+	# T-DEF3 escapes: reactions after the hit lands (react), not reads before it.
+	"combo_breaker": {"react": "breaker"},
+	"air_tech_up": {"react": "air_tech"},
+	"tech_roll": {"react": "tech_roll"},
 }
 
 var sim: CombatSim
@@ -87,6 +93,8 @@ func _run(legend: StringName, attack: String, option: String, contact_tick: int)
 	_previous = [FighterInput.new(), FighterInput.new()]
 	for f in sim.fighters:
 		f.ki = 100 * FighterState.METER_UNIT
+	if opt.get("react", "") == "breaker":
+		sim.fighters[1].burst = sim.meter_tuning.burst_stock_size * FighterState.METER_UNIT
 	if spec.has("weapon"):
 		_arm(spec.weapon)
 	_step(0, 0, 0, 0, 10)
@@ -106,6 +114,7 @@ func _run(legend: StringName, attack: String, option: String, contact_tick: int)
 	for t in WATCH_TICKS + delay:
 		var a_press := 0
 		var a_move: Vector2 = spec.get("move", Vector2.ZERO) if t - delay < 2 else Vector2.ZERO
+		var a_vertical: int = spec.get("vertical", 0) if t - delay < 2 else 0
 		if t == delay:
 			a_press = spec.press
 		if hold > 0 and t >= delay and t - delay < hold:
@@ -121,7 +130,20 @@ func _run(legend: StringName, attack: String, option: String, contact_tick: int)
 			d_vertical = opt.get("vertical", 0)
 		if opt.get("tech", false) and sim.fighters[1].state == S.GRABBED and sim.fighters[1].state_ticks == 2:
 			d_press = A.GRAB
-		var events := _step_once(attacker_held | a_press, a_move, 0,
+		var defender := sim.fighters[1]
+		match opt.get("react", ""):
+			"breaker":
+				if defender.state == S.HITSTUN and defender.hitstop_ticks == 0 and defender.state_ticks == 0:
+					d_press = A.BREAKER
+			"air_tech":
+				if defender.state == S.HITSTUN and defender.state_ticks == sim.escape_tuning.air_tech_first_tick:
+					d_press = A.DASH
+					d_vertical = 1
+			"tech_roll":
+				if defender.state == S.KNOCKDOWN and defender.state_ticks == 1:
+					d_vertical = 1
+					d_move = Vector2(1, 0)
+		var events := _step_once(attacker_held | a_press, a_move, a_vertical,
 			defender_held | d_press, d_move, d_vertical)
 		for event: Dictionary in events:
 			var against: bool = event.get("target", event.get("fighter", -1)) == 1
@@ -144,10 +166,14 @@ func _run(legend: StringName, attack: String, option: String, contact_tick: int)
 						label = "REFLECTED" if event.reflected else ("BLOCKED" if event.blocked else "HIT")
 				E.GUARD_BREAK:
 					label = "GUARD_BREAK" if against else ""
+				E.COMBO_BREAKER, E.AIR_TECH, E.TECH_ROLL:
+					if event.fighter == 1:
+						var escape := {E.COMBO_BREAKER: "BROKE", E.AIR_TECH: "AIR_TECH", E.TECH_ROLL: "ROLL"}
+						outcome = "%s>%s" % [outcome if outcome != "" else "HIT", escape[event.type]]
 			if label != "":
 				if first_contact < 0:
 					first_contact = t
-				if outcome == "" or label in ["HIT", "TECHED", "GUARD_BREAK"]:
+				if outcome == "" or (label in ["HIT", "TECHED", "GUARD_BREAK"] and not ">" in outcome):
 					outcome = label if not outcome.begins_with("GRABBED") or label == "TECHED" else outcome
 			# The defender's own reversal landing on the attacker.
 			if event.type in [E.HIT, E.COUNTER] and event.get("target", -1) == 0 and outcome == "":

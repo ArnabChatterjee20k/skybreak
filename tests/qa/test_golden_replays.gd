@@ -30,6 +30,48 @@ func test_every_canonical_golden_replays_without_drift() -> void:
 		assert_true(result.ok, "%s\n%s" % [result.message, BLESS_HINT])
 
 
+## Builds every weapon's armed move set for every legend, last legend first, so no golden
+## gets the cache state a fresh process would give it.
+func _prime_weapon_sets() -> void:
+	var ids := Roster.ids()
+	ids.reverse()
+	for id in ids:
+		var unarmed: MoveSet = Roster.character(id).stats.move_set
+		if unarmed == null:
+			unarmed = (CombatSim.DEFAULT_FIGHTER_STATS as FighterStats).move_set
+		for kind in Weapon.Kind.values():
+			if kind != Weapon.Kind.NONE:
+				WeaponMoves.move_set(kind, unarmed)
+
+
+func test_every_golden_replays_the_same_whatever_built_the_weapon_sets_first() -> void:
+	# Regression: armed sets were cached per weapon with the first caller's grab and push-block.
+	_prime_weapon_sets()
+	for spec in GoldenReplayCatalog.specs():
+		var path := GoldenReplayCatalog.path_for(spec.name)
+		if FileAccess.file_exists(path):
+			var result := GoldenReplay.load_file(path).play()
+			assert_true(result.ok, "%s after priming the weapon sets: %s" % [spec.name, result.message])
+
+
+func test_re_recording_every_golden_in_a_used_process_writes_the_same_hashes() -> void:
+	_prime_weapon_sets()
+	for spec in GoldenReplayCatalog.specs():
+		var path := GoldenReplayCatalog.path_for(spec.name)
+		if not FileAccess.file_exists(path):
+			continue
+		var stored := GoldenReplay.load_file(path)
+		var recorded := GoldenReplay.record(spec)
+		var first := -1
+		for i in mini(stored.hashes.size(), recorded.hashes.size()):
+			if stored.hashes[i] != recorded.hashes[i]:
+				first = i
+				break
+		assert_eq(first, -1, "%s: recording differs from the file from hash %d" % [spec.name, first])
+		assert_eq(recorded.hashes.size(), stored.hashes.size(), "%s: same length" % spec.name)
+		assert_true(recorded.play().ok, "%s: the fresh recording replays" % spec.name)
+
+
 func test_every_golden_file_has_a_spec_in_the_catalog() -> void:
 	var names: Array = GoldenReplayCatalog.specs().map(func(spec: Dictionary) -> String: return spec.name)
 	for file in DirAccess.get_files_at(GoldenReplayCatalog.DIRECTORY):

@@ -43,16 +43,21 @@
 [ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/tech_2.ogg" id="s39"]
 [ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/counter_hit_1.ogg" id="s40"]
 [ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/counter_hit_2.ogg" id="s41"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/ko.ogg" id="s42"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/ko_tail.ogg" id="s43"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/combo_tick.ogg" id="s44"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_1.ogg" id="s45"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_2.ogg" id="s46"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_3.ogg" id="s47"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_4.ogg" id="s48"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_heavy_1.ogg" id="s49"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_heavy_2.ogg" id="s50"]
-[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_heavy_3.ogg" id="s51"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/combo_breaker_1.ogg" id="s42"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/combo_breaker_2.ogg" id="s43"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/air_tech_1.ogg" id="s44"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/air_tech_2.ogg" id="s45"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/air_tech_3.ogg" id="s46"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/ko.ogg" id="s47"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/ko_tail.ogg" id="s48"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/combo_tick.ogg" id="s49"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_1.ogg" id="s50"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_2.ogg" id="s51"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_3.ogg" id="s52"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_light_4.ogg" id="s53"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_heavy_1.ogg" id="s54"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_heavy_2.ogg" id="s55"]
+[ext_resource type="AudioStreamOggVorbis" path="res://game/audio/sfx/combat/whoosh_heavy_3.ogg" id="s56"]
 
 [sub_resource type="Resource" id="hit_light"]
 script = ExtResource("cue")
@@ -111,8 +116,8 @@ unit_size = 12.0
 max_distance = 250.0
 loop = false
 layers = Array[StringName]([&"impact_thump", &"impact_tail"])
-duck_db = -8.0
-duck_seconds = 0.6
+duck_db = -6.0
+duck_seconds = 0.35
 
 [sub_resource type="Resource" id="impact_thump"]
 script = ExtResource("cue")
@@ -211,8 +216,8 @@ unit_size = 12.0
 max_distance = 250.0
 loop = false
 layers = Array[StringName]([])
-duck_db = -8.0
-duck_seconds = 0.6
+duck_db = -6.0
+duck_seconds = 0.4
 
 [sub_resource type="Resource" id="armor_hit"]
 script = ExtResource("cue")
@@ -291,8 +296,8 @@ unit_size = 12.0
 max_distance = 250.0
 loop = false
 layers = Array[StringName]([])
-duck_db = -8.0
-duck_seconds = 0.7
+duck_db = -6.0
+duck_seconds = 0.4
 
 [sub_resource type="Resource" id="push_block"]
 script = ExtResource("cue")
@@ -394,10 +399,50 @@ layers = Array[StringName]([])
 duck_db = 0.0
 duck_seconds = 0.0
 
+[sub_resource type="Resource" id="combo_breaker"]
+script = ExtResource("cue")
+id = &"combo_breaker"
+streams = Array[AudioStream]([ExtResource("s42"), ExtResource("s43")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.98
+pitch_max = 1.02
+volume_jitter_db = 1.0
+max_voices = 1
+priority = 90
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = -6.0
+duck_seconds = 0.5
+
+[sub_resource type="Resource" id="air_tech"]
+script = ExtResource("cue")
+id = &"air_tech"
+streams = Array[AudioStream]([ExtResource("s44"), ExtResource("s45"), ExtResource("s46")])
+bus = &"SFX"
+volume_db = 0.0
+pitch_min = 0.95
+pitch_max = 1.05
+volume_jitter_db = 1.0
+max_voices = 2
+priority = 65
+cooldown = 0.03
+positional = true
+unit_size = 12.0
+max_distance = 250.0
+loop = false
+layers = Array[StringName]([])
+duck_db = 0.0
+duck_seconds = 0.0
+
 [sub_resource type="Resource" id="ko"]
 script = ExtResource("cue")
 id = &"ko"
-streams = Array[AudioStream]([ExtResource("s42")])
+streams = Array[AudioStream]([ExtResource("s47")])
 bus = &"SFX"
 volume_db = 0.0
 pitch_min = 0.95
@@ -411,13 +456,13 @@ unit_size = 12.0
 max_distance = 250.0
 loop = false
 layers = Array[StringName]([&"ko_tail"])
-duck_db = -14.0
-duck_seconds = 2.5
+duck_db = -12.0
+duck_seconds = 1.6
 
 [sub_resource type="Resource" id="ko_tail"]
 script = ExtResource("cue")
 id = &"ko_tail"
-streams = Array[AudioStream]([ExtResource("s43")])
+streams = Array[AudioStream]([ExtResource("s48")])
 bus = &"SFX"
 volume_db = 0.0
 pitch_min = 0.95
@@ -437,7 +482,7 @@ duck_seconds = 0.0
 [sub_resource type="Resource" id="combo_tick"]
 script = ExtResource("cue")
 id = &"combo_tick"
-streams = Array[AudioStream]([ExtResource("s44")])
+streams = Array[AudioStream]([ExtResource("s49")])
 bus = &"UI"
 volume_db = 0.0
 pitch_min = 1.0
@@ -457,7 +502,7 @@ duck_seconds = 0.0
 [sub_resource type="Resource" id="whoosh_light"]
 script = ExtResource("cue")
 id = &"whoosh_light"
-streams = Array[AudioStream]([ExtResource("s45"), ExtResource("s46"), ExtResource("s47"), ExtResource("s48")])
+streams = Array[AudioStream]([ExtResource("s50"), ExtResource("s51"), ExtResource("s52"), ExtResource("s53")])
 bus = &"SFX"
 volume_db = -5.0
 pitch_min = 0.95
@@ -477,7 +522,7 @@ duck_seconds = 0.0
 [sub_resource type="Resource" id="whoosh_heavy"]
 script = ExtResource("cue")
 id = &"whoosh_heavy"
-streams = Array[AudioStream]([ExtResource("s49"), ExtResource("s50"), ExtResource("s51")])
+streams = Array[AudioStream]([ExtResource("s54"), ExtResource("s55"), ExtResource("s56")])
 bus = &"SFX"
 volume_db = -4.0
 pitch_min = 0.95
@@ -497,4 +542,4 @@ duck_seconds = 0.0
 [resource]
 script = ExtResource("bank")
 category = &"combat"
-cues = Array[ExtResource("cue")]([SubResource("hit_light"), SubResource("hit_medium"), SubResource("hit_heavy"), SubResource("impact_thump"), SubResource("impact_tail"), SubResource("launcher"), SubResource("spike_bounce"), SubResource("wall_splat"), SubResource("armor_hit"), SubResource("block"), SubResource("perfect_block"), SubResource("guard_break"), SubResource("push_block"), SubResource("grab"), SubResource("throw"), SubResource("tech"), SubResource("counter_hit"), SubResource("ko"), SubResource("ko_tail"), SubResource("combo_tick"), SubResource("whoosh_light"), SubResource("whoosh_heavy")])
+cues = Array[ExtResource("cue")]([SubResource("hit_light"), SubResource("hit_medium"), SubResource("hit_heavy"), SubResource("impact_thump"), SubResource("impact_tail"), SubResource("launcher"), SubResource("spike_bounce"), SubResource("wall_splat"), SubResource("armor_hit"), SubResource("block"), SubResource("perfect_block"), SubResource("guard_break"), SubResource("push_block"), SubResource("grab"), SubResource("throw"), SubResource("tech"), SubResource("counter_hit"), SubResource("combo_breaker"), SubResource("air_tech"), SubResource("ko"), SubResource("ko_tail"), SubResource("combo_tick"), SubResource("whoosh_light"), SubResource("whoosh_heavy")])

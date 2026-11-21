@@ -138,29 +138,76 @@ static func part_boxes(model: Node3D, with_string := false) -> Array[Transform3D
 		while at != model and at != null:
 			to_model = (at as Node3D).transform * to_model
 			at = at.get_parent()
-		var box := part.get_aabb()
-		boxes.append(to_model * Transform3D(Basis.from_scale(box.size * 0.5), box.get_center()))
+		# A voxel weapon is one merged mesh: its slices along the long axis stand in for parts.
+		var parts: Array[AABB] = [part.get_aabb()]
+		if model.has_meta(&"voxel"):
+			parts = voxel_slices(part.mesh)
+		for box in parts:
+			boxes.append(to_model * Transform3D(Basis.from_scale(box.size * 0.5), box.get_center()))
 	return boxes
+
+
+## Slice height (m) of a merged voxel mesh's part boxes.
+const VOXEL_SLICE := 0.06
+static var _slice_cache := {}
+
+
+## Tight boxes of a mesh's vertices in VOXEL_SLICE slabs along +Y (cached per mesh).
+static func voxel_slices(mesh: Mesh) -> Array[AABB]:
+	var key := mesh.get_instance_id()
+	if _slice_cache.has(key):
+		return _slice_cache[key]
+	var slabs := {}
+	for s in mesh.get_surface_count():
+		for v: Vector3 in mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]:
+			var i := floori(v.y / VOXEL_SLICE)
+			if slabs.has(i):
+				slabs[i] = (slabs[i] as AABB).expand(v)
+			else:
+				slabs[i] = AABB(v, Vector3.ZERO)
+	var out: Array[AABB] = []
+	var keys := slabs.keys()
+	keys.sort()
+	for i: int in keys:
+		# At least a few millimetres thick on every axis, so the box stays invertible.
+		var box: AABB = slabs[i]
+		out.append(box.grow(0.002))
+	_slice_cache[key] = out
+	return out
 
 
 static var _box_cache := {}
 
 
-## Part boxes of a freshly built model of kind (cached per kind).
-static func model_boxes(kind: Weapon.Kind) -> Array[Transform3D]:
-	if not _box_cache.has(kind):
-		var model := WeaponModels.build(kind)
-		model.transform = Transform3D.IDENTITY
-		_box_cache[kind] = part_boxes(model)
-		_clear_cache[kind] = part_boxes(model, true)
-		model.free()
-	return _box_cache[kind]
+## Part boxes of a freshly built model of kind (cached per kind and look); with voxel (and a
+## voxel model of kind) the voxel model's boxes too, so the clearance covers the drawn shape.
+static func model_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]:
+	var key := _box_key(kind, voxel)
+	if not _box_cache.has(key):
+		var boxes: Array[Transform3D] = []
+		var clear: Array[Transform3D] = []
+		# A voxel holder keeps out the classic shape the holds were tuned on as well as the drawn voxel one.
+		var models: Array[Node3D] = [WeaponModels.build(kind)]
+		if key.y == 1:
+			models.push_front(VoxelWeapons.build(kind))
+		for model in models:
+			model.transform = Transform3D.IDENTITY
+			boxes.append_array(part_boxes(model))
+			clear.append_array(part_boxes(model, true))
+			model.free()
+		_box_cache[key] = boxes
+		_clear_cache[key] = clear
+	return _box_cache[key]
 
 
 static var _clear_cache := {}
 
 
 ## What the holder's clearance keeps out of the body: the part boxes plus a bow's resting string.
-static func clearance_boxes(kind: Weapon.Kind) -> Array[Transform3D]:
-	model_boxes(kind)
-	return _clear_cache[kind]
+static func clearance_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]:
+	model_boxes(kind, voxel)
+	return _clear_cache[_box_key(kind, voxel)]
+
+
+static func _box_key(kind: Weapon.Kind, voxel: bool) -> Vector2i:
+	return Vector2i(kind, 1 if voxel and VoxelWeapons.has(kind) else 0)

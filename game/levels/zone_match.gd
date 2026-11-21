@@ -36,6 +36,8 @@ var config := {}
 var zone_id: StringName
 var sim := CombatSim.new()
 var world: WorldMap
+## The zone's voxel look (Voxel art style), or null in Classic.
+var voxel_zone: VoxelZoneView
 var ground: ZoneGround
 ## Team per fighter, as configured.
 var teams: Array[int] = []
@@ -70,7 +72,8 @@ var contact_shadows := ContactShadows.new()
 
 
 ## {zone, fighters: [{character, team, is_ai, ai_level}], rounds, mode}; missing keys
-## fall back to DEFAULT_CONFIG.
+## fall back to DEFAULT_CONFIG. Optional voxel_zone (bool) overrides the art style for
+## the zone only (characters follow ArtStyle).
 func configure(match_config: Dictionary) -> void:
 	assert(not is_inside_tree(), "configure the zone match before adding it to the tree")
 	_apply_config(match_config)
@@ -111,6 +114,7 @@ func _ready() -> void:
 		match_hud.names.append(fighter_views[i].display_name)
 		match_hud.team_colors.append(Color(fighter_views[i].energy_color, 1.0))
 		match_hud.is_ai.append(drivers[i] != null)
+		match_hud.portraits.append(_hud_portrait(fighter_views[i].character_id))
 	match_hud.teams = teams
 	match_hud.player = player
 	$Hud.add_child(match_hud)
@@ -146,6 +150,17 @@ func _build_world() -> void:
 	sim.arena_centre = data.centre
 	ground = ZoneGround.bake(world.heightmap, world.islands, data.centre, arena.x)
 	sim.ground_height = ground.height_at
+	if bool(config.get("voxel_zone", ArtStyle.is_voxel())) and VoxelZoneView.supports(zone_id):
+		_build_voxel_zone()
+
+
+## Voxel art style: the zone's voxel look over the same ground (visual only).
+func _build_voxel_zone() -> void:
+	voxel_zone = VoxelZoneView.new()
+	add_child(voxel_zone)
+	move_child(voxel_zone, 1)
+	VoxelZoneView.hide_classic(world)
+	voxel_zone.build(zone_id, int(config.get("quality", GraphicsSettings.load_saved().quality)))
 
 
 func _build_fighters() -> void:
@@ -238,7 +253,7 @@ func _start_prewarm() -> void:
 
 func _physics_process(_delta: float) -> void:
 	step_tick()
-	Engine.time_scale = match_flow.time_scale()
+	Engine.time_scale = match_flow.time_scale() * combat_feedback.time_scale()
 
 
 func _exit_tree() -> void:
@@ -247,6 +262,16 @@ func _exit_tree() -> void:
 
 func _process(delta: float) -> void:
 	present_frame(Engine.get_physics_interpolation_fraction(), delta)
+
+
+## A legend's head shot for the HUD portrait tile, rendered once like the
+## character-select cards; the container itself stays invisible.
+func _hud_portrait(id: StringName) -> Texture2D:
+	var shot := LegendTurntable.new(id, false, true, Vector2i(156, 232))
+	shot.stretch = false
+	shot.self_modulate = Color.TRANSPARENT
+	$Hud.add_child(shot)
+	return shot.viewport.get_texture()
 
 
 ## Advances the sim one tick: keyboard for the player, drivers for AI slots.

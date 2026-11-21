@@ -117,6 +117,7 @@ func test_present_drives_the_character_animation_from_sim_state() -> void:
 
 
 func test_the_test_arena_draws_p1_kael_against_p2_vexa() -> void:
+	ArtStyle.set_current(ArtStyle.Kind.CLASSIC)
 	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
 	add_child_autofree(arena)
 	var p1: FighterView = arena.get_node("Fighter1")
@@ -126,6 +127,19 @@ func test_the_test_arena_draws_p1_kael_against_p2_vexa() -> void:
 	assert_eq(p2.find_children("*", "VexaView", true, false).size(), 1, "P2 draws Vexa's view")
 	assert_eq(arena.sim.fighters[0].stats.move_set.resource_path, "res://game/combat/moves/kael/kael_move_set.tres")
 	assert_eq(arena.sim.fighters[1].stats.move_set.resource_path, "res://game/combat/moves/vexa/vexa_move_set.tres")
+	ArtStyle.reset()
+
+
+func test_the_test_arena_draws_voxel_kael_and_vexa_in_the_voxel_style() -> void:
+	ArtStyle.set_current(ArtStyle.Kind.VOXEL)
+	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
+	add_child_autofree(arena)
+	var p1: FighterView = arena.get_node("Fighter1")
+	var p2: FighterView = arena.get_node("Fighter2")
+	assert_eq(p1.character_scene.resource_path, "res://game/characters/kael_voxel/kael_voxel.tscn")
+	assert_eq(p2.character_scene.resource_path, "res://game/characters/vexa_voxel/vexa_voxel.tscn")
+	assert_eq(p2.find_children("*", "VexaView", true, false).size(), 1, "voxel Vexa keeps Vexa's view")
+	ArtStyle.reset()
 
 func test_a_ko_snaps_the_body_back_from_the_contact_on_the_ko_frame() -> void:
 	# #121: the sim holds the loser in hitstop; the view reacts on the KO frame anyway.

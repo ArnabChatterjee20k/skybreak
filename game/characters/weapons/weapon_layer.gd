@@ -167,7 +167,7 @@ func _make_pickup(kind: Weapon.Kind, power := Power.Kind.NONE) -> Node3D:
 	var glow_color := HEART_GLOW if kind == Weapon.Kind.HEARTSTRING_BOW else ITEM_GLOW
 	var model := Node3D.new()
 	model.name = "Model"
-	var weapon := WeaponModels.build(kind) if power == Power.Kind.NONE else PowerModels.build(power)
+	var weapon := WeaponModels.build_for(kind) if power == Power.Kind.NONE else PowerModels.build(power)
 	weapon.position = -WeaponModels.centre_of(weapon)
 	model.add_child(weapon)
 	node.add_child(model)
@@ -245,7 +245,7 @@ func _make_projectile(projectile: Projectile) -> Node3D:
 	var node := Node3D.new()
 	if projectile.effect == Weapon.Effect.DISC:
 		# The chakram flies flat, spinning.
-		var disc := WeaponModels.build(Weapon.Kind.ORBIT_CHAKRAM)
+		var disc := WeaponModels.build_for(Weapon.Kind.ORBIT_CHAKRAM)
 		disc.position = -WeaponModels.centre_of(disc)
 		var flat := Node3D.new()
 		flat.rotation_degrees = Vector3(90, 0, 0)
@@ -254,7 +254,7 @@ func _make_projectile(projectile: Projectile) -> Node3D:
 		node.add_child(_glow_ball(0.2, Color(ITEM_GLOW, 0.35)))
 		return node
 	if projectile.thrown:
-		var model := WeaponModels.build(projectile.weapon)
+		var model := WeaponModels.build_for(projectile.weapon)
 		model.position = -WeaponModels.centre_of(model)
 		var spinner := Node3D.new()
 		spinner.add_child(model)
@@ -539,7 +539,7 @@ static func attach(skeleton: Skeleton3D, kind: Weapon.Kind) -> Array[Node]:
 		attachment.name = "Held%s" % hand
 		attachment.bone_name = hand
 		skeleton.add_child(attachment)
-		var model := WeaponModels.build(kind)
+		var model := WeaponModels.build_for(kind, skeleton)
 		model.transform = WeaponGrip.grip_transform(skeleton, kind, hand)
 		attachment.add_child(model)
 		if WeaponGrip.hold_of(kind) == WeaponGrip.Hold.BOW:

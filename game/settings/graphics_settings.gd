@@ -68,6 +68,8 @@ var fullscreen: bool = true
 ## The fight camera's side-on swing for melee exchanges and beam clashes; off
 ## keeps the steady over-the-shoulder view (accessibility).
 var exchange_camera: bool = true
+## Voxel (default) or the classic models and zones; see ArtStyle.
+var art_style: ArtStyle.Kind = ArtStyle.Kind.VOXEL
 
 
 func _init(is_web: bool = OS.has_feature("web")) -> void:
@@ -117,6 +119,7 @@ func save(path: String = SAVE_PATH) -> Error:
 	config.set_value(SECTION, "vsync_enabled", vsync_enabled)
 	config.set_value(SECTION, "fullscreen", fullscreen)
 	config.set_value(SECTION, "exchange_camera", exchange_camera)
+	config.set_value(SECTION, "art_style", art_style)
 	return config.save(path)
 
 
@@ -134,6 +137,9 @@ static func load_saved(
 	settings.vsync_enabled = config.get_value(SECTION, "vsync_enabled", settings.vsync_enabled)
 	settings.fullscreen = config.get_value(SECTION, "fullscreen", settings.fullscreen)
 	settings.exchange_camera = config.get_value(SECTION, "exchange_camera", settings.exchange_camera)
+	var saved_style: int = config.get_value(SECTION, "art_style", settings.art_style)
+	if ArtStyle.NAMES.has(saved_style):
+		settings.art_style = saved_style as ArtStyle.Kind
 	return settings
 
 

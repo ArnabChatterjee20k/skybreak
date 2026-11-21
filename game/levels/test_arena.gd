@@ -75,8 +75,8 @@ func _start_prewarm() -> void:
 
 func _physics_process(_delta: float) -> void:
 	step_tick()
-	# Slow motion after a KO; only when the arena runs in real time.
-	Engine.time_scale = match_flow.time_scale()
+	# Slow motion after a KO or a perfect block; only when the arena runs in real time.
+	Engine.time_scale = match_flow.time_scale() * combat_feedback.time_scale()
 
 
 func _exit_tree() -> void:

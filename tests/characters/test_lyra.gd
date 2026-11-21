@@ -403,6 +403,7 @@ func test_the_roster_lists_lyra_with_her_stats_and_palettes() -> void:
 
 
 func test_a_fighter_view_draws_lyra_in_her_slot_palette() -> void:
+	ArtStyle.set_current(ArtStyle.Kind.CLASSIC)
 	var view := FighterView.new()
 	view.character_id = &"lyra"
 	view.slot = 1
@@ -410,6 +411,7 @@ func test_a_fighter_view_draws_lyra_in_her_slot_palette() -> void:
 	add_child_autofree(view)
 	assert_eq(view.find_children("*", "LyraView", true, false).size(), 1)
 	assert_eq(view.palette, Roster.character(&"lyra").palette_for(1))
+	ArtStyle.reset()
 
 
 func test_a_3600_tick_bot_match_with_lyra_runs_clean_and_uses_her_kit() -> void:

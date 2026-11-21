@@ -1,0 +1,67 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 4,
+			"8": 2
+		},
+		"light_1": {
+			"3": 10,
+			"4": 2,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 7
+		},
+		"light_2": {
+			"3": 11,
+			"4": 2,
+			"5": 4,
+			"20": 1
+		},
+		"light_3": {
+			"3": 5,
+			"4": 2,
+			"5": 3,
+			"8": 2
+		},
+		"sweep": {
+			"7": 1
+		}
+	},
+	"id": "117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343",
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		3,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 117,
+	"sim_ms_per_tick": 1.51791125,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0104242768138647,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.866565839243094,
+		"foot_slide_cm_per_frame": 0.0517168871585071,
+		"foot_slide_frames": 570,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.980235492010093,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.26013791666667,
+	"violations": [],
+	"wall_seconds": 20.308,
+	"zone": "frozen_peaks"
+}

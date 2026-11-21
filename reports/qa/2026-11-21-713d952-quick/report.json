@@ -1,0 +1,351 @@
+{
+  "status": {
+    "Invariant soak (sim)": "PASS",
+    "Invariant soak (view)": "FAIL",
+    "Scenario library": "PASS",
+    "Golden replays": "PASS",
+    "Visual goldens": "FAIL",
+    "Feel metrics trend": "FAIL"
+  },
+  "matches": 21,
+  "top": [
+    {
+      "check": "foot_ground",
+      "count": 2,
+      "detail": "lowest sole +22.0 cm off the visible ground (IDLE, clip fight_idle)",
+      "fighter": 2,
+      "first_tick": 268,
+      "legend": "lyra",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 268,
+      "worst_value": 0.219896240115531,
+      "match": "117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343",
+      "seed": 117,
+      "zone": "frozen_peaks",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343' --tick 268 --fighter 2",
+      "pending": false,
+      "image": "2026-11-21-713d952-quick/captures/117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t268/frame_00268.png",
+      "clip": "2026-11-21-713d952-quick/captures/117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t268/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 2,
+      "detail": "lowest sole +5.4 cm off the visible ground (BLOCKING, clip guard)",
+      "fighter": 3,
+      "first_tick": 2201,
+      "legend": "kael",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 2206,
+      "worst_value": 0.0543107023927263,
+      "match": "117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343",
+      "seed": 117,
+      "zone": "frozen_peaks",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343' --tick 2206 --fighter 3",
+      "pending": false,
+      "image": "2026-11-21-713d952-quick/captures/117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t2206/frame_02206.png",
+      "clip": "2026-11-21-713d952-quick/captures/117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t2206/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 2,
+      "detail": "lowest sole +5.3 cm off the visible ground (BLOCKING, clip guard)",
+      "fighter": 3,
+      "first_tick": 1567,
+      "legend": "kael",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 1570,
+      "worst_value": 0.0526876787064801,
+      "match": "104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243",
+      "seed": 104,
+      "zone": "verdant_falls",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243' --tick 1570 --fighter 3",
+      "pending": false,
+      "image": "2026-11-21-713d952-quick/captures/104_verdant_falls_ffa4_vexa-brann-lyra-kael_2243_t1570/frame_01570.png",
+      "clip": "2026-11-21-713d952-quick/captures/104_verdant_falls_ffa4_vexa-brann-lyra-kael_2243_t1570/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 1,
+      "detail": "lowest sole +7.5 cm off the visible ground (IDLE, clip turn_step)",
+      "fighter": 0,
+      "first_tick": 2226,
+      "legend": "kael",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 2226,
+      "worst_value": 0.0749161021438454,
+      "match": "100:shattered_mesa:1v1:kael,vexa:54",
+      "seed": 100,
+      "zone": "shattered_mesa",
+      "mode": "1v1",
+      "repro": "tools/qa/run_qa.sh --repro '100:shattered_mesa:1v1:kael,vexa:54' --tick 2226 --fighter 0",
+      "pending": false,
+      "image": "2026-11-21-713d952-quick/captures/100_shattered_mesa_1v1_kael-vexa_54_t2226/frame_02226.png",
+      "clip": "2026-11-21-713d952-quick/captures/100_shattered_mesa_1v1_kael-vexa_54_t2226/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 1,
+      "detail": "lowest sole +5.1 cm off the visible ground (BLOCKING, clip guard)",
+      "fighter": 0,
+      "first_tick": 639,
+      "legend": "vexa",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 639,
+      "worst_value": 0.0511992355538382,
+      "match": "103:frozen_peaks:1v1:vexa,brann:44",
+      "seed": 103,
+      "zone": "frozen_peaks",
+      "mode": "1v1",
+      "repro": "tools/qa/run_qa.sh --repro '103:frozen_peaks:1v1:vexa,brann:44' --tick 639 --fighter 0",
+      "pending": false,
+      "image": "2026-11-21-713d952-quick/captures/103_frozen_peaks_1v1_vexa-brann_44_t639/frame_00639.png",
+      "clip": "2026-11-21-713d952-quick/captures/103_frozen_peaks_1v1_vexa-brann_44_t639/clip.mp4"
+    }
+  ],
+  "metrics": {
+    "hitstop_consistency": 0.619794809897405,
+    "pops_per_fighter_minute": 0.0,
+    "finger_pops_per_fighter_minute": 0.017864586434824047,
+    "foot_slide_cm_per_frame": 0.031475488036733584,
+    "foot_error_p95_cm": 0.9340272397680902,
+    "camera_jerk_p95": 0.009425323390002766,
+    "locked_on_screen_share": 0.9848640604121944,
+    "sim_ms_per_tick": 2.3949199999999995,
+    "view_ms_per_frame": 2.3023608730158727,
+    "metric_versions": {
+      "foot_slide_cm_per_frame": 2
+    },
+    "latency_ticks": {
+      "brann": {
+        "grab@air": 10,
+        "grab@ground": 10,
+        "heavy@air": 19,
+        "heavy@ground": 19,
+        "light@air": 9,
+        "light@ground": 9
+      },
+      "kael": {
+        "grab@air": 8,
+        "grab@ground": 8,
+        "heavy@air": 15,
+        "heavy@ground": 15,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "lyra": {
+        "grab@air": 9,
+        "grab@ground": 9,
+        "heavy@air": 16,
+        "heavy@ground": 16,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "vexa": {
+        "grab@air": 7,
+        "grab@ground": 7,
+        "heavy@air": 12,
+        "heavy@ground": 12,
+        "light@air": 5,
+        "light@ground": 5
+      }
+    },
+    "generated_at": 1795285540.8281379
+  },
+  "trend": [
+    [
+      "hitstop_consistency",
+      0.619794809897405,
+      0.619794809897405,
+      0.0,
+      false
+    ],
+    [
+      "pops_per_fighter_minute",
+      0.0,
+      0.0,
+      null,
+      false
+    ],
+    [
+      "finger_pops_per_fighter_minute",
+      0.017864586434824047,
+      0.017864586434824047,
+      0.0,
+      false
+    ],
+    [
+      "foot_slide_cm_per_frame",
+      0.031475488036733584,
+      0.03147455353978346,
+      2.9690554591657532e-05,
+      false
+    ],
+    [
+      "foot_error_p95_cm",
+      0.9340272397680902,
+      1.7252378037069542,
+      -0.4586095680484275,
+      false
+    ],
+    [
+      "camera_jerk_p95",
+      0.009425323390002766,
+      0.009425323390002766,
+      0.0,
+      false
+    ],
+    [
+      "locked_on_screen_share",
+      0.9848640604121944,
+      0.9848640604121944,
+      0.0,
+      false
+    ],
+    [
+      "sim_ms_per_tick",
+      2.3949199999999995,
+      1.167481527777778,
+      1.0513557970879142,
+      true
+    ],
+    [
+      "view_ms_per_frame",
+      2.3023608730158727,
+      1.202869563492063,
+      0.9140569708421794,
+      true
+    ]
+  ],
+  "visual": [
+    {
+      "shot": "heartbloom_brann_idle.png",
+      "status": "FAIL",
+      "ssim": 0.6926682079765808,
+      "tiles": 0.96875,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_heartbloom_brann_idle.png"
+    },
+    {
+      "shot": "heartbloom_brann_light.png",
+      "status": "FAIL",
+      "ssim": 0.7002364246955067,
+      "tiles": 0.96875,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_heartbloom_brann_light.png"
+    },
+    {
+      "shot": "heartbloom_kael_idle.png",
+      "status": "FAIL",
+      "ssim": 0.6998444539716533,
+      "tiles": 0.96875,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_heartbloom_kael_idle.png"
+    },
+    {
+      "shot": "heartbloom_kael_light.png",
+      "status": "FAIL",
+      "ssim": 0.7070607303380284,
+      "tiles": 0.96875,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_heartbloom_kael_light.png"
+    },
+    {
+      "shot": "heartbloom_lyra_idle.png",
+      "status": "FAIL",
+      "ssim": 0.6956054369332957,
+      "tiles": 0.96875,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_heartbloom_lyra_idle.png"
+    },
+    {
+      "shot": "heartbloom_lyra_light.png",
+      "status": "FAIL",
+      "ssim": 0.7006789432185803,
+      "tiles": 0.96875,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_heartbloom_lyra_light.png"
+    },
+    {
+      "shot": "heartbloom_vexa_idle.png",
+      "status": "FAIL",
+      "ssim": 0.7023784897643075,
+      "tiles": 0.96875,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_heartbloom_vexa_idle.png"
+    },
+    {
+      "shot": "heartbloom_vexa_light.png",
+      "status": "FAIL",
+      "ssim": 0.7057440467855015,
+      "tiles": 0.96875,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_heartbloom_vexa_light.png"
+    },
+    {
+      "shot": "zone_ember_rift.png",
+      "status": "FAIL",
+      "ssim": 0.3915148613590903,
+      "tiles": 0.90625,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_zone_ember_rift.png"
+    },
+    {
+      "shot": "zone_frozen_peaks.png",
+      "status": "FAIL",
+      "ssim": 0.45467080089100226,
+      "tiles": 0.8770833333333333,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_zone_frozen_peaks.png"
+    },
+    {
+      "shot": "zone_shattered_mesa.png",
+      "status": "FAIL",
+      "ssim": 0.6740663839164449,
+      "tiles": 1.0,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_zone_shattered_mesa.png"
+    },
+    {
+      "shot": "zone_skyhold_ruins.png",
+      "status": "FAIL",
+      "ssim": 0.5847636732472116,
+      "tiles": 0.9958333333333333,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_zone_skyhold_ruins.png"
+    },
+    {
+      "shot": "zone_stormfall_city.png",
+      "status": "FAIL",
+      "ssim": 0.3217240604827288,
+      "tiles": 0.9375,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_zone_stormfall_city.png"
+    },
+    {
+      "shot": "zone_verdant_falls.png",
+      "status": "FAIL",
+      "ssim": 0.6208904591849828,
+      "tiles": 1.0,
+      "diff": "reports/qa/2026-11-21-713d952-quick/visual_diff/diff_zone_verdant_falls.png"
+    }
+  ],
+  "scenarios": {
+    "tests": 38,
+    "passing": 38,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "goldens": {
+    "tests": 11,
+    "passing": 11,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "sim_summary": {},
+  "view_summary": {
+    "foot_ground": {
+      "matches": 4,
+      "frames": 8,
+      "pending": false
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+	"hitstops": {
+		"launcher": {
+			"7": 8,
+			"9": 1
+		},
+		"light_1": {
+			"3": 4,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 10,
+			"9": 3
+		},
+		"light_2": {
+			"3": 9,
+			"5": 3
+		},
+		"light_3": {
+			"3": 9,
+			"8": 3
+		}
+	},
+	"id": "115:skyhold_ruins:1v1:vexa,brann:45",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 115,
+	"sim_ms_per_tick": 1.21602708333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00975272711366415,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"foot_slide_frames": 0,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.992080033347228,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 2.58260083333333,
+	"violations": [],
+	"wall_seconds": 97.658,
+	"zone": "skyhold_ruins"
+}

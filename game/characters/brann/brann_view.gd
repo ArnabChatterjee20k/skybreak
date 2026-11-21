@@ -205,7 +205,7 @@ func _stow_weapons() -> void:
 			* Basis(Vector3.UP, deg_to_rad(entry[4]))
 		var size: float = entry[5] if entry.size() > 5 else 1.0
 		var place := Transform3D(turn.scaled(Vector3.ONE * STOWED_SCALE * size), entry[1])
-		var weapon := WeaponModels.build(kind)
+		var weapon := WeaponModels.build_for(kind, _skeleton)
 		weapon.transform = _skeleton.get_bone_global_rest(bone).affine_inverse() * place * weapon.transform
 		attachment.add_child(weapon)
 		_stowed.append(attachment)
