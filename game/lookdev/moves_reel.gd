@@ -1,7 +1,7 @@
 extends SceneTree
 ## Moves reel of a character on the look-dev stage, against a grey target
 ## dummy so the hits read (.claude/skills/voxel-character-lookdev/SKILL.md).
-##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat]
+##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots]
 ##       --scene=<character scene> --moves=res://game/combat/moves/<name>/
 ##       [--dummy=<scene>] [--stats=<FighterStats .tres>] [--energy=#ff9e40]
 ## Writes numbered JPG frames (f_00000.jpg...) for ffmpeg at 60 fps; "poses"
@@ -14,7 +14,7 @@ extends SceneTree
 ## hover, crossed guard, ki shot, kick, jump crouch, a big flinch) are layered
 ## over the clips by LookdevPoseOverride. Neither the sim nor the clips change.
 
-const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
+const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
 ## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
 const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
@@ -69,6 +69,17 @@ const BEAM_AIMS := {
 	&"RightUpperLeg": Vector3(-0.2, -0.95, -0.2), &"RightLowerLeg": Vector3(-0.05, -0.98, -0.2),
 }
 const BEAM_TURNS := {&"Spine": Vector3(6, 0, 0)}
+
+## Beam charge: palms cupped together in front of the waist, holding the orb.
+const CHARGE_AIMS := {
+	&"LeftUpperArm": Vector3(0.28, -0.78, 0.5), &"LeftLowerArm": Vector3(-0.62, 0.05, 0.78),
+	&"LeftHand": Vector3(-0.85, 0.15, 0.45),
+	&"RightUpperArm": Vector3(-0.28, -0.78, 0.5), &"RightLowerArm": Vector3(0.62, 0.05, 0.78),
+	&"RightHand": Vector3(0.85, 0.15, 0.45),
+	&"LeftUpperLeg": Vector3(0.16, -0.9, 0.35), &"LeftLowerLeg": Vector3(0.05, -0.95, -0.25),
+	&"RightUpperLeg": Vector3(-0.16, -0.9, 0.35), &"RightLowerLeg": Vector3(-0.05, -0.95, -0.25),
+}
+const CHARGE_TURNS := {&"Spine": Vector3(12, 0, 0), &"Head": Vector3(10, 0, 0)}
 
 ## Kick, right leg: chamber (knee up, shin hanging) then snap out, leaning back.
 const KICK_CHAMBER := {
@@ -161,6 +172,9 @@ var _cam_side := -1.0
 var _fx: Array[Node3D] = []
 var _shots: Array[Dictionary] = []
 var _kicking := false
+## How far the hero's crown (hat, ears, hair) and head width exceed a plain
+## head, in metres: the over-the-shoulder camera lifts and widens by it.
+var _hero_extra := 0.0
 
 
 func _initialize() -> void:
@@ -228,10 +242,21 @@ func _run(what: String) -> void:
 	for node in _dummy.view.model.find_children("*", "MeshInstance3D", true, false):
 		(node as MeshInstance3D).material_override = _dummy.material
 	_dummy.body.visible = false
+	# Plain heads with spiky hair (Kael) measure ~0.5 m; only what's beyond it
+	# (tall hats, ears) lifts the camera.
+	_hero_extra = clampf((_crown_extra(_hero) - 0.5) * 1.6, 0.0, 1.0)
+	print("crown extra %.2f m" % _hero_extra)
 	for i in 30:  # settle the pose and scarf without recording
 		await _tick(false)
 	if what == "poses":
 		await _pose_stills()
+		quit()
+		return
+	if what == "shots":
+		# Energy-colour check: the ki volley and the beam only.
+		await _ki_volley()
+		await _beam()
+		print("frames: %d" % _frame)
 		quit()
 		return
 	if what == "combat":
@@ -490,13 +515,19 @@ func _beam() -> void:
 	_reset_hero(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
 	_place_dummy(5.0)
 	_cam_mode = "close"
+	# Charge facing the camera so the cupped hands and the orb read; turn to
+	# the dummy on the cut to the over-the-shoulder fire.
+	_hero.f.facing_yaw = PI
+	_cam_snap = true
 	_hero.f.enter_state(S.CHARGING)
+	_set_pose(_hero, CHARGE_AIMS, CHARGE_TURNS, true, 1.0, 0.1)
 	var orb := _glow_orb(0.04)
 	for t in 150:
-		orb.global_position = _hands_point()
+		orb.global_position = _palms_point()
 		orb.scale = Vector3.ONE * (1.0 + t / 150.0 * 2.4 + 0.2 * sin(t * 0.7))
 		await _tick()
 	_caption.text = "Beam fire"
+	_hero.f.facing_yaw = 0.0
 	_cam_mode = "shoulder"
 	_cam_snap = true
 	_hero.f.enter_state(S.IDLE)
@@ -815,10 +846,13 @@ func _glow_material(energy: float, color := Color.TRANSPARENT) -> StandardMateri
 		color = KI_COLOR
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(1.0, 0.94, 0.82)
+	# The core is the energy colour lifted a little toward white (it was a fixed
+	# warm white, so every character's orbs and beams read white-peach), and the
+	# emission stays low enough that the hue survives tone mapping and bloom.
+	mat.albedo_color = color.lerp(Color.WHITE, 0.25)
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = energy
+	mat.emission_energy_multiplier = energy * 0.45
 	return mat
 
 
@@ -940,6 +974,37 @@ func _clear_fx() -> void:
 	for shot in _shots:
 		(shot["node"] as Node).queue_free()
 	_shots.clear()
+
+
+## Crown height above the head bone (hat, ears, hair) and half-width around
+## the head (brims, long hair), beyond a plain head, from rest-pose vertices.
+func _crown_extra(actor: Actor) -> float:
+	var sk := actor.skeleton()
+	var hb := sk.find_bone(&"Head")
+	var rest := sk.get_bone_global_rest(hb).origin
+	var top := 0.0
+	var half := 0.0
+	for mi: MeshInstance3D in sk.find_children("*", "MeshInstance3D", true, false):
+		if mi.mesh == null or not mi.visible:
+			continue
+		for si in mi.mesh.get_surface_count():
+			for v: Vector3 in mi.mesh.surface_get_arrays(si)[Mesh.ARRAY_VERTEX]:
+				if v.y < rest.y - 0.08 or Vector2(v.x - rest.x, v.z - rest.z).length() > 0.6:
+					continue
+				top = maxf(top, v.y - rest.y)
+				half = maxf(half, absf(v.x - rest.x))
+	return clampf(top - 0.32, 0.0, 0.9) + clampf(half - 0.2, 0.0, 0.5)
+
+
+## Between the two palms (each palm partway from the wrist to the middle
+## finger's first knuckle): where cupped hands hold the charging orb.
+func _palms_point() -> Vector3:
+	var palms := Vector3.ZERO
+	for side: String in ["Left", "Right"]:
+		var wrist := _hero.bone(StringName(side + "Hand"))
+		var knuckle := _hero.bone(StringName(side + "MiddleProximal"))
+		palms += wrist.lerp(knuckle, 0.6)
+	return palms * 0.5
 
 
 func _hands_point() -> Vector3:
@@ -1161,8 +1226,11 @@ func _camera() -> void:
 			var fwd := _hero.forward()
 			var right := Basis(Vector3.UP, _hero.f.facing_yaw) * Vector3.RIGHT
 			var ground := Vector3(k.x, 0.0, k.z)
-			var eye := ground + Vector3(0, 1.55, 0) - fwd * 3.6 + right * 1.5
-			var look := ground + fwd * 2.4 + Vector3(0, 0.9, 0)
+			# Tall hats, ears or long hair would hide the shooting arm: lift and
+			# widen the camera by how far the hero's crown and head extend.
+			var lift := _hero_extra
+			var eye := ground + Vector3(0, 1.55 + lift * 1.1, 0) - fwd * (3.6 + lift) + right * (1.5 + lift * 1.4)
+			var look := ground + fwd * 2.4 + Vector3(0, 0.9 - lift * 0.2, 0)
 			_stage.camera.global_position = eye
 			_stage.camera.look_at(look, Vector3.UP)
 			_cam_snap = true
