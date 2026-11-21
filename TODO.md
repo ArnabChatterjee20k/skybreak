@@ -81,6 +81,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - VOXEL-COMPAT / VOXEL-WEB done on the branch: zone-perf's merged props use no instance uniforms
     (0 overflow errors in a gl_compatibility WEB-tier match); web ships only the `*_web.scn` bakes,
     zone lamps drop shadows and fade past 60 m on the web tier.
+  - QA-23 done on the branch: voxel Brann's braid popped (Braid2 1.7 rad on weapon pickups, 42 pop
+    frames in the quick run): it is now posed by a last skeleton modifier on the drawn body and
+    turns at most 54 rad/s (`test_brann_voxel_braid.gd`).
   - QA-22 [desktop, characters] voxel Brann's view still costs ~2x a classic legend per frame
     (1.20 vs ~0.55 ms for two fighters, headless) after the perf pass: `_keep_fist_clear` dominates.
   - Visual goldens: all 14 fail as expected from the art change; one refresh pass after merge.

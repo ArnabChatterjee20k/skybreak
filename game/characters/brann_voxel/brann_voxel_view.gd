@@ -24,6 +24,8 @@ const BRAID_FOLLOW := 15.0
 const BRAID_DAMPING := 0.88
 const BRAID_DRAG := 0.6
 const BRAID_ITERATIONS := 4
+## Fastest a drawn braid segment may turn in skeleton space (rad/s), as ScarfLag.MAX_TURN_RATE.
+const BRAID_MAX_TURN_RATE := 54.0
 ## How much further than BRAID_MAX_SWING the body may tilt the braid out.
 const BRAID_BODY_TILT := deg_to_rad(20.0)
 ## The most his movement may blow the braid (m/s^2): a dash leans it, never flings it.
@@ -51,6 +53,22 @@ var _torso_bones: Array[int] = []
 var _braid_now := PackedVector3Array()
 var _braid_was := PackedVector3Array()
 var _braid_time := 0.0
+## The braid bones' drawn rotations last frame (skeleton space).
+var _braid_rot: Array[Quaternion] = []
+## The head's skinning transform the braid was simulated against (before modifiers).
+var _head_skin := Transform3D()
+var _braid_pose: BraidPose
+
+
+## Poses the braid as the skeleton's last modifier, on the body as drawn (MotionLayers
+## and the other modifiers turn his torso and head after apply_state).
+class BraidPose:
+	extends SkeletonModifier3D
+	var view: BrannVoxelView
+
+	func _process_modification_with_delta(delta: float) -> void:
+		if view != null and not view._braid_now.is_empty():
+			view._pose_braid(delta)
 ## This frame's skinning transforms of Spine, Chest and UpperChest and their
 ## inverses (the torso holds still while the braid steps).
 var _torso_skins: Array[Transform3D] = [Transform3D(), Transform3D(), Transform3D()]
@@ -59,6 +77,9 @@ var _torso_unskins: Array[Transform3D] = [Transform3D(), Transform3D(), Transfor
 
 func apply_state(fighter: FighterState, delta: float) -> void:
 	super.apply_state(fighter, delta)
+	_add_braid_pose()
+	if _braid_pose.get_index() != _skeleton.get_child_count() - 1:
+		_skeleton.move_child(_braid_pose, -1)
 	_swing_braid(fighter, 0.0 if fighter.hitstop_ticks > 0 else delta)
 	for side: float in [1.0, -1.0]:
 		_clamp_wrist(side)
@@ -114,7 +135,7 @@ func _swing_braid(fighter: FighterState, delta: float) -> void:
 		_constrain_braid(rest, target, down)
 	if delta <= 0.0:
 		_constrain_braid(rest, target, down)
-	_pose_braid(rest, head)
+	_head_skin = head
 
 
 func _constrain_braid(rest: PackedVector3Array, target: PackedVector3Array, down: Vector3) -> void:
@@ -188,13 +209,40 @@ func _clear_of_torso(p: Vector3) -> Vector3:
 	return p
 
 
-func _pose_braid(rest: PackedVector3Array, head: Transform3D) -> void:
+## Called by BraidPose: the simulated chain carried along with the drawn head, each
+## drawn segment turning at most BRAID_MAX_TURN_RATE (the solver's cone or the body's
+## pose would flick it otherwise).
+func _pose_braid(delta: float) -> void:
+	var rest := BrannVoxelDesign.braid_points()
+	var head := _skin_of(_torso_bones[3])
+	var follow := head * _head_skin.affine_inverse()
 	var head_basis := head.basis.orthonormalized()
+	var max_turn := BRAID_MAX_TURN_RATE * delta
+	var origin := follow * _braid_now[0]
 	for k in _braid_bones.size():
 		var from := (head_basis * (rest[k + 1] - rest[k])).normalized()
-		var to := (_braid_now[k + 1] - _braid_now[k]).normalized()
+		var to := (follow.basis * (_braid_now[k + 1] - _braid_now[k])).normalized()
 		var turn := Basis(Quaternion(from, to)) if from.dot(to) > -0.999 else Basis()
-		_skeleton.set_bone_global_pose(_braid_bones[k], Transform3D(turn * head_basis, _braid_now[k]))
+		var q := (turn * head_basis).get_rotation_quaternion()
+		if k < _braid_rot.size():
+			var angle := _braid_rot[k].angle_to(q)
+			if angle > max_turn:
+				q = _braid_rot[k].slerp(q, max_turn / angle)
+			_braid_rot[k] = q
+		else:
+			_braid_rot.append(q)
+		var basis := Basis(q)
+		_skeleton.set_bone_global_pose(_braid_bones[k], Transform3D(basis, origin))
+		origin += basis * head_basis.inverse() * (from * rest[k].distance_to(rest[k + 1]))
+
+
+func _add_braid_pose() -> void:
+	if _skeleton == null or _braid_pose != null:
+		return
+	_braid_pose = BraidPose.new()
+	_braid_pose.name = "BraidPose"
+	_braid_pose.view = self
+	_skeleton.add_child(_braid_pose)
 
 
 ## The skinning transform of a bone: rest skeleton space to posed.
