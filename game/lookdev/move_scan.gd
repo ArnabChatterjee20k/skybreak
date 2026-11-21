@@ -4,12 +4,17 @@ extends SceneTree
 ## stretched more than 3x from rest, and clipping: vertices that pierce a rigid
 ## part the design names in clearance_parts() ({bone: sdf in rest space}, or
 ## {bone: [sdf, probe bone names]} to test only those bones' vertices),
-## counting only vertices that were clear of it at rest. Headless is fine.
+## counting only vertices that were clear of it at rest. Gaps: seams the design
+## names in gap_checks() ({name: [points bone, points, cover bone, sdf]}): the
+## points, posed on their bone, must stay inside the cover bone's solid.
+## Headless is fine.
 ##   godot --headless --path . -s res://game/lookdev/move_scan.gd -- --scene=<character scene>
 ##       --moves=res://game/combat/moves/<name>/ [--every=2] [--clip-tolerance=0.015]
-## Exits 1 on any stretch or a clip deeper than the tolerance.
+##       [--gap-tolerance=0.011] [--fail-on=stretch,gaps,clips]
+## Exits 1 on any stretch, a gap wider than its tolerance or a clip deeper than
+## its tolerance (only the kinds in --fail-on, default all).
 
-const USAGE := "move_scan.gd -- --scene=<character scene> --moves=<moves folder> [--every=2] [--clip-tolerance=0.015]"
+const USAGE := "move_scan.gd -- --scene=<character scene> --moves=<moves folder> [--every=2] [--clip-tolerance=0.015] [--gap-tolerance=0.011] [--fail-on=stretch,gaps,clips]"
 const S := FighterState.State
 
 var _view: CharacterView
@@ -32,6 +37,11 @@ var _only := {}
 var _tolerance := 0.015
 var _worst := {}
 var _stretched := 0
+var _stretch_labels := {}
+## Gap checks: [name, points bone, points, cover bone, sdf]; widest gap per move and seam.
+var _gaps: Array = []
+var _gap_tolerance := 0.011
+var _widest := {}
 
 
 func _initialize() -> void:
@@ -47,6 +57,8 @@ func _go() -> void:
 		return
 	var every := int(args.get_option("every", "2"))
 	_tolerance = float(args.get_option("clip-tolerance", "0.015"))
+	_gap_tolerance = float(args.get_option("gap-tolerance", "0.011"))
+	var fail_on := args.get_option("fail-on", "stretch,gaps,clips").split(",")
 	_view = load(scene).instantiate()
 	root.add_child(_view)
 	_skeleton = _view.model.get_node("%GeneralSkeleton") as Skeleton3D
@@ -90,8 +102,21 @@ func _go() -> void:
 		print("%s %-30s deepest %.3f m at tick %d (%s into %s), %d vertices past tolerance" % [flag, key, w.depth, w.tick,
 			w.probe, w.part, w.count])
 	bad = labels.size()
+	var gapped := {}
+	var widest_all := 0.0
+	for key: String in _widest:
+		var g: Dictionary = _widest[key]
+		widest_all = maxf(widest_all, g.gap)
+		if g.gap > _gap_tolerance:
+			gapped[key.get_slice(" / ", 0)] = true
+			print("GAP  %-30s widest %.3f m at tick %d" % [key, g.gap, g.tick])
+	print("seams %d, widest gap %.3f m, gapped moves %d" % [_gaps.size(), widest_all, gapped.size()])
+	for label: String in _stretch_labels:
+		print("STRETCH %-28s %d faces over its frames" % [label, _stretch_labels[label]])
 	print("stretched faces %d, clipping moves %d" % [_stretched, bad])
-	quit(0 if _stretched == 0 and bad == 0 else 1)
+	var failed := ("stretch" in fail_on and _stretched > 0) or ("gaps" in fail_on and not gapped.is_empty()) \
+		or ("clips" in fail_on and bad > 0)
+	quit(1 if failed else 0)
 
 
 func _advance(ticks: int) -> void:
@@ -108,6 +133,11 @@ func _collect() -> void:
 	for child in _view.get_children():
 		if child.get(&"design") is Script:
 			design = (child.get(&"design") as Script).new(_skeleton)
+	if design and design.has_method(&"gap_checks"):
+		var seams: Dictionary = design.call(&"gap_checks")
+		for name: String in seams:
+			var seam: Array = seams[name]
+			_gaps.append([name, _skeleton.find_bone(seam[0]), seam[1], _skeleton.find_bone(seam[2]), seam[3]])
 	if design and design.has_method(&"clearance_parts"):
 		var named: Dictionary = design.call(&"clearance_parts")
 		for bone: StringName in named:
@@ -177,8 +207,20 @@ func _scan(label: String, tick: int) -> void:
 		var rest_len := _rest[fi * 2].distance_to(_rest[fi * 2 + 1])
 		if a.distance_to(c) > rest_len * 3.0 + 0.01:
 			_stretched += 1
-			if _stretched <= 10:
+			if not _stretch_labels.has(label):
 				print("stretch in %s tick %d at rest %s" % [label, tick, _rest[fi * 2]])
+			_stretch_labels[label] = _stretch_labels.get(label, 0) + 1
+	for seam: Array in _gaps:
+		var key := "%s / %s" % [label, seam[0]]
+		var entry: Dictionary = _widest.get(key, {"gap": 0.0, "tick": -1})
+		var back: Transform3D = mats[seam[3]].affine_inverse()
+		var cover: Callable = seam[4]
+		for p: Vector3 in seam[2]:
+			var gap: float = cover.call(back * (mats[seam[1]] * p))
+			if gap > entry.gap:
+				entry.gap = gap
+				entry.tick = tick
+		_widest[key] = entry
 	for part: int in _parts:
 		var key := "%s / %s" % [label, _skeleton.get_bone_name(part)]
 		var entry: Dictionary = _worst.get(key, {"depth": 0.0, "tick": -1, "probe": "", "part": "", "count": 0})
