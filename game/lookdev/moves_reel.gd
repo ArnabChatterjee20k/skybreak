@@ -50,9 +50,10 @@ const MAX_OVERLAP := 0.35
 ## Beam-charge orb core radius at its largest (it grows from 0.04 m).
 const ORB_RADIUS := 0.04
 ## Over-the-shoulder camera: the most it lifts (m) and how far its sight lines
-## to the dummy stay from the hero's surface.
+## to the dummy stay from the hero's idle surface (measured at the cut; the
+## shot and beam poses turn the chest and swing the boulders in by ~0.3 m).
 const SHOULDER_LIFT := 1.0
-const SHOULDER_MARGIN := 0.05
+const SHOULDER_MARGIN := 0.35
 
 # ---------------------------------------------------------------- poses
 # Skeleton space: +Z his front, +X his left, +Y up. See LookdevPoseOverride.
@@ -615,6 +616,8 @@ func _beam() -> void:
 		orb.scale = Vector3.ONE * grow
 		var hands := _hand_surface(_hero)
 		orb.global_position = orb_centre(_palms_point(), _hero.forward(), hands, ORB_RADIUS * grow)
+		if t % 30 == 0 and OS.has_environment("REEL_DEBUG"):
+			print("dbg t%d palms %s orb %s L %s R %s n %d fwd %s hips %s cam %s" % [t, _palms_point(), orb.global_position, _hero.bone(&"LeftHand"), _hero.bone(&"RightHand"), hands.size(), _hero.forward(), _hero.bone(&"Hips"), _stage.camera.global_position])
 		if t >= 30:
 			_orb_clearance = minf(_orb_clearance, nearest(orb.global_position, hands) - ORB_RADIUS * grow)
 			_charge_square_err = maxf(_charge_square_err, _hips_camera_angle(_hero))
