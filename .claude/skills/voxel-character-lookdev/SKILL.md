@@ -47,13 +47,15 @@ The shared code lives in `game/characters/voxel_kit/` (read its `README.md`: API
 - `voxel_grid.gd`: `paint(bounds, sdf, mat, tag, mode)` with FILL, ADD, CARVE and PAINT, plus `paint_surface` for decals, stitches and emblems, plus `smooth` to clean up single-voxel noise.
 - `voxel_mesher.gd`: one face per open voxel side, skinned to the skeleton. It handles per-voxel colour variation, cavity AO from a blurred occupancy field, corner AO and convex-edge flags.
 - `voxel_figure.gdshader`: corner AO and a bevel highlight on voxel edges. **Keep the varyings clamped**, because MSAA extrapolation on edge-on faces made HDR fireflies that bloom turned into white blobs.
-- `voxel_design.gd` (`VoxelDesign`), the base class each character extends, plus `voxel_body.gd`, which swaps the built mesh onto the rig. Kael's `kael_voxel_design.gd` is the example design: with `Mat` and `Tag` enums, a `COLORS` table, parts painted in the skeleton's rest pose, and rig tags deciding the skin weights.
+- `voxel_design.gd` (`VoxelDesign`), the base class each character extends, plus `voxel_body.gd`, which swaps the built mesh onto the rig.
+- `voxel_bake.gd` (`VoxelBake`) plus `tools/voxel_bake.gd`: **bake after every design or kit change** (`godot --headless --path . -s res://tools/voxel_bake.gd`) and commit `game/characters/voxel_kit/baked/<design>.res` with the change. A live build takes 6–30 s; the bake loads in about 15 ms. VoxelBody uses the bake only while its source hash (design plus kit sources) and rig match, and otherwise builds live with a warning. Exported and web builds can't check the hash, so CI fails on a stale bake. Details are in the kit README under "Baking". Kael's `kael_voxel_design.gd` is the example design: with `Mat` and `Tag` enums, a `COLORS` table, parts painted in the skeleton's rest pose, and rig tags deciding the skin weights.
 
 How to build:
 - **Rig to the existing humanoid skeleton** so the current clips drive it. Give each rigid part one tag. Give each finger its own tag so a face never blends two fingers, and keep thumbs rigid with the hand unless the clips are authored for them.
 - **Design in blocks, don't voxelise curves.** Big cloth and armour surfaces should be **planar panels** with crisp fold ridges, bevelled plate edges and hard hems. An ellipsoid chopped into voxels gives noisy 1-voxel terraces ("a curved shape voxelised"). Keep curves for the head, hair locks, lenses and scarf folds, at the fine cell size.
 - **Colour noise:** ±2–3% value on large panels and up to ±6% on small parts. Darker voxels in recesses and folds; lighter on edges and wear spots (knuckles, toe caps, scarf tail).
 - Every part has a medium and tiny layer. A plain box or cylinder is a bug unless it's deliberate.
+- **Keep builds cheap:** pass each `paint` the part's own bounds, not the whole grid's. The lambda runs for every cell in the bounds, and whole-grid paints are most of a build's time. Use `tools/voxel_bake.gd -- --time` to see paint, smooth and mesh times.
 
 ## Step 3: Look-dev stage and captures
 Use `game/lookdev/lookdev_stage.gd`. Its lighting stack is half the quality, so keep it:

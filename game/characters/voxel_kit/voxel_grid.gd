@@ -45,26 +45,47 @@ func cell_of(p: Vector3) -> Vector3i:
 func paint(bounds: AABB, sdf: Callable, mat: int, tag := -1, mode := Mode.FILL) -> void:
 	var lo := Vector3i(((bounds.position - origin) / cell).floor()).clamp(Vector3i.ZERO, size - Vector3i.ONE)
 	var hi := Vector3i(((bounds.end - origin) / cell).ceil()).clamp(Vector3i.ZERO, size - Vector3i.ONE)
+	var xs := _centres(0, lo.x, hi.x)
+	var ys := _centres(1, lo.y, hi.y)
+	var zs := _centres(2, lo.z, hi.z)
+	var needs_empty := mode == Mode.ADD
+	var needs_filled := mode == Mode.PAINT or mode == Mode.CARVE
+	var needs_tag := mode == Mode.PAINT and tag >= 0
+	var carve := mode == Mode.CARVE
+	var retag := tag >= 0 and mode != Mode.PAINT
 	for z in range(lo.z, hi.z + 1):
+		var pz := zs[z - lo.z]
 		for y in range(lo.y, hi.y + 1):
+			var py := ys[y - lo.y]
 			var row := size.x * (y + size.y * z)
 			for x in range(lo.x, hi.x + 1):
 				var i := x + row
 				var current := mats[i]
-				if mode == Mode.ADD and current != 0:
+				if needs_empty and current != 0:
 					continue
-				if (mode == Mode.PAINT or mode == Mode.CARVE) and current == 0:
+				if needs_filled and current == 0:
 					continue
-				if mode == Mode.PAINT and tag >= 0 and tags[i] != tag:
+				if needs_tag and tags[i] != tag:
 					continue
-				if sdf.call(origin + (Vector3(x, y, z) + Vector3(0.5, 0.5, 0.5)) * cell) > 0.0:
+				if sdf.call(Vector3(xs[x - lo.x], py, pz)) > 0.0:
 					continue
-				if mode == Mode.CARVE:
+				if carve:
 					mats[i] = 0
 				else:
 					mats[i] = mat
-					if tag >= 0 and mode != Mode.PAINT:
+					if retag:
 						tags[i] = tag
+
+
+## One axis of center() for cells lo..hi: the same float32 vector arithmetic,
+## so Vector3(xs[x], ys[y], zs[z]) equals center(x, y, z) bit for bit.
+func _centres(axis: int, lo: int, hi: int) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	for k in range(lo, hi + 1):
+		var v := Vector3.ZERO
+		v[axis] = k
+		out.append((origin + (v + Vector3(0.5, 0.5, 0.5)) * cell)[axis])
+	return out
 
 
 ## Recolours the filled cells on the outer surface (a face open to air) that
@@ -73,14 +94,27 @@ func paint(bounds: AABB, sdf: Callable, mat: int, tag := -1, mode := Mode.FILL) 
 func paint_surface(bounds: AABB, test: Callable, mat: int, only: Array = []) -> void:
 	var lo := Vector3i(((bounds.position - origin) / cell).floor()).clamp(Vector3i.ZERO, size - Vector3i.ONE)
 	var hi := Vector3i(((bounds.end - origin) / cell).ceil()).clamp(Vector3i.ZERO, size - Vector3i.ONE)
+	var allowed := _material_set(only)
+	var any := only.is_empty()
 	for z in range(lo.z, hi.z + 1):
 		for y in range(lo.y, hi.y + 1):
+			var row := size.x * (y + size.y * z)
 			for x in range(lo.x, hi.x + 1):
-				var i := index(x, y, z)
-				if mats[i] == 0 or (not only.is_empty() and not mats[i] in only) or not is_surface(x, y, z):
+				var m := mats[x + row]
+				if m == 0 or (not any and allowed[m] == 0) or not is_surface(x, y, z):
 					continue
 				if test.call(center(x, y, z), Vector3i(x, y, z)):
-					mats[i] = mat
+					mats[x + row] = mat
+
+
+## 256 flags, 1 for each material id in list.
+static func _material_set(list: Array) -> PackedByteArray:
+	var out := PackedByteArray()
+	out.resize(256)
+	for m in list:
+		if m is int and m >= 0 and m < 256:
+			out[m] = 1
+	return out
 
 
 func is_surface(x: int, y: int, z: int) -> bool:
@@ -92,28 +126,58 @@ func is_surface(x: int, y: int, z: int) -> bool:
 ## materials with 5+ open sides (lone bumps) and fills empty cells with 5+
 ## filled sides (pits), taking a neighbour's material and tag.
 func smooth(soft: Array) -> void:
-	var remove := PackedInt32Array()
-	var fill := {}
+	var is_soft := _material_set(soft)
+	# A padded copy (one empty cell each side) so neighbours need no bounds checks.
+	var px := size.x + 2
+	var py := size.y + 2
+	var pxy := px * py
+	var pm := PackedByteArray()
+	pm.resize(pxy * (size.z + 2))
+	var row_filled := PackedByteArray()
+	row_filled.resize(py * (size.z + 2))
 	for z in size.z:
 		for y in size.y:
+			var src := size.x * (y + size.y * z)
+			var dst := 1 + px * (y + 1) + pxy * (z + 1)
 			for x in size.x:
-				var i := index(x, y, z)
+				var m := mats[src + x]
+				if m != 0:
+					pm[dst + x] = m
+					row_filled[(y + 1) + py * (z + 1)] = 1
+	# Neighbour order +x, -x, +y, -y, +z, -z; the last soft one is the donor.
+	var padded_dirs := PackedInt32Array([1, -1, px, -px, pxy, -pxy])
+	var dirs := PackedInt32Array([1, -1, size.x, -size.x, size.x * size.y, -size.x * size.y])
+	var remove := PackedInt32Array()
+	var fill_at := PackedInt32Array()
+	var fill_from := PackedInt32Array()
+	for z in size.z:
+		for y in size.y:
+			# An empty row's cells have at most 4 filled sides: nothing to do.
+			if row_filled[(y + 1) + py * (z + 1)] == 0:
+				continue
+			var row := size.x * (y + size.y * z)
+			var prow := 1 + px * (y + 1) + pxy * (z + 1)
+			for x in size.x:
+				var pi := prow + x
+				var own := pm[pi]
+				if own != 0 and is_soft[own] == 0:
+					continue
 				var filled := 0
 				var neighbour := -1
-				for d: Vector3i in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 1, 0),
-						Vector3i(0, -1, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
-					var m := get_mat(x + d.x, y + d.y, z + d.z)
+				for d in 6:
+					var m := pm[pi + padded_dirs[d]]
 					if m != 0:
 						filled += 1
-						if m in soft:
-							neighbour = index(x + d.x, y + d.y, z + d.z)
-				if mats[i] != 0:
-					if filled <= 1 and mats[i] in soft:
-						remove.append(i)
+						if is_soft[m] != 0:
+							neighbour = x + row + dirs[d]
+				if own != 0:
+					if filled <= 1:
+						remove.append(x + row)
 				elif filled >= 5 and neighbour >= 0:
-					fill[i] = neighbour
+					fill_at.append(x + row)
+					fill_from.append(neighbour)
 	for i in remove:
 		mats[i] = 0
-	for i: int in fill:
-		mats[i] = mats[fill[i]]
-		tags[i] = tags[fill[i]]
+	for k in fill_at.size():
+		mats[fill_at[k]] = mats[fill_from[k]]
+		tags[fill_at[k]] = tags[fill_from[k]]
