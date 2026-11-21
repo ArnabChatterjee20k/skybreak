@@ -114,6 +114,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - Visual goldens: all 14 fail as expected from the art change; one refresh pass after merge.
   - The menu backdrop is still the classic world fly-through; MotionLayers' weapon clearance uses the
     classic weapon boxes (voxel models keep the old size and grip).
+  - ZONE-POLISH FIXED on fix/zone-polish@4938c10: merge that branch.
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
   all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
   energy on GLOW, emblems at 5.5 mm), drop-in behind `VoxelArmory` / `WeaponModels.voxel_everywhere`
