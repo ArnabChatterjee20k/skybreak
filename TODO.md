@@ -18,6 +18,14 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - a readable Ice Crown summit; spire facet/value breakup; planar strata slabs and cornices on cliffs
   - smooth floor normals (dusk facets); snowstorm shot, spindrift, readability strip, benchmark on the 1650
   - kit: a per-zone sky shader hook (the zone swaps VoxelStage's private sky material today)
+- LOOKDEV-SM [desktop] Shattered Mesa voxel look v1 (`game/world/zones_voxel/shattered_mesa/`, branch
+  `lookdev/zone-shattered_mesa`, report `reports/lookdev/shattered_mesa/`). Waiting on the owner's
+  draft-stills gate. Open for v2 (ranked in the report's critique):
+  - triangle and draw-call budget: about 1.5 M visible + 1.7 M shadow triangles at the arch (target
+    1.2 M / 250 draws; web 500 k / 120): greedy-merge prop faces, T2 hoodoo tier ends sooner
+  - hoodoo lower 12 m and boulders at T1 (now T2 and 2xT1), caprock overhang lips, sand drifts
+  - slot-canyon hero shot and chockstone, heat shimmer, sand drift off crests, scrub sway
+  - the render benchmark on the GTX 1650
 
 - LOOKDEV-HB [desktop] Heartbloom voxel look v2 + the voxel zone kit (`game/world/voxel_zone_kit/`,
   branch `lookdev/heartbloom-zone`, report `reports/lookdev/heartbloom/v2/`). Waiting on the owner's
