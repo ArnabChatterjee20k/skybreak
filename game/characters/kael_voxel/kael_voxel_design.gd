@@ -15,7 +15,7 @@ const HEAD_CELL := 0.0085
 enum Mat {
 	EMPTY, COAT, COAT_DARK, LAPEL, TRIM, TUNIC, PANTS, SCARF, BOOT, BOOT_CUFF, SOLE,
 	HAIR, SKIN, LENS, STRAP, BRASS, RIVET, IRIS, EYE_WHITE, BROW, MOUTH, GLINT,
-	STITCH, BELT, GLOVE, LACE, EMBLEM, BLUSH, ENGRAVE, BUCKLE_DARK, SCARF_FOLD, LID, SKIN_SHADE,
+	STITCH, BELT, GLOVE, LACE, EMBLEM, BLUSH, ENGRAVE, BUCKLE_DARK, SCARF_FOLD, LID, SKIN_SHADE, SCARF_LIT,
 }
 enum Tag {
 	TORSO, ARM_L, ARM_R, LEG_L, LEG_R, SKIRT, COLLAR, SCARF_WRAP, SCARF_TAIL, SCARF_FRONT,
@@ -31,6 +31,7 @@ const COLORS := {
 	Mat.LAPEL: Color(0.14, 0.40, 0.42), Mat.TRIM: Color(0.76, 0.60, 0.33),
 	Mat.TUNIC: Color(0.16, 0.16, 0.18), Mat.PANTS: Color(0.19, 0.20, 0.24),
 	Mat.SCARF: Color(0.86, 0.36, 0.11), Mat.SCARF_FOLD: Color(0.70, 0.27, 0.08),
+	Mat.SCARF_LIT: Color(0.93, 0.45, 0.16),
 	Mat.BOOT: Color(0.52, 0.30, 0.16),
 	Mat.BOOT_CUFF: Color(0.60, 0.37, 0.21), Mat.SOLE: Color(0.15, 0.11, 0.09),
 	Mat.HAIR: Color(0.86, 0.88, 0.92), Mat.SKIN: Color(0.96, 0.79, 0.67),
@@ -85,13 +86,23 @@ func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exp
 	var noise := VoxelSdf.hash3(c, mat) * 2.0 - 1.0
 	var drift := VoxelSdf.hash3(c, mat + 31) * 2.0 - 1.0
 	# Big cloth panels stay calm (about +-2%); the variation goes to edges and wear.
-	var quiet := mat in [Mat.COAT, Mat.TUNIC, Mat.PANTS, Mat.LAPEL, Mat.SCARF, Mat.SCARF_FOLD]
+	var quiet := mat in [Mat.COAT, Mat.TUNIC, Mat.PANTS, Mat.LAPEL, Mat.SCARF, Mat.SCARF_FOLD, Mat.SCARF_LIT]
 	var col := base * (1.0 + noise * (0.02 if quiet else 0.035))
 	col = Color.from_hsv(fposmod(col.h + drift * (0.005 if quiet else 0.012), 1.0),
 		clampf(col.s * (1.0 + drift * (0.02 if quiet else 0.05)), 0.0, 1.0), col.v)
-	if mat == Mat.SCARF and p.z < -0.1:
-		# A touch lighter and warmer toward the tail.
-		col = col.lerp(Color(0.93, 0.47, 0.17), clampf((1.2 - p.y) / 0.7, 0.0, 1.0) * 0.45)
+	if mat in [Mat.SCARF, Mat.SCARF_FOLD, Mat.SCARF_LIT] and p.z < -0.1:
+		# The tail: a touch lighter and warmer toward the end, with its fold
+		# valleys darker and crests lighter than the cloth around them.
+		var cloth := COLORS[Mat.SCARF] * (col.v / maxf(base.v, 0.001))
+		col = cloth.lerp(Color(0.93, 0.47, 0.17), clampf((1.2 - p.y) / 0.7, 0.0, 1.0) * 0.45)
+		if mat == Mat.SCARF_FOLD:
+			col = col.darkened(0.26)
+		elif mat == Mat.SCARF_LIT:
+			col = col.lightened(0.15)
+		if p.z < -0.19 and p.y < 1.23 and absf(p.x - SCARF_X) < SCARF_HALF_W:
+			# Each panel turned slightly the other way: a soft tone across its width.
+			var turn := 1.0 if scarf_panel(p.y) % 2 == 0 else -1.0
+			col = col * (1.0 + 0.04 * turn * (p.x - SCARF_X) / SCARF_HALF_W)
 	if mat == Mat.COAT:
 		# The darker band low in the coat tail's folds.
 		col = col.lerp(COLORS[Mat.COAT_DARK], clampf((0.74 - p.y) / 0.2, 0.0, 1.0) * 0.25)
@@ -99,7 +110,8 @@ func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exp
 	var shade := 1.0 - occlusion * 0.6
 	col = Color(col.r * lerpf(1.0, tint.r, occlusion), col.g * lerpf(1.0, tint.g, occlusion),
 		col.b * lerpf(1.0, tint.b, occlusion)) * shade
-	if mat in [Mat.BRASS, Mat.RIVET, Mat.BOOT, Mat.BOOT_CUFF, Mat.TRIM, Mat.SCARF, Mat.BELT, Mat.GLOVE]:
+	if mat in [Mat.BRASS, Mat.RIVET, Mat.BOOT, Mat.BOOT_CUFF, Mat.TRIM, Mat.SCARF, Mat.SCARF_FOLD, Mat.SCARF_LIT,
+			Mat.BELT, Mat.GLOVE]:
 		col = col.lerp(col.lightened(0.35), exposure * 0.7)
 	col.a = 1.0
 	return col
@@ -371,110 +383,102 @@ func _collar_and_scarf(g: VoxelGrid) -> void:
 
 # ------------------------------------------------------------ scarf tail grid
 
-## The long tail down his back, at the fine cell so its folds read as cloth:
-## a ribbon that bends back and forth along its length (three soft folds),
-## sways a little sideways, tapers to a pointed end and breaks into fringe. Skinned
-## along the Scarf1-5 chain, which ScarfLag swings.
+## The long tail down his back, at the fine cell: a folded cloth ribbon built
+## from flat panels that sit exactly on the voxel grid (so no panel steps into
+## terraces), joined by soft two-rows-per-cell chamfered folds that alternate
+## out and in. Its edges run straight down the voxel columns at a constant
+## width, it narrows by a cell each side near the end and breaks into a short
+## fringe only at the tip. Skinned by height along Scarf1-5, so every row moves
+## as one piece and ScarfLag swings the whole ribbon.
 func build_scarf_tail() -> VoxelGrid:
 	var g := VoxelGrid.new(AABB(Vector3(-0.04, 0.30, -0.40), Vector3(0.36, 1.06, 0.32)), FINE_CELL)
 	var box := AABB(g.origin, Vector3(g.size) * g.cell)
-	var line := scarf_tail_line()
-	g.paint(box, func(p: Vector3): return scarf_tail_eval(p, line).x, Mat.SCARF, Tag.SCARF_TAIL)
-	# Fold shading: a darker band across each fold's inner valley.
-	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
-		var e := scarf_tail_eval(p, line)
-		if e.x > FINE_CELL * 1.2:
-			return false
-		return sin(TAU * SCARF_FOLDS * e.y + 0.6) < -0.75, Mat.SCARF_FOLD, [Mat.SCARF])
+	g.paint(box, scarf_tail_sdf, Mat.SCARF, Tag.SCARF_TAIL)
+	# Fold shading: darker in each fold's valley, lighter on each crest.
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i): return scarf_fold_shade(p.y) < -0.5, Mat.SCARF_FOLD, [Mat.SCARF])
+	g.paint_surface(box, func(p: Vector3, _c: Vector3i): return scarf_fold_shade(p.y) > 0.5, Mat.SCARF_LIT, [Mat.SCARF])
 	return g
 
 
-## Folds along the tail (sine periods over its length).
-const SCARF_FOLDS := 1.5
-const SCARF_HALF_W := 0.064
-const SCARF_HALF_T := 0.015
+## The ribbon's half width: 9 fine cells, edges on cell boundaries.
+const SCARF_HALF_W := FINE_CELL * 4.5
+## Near the end: 7 cells.
+const SCARF_END_HALF_W := FINE_CELL * 3.5
+## Two cells thick, centred on a cell boundary.
+const SCARF_HALF_T := FINE_CELL
+## Centre column: a fine-cell centre of the tail grid (origin x -0.04).
+const SCARF_X := -0.04 + FINE_CELL * 16.5
+## Tail grid origin z: panel depths are cell boundaries counted from it.
+const SCARF_Z0 := -0.40
+const SCARF_TOP := 1.275
+const SCARF_END := 0.50
+## Panels, top down: [depth in cells from SCARF_Z0, height of the fold below it].
+## The first sits inside the knot; then out (crest), in (valley), out, in.
+const SCARF_PANELS := [[21, 1.245], [18, 1.13], [14, 0.97], [17, 0.81], [13, 0.655], [15, -1.0]]
+## Fringe below the end: [first column, last column, length] across the 7 end columns.
+const SCARF_FRINGE := [[-3, -2, 0.046], [0, 0, 0.034], [2, 3, 0.041]]
 
 
-## The tail's centreline, densely sampled: the scarf chain with a fold offset
-## (mostly backward, away from the coat) and a slight sideways sway.
+## Depth of the ribbon's centre plane at height y: flat on each panel, a 1:2
+## chamfer across each fold (one cell deeper every two rows).
+static func scarf_depth(y: float) -> float:
+	var z := SCARF_Z0 + FINE_CELL * float(SCARF_PANELS[0][0])
+	for i in SCARF_PANELS.size() - 1:
+		var fold: float = SCARF_PANELS[i][1]
+		var step := FINE_CELL * float(SCARF_PANELS[i + 1][0] - SCARF_PANELS[i][0])
+		var span := absf(step) * 2.0
+		z += step * clampf((fold + span * 0.5 - y) / span, 0.0, 1.0)
+	return z
+
+
+## Signed distance to the tail ribbon (only the sign is used by the grid).
+static func scarf_tail_sdf(p: Vector3) -> float:
+	var hw := SCARF_END_HALF_W if p.y < SCARF_END + 0.11 else SCARF_HALF_W
+	var u := (p.x - SCARF_X) / hw
+	var d := maxf(absf(p.x - SCARF_X) - hw, absf(p.z - scarf_depth(p.y)) - SCARF_HALF_T)
+	d = maxf(d, p.y - SCARF_TOP)
+	# The end: a shallow V a cell deep, then the fringe tabs below it.
+	var cut := SCARF_END - FINE_CELL * (1.0 - absf(u)) - p.y
+	if cut > 0.0:
+		var col := int(floor((p.x - SCARF_X) / FINE_CELL + 0.5))
+		var hang := 0.0
+		for tab: Array in SCARF_FRINGE:
+			if col >= tab[0] and col <= tab[1]:
+				hang = tab[2]
+		d = maxf(d, cut - hang)
+	return d
+
+
+## The tail's centreline in rest pose, sampled every fine cell down its height.
 func scarf_tail_line() -> PackedVector3Array:
-	var chain := _scarf_points()
-	var total := 0.0
-	for i in chain.size() - 1:
-		total += chain[i].distance_to(chain[i + 1])
 	var out := PackedVector3Array()
-	var n := 30
-	for k in n + 1:
-		var s := float(k) / n
-		var at := _along(chain, s * total)
-		var env := smoothstep(0.0, 0.25, s)
-		var fold := sin(TAU * SCARF_FOLDS * s + 0.6)
-		at += Vector3(0.022 * sin(TAU * 0.75 * s + 0.3) * env, 0.0, (0.045 * (fold - 0.9) - 0.03) * env)
-		out.append(at)
+	var y := SCARF_TOP
+	while y >= SCARF_END:
+		out.append(Vector3(SCARF_X, y, scarf_depth(y)))
+		y -= FINE_CELL
 	return out
 
 
-static func _along(chain: PackedVector3Array, d: float) -> Vector3:
-	for i in chain.size() - 1:
-		var seg_len := chain[i].distance_to(chain[i + 1])
-		if d <= seg_len or i == chain.size() - 2:
-			return chain[i].lerp(chain[i + 1], clampf(d / seg_len, 0.0, 1.0))
-		d -= seg_len
-	return chain[-1]
+## -1 in a fold's valley (under an inward fold, in the overhang's shadow), +1
+## on a crest (the top of the panel an outward fold pushes out), 0 elsewhere.
+static func scarf_fold_shade(y: float) -> float:
+	for i in range(1, SCARF_PANELS.size() - 1):
+		var fold: float = SCARF_PANELS[i][1]
+		var step: int = SCARF_PANELS[i + 1][0] - SCARF_PANELS[i][0]
+		var half := FINE_CELL * absf(step)
+		if step < 0 and absf(y - fold) <= half * 0.5:
+			return 1.0
+		if step > 0 and y <= fold and y > fold - half - FINE_CELL * 1.5:
+			return -1.0
+	return 0.0
 
 
-## (distance, s along 0..1, u across -1..1) for the tail ribbon. The band is
-## flat across its width, gathers narrower at each fold and narrows over its
-## last third to a point; fringe hangs off the point.
-static func scarf_tail_eval(p: Vector3, line: PackedVector3Array) -> Vector3:
-	var best := Vector3(1e9, 0.0, 0.0)
-	var total := 0.0
-	for i in line.size() - 1:
-		total += line[i].distance_to(line[i + 1])
-	var run := 0.0
-	var last := line.size() - 2
-	for i in last + 1:
-		var a := line[i]
-		var ab := line[i + 1] - a
-		var seg := ab.length()
-		var h := (p - a).dot(ab) / (seg * seg)
-		if i == 0 and h < 0.0:
-			run += seg
-			continue
-		h = maxf(h, 0.0) if i == last else clampf(h, 0.0, 1.0)
-		var s := (run + seg * h) / total
-		var q := p - (a + ab * h)
-		var qx := q.x
-		var qz := q.z
-		# Flat across (a twist draws diagonal stair lines); instead the band
-		# gathers a little narrower where each fold bends.
-		var gather := 1.0 - 0.12 * absf(cos(TAU * SCARF_FOLDS * s + 0.6)) * smoothstep(0.0, 0.2, s)
-		var taper := (1.0 - 0.3 * smoothstep(0.62, 1.0, s)) * gather
-		var w := SCARF_HALF_W * taper
-		var u := clampf(qx / w, -1.5, 1.5)
-		# Past a clamped joint the offset along the line counts too.
-		var d := maxf(absf(qx) - w, absf(qz) - SCARF_HALF_T)
-		var beyond := absf(q.dot(ab) / seg)
-		if beyond > 0.0001:
-			d = maxf(d, beyond)
-		# Pointed end: past the last joint the band is cut in a V, and below
-		# that every other fine column hangs as fringe of uneven length.
-		if h > 1.0:
-			var drop := seg * (h - 1.0)
-			var point := 0.024 * (1.0 - absf(u))
-			var cut := drop - point
-			if cut > 0.0:
-				var col := int(floor(qx / FINE_CELL + 64.0))
-				var fringe_len := 0.03 + 0.016 * VoxelSdf.hash3(Vector3i(col, 7, 3), 11)
-				if posmod(col, 2) == 0 and absf(u) < 0.95:
-					d = maxf(d, cut - fringe_len)
-				else:
-					d = maxf(d, cut)
-			s = 1.0
-		if d < best.x:
-			best = Vector3(d, s, u)
-		run += seg
-	return best
+## Which panel (0 at the top) height y falls on, for the alternating twist tone.
+static func scarf_panel(y: float) -> int:
+	for i in SCARF_PANELS.size() - 1:
+		if y > SCARF_PANELS[i][1]:
+			return i
+	return SCARF_PANELS.size() - 1
 
 
 func _scarf_points() -> PackedVector3Array:
@@ -813,9 +817,9 @@ func weights(tag: int, p: Vector3) -> Array:
 			_add(w, &"Hips", 1.0 - k)
 			_add(w, &"LeftUpperLeg" if p.x > 0.0 else &"RightUpperLeg", k)
 		Tag.SCARF_TAIL:
-			# All on the scarf chain: its root sits under the knot, and an
-			# UpperChest blend there stretched when ScarfLag swung Scarf1 hard.
-			_chain_w(p, w, _scarf_points(), [&"Scarf1", &"Scarf2", &"Scarf3", &"Scarf4", &"Scarf5"])
+			# All on the scarf chain (an UpperChest blend at the root stretched
+			# when ScarfLag swung Scarf1 hard), by height, not by nearest bone.
+			_scarf_tail_w(p, w)
 		Tag.HEAD:
 			_add(w, &"Head", 1.0)
 		Tag.GAUNT_L, Tag.GAUNT_R:
@@ -829,6 +833,16 @@ func weights(tag: int, p: Vector3) -> Array:
 			# guard pose, and the clips' thumb bones splay it.
 			_add(w, &"LeftHand" if tag == Tag.THUMB_L else &"RightHand", 1.0)
 	return _pack(w)
+
+
+## Linear blends between the scarf bones' midpoints, keyed by rest height
+## only, so a whole row of the ribbon (width and thickness) moves together.
+func _scarf_tail_w(p: Vector3, w: Dictionary) -> void:
+	var chain := _scarf_points()
+	var keys := []
+	for i in 5:
+		keys.append([-(chain[i].y + chain[i + 1].y) * 0.5, ["Scarf1", "Scarf2", "Scarf3", "Scarf4", "Scarf5"][i]])
+	_piecewise(-p.y, keys, w, false)
 
 
 func _torso_w(p: Vector3, w: Dictionary, tag: int) -> void:
