@@ -11,6 +11,14 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   test), keyboard/mouse bindings, debug overlay (fps, frame time), GUT, CI,
   `AGENTS.md`. Remaining: CI green on GitHub.
 
+- LOOKDEV-FP [desktop] Frozen Peaks voxel look v1 (`game/world/zones_voxel/frozen_peaks/`, branch
+  `lookdev/zone-frozen_peaks`, report `reports/lookdev/frozen_peaks/v1/`). Waiting on the owner's
+  draft-stills gate. Open for v2:
+  - perf: greedy face merging for static props, T3 foothills past 120 m, web preset (~3.5x over)
+  - a readable Ice Crown summit; spire facet/value breakup; planar strata slabs and cornices on cliffs
+  - smooth floor normals (dusk facets); snowstorm shot, spindrift, readability strip, benchmark on the 1650
+  - kit: a per-zone sky shader hook (the zone swaps VoxelStage's private sky material today)
+
 - LOOKDEV-HB [desktop] Heartbloom voxel look v2 + the voxel zone kit (`game/world/voxel_zone_kit/`,
   branch `lookdev/heartbloom-zone`, report `reports/lookdev/heartbloom/v2/`). Waiting on the owner's
   draft-stills gate. Open for v3:
