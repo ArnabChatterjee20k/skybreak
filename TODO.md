@@ -120,6 +120,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - REEL-FIXES DONE: lookdev/reel-fixes@d3a75e4 merged into integration/voxel-art (moves_reel takes
     the reel-fixes side, which carries the Brann-lane lit glow: black albedo, emission x GLOW_GAIN 0.27).
   - zone_capture.gd prints the real video adapter instead of a fixed "(software)" (test_zone_capture.gd).
+  - MOTION-CACHE done on the branch: `MotionClips.build` cached the rig-fitted derived clips per
+    library only, so the first legend loaded fixed them for all (in a match: load-order dependent;
+    in GUT: voxel Brann's fist golden failed after the motion tests). Now keyed by library and rig
+    (`test_motion_clips_cache.gd`).
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
   all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
   energy on GLOW, emblems at 5.5 mm), drop-in behind `VoxelArmory` / `WeaponModels.voxel_everywhere`
@@ -519,4 +523,4 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   round-flow cues are banked and mapped but wait for sim events; audio volume
   sliders in the settings menu.
 
-GAUNTLET-CLOSEUP FIXED on lookdev/reel-fixes@5a6ee72
+GAUNTLET-CLOSEUP FIXED on lookdev/reel-fixes@5a6ee72. DONE: merged (e846428) into integration/voxel-art.
