@@ -57,6 +57,8 @@ var _braid_time := 0.0
 var _braid_rot: Array[Quaternion] = []
 ## The head's skinning transform the braid was simulated against (before modifiers).
 var _head_skin := Transform3D()
+## Frame time apply_state gave the braid that BraidPose hasn't spent yet.
+var _pose_delta := 0.0
 var _braid_pose: BraidPose
 
 
@@ -66,9 +68,9 @@ class BraidPose:
 	extends SkeletonModifier3D
 	var view: BrannVoxelView
 
-	func _process_modification_with_delta(delta: float) -> void:
+	func _process_modification_with_delta(_delta: float) -> void:
 		if view != null and not view._braid_now.is_empty():
-			view._pose_braid(delta)
+			view._pose_braid()
 ## This frame's skinning transforms of Spine, Chest and UpperChest and their
 ## inverses (the torso holds still while the braid steps).
 var _torso_skins: Array[Transform3D] = [Transform3D(), Transform3D(), Transform3D()]
@@ -81,6 +83,7 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 	if _braid_pose.get_index() != _skeleton.get_child_count() - 1:
 		_skeleton.move_child(_braid_pose, -1)
 	_swing_braid(fighter, 0.0 if fighter.hitstop_ticks > 0 else delta)
+	_pose_delta += 0.0 if fighter.hitstop_ticks > 0 else delta
 	for side: float in [1.0, -1.0]:
 		_clamp_wrist(side)
 		_keep_fist_clear(side)
@@ -212,7 +215,11 @@ func _clear_of_torso(p: Vector3) -> Vector3:
 ## Called by BraidPose: the simulated chain carried along with the drawn head, each
 ## drawn segment turning at most BRAID_MAX_TURN_RATE (the solver's cone or the body's
 ## pose would flick it otherwise).
-func _pose_braid(delta: float) -> void:
+func _pose_braid() -> void:
+	# The view's own frame time, spent once: the skeleton may update more than once a
+	# frame, and its own delta need not match the rendered frame (headless runs).
+	var delta := _pose_delta
+	_pose_delta = 0.0
 	var rest := BrannVoxelDesign.braid_points()
 	var head := _skin_of(_torso_bones[3])
 	var follow := head * _head_skin.affine_inverse()
