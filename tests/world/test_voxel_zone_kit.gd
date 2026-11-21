@@ -198,6 +198,7 @@ func test_medium_keeps_the_high_look_and_web_shortens_ranges() -> void:
 	var web: Dictionary = VoxelQuality.VALUES[GraphicsSettings.Quality.WEB]
 	assert_eq(medium.range_scale, high.range_scale)
 	assert_eq(medium.near_split, high.near_split, "contact shadows as sharp")
+	assert_eq(medium.shadow_distance, high.shadow_distance, "far shadows (islands on the cloud sea) stay")
 	assert_lt(float(web.range_scale), 1.0)
 
 
@@ -205,7 +206,7 @@ func test_place_drops_shadows_from_clutter_on_medium() -> void:
 	var parent := Node3D.new()
 	add_child_autofree(parent)
 	var box := BoxMesh.new()
-	box.size = Vector3(0.3, 0.3, 0.3)
+	box.size = Vector3(0.2, 0.2, 0.2)
 	var am := ArrayMesh.new()
 	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, box.get_mesh_arrays())
 	var keep := VoxelQuality.tier
