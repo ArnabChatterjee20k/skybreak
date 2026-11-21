@@ -31,9 +31,9 @@ const COLORS := {
 	Mat.HOOD: Color("#3a2650"), Mat.HOOD_DARK: Color("#271a37"), Mat.LINING: Color("#8a3cf0"),
 	Mat.SUIT: Color("#1a1c24"), Mat.SUIT_SEAM: Color("#2a2d3a"),
 	Mat.HOOD_INNER: Color("#160e20"), Mat.HOOD_RIM: Color("#5e4482"),
-	Mat.JACKET: Color("#5a5a70"), Mat.JACKET_EDGE: Color("#3c3c4e"), Mat.JACKET_DARK: Color("#2e2e3c"),
+	Mat.JACKET: Color("#3a3a4c"), Mat.JACKET_EDGE: Color("#343445"), Mat.JACKET_DARK: Color("#2e2e3c"),
 	Mat.ZIP: Color("#c4c8d2"),
-	Mat.WRAP: Color("#8a8aa0"), Mat.WRAP_RIDGE: Color("#9696ac"), Mat.WRAP_BAND: Color("#3a3848"),
+	Mat.WRAP: Color("#6a6a80"), Mat.WRAP_RIDGE: Color("#76768c"), Mat.WRAP_BAND: Color("#302e3c"),
 	Mat.BOOT: Color("#2c2a30"), Mat.SOLE: Color("#141316"), Mat.PAD: Color("#3a3840"),
 	Mat.STEEL: Color("#bcc0ca"),
 	Mat.VISOR: Color("#18141f"), Mat.VISOR_GLINT: Color("#4a4358"),
@@ -141,7 +141,7 @@ static func hood_shade(base: Color, mat: int, p: Vector3, n: Vector3) -> Color:
 		var d := 1.0
 		for t: Array in TATTERS:
 			d = minf(d, absf(angle_difference(angle, deg_to_rad(t[0]))) / TATTER_HALF)
-		var fold := lerpf(1.12, 0.7, smoothstep(0.15, 1.0, d))
+		var fold := lerpf(1.2, 0.55, smoothstep(0.15, 1.0, d))
 		var tip := 1.0 - smoothstep(0.0, 0.04, p.y - tatter_hem(angle))
 		return (base * fold).lerp(COLORS[Mat.HOOD_RIM], tip * 0.75)
 	if p.y >= 1.32:
@@ -149,7 +149,7 @@ static func hood_shade(base: Color, mat: int, p: Vector3, n: Vector3) -> Color:
 		# crown, darker at the cowl.
 		var drape := 0.5 + 0.5 * cos(angle * 6.0)
 		var back := smoothstep(0.6, 2.0, absf(angle))
-		var fold := lerpf(1.0, lerpf(0.8, 1.1, drape), back)
+		var fold := lerpf(1.0, lerpf(0.62, 1.2, drape), back)
 		return base * fold * lerpf(0.86, 1.1, smoothstep(1.36, 1.74, p.y))
 	return base
 
