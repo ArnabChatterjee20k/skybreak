@@ -154,3 +154,65 @@ func test_pink_is_the_accent_not_the_sky_or_fog() -> void:
 			var c: Color = p[k]
 			var pinkish := c.r > c.b + 0.08 and c.r > c.g + 0.08 and fposmod(c.h, 1.0) > 0.85
 			assert_false(pinkish, "%s %s is not pink" % [name, k])
+
+
+func _slab(n: int) -> VoxelHeightfield:
+	var hf := VoxelHeightfield.new(0.5, Vector2.ZERO, Vector2(n * 0.5 - 0.01, n * 0.5 - 0.01))
+	for z in hf.size.y:
+		for x in hf.size.x:
+			hf.set_column(x, z, 40, 10, Color.WHITE)
+	return hf
+
+
+func test_a_solid_field_gets_an_occluder_inside_its_solid() -> void:
+	var hf := _slab(40)
+	var occ := hf.chunk_occluder(0, 0)
+	assert_not_null(occ)
+	var top := -INF
+	var bottom := INF
+	for v in occ.vertices:
+		top = maxf(top, v.y)
+		bottom = minf(bottom, v.y)
+	assert_lt(top, 40 * hf.cell, "below the shown top")
+	assert_gt(bottom, 10 * hf.cell, "above the hidden bottom")
+
+
+func test_a_thin_field_gets_no_occluder() -> void:
+	var hf := _flat_field(4, 10)
+	assert_null(hf.chunk_occluder(0, 0), "a 2-cell crust is too thin to occlude safely")
+
+
+func test_built_chunks_keep_only_meshes_under_their_root() -> void:
+	var parent := Node3D.new()
+	add_child_autofree(parent)
+	var hf := _slab(40)
+	var root := hf.build(parent, ShaderMaterial.new(), "Field")
+	for c in root.get_children():
+		assert_true(c is MeshInstance3D)
+	assert_not_null(parent.get_node_or_null("FieldOccluders"))
+
+
+func test_medium_keeps_the_high_look_and_web_shortens_ranges() -> void:
+	var high: Dictionary = VoxelQuality.VALUES[GraphicsSettings.Quality.HIGH]
+	var medium: Dictionary = VoxelQuality.VALUES[GraphicsSettings.Quality.MEDIUM]
+	var web: Dictionary = VoxelQuality.VALUES[GraphicsSettings.Quality.WEB]
+	assert_eq(medium.range_scale, high.range_scale)
+	assert_eq(medium.near_split, high.near_split, "contact shadows as sharp")
+	assert_lt(float(web.range_scale), 1.0)
+
+
+func test_place_drops_shadows_from_clutter_on_medium() -> void:
+	var parent := Node3D.new()
+	add_child_autofree(parent)
+	var box := BoxMesh.new()
+	box.size = Vector3(0.3, 0.3, 0.3)
+	var am := ArrayMesh.new()
+	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, box.get_mesh_arrays())
+	var keep := VoxelQuality.tier
+	VoxelQuality.tier = GraphicsSettings.Quality.MEDIUM
+	var meshes: Array[ArrayMesh] = [am]
+	var xfs: Array[Transform3D] = [Transform3D.IDENTITY]
+	var root := VoxelProp.place(parent, "Pebbles", meshes, [80.0], xfs, 1)
+	VoxelQuality.tier = keep
+	var mmi := root.get_child(0) as MultiMeshInstance3D
+	assert_eq(mmi.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)

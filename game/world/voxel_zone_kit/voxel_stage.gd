@@ -136,6 +136,9 @@ func apply_quality(quality: GraphicsSettings.Quality) -> void:
 		sun.directional_shadow_split_1 = clampf(float(v.near_split) / dist, 0.05, 0.9)
 	env.ssao_enabled = v.ssao
 	shadow_quality(v.shadow_atlas)
+	# Terrain occluders (VoxelHeightfield) cull what's behind hills and walls.
+	if is_inside_tree():
+		get_viewport().use_occlusion_culling = true
 
 
 ## Applies a preset by name (or a Dictionary of values).

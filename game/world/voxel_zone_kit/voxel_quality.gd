@@ -6,7 +6,8 @@ extends RefCounted
 ## change what can't be seen at gameplay distance. LOW and WEB trade detail.
 ##   VoxelQuality.tier = GraphicsSettings.Quality.MEDIUM   # before zone.build()
 
-static var tier: GraphicsSettings.Quality = GraphicsSettings.Quality.HIGH
+## The tier zones build at: WEB in a web build, else the player's saved quality.
+static var tier: GraphicsSettings.Quality = GraphicsSettings.load_saved().quality
 
 ## range_scale: prop LOD ranges (where each tier ends) are multiplied by it.
 ## clutter_size: props whose mesh is smaller than this (m, longest side)

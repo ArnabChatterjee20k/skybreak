@@ -20,6 +20,8 @@ const MIN_CHUNK := 32
 const NONE := -2147483648
 ## Quadtree block sizes (cells) for a smooth top, biggest first.
 const SMOOTH_BLOCKS: Array[int] = [32, 8, 2, 1]
+## Side of an occluder box (m).
+const OCCLUDER_BLOCK := 4.0
 
 var cell := 0.088
 var origin := Vector2.ZERO  # world (x, z) of column (0, 0)'s corner
@@ -136,12 +138,16 @@ func bind(material: ShaderMaterial) -> void:
 ## One MeshInstance3D per non-empty chunk (frustum-culled separately), all
 ## sharing `material`. visibility_end > 0 hides chunks past that distance.
 ## cast_shadow false: a smooth lawn under a low sun self-shadows into contour
-## bands (acne); let the underside and the props cast instead.
+## bands (acne); let the underside and the props cast instead. occluders:
+## a conservative occluder per chunk (chunk_occluder) in a sibling node
+## "<node_name>Occluders", so props and terrain hidden behind it skip the main
+## pass (where the viewport culls occlusion).
 func build(parent: Node3D, material: Material, node_name: String, visibility_end := 0.0,
-		cast_shadow := true) -> Node3D:
+		cast_shadow := true, occluders := true) -> Node3D:
 	var root := Node3D.new()
 	root.name = node_name
 	parent.add_child(root)
+	var occ_root: Node3D = null  # a sibling, so root holds only the chunk meshes
 	for cz in ceili(float(size.y) / chunk):
 		for cx in ceili(float(size.x) / chunk):
 			var mesh := chunk_mesh(cx * chunk, cz * chunk)
@@ -155,7 +161,83 @@ func build(parent: Node3D, material: Material, node_name: String, visibility_end
 			if not cast_shadow:
 				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			root.add_child(mi)
+			if occluders:
+				var occ := chunk_occluder(cx * chunk, cz * chunk)
+				if occ != null:
+					if occ_root == null:
+						occ_root = Node3D.new()
+						occ_root.name = node_name + "Occluders"
+						parent.add_child(occ_root)
+					var oi := OccluderInstance3D.new()
+					oi.occluder = occ
+					occ_root.add_child(oi)
 	return root
+
+
+## A conservative occluder for a chunk: one box per OCCLUDER_BLOCK of columns,
+## spanning only what every column in the block fills (less a cell of slack
+## at each end), with sides only where the neighbour box doesn't cover them.
+## Null if the chunk has no solid block.
+func chunk_occluder(x0: int, z0: int) -> ArrayOccluder3D:
+	var b := maxi(2, roundi(OCCLUDER_BLOCK / cell))
+	var x1 := mini(x0 + chunk, size.x)
+	var z1 := mini(z0 + chunk, size.y)
+	var nx := ceili(float(x1 - x0) / b)
+	var nz := ceili(float(z1 - z0) / b)
+	var spans: Array[Vector2] = []
+	spans.resize(nx * nz)
+	for bz in nz:
+		for bx in nx:
+			var lo := -INF
+			var hi := INF
+			for z in range(z0 + bz * b, mini(z0 + (bz + 1) * b, z1)):
+				for x in range(x0 + bx * b, mini(x0 + (bx + 1) * b, x1)):
+					var sv := shown[index(x, z)]
+					var hv := hidden[index(x, z)]
+					if sv == NONE or hv == NONE:
+						lo = INF
+						break
+					lo = maxf(lo, float(mini(sv, hv)))
+					hi = minf(hi, float(maxi(sv, hv)))
+				if lo == INF:
+					break
+			spans[bx + bz * nx] = Vector2(lo + 1.0, hi - 1.0) * cell if lo != INF and hi - lo > 3.0 \
+				else Vector2(INF, -INF)
+	var verts := PackedVector3Array()
+	var indices := PackedInt32Array()
+	for bz in nz:
+		for bx in nx:
+			var sp := spans[bx + bz * nx]
+			if sp.x >= sp.y:
+				continue
+			var a := origin + Vector2(x0 + bx * b, z0 + bz * b) * cell
+			var e := origin + Vector2(mini(x0 + (bx + 1) * b, x1), mini(z0 + (bz + 1) * b, z1)) * cell
+			_occ_quad(verts, indices, Vector3(a.x, sp.y, a.y), Vector3(e.x, sp.y, a.y), Vector3(e.x, sp.y, e.y), Vector3(a.x, sp.y, e.y))
+			_occ_quad(verts, indices, Vector3(a.x, sp.x, a.y), Vector3(e.x, sp.x, a.y), Vector3(e.x, sp.x, e.y), Vector3(a.x, sp.x, e.y))
+			for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var ox := bx + d.x
+				var oz := bz + d.y
+				if ox >= 0 and oz >= 0 and ox < nx and oz < nz:
+					var o := spans[ox + oz * nx]
+					if o.x <= sp.x and o.y >= sp.y:
+						continue
+				var p := Vector2(e.x if d.x > 0 else a.x, e.y if d.y > 0 else a.y)
+				if d.y == 0:
+					_occ_quad(verts, indices, Vector3(p.x, sp.x, a.y), Vector3(p.x, sp.x, e.y), Vector3(p.x, sp.y, e.y), Vector3(p.x, sp.y, a.y))
+				else:
+					_occ_quad(verts, indices, Vector3(a.x, sp.x, p.y), Vector3(e.x, sp.x, p.y), Vector3(e.x, sp.y, p.y), Vector3(a.x, sp.y, p.y))
+	if verts.is_empty():
+		return null
+	var occ := ArrayOccluder3D.new()
+	occ.set_arrays(verts, indices)
+	return occ
+
+
+static func _occ_quad(verts: PackedVector3Array, indices: PackedInt32Array, a: Vector3, b: Vector3, c: Vector3,
+		d: Vector3) -> void:
+	var i := verts.size()
+	verts.append_array([a, b, c, d])
+	indices.append_array([i, i + 1, i + 2, i, i + 2, i + 3])
 
 
 ## Quad count under a node built by build().
