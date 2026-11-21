@@ -180,7 +180,10 @@ func _flythrough() -> void:
 		_viewport.get_texture().get_image().save_jpg(dir.path_join("f%05d.jpg" % f), 0.94)
 		if f % 30 == 0:
 			print("frame %d/%d, %.1f s per frame" % [f, frames, (Time.get_ticks_msec() - t0) / 1000.0 / (f - start + 1)])
-	var mp4 := _out.path_join("%s_flythrough.mp4" % _zone.name.to_snake_case())
+	# An unnamed zone node is called "@Node3D@N": fall back to the script's file name.
+	var zone_name := String(_zone.name) if not String(_zone.name).begins_with("@") \
+		else (_zone.get_script() as Script).resource_path.get_file().get_basename().trim_suffix("_voxel")
+	var mp4 := _out.path_join("%s_flythrough.mp4" % zone_name.to_snake_case())
 	var code := OS.execute("ffmpeg", ["-y", "-loglevel", "error", "-framerate", str(fps), "-i", dir.path_join("f%05d.jpg"),
 		"-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart", mp4])
 	print("fly-through: %d frames -> %s (ffmpeg exit %d)" % [frames, mp4, code])
