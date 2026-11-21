@@ -7,7 +7,9 @@ extends RefCounted
 ## loaded. Placement goes through MultiMesh tiles with LOD tiers, so the far
 ## field costs little and the scatter only draws near the camera.
 
-const SHADER := preload("res://game/characters/voxel_kit/voxel_figure.gdshader")
+## voxel_figure.gdshader without the per-instance rim (instance uniforms would
+## take 16 global-buffer slots per prop instance; the web build has 4096).
+const SHADER := preload("res://game/world/voxel_zone_kit/voxel_prop.gdshader")
 const CACHE_DIR := "user://voxel_prop_cache/"
 ## Side of a placement tile (m): each tile is its own MultiMesh, so visibility
 ## ranges and frustum culling work per tile, not per zone.
