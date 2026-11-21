@@ -2,7 +2,7 @@ extends SceneTree
 ## Look-dev stills and clips of a character on the neutral stage
 ## (.claude/skills/voxel-character-lookdev/SKILL.md, step 3).
 ##   godot --path . --disable-vsync -s res://game/lookdev/lookdev_capture.gd -- <out dir>
-##       [quick|turntable|closeups|spin|idle|compare|all]
+##       [quick|turntable|closeups|knockdown|spin|idle|compare|all]
 ##       --scene=res://game/characters/<name>_voxel/<name>_voxel.tscn
 ##       [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0]
 ## Needs a GPU (not headless); renders at exactly 1920x1080 through a
@@ -11,6 +11,9 @@ extends SceneTree
 
 const USAGE := "lookdev_capture.gd -- <out dir> [mode] --scene=<character scene> [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0]"
 const CLIP_FPS := 30
+## The knockdown still: stun length and the tick she lies on the floor.
+const KNOCKDOWN_TICKS := 90
+const KNOCKDOWN_LIE_TICK := 30
 
 var _scene := ""
 var _compare := ""
@@ -92,6 +95,8 @@ func _run(what: String) -> void:
 	if what in ["closeups", "all"]:
 		await _head("closeup_head")
 		await _hand("closeup_gauntlet")
+	if what in ["knockdown", "all"]:
+		await _knockdown()
 	if what in ["spin", "all"]:
 		DirAccess.make_dir_recursive_absolute(_out.path_join("spin"))
 		_stage.frame(Vector3(0, 0.93, 0), 1.9, 0.82, -4.0)
@@ -122,6 +127,23 @@ func _full(yaw: float, name: String) -> void:
 	_pivot.rotation.y = deg_to_rad(yaw)
 	_stage.frame(Vector3(0, 0.93, 0), 1.9, 0.82, -4.0)
 	await _save(name)
+
+
+## Knocked down and lying on the floor (the game's KNOCKDOWN state), seen
+## low from the side and from a 3/4 angle, so the hat's floor contact shows.
+func _knockdown() -> void:
+	_fighter.enter_state(FighterState.State.KNOCKDOWN)
+	_fighter.stun_ticks = KNOCKDOWN_TICKS
+	for t in KNOCKDOWN_LIE_TICK:
+		_fighter.state_ticks += 1
+		_fighter.stun_ticks -= 1
+		_view.apply_state(_fighter, 1.0 / 60.0)
+		await process_frame
+	for shot: Vector2 in [Vector2(90.0, -3.0), Vector2(35.0, -12.0)]:
+		_pivot.rotation.y = deg_to_rad(shot.x)
+		_stage.frame(Vector3(0, 0.25, 0), 0.9, 0.5, shot.y)
+		await _save("knockdown_%03d" % int(shot.x))
+	await _spawn(_scene)
 
 
 func _head(name: String) -> void:
