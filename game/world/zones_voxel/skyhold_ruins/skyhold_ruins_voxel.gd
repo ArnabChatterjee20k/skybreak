@@ -245,8 +245,7 @@ func _island_top(i: int, cell := T2) -> Node3D:
 	mat.set_shader_parameter("marble_color", Color("#E6DCC8"))
 	mat.set_shader_parameter("strata_cells", 2.0)
 	mat.set_shader_parameter("crack_amount", 0.3)
-	var far := cell > T2
-	var node := hf.build(self, mat, "Isle%dTop%s" % [i, "Far" if far else ""], 0.0, true, not far)
+	var node := hf.build(self, mat, "Isle%dTop%s" % [i, "Far" if cell > T2 else ""], 0.0, true)
 	node.position.y = y - level * cell
 	return node
 
@@ -324,8 +323,7 @@ func _island_underside(i: int, cell := T2) -> Node3D:
 	mat.set_shader_parameter("strata_cells", float(slab))
 	mat.set_shader_parameter("crack_amount", 0.12)
 	mat.set_shader_parameter("noise_amount", 0.03)
-	var far := cell > T2
-	return hf.build(self, mat, "Isle%dUnder%s" % [i, "Far" if far else ""], 0.0, true, not far)
+	return hf.build(self, mat, "Isle%dUnder%s" % [i, "Far" if cell > T2 else ""], 0.0, true)
 
 
 # ---------------------------------------------------------------- fangs

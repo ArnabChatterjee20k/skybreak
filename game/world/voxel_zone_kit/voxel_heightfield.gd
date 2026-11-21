@@ -138,12 +138,12 @@ func bind(material: ShaderMaterial) -> void:
 ## One MeshInstance3D per non-empty chunk (frustum-culled separately), all
 ## sharing `material`. visibility_end > 0 hides chunks past that distance.
 ## cast_shadow false: a smooth lawn under a low sun self-shadows into contour
-## bands (acne); let the underside and the props cast instead. occluders:
-## a conservative occluder per chunk (chunk_occluder) in a sibling node
+## bands (acne); let the underside and the props cast instead. occluders
+## (opt-in): a conservative occluder per chunk (chunk_occluder) in a sibling node
 ## "<node_name>Occluders", so props and terrain hidden behind it skip the main
 ## pass (where the viewport culls occlusion).
 func build(parent: Node3D, material: Material, node_name: String, visibility_end := 0.0,
-		cast_shadow := true, occluders := true) -> Node3D:
+		cast_shadow := true, occluders := false) -> Node3D:
 	var root := Node3D.new()
 	root.name = node_name
 	parent.add_child(root)

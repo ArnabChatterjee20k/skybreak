@@ -186,7 +186,7 @@ func test_built_chunks_keep_only_meshes_under_their_root() -> void:
 	var parent := Node3D.new()
 	add_child_autofree(parent)
 	var hf := _slab(40)
-	var root := hf.build(parent, ShaderMaterial.new(), "Field")
+	var root := hf.build(parent, ShaderMaterial.new(), "Field", 0.0, true, true)
 	for c in root.get_children():
 		assert_true(c is MeshInstance3D)
 	assert_not_null(parent.get_node_or_null("FieldOccluders"))

@@ -368,6 +368,8 @@ func _occluders() -> void:
 		oi.transform = Transform3D(rot, base + rot * Vector3(0, lower_top * 0.5, 0))
 		root.add_child(oi)
 	stats["occluders"] = root.get_child_count()
+	if is_inside_tree():
+		get_viewport().use_occlusion_culling = true
 
 
 ## One building: storey slabs, setback, cornice, parapet, windows (shader),

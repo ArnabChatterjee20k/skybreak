@@ -36,8 +36,14 @@ Kit level (`game/world/voxel_zone_kit/`), so every zone gets it:
    LOD tier only, use bigger terrain chunks and a shorter sun (WEB: one split, no SSAO).
    `VoxelQuality.tier` defaults to the player's saved quality, and to WEB in a web build.
 5. Zone fixes: Stormfall's outer ground ring (8 m tier only) merges 4 x 4 tiles into one mesh.
+   Skyhold's islands get a 2 x T2 far tier below HIGH: each island switches as a whole (one box
+   for all its chunks, so no seams) at 300 m on MEDIUM. Shattered Mesa's rock/floor, Frozen Peaks'
+   mountains and Stormfall's block and ground tiers scale their authored switch distances with the
+   tier (`VoxelQuality.far`), HIGH unchanged.
+6. WEB also starts props at their second LOD tier.
 
-Tried and reverted: 64 m terrain chunks on HIGH/MEDIUM. Frozen Peaks sets its mountain LOD per
+Tried and reverted: blocks for short-range scatter (dense tufts drawn a block radius further cost
+more triangles than the draws they saved), and 64 m terrain chunks on HIGH/MEDIUM. Frozen Peaks sets its mountain LOD per
 chunk after building, so bigger chunks dropped a shadow-casting mountain chunk early and the valley
 lost a big shadow (caught by the stills). HIGH/MEDIUM keep the authored 32 m chunks.
 
@@ -69,4 +75,19 @@ It exits 1 if any zone misses the medium budget (p95 <= 300k visible triangles a
 
 ## Not done / open
 
-OPEN_POINTS
+- **Medium misses the 300k-triangle target in every zone but Stormfall** (see the table). After the
+  merge, what's left is mostly terrain with no LOD of its own (Heartbloom's island undersides,
+  Skyhold's islands, Shattered Mesa's T2 rock, Frozen Peaks' foothills and mountains) and the big
+  canopies and puff clouds. Getting to 300k means coarser terrain within view, which the owner would
+  see; I stopped at "invisible at gameplay distance". Next levers, in order: a kit-level far tier
+  for any heightfield (the Skyhold island pattern), Heartbloom's puff clouds at T3 x 2 past 150 m,
+  Verdant canopy impostors past 120 m.
+- **Draws**: Medium meets 250 in Heartbloom only; Verdant (grove scatter on 16 m tiles), Stormfall
+  (ground tiles), Ember and Skyhold remain over. Short-range scatter is the main source.
+- **GPU ms are not measured**: run the benchmark on the GTX 1650 (command above) and paste the
+  output here. Lavapipe ms in the JSON are meaningless.
+- **Web**: the WEB tier is measured with Forward+ counts; a real web export (Compatibility renderer)
+  hasn't been run with the voxel zones. WEB is still over its 500k / 120 target in most zones.
+- Occlusion culling helps only the main pass and needs a few frames to warm up after a camera cut.
+- The benchmark's `--breakdown` ignores `visibility_parent` and occlusion, so it over-counts; the
+  totals come from the renderer and are exact.
