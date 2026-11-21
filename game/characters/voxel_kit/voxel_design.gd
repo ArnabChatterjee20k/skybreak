@@ -23,8 +23,11 @@ var bones := {}  # bone name -> index
 var rest := {}  # bone name -> rest position (skeleton space)
 
 
-func _init(skel: Skeleton3D) -> void:
+## skel may be null for a rigid prop (a weapon) that is never skinned.
+func _init(skel: Skeleton3D = null) -> void:
 	skeleton = skel
+	if skel == null:
+		return
 	for i in skel.get_bone_count():
 		var bone_name := StringName(skel.get_bone_name(i))
 		bones[bone_name] = i

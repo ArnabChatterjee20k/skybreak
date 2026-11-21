@@ -104,6 +104,16 @@ it in the tree with the VoxelBody swapped out (so figures that build their skele
   is in the designs' SDF lambdas. A paint over a whole head grid evaluates its lambda
   for every cell, so give `paint` the part's own bounds, not the grid's.
 
+## Rigid props (weapons)
+
+`VoxelDesign` also builds props with no skeleton (`_init(null)`). Weapons extend
+`VoxelWeaponDesign` (`game/characters/voxel_weapons/`, sheet `docs/lookdev/weapons.md`):
+shared material roles filled per owner palette, grip-wrap / rivet / engraved-mark /
+seam helpers, and `VoxelWeapons.build_mesh`, which merges the grids into one static
+mesh (no bones; it rides a `BoneAttachment3D`). Put fine grids (emblems) on the same
+lattice as the coarse one (`grid()` snaps origins; split heights with `snap()`), or
+they gap or overlap by up to half a cell.
+
 ## Rules learned on Kael
 
 - **Rig tags.** Give each rigid part one tag. Give each finger its own tag, and keep
