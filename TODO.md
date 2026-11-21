@@ -76,6 +76,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
     the browser would take minutes: decide Classic zones on web or baked zones.
   - QA-21 [desktop, characters] voxel Lyra's cape chain (Scarf1-5, ScarfLag + LyraCapeClearance)
     flips ~3 rad in one frame: 43 pops per fighter-minute in run_qa --quick (budget 2).
+    FIXED on fix/lyra-cape-pops@295bd83: merge that branch, do not re-fix. Lyra's cape pops
+    109 stormfall 1v1 155 -> 0, 102 stormfall 2v2 142 -> 0, and 0 in five more quick-run
+    matches (were 131/146/121/86/120); QA pop metric, 2400 ticks each. Also seen, not fixed
+    there: Brann's Braid2 pops 16 in the 102 match (already on this branch); test_moves_reel
+    glow material fails on this branch.
   - VOXEL-COMPAT [desktop] the voxel figure shader's `instance uniform` on thousands of zone props
     overflows the Compatibility renderer's 4096-slot buffer (visual goldens log ~3000 errors per
     shot): the web build would mis-draw voxel zones. Forward+ (65536) is fine.
