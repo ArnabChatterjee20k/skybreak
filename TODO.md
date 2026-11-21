@@ -65,22 +65,24 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   voxel zone builders in zone_match for all 7 zones (VoxelZoneView, visual only, sim bit-identical),
   voxel zone cards, quality tie-in (Low: LOD ranges x0.6, far tiers shadowless, 2K atlas, no SSAO).
   Open:
-  - VOXEL-LOAD [desktop, perf lane] voxel zone build at match start (cloud CPU, cold / warm cache):
-    Heartbloom 200 / 65 s, Skyhold 105 / 32 s, Frozen Peaks 94 / 62 s, Shattered Mesa 86 / 1 s,
-    Stormfall 5 / 5 s (rest in the PR). Needs the kit perf work or baked zones, and a loading screen.
+  - VOXEL-LOAD [desktop] done on the branch: zones load from offline bakes per tier
+    (`tools/voxel_zone_bake.gd`, `VoxelZoneBake`) behind a threaded `LoadingScreen`: 1.0-2.0 s per
+    zone on lavapipe (were 1-484 s live builds). Stale bakes fail `test_voxel_zone_bake`.
+  - VOXEL-BAKES [desktop, owner decision] the 28 zone bakes are 836 MB (14-58 MB each; terrain
+    triangles dominate), so they are gitignored and baked locally (~15 min, 2 jobs, see the kit
+    README). Owner: pick storage (Git LFS, a release asset fetched by a script, or a smaller bake
+    format, e.g. indexed terrain chunks). Until then CI marks the bake test pending.
   - VOXEL-PALETTE [desktop, characters] voxel bodies bake their colours, so team palettes don't
     apply: a mirror match tells P1 from P2 only by energy rim and team ring.
-  - QA-20 [desktop, characters] voxel Brann's held weapons dip into his voxel chest (VisualQa
-    weapon_vs_holder ~700 frames per 3600-tick run); arm clearance still fits the classic body.
-  - VOXEL-WEB [desktop] the web build carries the voxel art (+15 MB pck) but a voxel zone build in
-    the browser would take minutes: decide Classic zones on web or baked zones.
-  - QA-21 [desktop, characters] voxel Lyra's cape chain (Scarf1-5, ScarfLag + LyraCapeClearance)
-    flips ~3 rad in one frame: 43 pops per fighter-minute in run_qa --quick (budget 2).
-  - VOXEL-COMPAT [desktop] the voxel figure shader's `instance uniform` on thousands of zone props
-    overflows the Compatibility renderer's 4096-slot buffer (visual goldens log ~3000 errors per
-    shot): the web build would mis-draw voxel zones. Forward+ (65536) is fine.
-  - Feel trend vs the last quick run: view_ms_per_frame 1.41 -> 2.56 (+82%), foot_error_p95
-    0.87 -> 1.73 cm (+97%), both from the voxel legends and zones.
+  - QA-20 done on the branch: the clearance solver keeps out the voxel weapon a voxel legend draws,
+    and voxel Brann's stone torso keeps bone scale 1 (weapon_vs_holder 3667 -> 7 frames over 9 runs).
+  - QA-21 done on the branch: fix/lyra-cape-pops@295bd83 merged (cape clearance inside the chain sim);
+    regression tests `test_lyra_cape.gd`, `test_lyra_voxel_cape.gd` (150 pops -> 0).
+  - VOXEL-COMPAT / VOXEL-WEB done on the branch: zone-perf's merged props use no instance uniforms
+    (0 overflow errors in a gl_compatibility WEB-tier match); web ships only the `*_web.scn` bakes,
+    zone lamps drop shadows and fade past 60 m on the web tier.
+  - QA-22 [desktop, characters] voxel Brann's view still costs ~2x a classic legend per frame
+    (1.20 vs ~0.55 ms for two fighters, headless) after the perf pass: `_keep_fist_clear` dominates.
   - Visual goldens: all 14 fail as expected from the art change; one refresh pass after merge.
   - The menu backdrop is still the classic world fly-through; MotionLayers' weapon clearance uses the
     classic weapon boxes (voxel models keep the old size and grip).

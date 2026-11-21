@@ -12,6 +12,7 @@ import os
 import re
 import statistics
 import sys
+import time
 
 # Checks that are pending until the lane named lands on main.
 PENDING_UNTIL = {"fighter_overlap": "T-D29 (pushboxes)"}
@@ -132,13 +133,23 @@ def metrics_of(matches, feel):
 
 def previous_metrics(reports_dir, current_run, mode):
     """Newest earlier run of the same mode (quick and full play different matrices)."""
+    # By the run folder's date (YYYY-MM-DD-...), then mtime: a fresh clone gives every report the
+    # same mtime, which made the baseline an arbitrary earlier run.
     candidates = sorted(glob.glob(os.path.join(reports_dir, "*-" + mode, "metrics.json")),
-                        key=os.path.getmtime)
+                        key=lambda c: (os.path.basename(os.path.dirname(c))[:10], _generated_at(c), os.path.getmtime(c)))
     candidates = [c for c in candidates if os.path.dirname(os.path.abspath(c)) != os.path.abspath(current_run)]
     if not candidates:
         return None, None
     with open(candidates[-1]) as f:
         return json.load(f), candidates[-1]
+
+
+def _generated_at(path):
+    try:
+        with open(path) as f:
+            return float(json.load(f).get("generated_at", 0.0))
+    except (OSError, ValueError):
+        return 0.0
 
 
 def trend(current, previous):
@@ -252,6 +263,7 @@ def main():
     metrics = metrics_of(matches, feel)
     previous, previous_path = previous_metrics(args.reports_dir, run, args.mode)
     trend_rows = trend(metrics, previous)
+    metrics["generated_at"] = time.time()
     json.dump(metrics, open(os.path.join(run, "metrics.json"), "w"), indent=2)
     vis_rows, vis_note = visual(run, args.golden_dir, os.path.join(run, "visual_diff"))
     scenarios = gut_summary(os.path.join(run, "scenarios.log"))

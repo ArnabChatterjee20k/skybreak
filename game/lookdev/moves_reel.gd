@@ -895,14 +895,12 @@ func _glow_material(energy: float, color := Color.TRANSPARENT) -> StandardMateri
 ## material ignores emission and showed its pale albedo instead).
 static func glow_material(energy: float, color: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	# The core is the energy colour lifted a little toward white (it was a fixed
-	# warm white, so every character's orbs and beams read white-peach), and the
-	# emission stays low enough that the hue survives tone mapping and bloom.
-	mat.albedo_color = color.lerp(Color.WHITE, 0.25)
+	mat.albedo_color = Color.BLACK
+	mat.roughness = 1.0
+	mat.metallic_specular = 0.0
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = energy * 0.45
+	mat.emission_energy_multiplier = energy * GLOW_GAIN
 	return mat
 
 

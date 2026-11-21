@@ -37,6 +37,11 @@ const TORSO_BANDS: Array[Vector2] = [Vector2(0.90, 1.24), Vector2(1.04, 1.30), V
 const WRIST_MAX_SWING := deg_to_rad(24.0)
 ## Air between a fist and a boulder.
 const FIST_CLEARANCE := 0.01
+## The boulder's and its wedge's axis faces (rest space, from the boulder's
+## centre, x mirrored per side), grown by FIST_CLEARANCE: points outside both
+## boxes are farther than that from the rock and skip its hull test.
+const BOULDER_BOX := AABB(Vector3(-0.17, -0.17, -0.23), Vector3(0.38, 0.32, 0.43))
+const WEDGE_BOX := AABB(Vector3(-0.01, 0.07, -0.20), Vector3(0.18, 0.12, 0.16))
 
 var _glow: ShaderMaterial
 var _design: BrannVoxelDesign
@@ -46,6 +51,10 @@ var _torso_bones: Array[int] = []
 var _braid_now := PackedVector3Array()
 var _braid_was := PackedVector3Array()
 var _braid_time := 0.0
+## This frame's skinning transforms of Spine, Chest and UpperChest and their
+## inverses (the torso holds still while the braid steps).
+var _torso_skins: Array[Transform3D] = [Transform3D(), Transform3D(), Transform3D()]
+var _torso_unskins: Array[Transform3D] = [Transform3D(), Transform3D(), Transform3D()]
 
 
 func apply_state(fighter: FighterState, delta: float) -> void:
@@ -79,6 +88,9 @@ func _swing_braid(fighter: FighterState, delta: float) -> void:
 			_torso_bones.clear()
 			return
 	var rest := BrannVoxelDesign.braid_points()
+	for k in 3:
+		_torso_skins[k] = _skin_of(_torso_bones[k])
+		_torso_unskins[k] = _torso_skins[k].affine_inverse()
 	var head := _skin_of(_torso_bones[3])
 	var target := PackedVector3Array()
 	for p in rest:
@@ -86,7 +98,7 @@ func _swing_braid(fighter: FighterState, delta: float) -> void:
 	if _braid_now.is_empty():
 		_braid_now = target.duplicate()
 		_braid_was = target.duplicate()
-	var down := (_skin_of(_torso_bones[2]).basis * Vector3.DOWN).normalized()
+	var down := (_torso_skins[2].basis * Vector3.DOWN).normalized()
 	var gravity := Vector3.DOWN
 	if _skeleton.is_inside_tree():
 		gravity = (_skeleton.global_transform.basis.inverse() * Vector3.DOWN).normalized()
@@ -150,7 +162,7 @@ func _hang_segments(rest: PackedVector3Array, target: PackedVector3Array, down: 
 			if clear:
 				# Held inside the stone at the limit: tilt it out over the chest
 				# a little further (bounded, so it never swings up).
-				var front := (_skin_of(_torso_bones[2]).basis * Vector3.BACK).normalized()
+				var front := (_torso_skins[2].basis * Vector3.BACK).normalized()
 				for step in 4:
 					var end := start + dir * length
 					if _clear_of_torso(end).is_equal_approx(end):
@@ -165,8 +177,8 @@ func _hang_segments(rest: PackedVector3Array, target: PackedVector3Array, down: 
 ## p pushed straight out of the chest and belly fronts (skeleton space).
 func _clear_of_torso(p: Vector3) -> Vector3:
 	for k in 3:
-		var skin := _skin_of(_torso_bones[k])
-		var q := skin.affine_inverse() * p
+		var skin: Transform3D = _torso_skins[k]
+		var q: Vector3 = _torso_unskins[k] * p
 		# Each torso bone only for the band of stone it skins (spine, chest, upper chest).
 		if q.y < TORSO_BANDS[k].x or q.y > TORSO_BANDS[k].y or absf(q.x) > 0.42:
 			continue
@@ -234,6 +246,7 @@ func _keep_fist_clear(side: float) -> void:
 		_design = BrannVoxelDesign.new(_skeleton)
 	var points := BrannVoxelDesign.fist_points(side)
 	var fore := BrannVoxelDesign.forearm_points(side)
+	var centre := BrannVoxelDesign.boulder_center(side)
 	for attempt in 6:
 		var to_rock := (_skeleton.get_bone_global_pose(shoulder) * _skeleton.get_bone_global_rest(shoulder).affine_inverse()).affine_inverse()
 		var shoulder_basis := _skeleton.get_bone_global_pose(shoulder).basis.orthonormalized() \
@@ -246,6 +259,8 @@ func _keep_fist_clear(side: float) -> void:
 		for k in points.size() + fore.size():
 			var posed := skin * points[k] if k < points.size() else fore_skin * fore[k - points.size()]
 			var q := to_rock * posed
+			if not _near_boulder(q, centre, side):
+				continue
 			var deficit := FIST_CLEARANCE - _design.boulder_sdf(q, side)
 			if deficit > worst:
 				worst = deficit
@@ -259,14 +274,26 @@ func _keep_fist_clear(side: float) -> void:
 
 
 ## Turns a bone by a skeleton-space rotation, changing only its local rotation: a global
-## pose write would fold the parent's breath scale into the arm (skew, and a hand the
-## weapon clearance does not expect).
+## pose write folds any parent scale into the arm (skew, and a hand off where the weapon clearance put it).
 func _turn_bone(bone: int, turn: Quaternion) -> void:
 	var parent := _skeleton.get_bone_parent(bone)
 	var parent_turn := _skeleton.get_bone_global_pose(parent).basis.get_rotation_quaternion() if parent >= 0 \
 		else Quaternion.IDENTITY
 	var local := _skeleton.get_bone_pose_rotation(bone)
 	_skeleton.set_bone_pose_rotation(bone, (parent_turn.inverse() * turn * parent_turn * local).normalized())
+
+
+## Stone neither breathes nor squashes: the layer's bone scales would also grow his arms and the
+## held weapon past where the weapon clearance solver (rotations only) placed them (QA-20).
+func _apply_layer(layer: Dictionary) -> void:
+	for bone: StringName in layer:
+		layer[bone].scale = Vector3.ONE
+	super._apply_layer(layer)
+
+
+static func _near_boulder(q: Vector3, centre: Vector3, side: float) -> bool:
+	var local := Vector3((q.x - centre.x) * side, q.y - centre.y, q.z - centre.z)
+	return BOULDER_BOX.has_point(local) or WEDGE_BOX.has_point(local)
 
 
 func _stow_weapons() -> void:

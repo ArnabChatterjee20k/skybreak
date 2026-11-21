@@ -117,7 +117,7 @@ func test_the_clearance_covers_the_voxel_weapon_he_draws() -> void:
 	var view := _brann()
 	var skeleton: Skeleton3D = view.model.get_node("%GeneralSkeleton")
 	for kind: Weapon.Kind in [Weapon.Kind.STORM_BLADE, Weapon.Kind.TITAN_HAMMER, Weapon.Kind.SCATTER_CANNON]:
-		assert_true(WeaponGrip.voxel_for(kind, skeleton), "%s is drawn as voxels" % Weapon.Kind.find_key(kind))
+		assert_true(WeaponModels.is_voxel_for(kind, skeleton), "%s is drawn as voxels" % Weapon.Kind.find_key(kind))
 		var fighter := _fighter(kind)
 		view.apply_state(fighter, FRAME)
 		var drawn := VoxelWeapons.build(kind)
@@ -125,4 +125,3 @@ func test_the_clearance_covers_the_voxel_weapon_he_draws() -> void:
 		drawn.free()
 		for box in voxel_boxes:
 			assert_true(view.layers.weapon_boxes.has(box), "%s: every drawn voxel slice is kept clear" % Weapon.Kind.find_key(kind))
-	assert_false(WeaponGrip.voxel_for(Weapon.Kind.STORM_BLADE, null), "no holder: classic boxes")

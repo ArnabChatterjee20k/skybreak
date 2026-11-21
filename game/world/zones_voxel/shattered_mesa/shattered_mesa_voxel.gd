@@ -32,6 +32,13 @@ func build() -> void:
 	_bounce()
 
 
+## A loaded bake's props helper (its constructor takes the zone).
+func make_restored(script: Script) -> Object:
+	if script == MesaProps:
+		return MesaProps.new(self)
+	return super(script)
+
+
 ## Visible ground (the sim's: the floor mesh lies on the heightmap grid).
 func ground_at(x: float, z: float) -> float:
 	return map.ground_height_at(x, z)

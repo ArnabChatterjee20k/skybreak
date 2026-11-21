@@ -1,7 +1,7 @@
 extends GutTest
 ## The voxel zone hookup (VoxelZoneView): a builder for all seven zones, the
 ## zone and its stage as siblings, the classic look hidden but its sim data
-## kept, and the quality tiers' LOD ranges and shadows. Uses a small stand-in
+## kept, the kit building at the view's tier and the tiers' shadows and lamps. Uses a small stand-in
 ## zone; the real builders have their own tests in tests/world/.
 
 const WORLD := preload("res://game/world/world_map.tscn")
@@ -11,8 +11,13 @@ const WORLD := preload("res://game/world/world_map.tscn")
 class StubZone:
 	extends VoxelZone
 	var animated := -1.0
+	var built_tier := -1
 
 	func build() -> void:
+		built_tier = VoxelQuality.tier
+		var lamp := OmniLight3D.new()
+		lamp.shadow_enabled = true
+		add_child(lamp)
 		for range_pair: Vector2 in [Vector2(0, 40), Vector2(40, 120)]:
 			var tier := MeshInstance3D.new()
 			tier.mesh = BoxMesh.new()
@@ -27,6 +32,17 @@ class StubZone:
 		animated = t
 
 
+var _saved_tier: GraphicsSettings.Quality
+
+
+func before_all() -> void:
+	_saved_tier = VoxelQuality.tier
+
+
+func after_each() -> void:
+	VoxelQuality.tier = _saved_tier
+
+
 func _view(tier: GraphicsSettings.Quality) -> VoxelZoneView:
 	var view := VoxelZoneView.new()
 	add_child_autofree(view)
@@ -36,7 +52,7 @@ func _view(tier: GraphicsSettings.Quality) -> VoxelZoneView:
 
 func _tiers(view: VoxelZoneView) -> Array:
 	return view.zone.get_children().filter(func(n: Node) -> bool:
-		return (n as GeometryInstance3D).visibility_range_end > 0.0)
+		return n is GeometryInstance3D and (n as GeometryInstance3D).visibility_range_end > 0.0)
 
 
 func test_every_zone_has_a_voxel_builder_that_loads() -> void:
@@ -64,28 +80,32 @@ func test_the_view_animates_the_zone_every_frame() -> void:
 	assert_almost_eq((view.zone as StubZone).animated, 0.5, 0.0001)
 
 
-func test_high_keeps_the_lod_ranges_and_low_brings_coarse_tiers_in_sooner() -> void:
-	var high := _tiers(_view(GraphicsSettings.Quality.HIGH))
-	assert_eq((high[0] as GeometryInstance3D).visibility_range_end, 40.0)
+func test_the_zone_builds_at_the_views_quality_tier() -> void:
+	for tier: GraphicsSettings.Quality in [GraphicsSettings.Quality.LOW, GraphicsSettings.Quality.HIGH]:
+		assert_eq((_view(tier).zone as StubZone).built_tier, tier, "the kit reads the tier while building")
+
+
+func test_the_view_keeps_the_ranges_the_kit_built() -> void:
+	# VoxelQuality scales ranges while the zone builds; the view must not scale them again.
 	var low := _tiers(_view(GraphicsSettings.Quality.LOW))
-	assert_almost_eq((low[0] as GeometryInstance3D).visibility_range_end, 24.0, 0.001)
-	assert_almost_eq((low[1] as GeometryInstance3D).visibility_range_begin, 24.0, 0.001,
-		"the coarse tier starts where the fine one ends")
+	assert_eq((low[0] as GeometryInstance3D).visibility_range_end, 40.0)
+	assert_eq((low[1] as GeometryInstance3D).visibility_range_begin, 40.0)
 
 
-func test_low_drops_far_tier_shadows_and_ssao() -> void:
-	var view := _view(GraphicsSettings.Quality.LOW)
-	var tiers := _tiers(view)
-	assert_ne((tiers[0] as GeometryInstance3D).cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
-	assert_eq((tiers[1] as GeometryInstance3D).cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
-	assert_false(view.stage.env.ssao_enabled)
-	assert_lt(view.stage.sun.directional_shadow_max_distance, 180.0)
-	assert_true(_view(GraphicsSettings.Quality.HIGH).stage.env.ssao_enabled)
+func test_the_stage_takes_the_tiers_shadows_and_ssao() -> void:
+	for tier: GraphicsSettings.Quality in [GraphicsSettings.Quality.HIGH, GraphicsSettings.Quality.WEB]:
+		var view := _view(tier)
+		var values: Dictionary = VoxelQuality.VALUES[tier]
+		assert_eq(view.stage.sun.directional_shadow_max_distance, float(values.shadow_distance))
+		assert_eq(view.stage.env.ssao_enabled, bool(values.ssao))
 
 
-func test_web_uses_the_low_tier() -> void:
-	var view := _view(GraphicsSettings.Quality.WEB)
-	assert_almost_eq((_tiers(view)[0] as GeometryInstance3D).visibility_range_end, 24.0, 0.001)
+func test_web_lamps_cast_no_shadows_and_fade_out() -> void:
+	var lamp := _view(GraphicsSettings.Quality.WEB).zone.find_children("*", "OmniLight3D", true, false)[0] as OmniLight3D
+	assert_false(lamp.shadow_enabled)
+	assert_true(lamp.distance_fade_enabled)
+	var high_lamp := _view(GraphicsSettings.Quality.HIGH).zone.find_children("*", "OmniLight3D", true, false)[0] as OmniLight3D
+	assert_true(high_lamp.shadow_enabled, "desktop tiers keep the zone's lamps as built")
 
 
 func test_hiding_the_classic_look_keeps_its_sim_data() -> void:

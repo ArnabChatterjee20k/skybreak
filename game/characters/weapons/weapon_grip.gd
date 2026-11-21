@@ -189,7 +189,7 @@ static func model_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]
 		# A voxel holder keeps out the classic shape the holds were tuned on as well as the drawn voxel one.
 		var models: Array[Node3D] = [WeaponModels.build(kind)]
 		if key.y == 1:
-			models.append(VoxelWeapons.build(kind))
+			models.push_front(VoxelWeapons.build(kind))
 		for model in models:
 			model.transform = Transform3D.IDENTITY
 			boxes.append_array(part_boxes(model))
@@ -207,12 +207,6 @@ static var _clear_cache := {}
 static func clearance_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]:
 	model_boxes(kind, voxel)
 	return _clear_cache[_box_key(kind, voxel)]
-
-
-## Whether a holder draws kind as its voxel model (WeaponModels.build_for's rule).
-static func voxel_for(kind: Weapon.Kind, holder: Node) -> bool:
-	return VoxelWeapons.has(kind) and (WeaponModels.voxel_everywhere
-		or (holder != null and bool(holder.get_meta(WeaponModels.VOXEL_META, false))))
 
 
 static func _box_key(kind: Weapon.Kind, voxel: bool) -> Vector2i:

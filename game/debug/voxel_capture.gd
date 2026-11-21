@@ -3,7 +3,7 @@ extends SceneTree
 ## (AI vs AI) in Voxel art style per zone, plus character select and zone
 ## select. Each match shot is taken after a few seconds of fighting.
 ##   godot --path . --resolution 1280x720 -s res://game/debug/voxel_capture.gd -- <out dir> \
-##       [zone:legend,legend ...] [--select] [--ticks=N] [--style=voxel|classic]
+##       [zone:legend,legend ...] [--select] [--ticks=N] [--style=voxel|classic] [--quality=high|web|...]
 ## Default shots: heartbloom_gardens:kael,vexa shattered_mesa:lyra,brann stormfall_city:vexa,lyra
 
 const SIZE := Vector2i(1280, 720)
@@ -22,11 +22,14 @@ func _run() -> void:
 	var select := false
 	var ticks := 420
 	var style := ArtStyle.Kind.VOXEL
+	var quality := GraphicsSettings.load_saved().quality
 	for a in args.slice(1):
 		if a == "--select":
 			select = true
 		elif a.begins_with("--ticks="):
 			ticks = int(a.trim_prefix("--ticks="))
+		elif a.begins_with("--quality="):
+			quality = VoxelQuality.from_name(a.trim_prefix("--quality="))
 		elif a.begins_with("--style="):
 			style = ArtStyle.Kind.CLASSIC if a.ends_with("classic") else ArtStyle.Kind.VOXEL
 		else:
@@ -37,18 +40,19 @@ func _run() -> void:
 	root.size = SIZE
 	for shot in shots:
 		var parts := shot.split(":")
-		await _match_shot(out, StringName(parts[0]), parts[1].split(","), ticks)
+		await _match_shot(out, StringName(parts[0]), parts[1].split(","), ticks, quality)
 	if select:
 		await _select_shots(out)
 	quit(0)
 
 
-func _match_shot(out: String, zone: StringName, legends: PackedStringArray, ticks: int) -> void:
+func _match_shot(out: String, zone: StringName, legends: PackedStringArray, ticks: int,
+		quality: GraphicsSettings.Quality) -> void:
 	var level: ZoneMatch = load("res://game/levels/zone_match.tscn").instantiate()
 	var fighters := []
 	for i in legends.size():
 		fighters.append({"character": StringName(legends[i]), "team": i, "is_ai": true, "ai_level": 4})
-	level.configure({"zone": zone, "fighters": fighters, "rounds": 3})
+	level.configure({"zone": zone, "fighters": fighters, "rounds": 3, "quality": quality})
 	var t0 := Time.get_ticks_msec()
 	root.add_child(level)
 	var load_ms := Time.get_ticks_msec() - t0
@@ -68,8 +72,8 @@ func _match_shot(out: String, zone: StringName, legends: PackedStringArray, tick
 	var path := "%s/%s.png" % [out, name]
 	root.get_texture().get_image().save_png(path)
 	var voxel := level.voxel_zone != null
-	print("saved %s (voxel zone %s, level ready in %d ms, zone build %d ms)" % [
-		path, voxel, load_ms, level.voxel_zone.build_ms if voxel else 0])
+	print("saved %s (voxel zone %s, from bake %s, level ready in %d ms, zone %d ms)" % [
+		path, voxel, level.voxel_zone.from_bake if voxel else false, load_ms, level.voxel_zone.build_ms if voxel else 0])
 	level.queue_free()
 	await process_frame
 

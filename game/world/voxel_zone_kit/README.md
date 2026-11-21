@@ -194,6 +194,33 @@ exited.
    (`stats`), and the budget estimate. Publish the pre-release with an honest, ranked
    critique.
 
+## Bakes (`VoxelZoneBake`, `tools/voxel_zone_bake.gd`)
+
+A match never builds a zone. `tools/voxel_zone_bake.gd` builds every zone at every
+quality tier (`VoxelZoneBake.TIERS`: high, medium, low, web) and saves the built
+`VoxelZone` as `baked/<zone>_<tier>.scn`. The bake holds the zone node with its builder
+script, every node it made, meshes, materials and occluders, plus its script state:
+nodes are kept as paths, resources as themselves, and helper objects as their variables.
+`VoxelZoneView.build()` loads the bake, `VoxelZoneBake.restore()` puts the state back,
+`zone.restored()` runs instead of `build()`, and `animate()`, `presets()` and
+`cloud_sea()` work as after a build. `MatchConfig.launch()` fetches the bake on a
+background thread behind a `LoadingScreen`.
+
+```sh
+# Bake with a real renderer: the headless dummy drops MultiMesh buffers
+xvfb-run -a godot --rendering-driver vulkan --path . -s res://tools/voxel_zone_bake.gd [-- --zone=<id> --tier=<name>]
+godot --headless --path . -s res://tools/voxel_zone_bake.gd -- --check   # exit 1 if missing or stale
+```
+
+- A bake is used only while the SHA-256 of its sources matches: the builder's folder,
+  this kit, `game/world/{props,islands,terrain,zones}` and the voxel mesher. Otherwise the
+  zone is built live with a warning, and `tests/world/test_voxel_zone_bake.gd` fails.
+  Rebake after any change there.
+- A helper object whose constructor takes arguments needs `make_restored()` in the zone
+  (Shattered Mesa's `MesaProps`). A helper the bake can't rebuild stays null after a load,
+  so `animate()` must not depend on it.
+- The desktop export leaves out `*_web.scn`; the web export ships only `*_web.scn`.
+
 ## Performance
 
 Measure with the zone benchmark (`tools/bench/zone_bench.gd`): it builds each zone

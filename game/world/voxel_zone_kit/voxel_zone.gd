@@ -55,6 +55,21 @@ func flight_kael() -> Array:
 	return []
 
 
+## A fresh helper object of this script for a loaded bake to fill in
+## (VoxelZoneBake.restore). Override for helpers whose constructor takes args.
+func make_restored(script: Script) -> Object:
+	for m in script.get_script_method_list():
+		if m.name == "_init" and (m.args as Array).size() > (m.default_args as Array).size():
+			return null
+	return script.new()
+
+
+## Called after a bake was loaded and its state put back, instead of build().
+## Override to redo anything build() set up outside the saved nodes and state.
+func restored() -> void:
+	pass
+
+
 ## Updates moving parts (lantern sway, cloud drift) to time t in seconds.
 ## Override if the zone animates; the capture calls it every frame.
 func animate(_t: float) -> void:
