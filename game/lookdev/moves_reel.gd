@@ -1,7 +1,7 @@
 extends SceneTree
 ## Moves reel of a character on the look-dev stage, against a grey target
 ## dummy so the hits read (.claude/skills/voxel-character-lookdev/SKILL.md).
-##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat]
+##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots]
 ##       --scene=<character scene> --moves=res://game/combat/moves/<name>/
 ##       [--dummy=<scene>] [--stats=<FighterStats .tres>] [--energy=#ff9e40]
 ## Writes numbered JPG frames (f_00000.jpg...) for ffmpeg at 60 fps; "poses"
@@ -14,7 +14,7 @@ extends SceneTree
 ## hover, crossed guard, ki shot, kick, jump crouch, a big flinch) are layered
 ## over the clips by LookdevPoseOverride. Neither the sim nor the clips change.
 
-const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
+const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
 ## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
 const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
@@ -232,6 +232,13 @@ func _run(what: String) -> void:
 		await _tick(false)
 	if what == "poses":
 		await _pose_stills()
+		quit()
+		return
+	if what == "shots":
+		# Energy-colour check: the ki volley and the beam only.
+		await _ki_volley()
+		await _beam()
+		print("frames: %d" % _frame)
 		quit()
 		return
 	if what == "combat":
@@ -815,10 +822,13 @@ func _glow_material(energy: float, color := Color.TRANSPARENT) -> StandardMateri
 		color = KI_COLOR
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(1.0, 0.94, 0.82)
+	# The core is the energy colour lifted a little toward white (it was a fixed
+	# warm white, so every character's orbs and beams read white-peach), and the
+	# emission stays low enough that the hue survives tone mapping and bloom.
+	mat.albedo_color = color.lerp(Color.WHITE, 0.25)
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = energy
+	mat.emission_energy_multiplier = energy * 0.45
 	return mat
 
 
