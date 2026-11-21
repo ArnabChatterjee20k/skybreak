@@ -1,5 +1,5 @@
 // The Great Falls: a white curtain in voxel-stepped bands (0.7 m cells),
-// scrolling down, ragged stepped edges, foam at the foot.
+// scrolling down, ragged stepped edges, churning foam cells and a dithered foot.
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_disabled, unshaded;
 
@@ -32,11 +32,19 @@ void fragment() {
 	vec3 c = mix(water_color, streak_color, streak * 0.75 + fine * 0.2);
 	// Darker vertical seams where the curtain thins.
 	c = mix(c, shade_color, step(0.85, h1(col * 3.0 + 1.0)) * 0.5 * (1.0 - v));
-	c = mix(c, streak_color, smoothstep(0.86, 1.0, v));
+	// Foam at the foot: white, broken into lighter and greyer churning cells.
+	float churn = h1(col * 5.0 + row * 11.0 + floor(t * 6.0 + off * 4.0));
+	vec3 foam = mix(streak_color, mix(streak_color, shade_color, 0.55), step(0.55, churn) * (0.5 + 0.5 * h1(col + row * 3.0)));
+	c = mix(c, foam, smoothstep(0.86, 1.0, v));
+	// Value variation per cell, so the sheet never reads as one flat slab.
+	c *= 0.89 + 0.12 * h1(col * 13.0 + row * 7.0 + layer * 5.0);
 	// Ragged stepped sides.
 	float edge_cells = 3.0 + 4.0 * h1(row * 0.37 + col);
 	float from_edge = min(col, floor(size_m.x / cell_m) - col);
 	float a = step(edge_cells * 0.5, from_edge) * (0.86 + 0.14 * streak);
+	// A stepped, dithered foot: the last rows thin out cell by cell, churning.
+	float foot = clamp((size_m.y - row * cell_m) / 5.0, 0.0, 1.0);
+	a *= step(churn * 0.85 + 0.1, foot);
 	ALBEDO = c * light_level * 1.25;
 	ALPHA = a;
 }
