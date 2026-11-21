@@ -12,6 +12,11 @@ extends SkeletonModifier3D
 ##   about Z), a rotation of the bone (and everything below it) about its joint.
 ## keep_feet lowers the hips by however much the legs' aims lifted the feet,
 ## so a crouch stays planted on the floor.
+## reach: upper-arm bone -> [wrist target relative to the hips, elbow pole]
+## (skeleton space), solved
+## as a two-bone chain into that arm's aims, so a pose can place the hands.
+## square: a skeleton-space direction the hips (and the body above) are yawed to face
+## (zero: off), whatever stance the clip had.
 
 const CHILD := {
 	&"LeftUpperArm": &"LeftLowerArm", &"LeftLowerArm": &"LeftHand", &"LeftHand": &"LeftMiddleProximal",
@@ -33,6 +38,15 @@ var weight := 0.0
 var keep_feet := false
 ## Extra hips drop (skeleton units), e.g. a landing squash.
 var drop := 0.0
+var reach: Dictionary = {}
+var square := Vector3.ZERO
+## Global bone poses as this modifier left them (skeleton space): outside the
+## modification step the skeleton reports the clip's pose without it.
+var posed: Array[Transform3D] = []
+
+## Only the hips are squared; the spine follows them. Squaring each spine bone
+## too compounded the turn (each read its parent's pose before the update).
+const SQUARED: Array[StringName] = [&"Hips"]
 
 
 func set_pose(new_aims: Dictionary, new_turns := {}, feet := false) -> void:
@@ -43,13 +57,23 @@ func set_pose(new_aims: Dictionary, new_turns := {}, feet := false) -> void:
 
 func _process_modification() -> void:
 	var skeleton := get_skeleton()
-	if skeleton == null or weight <= 0.001:
+	if skeleton == null:
+		return
+	if weight <= 0.001:
+		_snapshot(skeleton)
 		return
 	var feet_before := _feet(skeleton)
 	for bone_name in ORDER:
 		var bone := skeleton.find_bone(bone_name)
 		if bone < 0:
 			continue
+		if square != Vector3.ZERO and bone_name in SQUARED:
+			var pose := skeleton.get_bone_global_pose(bone)
+			var front := pose.basis * skeleton.get_bone_global_rest(bone).basis.inverse() * Vector3.BACK
+			pose.basis = Basis(Vector3.UP, yaw_to_face(front, square) * weight) * pose.basis
+			skeleton.set_bone_global_pose(bone, pose)
+		if reach.has(bone_name):
+			_solve_reach(skeleton, bone_name, bone)
 		if turns.has(bone_name):
 			var e: Vector3 = turns[bone_name] * weight
 			var q := Quaternion.from_euler(Vector3(deg_to_rad(e.x), deg_to_rad(e.y), deg_to_rad(e.z)))
@@ -77,6 +101,59 @@ func _process_modification() -> void:
 		var pose := skeleton.get_bone_global_pose(hips)
 		pose.origin.y -= lift + drop * weight
 		skeleton.set_bone_global_pose(hips, pose)
+	_snapshot(skeleton)
+
+
+func _snapshot(skeleton: Skeleton3D) -> void:
+	posed.resize(skeleton.get_bone_count())
+	for i in posed.size():
+		posed[i] = skeleton.get_bone_global_pose(i)
+
+
+## A bone's global pose (skeleton space) including this modifier.
+func bone_pose(skeleton: Skeleton3D, bone: int) -> Transform3D:
+	return posed[bone] if bone < posed.size() else skeleton.get_bone_global_pose(bone)
+
+
+## Yaw (radians, about +Y) that turns `front` to face `toward` in the ground plane.
+static func yaw_to_face(front: Vector3, toward: Vector3) -> float:
+	if Vector2(front.x, front.z).length_squared() < 1e-8 or Vector2(toward.x, toward.z).length_squared() < 1e-8:
+		return 0.0
+	# Basis(UP, t) turns a heading atan2(x, z) into atan2(x, z) + t.
+	return wrapf(atan2(toward.x, toward.z) - atan2(front.x, front.z), -PI, PI)
+
+
+## Elbow position of a two-bone chain from `shoulder` reaching `target`, with
+## bone lengths `upper` and `lower`, bending toward `pole`.
+static func elbow_for(shoulder: Vector3, target: Vector3, upper: float, lower: float, pole: Vector3) -> Vector3:
+	var to := target - shoulder
+	var dist := clampf(to.length(), absf(upper - lower) + 0.001, upper + lower - 0.001)
+	var dir := to.normalized() if to.length() > 1e-5 else Vector3.FORWARD
+	var side := pole - dir * pole.dot(dir)
+	side = side.normalized() if side.length() > 1e-5 else dir.cross(Vector3.UP).normalized()
+	var cos_a := clampf((upper * upper + dist * dist - lower * lower) / (2.0 * upper * dist), -1.0, 1.0)
+	return shoulder + dir * upper * cos_a + side * upper * sqrt(1.0 - cos_a * cos_a)
+
+
+func _solve_reach(skeleton: Skeleton3D, bone_name: StringName, bone: int) -> void:
+	var lower_name: StringName = CHILD.get(bone_name, &"")
+	var lower := skeleton.find_bone(lower_name)
+	var wrist := skeleton.find_bone(CHILD.get(lower_name, &""))
+	if lower < 0 or wrist < 0:
+		return
+	var s := skeleton.get_bone_global_pose(bone).origin
+	var e := skeleton.get_bone_global_pose(lower).origin
+	var w := skeleton.get_bone_global_pose(wrist).origin
+	var goal: Array = reach[bone_name]
+	var hips := skeleton.find_bone(&"Hips")
+	var target: Vector3 = goal[0] + (skeleton.get_bone_global_pose(hips).origin if hips >= 0 else Vector3.ZERO)
+	var elbow := elbow_for(s, target, s.distance_to(e), e.distance_to(w), goal[1])
+	var dir: Vector3 = target - s
+	var hand := s + dir.normalized() * minf(dir.length(), s.distance_to(e) + e.distance_to(w) - 0.001)
+	var solved := aims.duplicate()
+	solved[bone_name] = elbow - s
+	solved[lower_name] = hand - elbow
+	aims = solved
 
 
 ## Heights of the two feet (skeleton space).

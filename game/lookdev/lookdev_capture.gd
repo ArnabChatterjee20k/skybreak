@@ -11,6 +11,14 @@ extends SceneTree
 
 const USAGE := "lookdev_capture.gd -- <out dir> [mode] --scene=<character scene> [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0] [--hide-stowed]"
 const CLIP_FPS := 30
+const ASPECT := 16.0 / 9.0
+## Close-up margins, as a fraction of the frame's half-extent.
+const HEAD_PAD := 0.16
+const HAND_PAD := 0.14
+## How far below the head joint the jaw ends (the head close-up's lower bound).
+const JAW_BELOW_HEAD := 0.1
+## Widest a head with hair, ears or a brim reaches from the neck (m).
+const HEAD_RADIUS := 0.3
 ## The knockdown still: stun length and the tick she lies on the floor.
 const KNOCKDOWN_TICKS := 90
 const KNOCKDOWN_LIE_TICK := 30
@@ -46,8 +54,7 @@ func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(_out)
 	_viewport = SubViewport.new()
 	_viewport.size = Vector2i(1920, 1080)
-	_viewport.msaa_3d = root.msaa_3d if root.msaa_3d != Viewport.MSAA_DISABLED else Viewport.MSAA_4X
-	_viewport.screen_space_aa = root.screen_space_aa
+	LookdevStage.configure_viewport(_viewport)
 	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	root.add_child(_viewport)
 	_stage = LookdevStage.new()
@@ -109,7 +116,7 @@ func _run(what: String) -> void:
 		for i in frames:
 			_pivot.rotation.y = TAU * i / frames
 			await _advance(2)
-			await _save("spin/f_%04d" % i)
+			await _save("spin/f_%04d" % i, 2)
 		_pivot.rotation.y = 0.0
 	if what in ["idle", "all"]:
 		DirAccess.make_dir_recursive_absolute(_out.path_join("idle"))
@@ -117,7 +124,7 @@ func _run(what: String) -> void:
 		_stage.frame(Vector3(0, 0.93, 0), 1.9, 0.82, -4.0)
 		for i in CLIP_FPS * 6:
 			await _advance(2)
-			await _save("idle/f_%04d" % i)
+			await _save("idle/f_%04d" % i, 2)
 	if what in ["compare", "all"] and _compare != "":
 		for yaw: float in [0.0, 35.0, 180.0]:
 			await _full(yaw, "compare_voxel_%03d" % int(yaw))
@@ -164,55 +171,104 @@ func _feet() -> void:
 	await _spawn(_scene)
 
 
+## The head close-up, framed from the head's measured posed vertices (hair,
+## ears, hats included) with padding; the camera tilts down further while big
+## shoulder pieces would cover the face.
 func _head(name: String) -> void:
 	_pivot.rotation.y = deg_to_rad(-28.0)
-	var head := _bone_position(&"Head") + Vector3(0, 0.17, 0)
-	# Frame from the chin to the figure's real top (tall ears, hats, hair
-	# spikes), and wide enough for a brim; a normal head keeps the 0.62 m span.
-	var chin := head.y - 0.4  # below the chin: the -6° pitch eats the bottom margin
-	var extent := _figure_top_and_width(head)
-	var top := maxf(head.y + 0.31, extent.x + 0.04)
-	var span := maxf(top - chin, extent.y / (16.0 / 9.0) * 1.15)
-	var centre := Vector3(head.x, (chin + top) * 0.5, head.z)
+	await _advance(1)
+	var head := PackedVector3Array()
+	var joint := _bone_position(&"Head")
+	# A long beard and parts of big shoulder pieces are skinned to the head
+	# too; the face is framed from the jaw up, within HEAD_RADIUS of the neck.
+	for p in LookdevFraming.skinned_points(_skeleton(), is_head_bone, 2):
+		if p.y >= joint.y - JAW_BELOW_HEAD and Vector2(p.x - joint.x, p.z - joint.z).length() <= HEAD_RADIUS:
+			head.append(p)
+	var shoulders := LookdevFraming.skinned_points(_skeleton(), is_shoulder_bone, 3)
 	_stage.camera.fov = 24.0
-	_stage.frame(centre, maxf(span, 0.62), 0.9, -6.0)
+	# Swing round toward the front and tilt down until the shoulder pieces
+	# stop covering the face; failing that, the clearest view.
+	var face := face_marks(head, view_basis(-6.0, 0.0), _bone_position(&"Head").y + 0.1)
+	var best := [-INF, -6.0, 0.0]
+	for yaw: float in [0.0, 8.0, 16.0, 24.0]:
+		for pitch: float in [-6.0, -10.0, -14.0, -18.0]:
+			var basis := view_basis(pitch, yaw)
+			var eye := LookdevFraming.fit(head, basis, _stage.camera.fov, ASPECT, HEAD_PAD)
+			var clear := LookdevFraming.clearance(eye, face, shoulders, 0.01, 0.1)
+			if clear > best[0]:
+				best = [clear, pitch, yaw]
+		if best[0] >= 0.0:
+			break
+	var pitch: float = best[1]
+	_place(head, pitch, best[2], HEAD_PAD)
+	print("%s: %d head points, pitch %.0f, yaw %.0f, face clear by %.3f m, inside frame %s" % [name, head.size(), pitch, best[2], best[0], _inside(head)])
 	await _save(name)
 	_stage.camera.fov = 30.0
 
 
+## The signature-part close-up (hand, fingers and gauntlet forearm), framed
+## from their measured posed vertices with padding, so the fist isn't cropped.
 func _hand(name: String) -> void:
 	_pivot.rotation.y = deg_to_rad(_hand_yaw_deg)
 	await _advance(1)
-	var forearm := StringName(String(_hand_bone).replace("Hand", "LowerArm"))
-	var hand := _bone_position(_hand_bone).lerp(_bone_position(forearm), 0.25)
+	var side := "Left" if String(_hand_bone).begins_with("Left") else "Right"
+	var hand := LookdevFraming.skinned_points(_skeleton(), LookdevFraming.hand_bones(side), 2)
 	_stage.camera.fov = 24.0
-	_stage.frame(hand, 0.42, 0.8, -8.0, 0.0)
+	_place(hand, -8.0, 0.0, HAND_PAD)
+	print("%s: %d hand points, inside frame %s" % [name, hand.size(), _inside(hand)])
 	await _save(name)
 	_stage.camera.fov = 30.0
 
 
-## The figure's highest point (x) and its widest extent around the head (y),
-## in world space: the rest-pose vertices above the neck and within 0.6 m of
-## the head (ears, hat, hair; not the T-posed arms), carried by the Head pose.
-func _figure_top_and_width(head: Vector3) -> Vector2:
-	var skeleton := _view.model.get_node("%GeneralSkeleton") as Skeleton3D
-	var hb := skeleton.find_bone(&"Head")
-	var rest := skeleton.get_bone_global_rest(hb).origin
-	var pose := skeleton.global_transform * skeleton.get_bone_global_pose(hb) 		* skeleton.get_bone_global_rest(hb).affine_inverse()
-	var top := head.y
-	var width := 0.0
-	for mi: MeshInstance3D in skeleton.find_children("*", "MeshInstance3D", true, false):
-		if mi.mesh == null or not mi.visible:
-			continue
-		for si in mi.mesh.get_surface_count():
-			var verts: PackedVector3Array = mi.mesh.surface_get_arrays(si)[Mesh.ARRAY_VERTEX]
-			for v in verts:
-				if v.y < rest.y - 0.08 or Vector2(v.x - rest.x, v.z - rest.z).length() > 0.6:
-					continue
-				var w := pose * v
-				top = maxf(top, w.y)
-				width = maxf(width, absf(w.x - head.x) * 2.0)
-	return Vector2(top, width)
+## Puts the camera at `pitch_deg` / `yaw_deg` (as LookdevStage.frame) where
+## all `points` fit with `pad` margin.
+func _place(points: PackedVector3Array, pitch_deg: float, yaw_deg: float, pad: float) -> void:
+	var basis := view_basis(pitch_deg, yaw_deg)
+	var eye := LookdevFraming.fit(points, basis, _stage.camera.fov, ASPECT, pad)
+	_stage.camera.global_transform = Transform3D(basis, eye)
+
+
+func _inside(points: PackedVector3Array) -> bool:
+	var cam := _stage.camera
+	return LookdevFraming.inside_frame(points, cam.global_position, cam.global_basis, cam.fov, ASPECT)
+
+
+## Camera orientation looking at the subject from yaw (0 = front, +Z) and
+## pitch (negative = looking down), like LookdevStage.frame.
+static func view_basis(pitch_deg: float, yaw_deg: float) -> Basis:
+	var up := deg_to_rad(-pitch_deg)
+	var yaw := deg_to_rad(yaw_deg)
+	var dir := Vector3(sin(yaw) * cos(up), sin(up), cos(yaw) * cos(up))
+	return Basis.looking_at(-dir, Vector3.UP)
+
+
+static func is_head_bone(bone: String) -> bool:
+	for part: String in ["Head", "Jaw", "Eye", "Hair", "Ear", "Hat"]:
+		if bone.contains(part):
+			return true
+	return false
+
+
+static func is_shoulder_bone(bone: String) -> bool:
+	return bone in ["Chest", "UpperChest", "LeftShoulder", "RightShoulder", "LeftUpperArm", "RightUpperArm"]
+
+
+## Head points facing the camera at eye height (`eye_y` +- 6 cm): the face
+## a big beard or collar mustn't decide the tilt by.
+static func face_marks(head: PackedVector3Array, basis: Basis, eye_y: float) -> PackedVector3Array:
+	var centre := Vector3.ZERO
+	for p in head:
+		centre += p
+	centre /= maxf(head.size(), 1.0)
+	var marks := PackedVector3Array()
+	for p in head:
+		if absf(p.y - eye_y) < 0.06 and (p - centre).dot(basis.z) > 0.0:
+			marks.append(p)
+	return marks
+
+
+func _skeleton() -> Skeleton3D:
+	return _view.model.get_node("%GeneralSkeleton") as Skeleton3D
 
 
 func _bone_position(bone: StringName) -> Vector3:
@@ -220,8 +276,9 @@ func _bone_position(bone: StringName) -> Vector3:
 	return skeleton.global_transform * skeleton.get_bone_global_pose(skeleton.find_bone(bone)).origin
 
 
-func _save(name: String) -> void:
-	for i in 2:
+## settle: frames to wait first (TAA converges on a still; clips move on).
+func _save(name: String, settle := LookdevStage.TAA_SETTLE_FRAMES) -> void:
+	for i in settle:
 		await process_frame
 	await RenderingServer.frame_post_draw
 	_viewport.get_texture().get_image().save_png(_out.path_join(name + ".png"))
