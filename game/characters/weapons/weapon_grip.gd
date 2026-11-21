@@ -179,19 +179,24 @@ static func voxel_slices(mesh: Mesh) -> Array[AABB]:
 static var _box_cache := {}
 
 
-## Part boxes of a freshly built model of kind, classic or voxel (cached per kind and look).
+## Part boxes of a freshly built model of kind (cached per kind and look); with voxel (and a
+## voxel model of kind) the voxel model's boxes too, so the clearance covers the drawn shape.
 static func model_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]:
-	var key := Vector2i(kind, int(voxel))
+	var key := _box_key(kind, voxel)
 	if not _box_cache.has(key):
-		var model := VoxelWeapons.build(kind) if voxel and VoxelWeapons.has(kind) else WeaponModels.build(kind)
-		model.transform = Transform3D.IDENTITY
-		_box_cache[key] = part_boxes(model)
-		_clear_cache[key] = part_boxes(model, true)
-		model.free()
-		if voxel and Weapon.is_bow(kind):
-			# A voxel bow also keeps the classic bow's wider limbs out: the draw is tuned to that margin.
-			(_box_cache[key] as Array[Transform3D]).append_array(model_boxes(kind))
-			(_clear_cache[key] as Array[Transform3D]).append_array(clearance_boxes(kind))
+		var boxes: Array[Transform3D] = []
+		var clear: Array[Transform3D] = []
+		# A voxel holder keeps out the classic shape the holds were tuned on as well as the drawn voxel one.
+		var models: Array[Node3D] = [WeaponModels.build(kind)]
+		if key.y == 1:
+			models.push_front(VoxelWeapons.build(kind))
+		for model in models:
+			model.transform = Transform3D.IDENTITY
+			boxes.append_array(part_boxes(model))
+			clear.append_array(part_boxes(model, true))
+			model.free()
+		_box_cache[key] = boxes
+		_clear_cache[key] = clear
 	return _box_cache[key]
 
 
@@ -201,4 +206,8 @@ static var _clear_cache := {}
 ## What the holder's clearance keeps out of the body: the part boxes plus a bow's resting string.
 static func clearance_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]:
 	model_boxes(kind, voxel)
-	return _clear_cache[Vector2i(kind, int(voxel))]
+	return _clear_cache[_box_key(kind, voxel)]
+
+
+static func _box_key(kind: Weapon.Kind, voxel: bool) -> Vector2i:
+	return Vector2i(kind, 1 if voxel and VoxelWeapons.has(kind) else 0)
