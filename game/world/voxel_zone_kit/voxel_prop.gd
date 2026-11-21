@@ -12,8 +12,10 @@ const CACHE_DIR := "user://voxel_prop_cache/"
 ## Side of a placement tile (m): each tile is its own MultiMesh, so visibility
 ## ranges and frustum culling work per tile, not per zone.
 const TILE := 48.0
-## Tiles per side of a far region (HLOD, see _far_regions).
+## Tiles per side of a far region (HLOD, see _far_regions), and of a block
+## of short-range scatter tiles (below HIGH only).
 const REGION := 4
+const SCATTER_REGION := 3
 
 ## The shared surfaces a design's surface(mat) picks from.
 enum Surf { MATTE, METAL, WATER, PETAL, GLOW, BARK }
@@ -152,7 +154,13 @@ static func place(parent: Node3D, node_name: String, meshes: Array[ArrayMesh], r
 			root.add_child(node)
 			begin = end
 	if float(ranges[-1]) == 0.0:
-		_far_regions(root, node_name, meshes[-1], tiles, tile_nodes, last_begin, meshes.size() - 1 < shadow_tiers)
+		_far_regions(root, node_name, meshes[-1], tiles, tile_nodes, last_begin, 0.0, REGION,
+			meshes.size() - 1 < shadow_tiers)
+	elif VoxelQuality.tier != GraphicsSettings.Quality.HIGH:
+		# Scatter whose last tier ends: blocks take over that tier too, and end a
+		# block radius past the range (a few more copies at the far edge, never fewer).
+		_far_regions(root, node_name, meshes[-1], tiles, tile_nodes, last_begin, float(ranges[-1]) * scale,
+			SCATTER_REGION, meshes.size() - 1 < shadow_tiers)
 	return root
 
 
@@ -163,10 +171,10 @@ static func place(parent: Node3D, node_name: String, meshes: Array[ArrayMesh], r
 ## it as visibility parent, so they hide while it shows. The same picture,
 ## one draw per block instead of one per tile.
 static func _far_regions(root: Node3D, node_name: String, far_mesh: ArrayMesh, tiles: Dictionary,
-		tile_nodes: Dictionary, last_begin: float, shadows: bool) -> void:
+		tile_nodes: Dictionary, last_begin: float, last_end: float, region: int, shadows: bool) -> void:
 	var regions := {}
 	for key: Vector2i in tiles:
-		var r := Vector2i(floori(key.x / float(REGION)), floori(key.y / float(REGION)))
+		var r := Vector2i(floori(key.x / float(region)), floori(key.y / float(region)))
 		if not regions.has(r):
 			regions[r] = []
 		(regions[r] as Array).append(key)
@@ -186,6 +194,8 @@ static func _far_regions(root: Node3D, node_name: String, far_mesh: ArrayMesh, t
 			var list: Array[Transform3D] = tiles[key]
 			reach = maxf(reach, _bounds(n.multimesh.mesh, list).get_center().distance_to(centre))
 		far.visibility_range_begin = last_begin + reach + 1.0
+		if last_end > 0.0:
+			far.visibility_range_end = last_end + reach
 		far.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 		far.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows \
 			else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

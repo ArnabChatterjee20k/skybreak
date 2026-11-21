@@ -239,3 +239,23 @@ func test_tiles_of_a_far_region_hide_behind_one_merged_far_node() -> void:
 	for node: MultiMeshInstance3D in root.get_children():
 		if node != far:
 			assert_eq(node.get_node(node.visibility_parent), far)
+
+
+func test_scatter_blocks_only_below_high_and_never_end_early() -> void:
+	var parent := Node3D.new()
+	add_child_autofree(parent)
+	var am := ArrayMesh.new()
+	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, BoxMesh.new().get_mesh_arrays())
+	var meshes: Array[ArrayMesh] = [am]
+	var xfs: Array[Transform3D] = []
+	for i in 3:
+		xfs.append(Transform3D(Basis(), Vector3(16.0 * i + 1.0, 0, 1)))
+	var keep := VoxelQuality.tier
+	VoxelQuality.tier = GraphicsSettings.Quality.HIGH
+	var high := VoxelProp.place(parent, "Tufts", meshes, [30.0], xfs, 0)
+	VoxelQuality.tier = GraphicsSettings.Quality.MEDIUM
+	var medium := VoxelProp.place(parent, "TuftsM", meshes, [30.0], xfs, 0)
+	VoxelQuality.tier = keep
+	assert_null(high.get_node_or_null("Tufts_far_0_0"), "HIGH keeps the authored tiles only")
+	var block := medium.get_node("TuftsM_far_0_0") as MultiMeshInstance3D
+	assert_gte(block.visibility_range_end, 30.0 * 0.8, "ends no earlier than the range")

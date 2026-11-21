@@ -172,9 +172,12 @@ func _breakdown(zone: Node, cam: Camera3D) -> void:
 		if mesh == null:
 			continue
 		var tris := 0
-		for s in mesh.get_surface_count():
-			var il: int = mesh.surface_get_array_index_len(s)
-			tris += (il if il > 0 else mesh.surface_get_array_len(s)) / 3
+		if mesh is ArrayMesh:
+			for s in mesh.get_surface_count():
+				var il: int = (mesh as ArrayMesh).surface_get_array_index_len(s)
+				tris += (il if il > 0 else (mesh as ArrayMesh).surface_get_array_len(s)) / 3
+		else:
+			tris = mesh.get_faces().size() / 3
 		var own := String(n.name)
 		var up := String(n.get_parent().name)
 		if own.begins_with("@"):
