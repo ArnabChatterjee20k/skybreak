@@ -67,35 +67,58 @@ static func clear_lift(base: Vector3, lift: Vector3, targets: PackedVector3Array
 
 ## World-space posed vertices of `skeleton`'s skinned meshes whose strongest
 ## bone passes `keep` (a Callable taking the bone name), every `stride`-th.
-static func skinned_points(skeleton: Skeleton3D, keep: Callable, stride := 1) -> PackedVector3Array:
+## Skinned on the CPU, so it also works headless (the dummy renderer has no
+## skin to bake from), from `poses` (a pose_snapshot() taken on
+## skeleton_updated, with the modifiers applied) or else the skeleton's pose.
+static func skinned_points(skeleton: Skeleton3D, keep: Callable, stride := 1, poses: Array[Transform3D] = []) -> PackedVector3Array:
 	var out := PackedVector3Array()
 	for node in skeleton.find_children("*", "MeshInstance3D", true, false):
 		var mi := node as MeshInstance3D
 		if mi.mesh == null or mi.skin == null or not mi.is_visible_in_tree():
 			continue
-		var baked := mi.bake_mesh_from_current_skeleton_pose()
-		if baked == null:
-			continue
+		var skin := mi.skin
+		var mats: Array[Transform3D] = []
+		var names: Array[String] = []
+		for k in skin.get_bind_count():
+			var bone := skin.get_bind_bone(k)
+			if bone < 0:
+				bone = skeleton.find_bone(skin.get_bind_name(k))
+			names.append(skeleton.get_bone_name(bone) if bone >= 0 else String(skin.get_bind_name(k)))
+			bone = maxi(bone, 0)
+			var pose := poses[bone] if bone < poses.size() else skeleton.get_bone_global_pose(bone)
+			# As the renderer and bake_mesh_from_current_skeleton_pose(): in the
+			# mesh instance's space.
+			mats.append(mi.global_transform * pose * skin.get_bind_pose(k))
 		for s in mi.mesh.get_surface_count():
 			var arr: Array = mi.mesh.surface_get_arrays(s)
-			var posed: PackedVector3Array = baked.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
 			var bones: PackedInt32Array = arr[Mesh.ARRAY_BONES]
 			var ws: PackedFloat32Array = arr[Mesh.ARRAY_WEIGHTS]
-			var per := bones.size() / maxi(posed.size(), 1)
+			var per := bones.size() / maxi(verts.size(), 1)
 			if per < 1:
 				continue
-			var names := {}
-			for v in range(0, posed.size(), stride):
+			for v in range(0, verts.size(), stride):
 				var top := 0
 				for j in per:
 					if ws[v * per + j] > ws[v * per + top]:
 						top = j
-				var bind := bones[v * per + top]
-				if not names.has(bind):
-					var bone := mi.skin.get_bind_bone(bind)
-					names[bind] = skeleton.get_bone_name(bone) if bone >= 0 else String(mi.skin.get_bind_name(bind))
-				if keep.call(names[bind]):
-					out.append(mi.global_transform * posed[v])
+				if not keep.call(names[bones[v * per + top]]):
+					continue
+				var p := Vector3.ZERO
+				for j in per:
+					var w := ws[v * per + j]
+					if w > 0.0:
+						p += (mats[bones[v * per + j]] * verts[v]) * w
+				out.append(p)
+	return out
+
+
+## Every bone's global pose now. Read on skeleton_updated it includes the
+## SkeletonModifier3Ds (outside it the skeleton reports the pose without them).
+static func pose_snapshot(skeleton: Skeleton3D) -> Array[Transform3D]:
+	var out: Array[Transform3D] = []
+	for b in skeleton.get_bone_count():
+		out.append(skeleton.get_bone_global_pose(b))
 	return out
 
 
@@ -111,3 +134,58 @@ static func hand_bones(side: String, forearm := true) -> Callable:
 			if rest.begins_with(f):
 				return true
 		return false
+
+
+## Screen-space bounds (frame fractions, y down) of the `points` in front of a
+## camera at `xf`.
+static func screen_box(points: PackedVector3Array, xf: Transform3D, fov_deg: float, aspect: float) -> Rect2:
+	var inv := xf.affine_inverse()
+	var ty := tan(deg_to_rad(fov_deg) * 0.5)
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for p in points:
+		var q := inv * p
+		if q.z > -0.01:
+			continue
+		var s := Vector2(0.5 + q.x / (-q.z * ty * aspect) * 0.5, 0.5 - q.y / (-q.z * ty) * 0.5)
+		lo = Vector2(minf(lo.x, s.x), minf(lo.y, s.y))
+		hi = Vector2(maxf(hi.x, s.x), maxf(hi.y, s.y))
+	return Rect2(lo, hi - lo)
+
+
+## How far `box` (frame fractions) stays inside the `pad` safe area: negative
+## means it pokes past the padding.
+static func safe_margin(box: Rect2, pad: float) -> float:
+	return minf(minf(box.position.x, 1.0 - box.end.x), minf(box.position.y, 1.0 - box.end.y)) - pad
+
+
+## Share of `box` (frame fractions) covered by `clutter` points seen from a
+## camera at `xf`, on a grid of `cells` across the box.
+static func cover(box: Rect2, clutter: PackedVector3Array, xf: Transform3D, fov_deg: float, aspect: float, cells := 12) -> float:
+	var inv := xf.affine_inverse()
+	var ty := tan(deg_to_rad(fov_deg) * 0.5)
+	var hit := {}
+	for p in clutter:
+		var q := inv * p
+		if q.z > -0.01:
+			continue
+		var s := Vector2(0.5 + q.x / (-q.z * ty * aspect) * 0.5, 0.5 - q.y / (-q.z * ty) * 0.5)
+		if box.has_point(s):
+			var c := Vector2i(((s - box.position) / box.size * cells).floor())
+			hit[c] = true
+	return float(hit.size()) / float(cells * cells)
+
+
+## World-space vertices of the visible meshes under `root` that aren't skinned
+## (rigidly attached gear, stowed weapons), every `stride`-th.
+static func rigid_points(root: Node, stride := 1) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for node in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := node as MeshInstance3D
+		if mi.mesh == null or mi.skin != null or not mi.is_visible_in_tree():
+			continue
+		for s in mi.mesh.get_surface_count():
+			var verts: PackedVector3Array = mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]
+			for v in range(0, verts.size(), stride):
+				out.append(mi.global_transform * verts[v])
+	return out

@@ -518,3 +518,5 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   ambience that follows altitude. Follow-ups: weapon, pickup, ki blast/beam and
   round-flow cues are banked and mapped but wait for sim events; audio volume
   sliders in the settings menu.
+
+GAUNTLET-CLOSEUP FIXED on lookdev/reel-fixes@5a6ee72

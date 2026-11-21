@@ -1980,18 +1980,7 @@ func _check_dash_frame() -> void:
 ## Screen-space bounds (0..1, x right, y down) of `points` seen by a camera at
 ## `xf` with a vertical `fov_deg` and `aspect` (points behind it are skipped).
 static func screen_box(points: PackedVector3Array, xf: Transform3D, fov_deg: float, aspect: float) -> Rect2:
-	var inv := xf.affine_inverse()
-	var ty := tan(deg_to_rad(fov_deg) * 0.5)
-	var lo := Vector2(INF, INF)
-	var hi := Vector2(-INF, -INF)
-	for p in points:
-		var q := inv * p
-		if q.z > -0.01:
-			continue
-		var s := Vector2(0.5 + q.x / (-q.z * ty * aspect) * 0.5, 0.5 - q.y / (-q.z * ty) * 0.5)
-		lo = Vector2(minf(lo.x, s.x), minf(lo.y, s.y))
-		hi = Vector2(maxf(hi.x, s.x), maxf(hi.y, s.y))
-	return Rect2(lo, hi - lo)
+	return LookdevFraming.screen_box(points, xf, fov_deg, aspect)
 
 
 ## How far (screen fraction) a span [lo, hi] must move to sit inside

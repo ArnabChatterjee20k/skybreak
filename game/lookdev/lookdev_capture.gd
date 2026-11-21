@@ -14,7 +14,22 @@ const CLIP_FPS := 30
 const ASPECT := 16.0 / 9.0
 ## Close-up margins, as a fraction of the frame's half-extent.
 const HEAD_PAD := 0.16
-const HAND_PAD := 0.14
+## The hand close-up's fit margin: a little over the 10% safe area (a fifth
+## of each half-extent), so the fist sits inside it with room to spare.
+const HAND_PAD := 0.24
+## The safe area the whole fist must stay inside, as a fraction of the frame.
+const HAND_SAFE := 0.1
+const HAND_FOV := 24.0
+## Frames the test waits to check the fist holds still as a still settles.
+const HAND_SETTLE_CHECK := LookdevStage.TAA_SETTLE_FRAMES
+## Forearm within this of the wrist joint is the gauntlet's cuff (m).
+const HAND_CUFF := 0.12
+## Camera angles the hand close-up searches (yaw 0 = front, + = figure's left).
+## Past about 45 degrees the frame runs off the cyclorama's side edge.
+const HAND_YAWS: Array[float] = [0.0, -15.0, 15.0, -30.0, 30.0, -45.0, 45.0]
+const HAND_PITCHES: Array[float] = [-10.0, -20.0, -30.0, 0.0, 10.0]
+## Closest the close-up's eye may come to any other part of the body (m).
+const HAND_EYE_CLEAR := 0.15
 ## How far below the head joint the jaw ends (the head close-up's lower bound).
 const JAW_BELOW_HEAD := 0.1
 ## Widest a head with hair, ears or a brim reaches from the neck (m).
@@ -31,6 +46,8 @@ var _hand_yaw_deg := 0.0
 var _hide_stowed := false
 
 var _out := ""
+## Set by setup(): the node the capture builds under (tests); else this tree.
+var _host: Node
 ## Renders go through a fixed-size viewport so stills and clips are exactly
 ## 1920x1080 whatever the window's client area is.
 var _viewport: SubViewport
@@ -38,6 +55,8 @@ var _stage: LookdevStage
 var _pivot: Node3D
 var _view: CharacterView
 var _fighter := FighterState.new()
+## The skeleton's last final pose (modifiers applied), for measuring.
+var _poses: Array[Transform3D] = []
 
 
 func _initialize() -> void:
@@ -62,10 +81,27 @@ func _initialize() -> void:
 	_run.call_deferred(what)
 
 
+## Builds the stage under `host` without capturing (tests).
+func setup(host: Node, scene: String, hand := &"RightHand") -> void:
+	_host = host
+	_scene = scene
+	_hand_bone = hand
+	_viewport = SubViewport.new()
+	_viewport.size = Vector2i(1920, 1080)
+	_host.add_child(_viewport)
+	_stage = LookdevStage.new()
+	_viewport.add_child(_stage)
+	await _spawn(_scene)
+
+
+func _tree() -> SceneTree:
+	return _host.get_tree() if _host != null else self
+
+
 func _spawn(scene: String) -> void:
 	if _pivot != null:
 		_pivot.queue_free()
-		await process_frame
+		await _tree().process_frame
 	_pivot = Node3D.new()
 	_stage.add_child(_pivot)
 	# The view's model faces -Z; turn it so yaw 0 faces the camera (+Z).
@@ -78,6 +114,9 @@ func _spawn(scene: String) -> void:
 	facing.add_child(body)
 	body.add_child(_view)
 	_hide_weapons(_view)
+	_poses.clear()
+	var skeleton := _skeleton()
+	skeleton.skeleton_updated.connect(func() -> void: _poses = LookdevFraming.pose_snapshot(skeleton))
 	_fighter = FighterState.new()
 	_fighter.enter_state(FighterState.State.IDLE)
 	await _advance(40)
@@ -87,7 +126,7 @@ func _advance(ticks: int, delta := 1.0 / 60.0) -> void:
 	for t in ticks:
 		_fighter.state_ticks += 1
 		_view.apply_state(_fighter, delta)
-		await process_frame
+		await _tree().process_frame
 
 
 func _run(what: String) -> void:
@@ -150,7 +189,7 @@ func _knockdown() -> void:
 		_fighter.state_ticks += 1
 		_fighter.stun_ticks -= 1
 		_view.apply_state(_fighter, 1.0 / 60.0)
-		await process_frame
+		await _tree().process_frame
 	for shot: Vector2 in [Vector2(90.0, -3.0), Vector2(35.0, -12.0)]:
 		_pivot.rotation.y = deg_to_rad(shot.x)
 		_stage.frame(Vector3(0, 0.25, 0), 0.9, 0.5, shot.y)
@@ -181,10 +220,10 @@ func _head(name: String) -> void:
 	var joint := _bone_position(&"Head")
 	# A long beard and parts of big shoulder pieces are skinned to the head
 	# too; the face is framed from the jaw up, within HEAD_RADIUS of the neck.
-	for p in LookdevFraming.skinned_points(_skeleton(), is_head_bone, 2):
+	for p in _points(is_head_bone, 2):
 		if p.y >= joint.y - JAW_BELOW_HEAD and Vector2(p.x - joint.x, p.z - joint.z).length() <= HEAD_RADIUS:
 			head.append(p)
-	var shoulders := LookdevFraming.skinned_points(_skeleton(), is_shoulder_bone, 3)
+	var shoulders := _points(is_shoulder_bone, 3)
 	_stage.camera.fov = 24.0
 	# Swing round toward the front and tilt down until the shoulder pieces
 	# stop covering the face; failing that, the clearest view.
@@ -206,18 +245,86 @@ func _head(name: String) -> void:
 	_stage.camera.fov = 30.0
 
 
-## The signature-part close-up (hand, fingers and gauntlet forearm), framed
-## from their measured posed vertices with padding, so the fist isn't cropped.
+## The signature-part close-up: the fist and gauntlet cuff, framed from
+## their measured posed vertices inside the safe area (hand_shot()).
 func _hand(name: String) -> void:
+	var r := await hand_shot()
+	print("%s: %d fist points, pitch %.0f, yaw %.0f, safe-area margin %.3f, shoulder overlap %.4f, clutter %.2f, eye clear by %.2f m" % [
+		name, r["fist"].size(), r["pitch"], r["yaw"], r["margin"], r["overlap"], r["clutter"], r["eye_clear"]])
+	await _save(name)
+	var after := LookdevFraming.screen_box(_fist_points(), _stage.camera.global_transform, HAND_FOV, ASPECT)
+	print("%s: margin after settling %.3f" % [name, LookdevFraming.safe_margin(after, HAND_SAFE)])
+	_stage.camera.fov = 30.0
+
+
+## Places the hand close-up camera: of the searched angles, the one where the
+## fist's screen box stays clear of the shoulder pieces (Brann's boulders) and
+## least of the body sits behind or in front of it, so it reads against the
+## backdrop. Returns the fist points, the angle and the measured margins.
+func hand_shot() -> Dictionary:
 	_pivot.rotation.y = deg_to_rad(_hand_yaw_deg)
 	await _advance(1)
-	var side := "Left" if String(_hand_bone).begins_with("Left") else "Right"
-	var hand := LookdevFraming.skinned_points(_skeleton(), LookdevFraming.hand_bones(side), 2)
-	_stage.camera.fov = 24.0
-	_place(hand, -8.0, 0.0, HAND_PAD)
-	print("%s: %d hand points, inside frame %s" % [name, hand.size(), _inside(hand)])
-	await _save(name)
-	_stage.camera.fov = 30.0
+	var side := _hand_side()
+	var fist := _fist_points()
+	var arm := LookdevFraming.hand_bones(side)
+	var shoulders := _points(is_shoulder_piece_bone, 2)
+	var clutter := _points(func(b: String) -> bool:
+		return not arm.call(b) and not is_shoulder_piece_bone(b), 3)
+	clutter.append_array(LookdevFraming.rigid_points(_view.model, 3))
+	# What the eye mustn't sit in: everything but the fist itself.
+	var body := clutter.duplicate()
+	body.append_array(shoulders)
+	body.append_array(_points(func(b: String) -> bool: return b == side + "LowerArm", 3))
+	_stage.camera.fov = HAND_FOV
+	var best := {}
+	for pitch: float in HAND_PITCHES:
+		for yaw: float in HAND_YAWS:
+			var basis := view_basis(pitch, yaw)
+			var xf := Transform3D(basis, LookdevFraming.fit(fist, basis, HAND_FOV, ASPECT, HAND_PAD))
+			var inside := nearest(xf.origin, body) < HAND_EYE_CLEAR
+			var box := LookdevFraming.screen_box(fist, xf, HAND_FOV, ASPECT)
+			var overlap := LookdevFraming.cover(box, shoulders, xf, HAND_FOV, ASPECT, 24)
+			var covered := LookdevFraming.cover(box, clutter, xf, HAND_FOV, ASPECT)
+			# Clear of the shoulders first, then the cleanest backdrop, then
+			# the angle nearest the front at a gentle tilt.
+			var score := (100.0 if inside else 0.0) + (10.0 if overlap > 0.0 else 0.0) + covered + absf(yaw) * 0.001 + absf(pitch + 10.0) * 0.002
+			if best.is_empty() or score < best["score"]:
+				best = {"score": score, "pitch": pitch, "yaw": yaw, "xf": xf, "overlap": overlap, "clutter": covered, "eye_clear": nearest(xf.origin, body)}
+	_stage.camera.global_transform = best["xf"]
+	var cam: Transform3D = best["xf"]
+	return {
+		"fist": fist, "shoulders": shoulders, "camera": cam, "pitch": best["pitch"], "yaw": best["yaw"],
+		"overlap": best["overlap"], "clutter": best["clutter"], "eye_clear": best["eye_clear"],
+		"margin": LookdevFraming.safe_margin(LookdevFraming.screen_box(fist, cam, HAND_FOV, ASPECT), HAND_SAFE),
+	}
+
+
+## The fist: every hand and finger vertex plus the forearm's cuff near the wrist.
+func _fist_points() -> PackedVector3Array:
+	var side := _hand_side()
+	var wrist := _bone_position(StringName(side + "Hand"))
+	var out := _points(LookdevFraming.hand_bones(side, false), 1)
+	for p in _points(func(b: String) -> bool: return b == side + "LowerArm", 1):
+		if p.distance_to(wrist) <= HAND_CUFF:
+			out.append(p)
+	return out
+
+
+func _hand_side() -> String:
+	return "Left" if String(_hand_bone).begins_with("Left") else "Right"
+
+
+## Distance from `at` to the nearest of `points`.
+static func nearest(at: Vector3, points: PackedVector3Array) -> float:
+	var best := INF
+	for p in points:
+		best = minf(best, at.distance_squared_to(p))
+	return sqrt(best)
+
+
+## Shoulder pieces: Brann's boulders, pauldrons, shoulder pads.
+static func is_shoulder_piece_bone(bone: String) -> bool:
+	return bone in ["LeftShoulder", "RightShoulder"]
 
 
 ## Puts the camera at `pitch_deg` / `yaw_deg` (as LookdevStage.frame) where
@@ -267,19 +374,26 @@ static func face_marks(head: PackedVector3Array, basis: Basis, eye_y: float) -> 
 	return marks
 
 
+## Posed vertices whose strongest bone passes `keep`, every `stride`-th.
+func _points(keep: Callable, stride := 1) -> PackedVector3Array:
+	return LookdevFraming.skinned_points(_skeleton(), keep, stride, _poses)
+
+
 func _skeleton() -> Skeleton3D:
 	return _view.model.get_node("%GeneralSkeleton") as Skeleton3D
 
 
 func _bone_position(bone: StringName) -> Vector3:
-	var skeleton := _view.model.get_node("%GeneralSkeleton") as Skeleton3D
-	return skeleton.global_transform * skeleton.get_bone_global_pose(skeleton.find_bone(bone)).origin
+	var skeleton := _skeleton()
+	var i := skeleton.find_bone(bone)
+	var pose := _poses[i] if i < _poses.size() else skeleton.get_bone_global_pose(i)
+	return skeleton.global_transform * pose.origin
 
 
 ## settle: frames to wait first (TAA converges on a still; clips move on).
 func _save(name: String, settle := LookdevStage.TAA_SETTLE_FRAMES) -> void:
 	for i in settle:
-		await process_frame
+		await _tree().process_frame
 	await RenderingServer.frame_post_draw
 	_viewport.get_texture().get_image().save_png(_out.path_join(name + ".png"))
 
