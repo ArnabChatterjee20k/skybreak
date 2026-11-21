@@ -95,3 +95,16 @@ func test_night_sky_is_lighter_than_the_facades_and_never_violet() -> void:
 		assert_between(c.h * 360.0, 200.0, 245.0, "%s is slate blue, not violet" % key)
 	var rim: Color = night.rim_color
 	assert_lt(rim.s, 0.2, "cool white rim, not cyan")
+
+
+func test_every_ground_mesh_has_triangles_including_the_merged_outer_ring() -> void:
+	_zone.street_mat = ShaderMaterial.new()
+	_zone._ground()
+	var ground := _zone.get_node("Ground")
+	var always := 0
+	for mi: MeshInstance3D in ground.get_children():
+		assert_gt(mi.mesh.surface_get_array_len(0), 0, "%s has triangles" % mi.name)
+		if mi.visibility_range_begin == 0.0 and mi.visibility_range_end == 0.0:
+			always += 1
+	assert_gt(always, 0, "the outer ring draws at every distance")
+	ground.free()

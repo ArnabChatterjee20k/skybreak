@@ -1512,6 +1512,11 @@ func _mist() -> void:
 	for spec: Array in [[lake, mat, "LakeMist"], [plume, spray, "FallsSpray"]]:
 		var root := VoxelProp.place(self, spec[2], puff, [0.0], spec[0], 0)
 		for child in root.get_children():
+			# Translucent: keep each tile its own node (a merged far node sorts differently).
+			if String(child.name).contains("_far_"):
+				child.free()
+				continue
+			(child as GeometryInstance3D).visibility_parent = NodePath()
 			(child as GeometryInstance3D).material_override = spec[1]
 
 

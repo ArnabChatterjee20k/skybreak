@@ -43,6 +43,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - basalt columns with real joints and moss ledges; a falls curtain with thickness and spray
   - darker near moss (L* 45-55), canopy outlines that aren't discs, night stills, the readability strip
   - the render benchmark on the GTX 1650
+- LOOKDEV-PERF [desktop] Voxel zone perf pass (branch `lookdev/zone-perf`, report `reports/perf/`):
+  all seven voxel zones on one branch; lossless prop face merge, HLOD far regions, terrain and
+  building occluders, quality tiers incl. a web tier (`VoxelQuality`), `tools/bench/zone_bench.gd`.
+  Open: GTX 1650 ms from the benchmark on the owner's PC; Medium still over 300k tris (see report);
+  the web tier measured with Forward+ counts, not yet in a real web export.
 
 - LOOKDEV-HB [desktop] Heartbloom voxel look v2 + the voxel zone kit (`game/world/voxel_zone_kit/`,
   branch `lookdev/heartbloom-zone`, report `reports/lookdev/heartbloom/v2/`). Waiting on the owner's

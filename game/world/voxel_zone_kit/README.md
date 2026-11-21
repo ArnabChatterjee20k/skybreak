@@ -23,6 +23,9 @@ within 4.4 cm of the sim's surface (the QA foot check allows 5 cm).
 | `voxel_stage.gd` | `VoxelStage` | Sky, sun with soft 2-split shadows, rim, ambient, fog, cloud sea. Value presets `day` / `dusk` / `night`. |
 | `voxel_sky.gdshader` | | Gradient sky, white cloud sea below the horizon, fbm puff clouds in a band, sun disc with halo, or moon and stars. |
 | `voxel_cloud_deck.gdshader` | | The cloud sea's floor: a flat deck with billows snapped to T3 cells. |
+| `voxel_face_merge.gd` | `VoxelFaceMerge` | Greedy 2D merge of a prop mesh with no change in look: per-face colour, corner AO, bevel flags and surface move into a face texture, coplanar faces become rectangles, all materials one surface. |
+| `voxel_merged_prop.gdshader` | | The props' shader for merged meshes: finds the voxel face under each pixel and shades it exactly as `voxel_figure.gdshader` shades the per-face mesh. |
+| `voxel_quality.gd` | `VoxelQuality` | Quality tiers (`GraphicsSettings.Quality`): prop LOD range scale, clutter shadows, shadow tiers, terrain chunk size, sun shadow distance/splits/atlas, SSAO. Set `VoxelQuality.tier` before `build()`. |
 | `zone_capture.gd` | (SceneTree script) | Hero stills, the fly-through video, voxel Kael for scale, and render stats per shot. |
 
 ### Cell ladder
@@ -190,6 +193,51 @@ exited.
 4. **Report** tris and draw calls per shot (printed), terrain and prop quads
    (`stats`), and the budget estimate. Publish the pre-release with an honest, ranked
    critique.
+
+## Performance
+
+Measure with the zone benchmark (`tools/bench/zone_bench.gd`): it builds each zone
+at each quality tier, flies the zone's `flight()` path and prints visible and
+shadow triangles, draw calls and CPU/GPU render ms (avg, p95, max). `--breakdown`
+lists the node groups that draw at the worst sample.
+
+```sh
+# Owner's PC (real GPU ms), all zones, all tiers:
+godot --path . --fullscreen --resolution 1920x1080 --disable-vsync -s res://tools/bench/zone_bench.gd
+# Cloud agent (lavapipe: counts are real, ms are not); counts don't depend on size:
+xvfb-run -a godot --path . --resolution 480x270 --disable-vsync -s res://tools/bench/zone_bench.gd -- \
+    --zones=verdant_falls --tiers=medium --breakdown
+```
+
+What keeps the look and cuts the cost:
+
+- **Merged props.** `VoxelProp.mesh` merges every mesh (`VoxelFaceMerge`) before caching
+  it: 4-6x fewer triangles in the main and shadow passes, one draw per copy whatever
+  the materials. The face texture costs 16 bytes per voxel face (the per-face mesh
+  cost 256). The only pixel difference is MSAA blending along internal cell edges.
+  `VoxelProp.merge_faces = false` builds the old per-face meshes.
+- **Materials.** Merged meshes get their own material (it holds the face texture).
+  After changing a shared material's value (e.g. the lantern emission), call
+  `VoxelProp.sync_materials()`; `VoxelStage.apply` does it for you.
+- **Far regions (HLOD).** `VoxelProp.place` gives each 4 x 4 block of tiles one node
+  holding the last LOD tier of all its copies; it shows only once every tile in the
+  block would show its last tier anyway, and the tiles hide behind it
+  (`visibility_parent`). The same picture, one draw per block. (Blocks for scatter
+  whose last tier ends were tried: they drew dense tufts a block radius further and
+  cost more triangles than the draws they saved.)
+- **Occluders.** `VoxelHeightfield.build` adds a conservative occluder per chunk
+  (`<name>Occluders`, 4 m boxes inside the solid); `VoxelStage.apply_quality` turns
+  occlusion culling on for the viewport. Give big solid landmarks a `BoxOccluder3D`
+  inside their mass (Stormfall does this per building).
+- **Tiers.** `VoxelQuality.tier` (default: the player's saved quality, WEB on the web)
+  before `build()`, `stage.apply_quality(tier)` after `setup()`. HIGH, the GTX 1650's
+  1080p60 default, is the authored look. MEDIUM keeps gameplay distance and contact
+  shadows as they are and pulls far LOD in (0.8x; zones scale their own terrain and
+  building LOD distances with `VoxelQuality.far(m)`), with a 150 m sun. LOW and WEB
+  shorten ranges further, cast from the first tier only and use 64/128 m terrain
+  chunks; WEB has one shadow split and no SSAO.
+- **Terrain chunks** stay 32 m on HIGH/MEDIUM: zones that set LOD ranges per chunk after
+  `build()` (Frozen Peaks' mountains) depend on that size.
 
 ## Lessons from Heartbloom
 

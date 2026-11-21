@@ -71,3 +71,28 @@ func test_only_bronze_is_saturated() -> void:
 		if mat in accents:
 			continue
 		assert_lt((SkyholdRuinsDesigns.COLORS[mat] as Color).s, 0.46, "material %d under the saturation ceiling" % mat)
+
+
+func test_an_island_switches_to_its_far_tier_all_at_once() -> void:
+	var keep := VoxelQuality.tier
+	VoxelQuality.tier = GraphicsSettings.Quality.MEDIUM
+	_zone._island_boxes[0] = AABB(Vector3(-50, -40, -50), Vector3(100, 50, 100))
+	var roots: Array[Node3D] = []
+	for k in 2:
+		var root := Node3D.new()
+		root.position.y = 0.3 * k
+		for c in 2:
+			var mi := MeshInstance3D.new()
+			mi.mesh = BoxMesh.new()
+			root.add_child(mi)
+		add_child_autofree(root)
+		roots.append(root)
+	_zone._link_far(0, [roots[0]], [roots[1]])
+	var switch := VoxelQuality.far(SkyholdRuinsVoxel.ISLAND_FAR)
+	VoxelQuality.tier = keep
+	for mi: MeshInstance3D in roots[0].get_children():
+		assert_eq(mi.visibility_range_end, switch)
+		assert_true((roots[0].transform * mi.custom_aabb).is_equal_approx(_zone._island_boxes[0]), "one box")
+	for mi: MeshInstance3D in roots[1].get_children():
+		assert_eq(mi.visibility_range_begin, switch)
+		assert_true((roots[1].transform * mi.custom_aabb).is_equal_approx(_zone._island_boxes[0]), "the same box")

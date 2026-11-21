@@ -317,7 +317,7 @@ func _mountains() -> void:
 	var cmat := _terrain_material(coarse)
 	var far := coarse.build(self, cmat, "MountainsFar")
 	for c: MeshInstance3D in node.get_children():
-		c.visibility_range_end = MOUNTAIN_LOD
+		c.visibility_range_end = MOUNTAIN_LOD  # not scaled: the far tier casts no shadow
 	for c: MeshInstance3D in far.get_children():
 		c.visibility_range_begin = MOUNTAIN_LOD
 		c.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

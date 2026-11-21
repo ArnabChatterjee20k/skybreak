@@ -4,6 +4,7 @@ extends SceneTree
 ##   godot --path . --disable-vsync -s res://game/world/voxel_zone_kit/zone_capture.gd -- <out dir>
 ##       draft|heroes|flythrough|all|preview [--zone=<VoxelZone script>] [--time=dusk|day|night]
 ##       [--kael=<scene>] [--fps=30] [--seconds=20] [--size=1920x1080] [--from=<frame>] [--shots=a,b]
+##       [--quality=high|medium|low|web]
 ## draft: every shot at one time (--time, default dusk); heroes: every shot at
 ## the times it lists; preview: draft, then the fly-through. Stills are PNG at --size through a SubViewport; the
 ## fly-through writes JPG frames to <out>/frames and, if ffmpeg is on PATH,
@@ -36,7 +37,7 @@ func _initialize() -> void:
 	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	root.add_child(_viewport)
 	RenderingServer.viewport_set_measure_render_time(_viewport.get_viewport_rid(), true)
-	VoxelStage.shadow_quality()
+	VoxelQuality.tier = VoxelQuality.from_name(_args.get_option("quality", "high"))
 	_run.call_deferred(_args.pos(1, "draft"))
 
 
@@ -49,6 +50,7 @@ func _run(what: String) -> void:
 	_stage = VoxelStage.new()
 	_viewport.add_child(_stage)
 	_stage.setup(_zone.presets(), _zone.cloud_sea())
+	_stage.apply_quality(VoxelQuality.tier)
 	_stage.lantern_materials = _zone.lantern_materials
 	_stage.apply(_args.get_option("time", "dusk"))
 	_camera = Camera3D.new()

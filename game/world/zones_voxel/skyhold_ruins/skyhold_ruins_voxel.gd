@@ -21,6 +21,8 @@ const CLOUD_Y := 40.0
 const COLUMN_RANGES := [35.0, 120.0, 0.0]
 const PROP_RANGES := [50.0, 160.0, 0.0]
 const SMALL_RANGES := [40.0]
+## Where islands switch to their 2 x T2 far tier below HIGH (scaled per tier).
+const ISLAND_FAR := 375.0
 
 var layout: SkyholdRuinsLayout
 var designs := SkyholdRuinsDesigns.new()
@@ -36,6 +38,10 @@ var _birds: MultiMeshInstance3D
 var _bird_paths: Array = []
 var _flame_light: OmniLight3D
 var _chain_ends: Array = []
+
+
+## Each island's box (zone space) shared by its near and far tier chunks.
+var _island_boxes := {}
 
 
 func _init() -> void:
@@ -149,12 +155,43 @@ func _floor(isl: SkyholdRuinsLayout.Island) -> float:
 
 func _islands() -> void:
 	var quads := 0
+	var far_quads := 0
 	for i in layout.islands.size():
 		var top := _island_top(i)
 		quads += VoxelHeightfield.count_quads(top)
 		var under := _island_underside(i)
 		quads += VoxelHeightfield.count_quads(under)
+		if VoxelQuality.tier == GraphicsSettings.Quality.HIGH:
+			continue
+		# Below HIGH, a far tier at 2 x T2 past ISLAND_FAR; the whole island
+		# switches at once (one box for every chunk of both tiers: no seams).
+		var box := AABB()
+		var nodes: Array = top.get_children() + under.get_children()
+		for k in nodes.size():
+			var mi := nodes[k] as MeshInstance3D
+			var b := (mi.get_parent() as Node3D).transform * mi.mesh.get_aabb()
+			box = b if k == 0 else box.merge(b)
+		_island_boxes[i] = box
+		var far_top := _island_top(i, T2 * 2.0)
+		var far_under := _island_underside(i, T2 * 2.0)
+		far_quads += VoxelHeightfield.count_quads(far_top) + VoxelHeightfield.count_quads(far_under)
+		_link_far(i, [top, under], [far_top, far_under])
 	stats["terrain_quads"] = quads
+	stats["terrain_far_quads"] = far_quads
+
+
+## Ties an island's near and far tier nodes to one box and one switch distance.
+func _link_far(i: int, near: Array, far: Array) -> void:
+	var box: AABB = _island_boxes[i]
+	var switch := VoxelQuality.far(ISLAND_FAR)
+	for tier in 2:
+		for root: Node3D in (near if tier == 0 else far):
+			for mi: MeshInstance3D in root.get_children():
+				mi.custom_aabb = root.transform.affine_inverse() * box
+				if tier == 0:
+					mi.visibility_range_end = switch
+				else:
+					mi.visibility_range_begin = switch
 
 
 func _bounds(i: int) -> Rect2:
@@ -165,10 +202,9 @@ func _bounds(i: int) -> Rect2:
 
 ## The paved shell: a flat T2 field, offset so its top lies exactly on the
 ## paving height; the rim breaks along 1 m blocks (lost flags).
-func _island_top(i: int) -> Node3D:
+func _island_top(i: int, cell := T2) -> Node3D:
 	var isl := layout.islands[i]
 	var b := _bounds(i)
-	var cell := T2
 	var hf := VoxelHeightfield.new(cell, b.position, b.end)
 	var y := _floor(isl)
 	var level := roundi(y / cell)
@@ -209,7 +245,7 @@ func _island_top(i: int) -> Node3D:
 	mat.set_shader_parameter("marble_color", Color("#E6DCC8"))
 	mat.set_shader_parameter("strata_cells", 2.0)
 	mat.set_shader_parameter("crack_amount", 0.3)
-	var node := hf.build(self, mat, "Isle%dTop" % i, 0.0, true)
+	var node := hf.build(self, mat, "Isle%dTop%s" % [i, "Far" if cell > T2 else ""], 0.0, true)
 	node.position.y = y - level * cell
 	return node
 
@@ -250,12 +286,11 @@ func _decorate(deco: Array, w: Vector2, c: Color) -> Color:
 
 ## The underside: stacked strata slabs stepping inward to the sim's depth,
 ## an inverted fractured cone (T2), each slab's outline wobbling on its own.
-func _island_underside(i: int) -> Node3D:
+func _island_underside(i: int, cell := T2) -> Node3D:
 	var isl := layout.islands[i]
 	var b := _bounds(i)
-	var cell := T2
 	var hf := VoxelHeightfield.new(cell, b.position, b.end, true)
-	var slab := 7
+	var slab := maxi(1, roundi(7.0 * T2 / cell))  # 2.45 m slabs
 	var top_level := roundi((_floor(isl) - SHELL) / cell) + 1
 	for z in hf.size.y:
 		for x in hf.size.x:
@@ -288,7 +323,7 @@ func _island_underside(i: int) -> Node3D:
 	mat.set_shader_parameter("strata_cells", float(slab))
 	mat.set_shader_parameter("crack_amount", 0.12)
 	mat.set_shader_parameter("noise_amount", 0.03)
-	return hf.build(self, mat, "Isle%dUnder" % i)
+	return hf.build(self, mat, "Isle%dUnder%s" % [i, "Far" if cell > T2 else ""], 0.0, true)
 
 
 # ---------------------------------------------------------------- fangs
@@ -523,7 +558,11 @@ func _story() -> void:
 	var old := get_node_or_null("Isle%dTop" % di)
 	if old != null:
 		old.free()
-		_island_top(di)
+		var top := _island_top(di)
+		var old_far := get_node_or_null("Isle%dTopFar" % di)
+		if old_far != null:
+			old_far.free()
+			_link_far(di, [top], [_island_top(di, T2 * 2.0)])
 
 
 ## Furniture on the other islands: altars before arches, a winged lion on a

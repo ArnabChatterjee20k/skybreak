@@ -77,8 +77,8 @@ func build() -> void:
 	street_mat = ShaderMaterial.new()
 	street_mat.shader = STREET_SHADER
 	street_mat.set_shader_parameter("zone_centre", zone.centre)
-	var steps: Array[Callable] = [_ground, _buildings, _towers, _rubble, _signs, _cars, _street_props, _story_props,
-		_commit_tiles, _weather]
+	var steps: Array[Callable] = [_ground, _buildings, _occluders, _towers, _rubble, _signs, _cars, _street_props,
+		_story_props, _commit_tiles, _weather]
 	for step in steps:
 		var s := Time.get_ticks_msec()
 		step.call()
@@ -186,9 +186,9 @@ func _commit_tiles() -> void:
 		var box := fm.get_aabb().merge(nm.get_aabb())
 		fi.custom_aabb = box
 		ni.custom_aabb = box
-		fi.visibility_range_begin = NEAR_RANGE
+		fi.visibility_range_begin = VoxelQuality.far(NEAR_RANGE)
 		fi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		ni.visibility_range_end = NEAR_RANGE
+		ni.visibility_range_end = VoxelQuality.far(NEAR_RANGE)
 	for k: Vector2i in _near:
 		var near: CityBlocks = _near[k]
 		if _far.has(k) or near.is_empty():
@@ -198,7 +198,7 @@ func _commit_tiles() -> void:
 		ni.name = "Near_%d_%d" % [k.x, k.y]
 		ni.mesh = near.commit()
 		ni.material_override = block_mat
-		ni.visibility_range_end = NEAR_RANGE * 1.5
+		ni.visibility_range_end = VoxelQuality.far(NEAR_RANGE * 1.5)
 		root.add_child(ni)
 	_tris["blocks_near_all_tiles"] = near_tris
 	_tris["blocks_far_all_tiles"] = far_tris
@@ -226,12 +226,25 @@ func _ground() -> void:
 	var lo := Vector2(c.x - 500.0, c.y - 600.0)
 	var hi := Vector2(c.x + 500.0, c.y + 600.0)
 	var tris := 0
+	# The outer ring only ever shows its 8 m tier: merged 4 x 4 tiles to a draw.
+	var ring := {}
 	for tz in range(floori(lo.y / TILE), ceili(hi.y / TILE)):
 		for tx in range(floori(lo.x / TILE), ceili(hi.x / TILE)):
 			var o := Vector2(tx * TILE, tz * TILE)
 			var d := o + Vector2(TILE, TILE) * 0.5 - c
 			var close := absf(d.x) < 360.0 and absf(d.y) < 480.0
-			for lod in ([2.0, 8.0] if close else [8.0]):
+			if not close:
+				var key := Vector2i(floori(tx / 4.0), floori(tz / 4.0))
+				var arrays := _ground_mesh(o, 8.0).surface_get_arrays(0)
+				# Packed arrays are values: append to a local copy and store it back.
+				var pair: Array = ring.get(key, [PackedVector3Array(), PackedVector3Array()])
+				var verts: PackedVector3Array = pair[0]
+				var normals: PackedVector3Array = pair[1]
+				verts.append_array(arrays[Mesh.ARRAY_VERTEX])
+				normals.append_array(arrays[Mesh.ARRAY_NORMAL])
+				ring[key] = [verts, normals]
+				continue
+			for lod in [2.0, 8.0]:
 				var mesh := _ground_mesh(o, lod)
 				var mi := MeshInstance3D.new()
 				mi.mesh = mesh
@@ -239,11 +252,24 @@ func _ground() -> void:
 				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				if close:
 					if lod == 2.0:
-						mi.visibility_range_end = GROUND_NEAR
+						mi.visibility_range_end = VoxelQuality.far(GROUND_NEAR)
 					else:
-						mi.visibility_range_begin = GROUND_NEAR
+						mi.visibility_range_begin = VoxelQuality.far(GROUND_NEAR)
 				root.add_child(mi)
-				tris += mesh.surface_get_array_len(0) / 3 if lod == 2.0 or not close else 0
+				tris += mesh.surface_get_array_len(0) / 3 if lod == 2.0 else 0
+	for key: Vector2i in ring:
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = ring[key][0]
+		arrays[Mesh.ARRAY_NORMAL] = ring[key][1]
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		var mi := MeshInstance3D.new()
+		mi.mesh = mesh
+		mi.material_override = street_mat
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(mi)
+		tris += mesh.surface_get_array_len(0) / 3
 	_tris["ground_all_tiles"] = tris
 
 
@@ -317,6 +343,36 @@ func _buildings() -> void:
 		var base := xf.origin - xf.basis * Vector3(0, 0.5, 0)
 		_water_tower(_near_blocks(base), Transform3D(Basis(), base), true)
 		_water_tower(_far_blocks(base), Transform3D(Basis(), base), false)
+
+
+## An occluder inside each building's full-footprint body (the shop floor up
+## to the roof under any setback or broken top, as _building lays it out), so
+## streets and blocks behind buildings skip the main pass.
+func _occluders() -> void:
+	var root := Node3D.new()
+	root.name = "Occluders"
+	add_child(root)
+	for xf in buildings:
+		var size := xf.basis.get_scale()
+		var base := xf.origin - xf.basis * Vector3(0, 0.5, 0)
+		var top := size.y
+		var shop_h := 1.0 + 4.5
+		var setback := top > 30.0 and _h(base, 4) < 0.55
+		var broken := _h(base, 5) < 0.3 and top > 20.0
+		var body_top := shop_h + roundf((top - shop_h) * 0.62 / STOREY) * STOREY if setback else top
+		var lower_top := body_top - (2.0 * STOREY if broken and not setback else 0.0)
+		if lower_top < 6.0 or minf(size.x, size.z) < 4.0:
+			continue
+		var box := BoxOccluder3D.new()
+		box.size = Vector3(size.x - 0.6, lower_top - 1.0, size.z - 0.6)
+		var oi := OccluderInstance3D.new()
+		oi.occluder = box
+		var rot := xf.basis.orthonormalized()
+		oi.transform = Transform3D(rot, base + rot * Vector3(0, lower_top * 0.5, 0))
+		root.add_child(oi)
+	stats["occluders"] = root.get_child_count()
+	if is_inside_tree():
+		get_viewport().use_occlusion_culling = true
 
 
 ## One building: storey slabs, setback, cornice, parapet, windows (shader),
