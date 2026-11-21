@@ -28,8 +28,8 @@ const MERGED_PARAMS := {
 }
 
 static var _materials: Array[Material] = []
-## The merged meshes' materials, kept in step by sync_materials().
-static var _merged_materials: Array[ShaderMaterial] = []
+## The merged meshes' materials (weak), kept in step by sync_materials().
+static var _merged_materials: Array[WeakRef] = []
 ## Set false to rebuild every mesh (ignores the disk cache).
 static var use_cache := true
 ## Greedy-merge coplanar faces (VoxelFaceMerge): same look, a fraction of the
@@ -231,8 +231,13 @@ static func _multimesh(m: Mesh, transforms: Array[Transform3D]) -> MultiMeshInst
 ## Copies the shared materials' values to the merged meshes' materials (call
 ## after changing a shared material, e.g. the lantern emission).
 static func sync_materials() -> void:
-	for m: ShaderMaterial in _merged_materials:
-		_copy_params(m)
+	var alive: Array[WeakRef] = []
+	for w in _merged_materials:
+		var m := w.get_ref() as ShaderMaterial
+		if m != null:
+			_copy_params(m)
+			alive.append(w)
+	_merged_materials = alive
 
 
 ## Attaches the shared materials to a loaded mesh (surfaces keep their
@@ -243,11 +248,14 @@ static func _apply_materials(m: ArrayMesh) -> void:
 		for s in m.get_surface_count():
 			m.surface_set_material(s, materials()[m.surface_get_name(s).to_int()])
 		return
+	var current := m.surface_get_material(0) as ShaderMaterial
+	if current != null and current.shader == MERGED_SHADER:
+		return  # the loader handed back a mesh that already has its material
 	var mat := ShaderMaterial.new()
 	mat.shader = MERGED_SHADER
 	mat.set_shader_parameter("faces", ImageTexture.create_from_image(m.get_meta("faces") as Image))
 	_copy_params(mat)
-	_merged_materials.append(mat)
+	_merged_materials.append(weakref(mat))
 	m.surface_set_material(0, mat)
 
 
