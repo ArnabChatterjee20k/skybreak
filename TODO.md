@@ -94,6 +94,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
       lights, 1 shadowed, textures) and a 4-player match with worst VFX (<= 256); previews in
       reports/integration/web/. Merges cleanly onto 8ee1ee7, voxel tests 81/81 there. Pre-existing on
       22d7008: test_moves_reel glow_material fails (unshaded vs the test), not touched.
+    - FIXED on fix/web-size@8b3cd12: merge that branch. pck 254.3 -> 56.5 MB (index.pck bytes, official
+      4.7.2). The 7 WEB bakes (187.6 MiB, 15-57 MB each) leave index.pck; build_web.sh packs each byte for
+      byte into zones/<zone>_web.<sha>.pck + manifest.json (stale bakes refused) and the LoadingScreen
+      fetches, SHA-checks, caches (user://) and mounts the zone's pack. WEB-tier gl_compatibility stills
+      of 3 zones byte-identical before/after; headless Chromium: 1.0-2.0 s fetch+mount, 1.4-1.9 s load.
+      A lossless compact format doesn't reach the budget (bakes ~gzip floor; indexed layout was bigger).
   - QA-23 done on the branch: voxel Brann's braid popped (Braid2 1.7 rad on weapon pickups, 42 pop
     frames in the quick run): it is now posed by a last skeleton modifier on the drawn body and
     turns at most 54 rad/s (`test_brann_voxel_braid.gd`).
