@@ -13,6 +13,24 @@ var large := false
 ## The soft ellipse under the feet; a moving subject can carry it along.
 var contact_shadow: MeshInstance3D
 
+## Key light softness. PCSS dithers its penumbra per pixel: a wide angular
+## size and blur made that dither read as dot grain in close shots and around
+## the feet, so the key is a little tighter, and captures add TAA, which
+## jitters the dither every frame and accumulates it into a smooth penumbra.
+## The soft contact shadow comes from the ellipse under the feet and SSAO.
+const KEY_ANGULAR_DISTANCE := 2.2
+const KEY_SHADOW_BLUR := 0.8
+## Frames a still waits for TAA to converge before it's saved.
+const TAA_SETTLE_FRAMES := 12
+
+
+## Capture viewport settings shared by stills and reels: 4x MSAA on the voxel
+## edges plus TAA for the shadow penumbra.
+static func configure_viewport(viewport: SubViewport) -> void:
+	viewport.msaa_3d = Viewport.MSAA_4X
+	viewport.use_taa = true
+	viewport.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+
 
 func _ready() -> void:
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_ULTRA)
@@ -93,8 +111,8 @@ func _cyclorama() -> void:
 func _lights() -> void:
 	# Key: warm, high front-left, soft (wide angular size) shadow.
 	key = _directional(Vector3(-38, 35, 0), Color(1.0, 0.95, 0.87), 2.1, true)
-	key.light_angular_distance = 4.0
-	key.shadow_blur = 1.5
+	key.light_angular_distance = KEY_ANGULAR_DISTANCE
+	key.shadow_blur = KEY_SHADOW_BLUR
 	key.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	key.directional_shadow_max_distance = 12.0
 	key.shadow_bias = 0.02

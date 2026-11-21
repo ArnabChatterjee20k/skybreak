@@ -1,7 +1,7 @@
 extends SceneTree
 ## Moves reel of a character on the look-dev stage, against a grey target
 ## dummy so the hits read (.claude/skills/voxel-character-lookdev/SKILL.md).
-##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots|travel|guard]
+##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots|travel|guard|knockdown]
 ##       --scene=<character scene> --moves=res://game/combat/moves/<name>/
 ##       [--dummy=<scene>] [--stats=<FighterStats .tres>] [--energy=#ff9e40] [--fps=60]
 ## Writes numbered JPG frames (f_00000.jpg...) for ffmpeg at --fps (60, or 30
@@ -16,7 +16,7 @@ extends SceneTree
 ## hover, crossed guard, ki shot, kick, jump crouch, a big flinch) are layered
 ## over the clips by LookdevPoseOverride. Neither the sim nor the clips change.
 
-const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots|travel|guard] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed] [--fps=60]"
+const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots|travel|guard|knockdown] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed] [--fps=60]"
 ## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
 const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
@@ -40,6 +40,19 @@ const BODY_GAP := 0.04
 ## capsules of this radius: blocked strikes stop at the crossed arms.
 const FOREARM_RADIUS := 0.075
 const FIST_PAST_WRIST := 0.4
+## Strikes whose hit volume is at most this far from the target step in to it
+## (a lunge); further away they whiff.
+const MAX_STEP_IN := 0.8
+## A limb this close to the target's surface (beyond BODY_GAP) counts as touching.
+const TOUCH := 0.012
+## Body overlap the contact pass resolves in one tick, at most.
+const MAX_OVERLAP := 0.35
+## Beam-charge orb core radius at its largest (it grows from 0.04 m).
+const ORB_RADIUS := 0.04
+## Over-the-shoulder camera: the most it lifts (m) and how far its sight lines
+## to the dummy stay from the hero's surface.
+const SHOULDER_LIFT := 1.0
+const SHOULDER_MARGIN := 0.05
 
 # ---------------------------------------------------------------- poses
 # Skeleton space: +Z his front, +X his left, +Y up. See LookdevPoseOverride.
@@ -85,16 +98,17 @@ const BEAM_AIMS := {
 }
 const BEAM_TURNS := {&"Spine": Vector3(6, 0, 0)}
 
-## Beam charge: palms cupped together in front of the waist, holding the orb.
+## Beam charge: a square stance; the cupped hands are placed per character
+## (_cup_pose) from the measured hands, forearms and belly.
 const CHARGE_AIMS := {
-	&"LeftUpperArm": Vector3(0.28, -0.78, 0.5), &"LeftLowerArm": Vector3(-0.62, 0.05, 0.78),
-	&"LeftHand": Vector3(-0.85, 0.15, 0.45),
-	&"RightUpperArm": Vector3(-0.28, -0.78, 0.5), &"RightLowerArm": Vector3(0.62, 0.05, 0.78),
-	&"RightHand": Vector3(0.85, 0.15, 0.45),
 	&"LeftUpperLeg": Vector3(0.16, -0.9, 0.35), &"LeftLowerLeg": Vector3(0.05, -0.95, -0.25),
 	&"RightUpperLeg": Vector3(-0.16, -0.9, 0.35), &"RightLowerLeg": Vector3(-0.05, -0.95, -0.25),
 }
-const CHARGE_TURNS := {&"Spine": Vector3(12, 0, 0), &"Head": Vector3(10, 0, 0)}
+const CHARGE_TURNS := {&"Spine": Vector3(8, 0, 0), &"Head": Vector3(8, 0, 0)}
+## Cupped left hand's finger direction (fingers forward, in and a little up);
+## the right hand mirrors it. Elbows bend out and back.
+const CUP_HAND := Vector3(-0.5, 0.2, 0.84)
+const CUP_POLE := Vector3(1.0, -0.4, -0.5)
 
 ## Kick, right leg: chamber (knee up, shin hanging) then snap out, leaning back.
 const KICK_CHAMBER := {
@@ -155,6 +169,16 @@ class Actor:
 	var probe_weights := PackedFloat32Array()
 	var probe_skins: Array[Skin] = []
 	var probe_skin_of := PackedInt32Array()
+	## Strongest skeleton bone of each probe, and the probes on hands,
+	## forearms, shins and feet (what strikes).
+	var probe_bone := PackedInt32Array()
+	var probe_limb := PackedInt32Array()
+	## Posed surface cache: the tick it was taken and the body's position then.
+	var surface := PackedVector3Array()
+	var surface_tick := -1
+	var surface_at := Vector3.ZERO
+	## Look-dev check: the strike's measured gap and the step taken toward it.
+	var stepped := 0.0
 
 	func skeleton() -> Skeleton3D:
 		return view.model.get_node("%GeneralSkeleton") as Skeleton3D
@@ -202,6 +226,19 @@ var _kicking := false
 var _hero_extra := 0.0
 ## Worst strike-into-guard overlap left after contacts resolve (look-dev check).
 var _guard_overlap := 0.0
+## Whether the hero reached KNOCKDOWN in the knockdown segment (look-dev check).
+var _knocked_down := false
+## Ticks stepped (recorded or not), for the surface cache.
+var _ticks := 0
+## Over-the-shoulder camera: how far it lifted to clear the hero's head and
+## shoulders (0..1 of its lift range; negative: not measured for this shot).
+var _shoulder_lift := -1.0
+## Look-dev checks for the beam charge: worst hips-to-camera angle (degrees)
+## once squared, and the orb's smallest clearance from the hand surfaces (m).
+var _charge_square_err := 0.0
+var _orb_clearance := INF
+## Cupped-hands pose per hero, from the measured hand, forearm and belly.
+var _cup := {}
 
 
 func _initialize() -> void:
@@ -226,7 +263,7 @@ func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(_out)
 	_viewport = SubViewport.new()
 	_viewport.size = Vector2i(1920, 1080)
-	_viewport.msaa_3d = Viewport.MSAA_4X
+	LookdevStage.configure_viewport(_viewport)
 	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	root.add_child(_viewport)
 	_stage = LookdevStage.new()
@@ -298,6 +335,11 @@ func _run(what: String) -> void:
 	if what == "guard":
 		await _guard()
 		print("frames: %d (ticks %d), guard overlap after contact %.3f m" % [_written, _frame, _guard_overlap])
+		quit()
+		return
+	if what == "knockdown":
+		await _knockdown()
+		print("frames: %d (ticks %d), knocked down %s" % [_written, _frame, _knocked_down])
 		quit()
 		return
 	if what == "combat":
@@ -525,6 +567,7 @@ func _ki_volley() -> void:
 	_reset_hero(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
 	_place_dummy(5.5)
 	_cam_mode = "shoulder"
+	_shoulder_lift = -1.0
 	_cam_snap = true
 	await _wait(25)
 	for k in 4:
@@ -555,21 +598,34 @@ func _beam() -> void:
 	_caption.text = "Beam charge"
 	_reset_hero(Vector3(0.0, 0, 4.6), 0.0)  # facing -Z: shots fly toward the back wall
 	_place_dummy(5.0)
-	_cam_mode = "close"
-	# Charge facing the camera so the cupped hands and the orb read; turn to
-	# the dummy on the cut to the over-the-shoulder fire.
+	_cam_mode = "charge"
+	# Charge facing the camera, hips and chest squared to it whatever the
+	# character's stance, so the cupped hands and the orb read; turn to the
+	# dummy on the cut to the over-the-shoulder fire.
 	_hero.f.facing_yaw = PI
 	_cam_snap = true
 	_hero.f.enter_state(S.CHARGING)
-	_set_pose(_hero, CHARGE_AIMS, CHARGE_TURNS, true, 1.0, 0.1)
-	var orb := _glow_orb(0.04)
+	var cup := _cup_pose(_hero)
+	_set_pose(_hero, cup["aims"], CHARGE_TURNS, true, 1.0, 0.1)
+	_hero.pose.reach = cup["reach"]
+	var orb := _glow_orb(ORB_RADIUS)
 	for t in 150:
-		orb.global_position = _palms_point()
-		orb.scale = Vector3.ONE * (1.0 + t / 150.0 * 2.4 + 0.2 * sin(t * 0.7))
+		_hero.pose.square = _toward_camera(_hero)
+		var grow := 1.0 + t / 150.0 * 2.4 + 0.2 * sin(t * 0.7)
+		orb.scale = Vector3.ONE * grow
+		var hands := _hand_surface(_hero)
+		orb.global_position = orb_centre(_palms_point(), _hero.forward(), hands, ORB_RADIUS * grow)
+		if t >= 30:
+			_orb_clearance = minf(_orb_clearance, nearest(orb.global_position, hands) - ORB_RADIUS * grow)
+			_charge_square_err = maxf(_charge_square_err, _hips_camera_angle(_hero))
 		await _tick()
+	print("beam charge: hips-to-camera %.1f deg, orb clear of hands by %.3f m" % [_charge_square_err, _orb_clearance])
+	_hero.pose.square = Vector3.ZERO
+	_hero.pose.reach = {}
 	_caption.text = "Beam fire"
 	_hero.f.facing_yaw = 0.0
 	_cam_mode = "shoulder"
+	_shoulder_lift = -1.0
 	_cam_snap = true
 	_hero.f.enter_state(S.IDLE)
 	_set_pose(_hero, BEAM_AIMS, BEAM_TURNS, false, 1.0, 0.3)
@@ -742,6 +798,7 @@ func _knockdown() -> void:
 	await _wait(10)
 	await _perform(_dummy, load(MOVES + "smash.tres"), true)
 	while _hero.f.state != S.IDLE:
+		_knocked_down = _knocked_down or _hero.f.state == S.KNOCKDOWN
 		await _tick()
 	await _wait(20)
 
@@ -1053,19 +1110,160 @@ func _crown_extra(actor: Actor) -> float:
 	return clampf(top - 0.32, 0.0, 0.9) + clampf(half - 0.2, 0.0, 0.5)
 
 
-## Between the two palms (each palm partway from the wrist to the middle
-## finger's first knuckle): where cupped hands hold the charging orb.
+## Between the two palms: the centroid of both hands' posed surfaces (the
+## bones' lerp sat inside big gauntlets and stone fists).
 func _palms_point() -> Vector3:
-	var palms := Vector3.ZERO
-	for side: String in ["Left", "Right"]:
-		var wrist := _hero.bone(StringName(side + "Hand"))
-		var knuckle := _hero.bone(StringName(side + "MiddleProximal"))
-		palms += wrist.lerp(knuckle, 0.6)
-	return palms * 0.5
+	var hands := _hand_surface(_hero)
+	if hands.is_empty():
+		return (_hero.bone(&"LeftHand") + _hero.bone(&"RightHand")) * 0.5
+	var sum := Vector3.ZERO
+	for q in hands:
+		sum += q
+	return sum / float(hands.size())
 
 
+## Where the beam leaves: just in front of both hands' real surfaces.
 func _hands_point() -> Vector3:
-	return (_hero.bone(&"LeftHand") + _hero.bone(&"RightHand")) * 0.5 + _hero.forward() * 0.14
+	var mid := (_hero.bone(&"LeftHand") + _hero.bone(&"RightHand")) * 0.5
+	return orb_centre(mid, _hero.forward(), _hand_surface(_hero), 0.1)
+
+
+## Centre for an orb of `radius` held in front of the palms: past the hands'
+## frontmost surface point along `forward`, so no hand surface covers it.
+static func orb_centre(palms: Vector3, forward: Vector3, hand_points: PackedVector3Array, radius: float, margin := 0.02) -> Vector3:
+	var front := 0.0
+	for q in hand_points:
+		front = maxf(front, (q - palms).dot(forward))
+	return palms + forward * (front + radius + margin)
+
+
+## Distance from `p` to the nearest of `points` (INF if none).
+static func nearest(p: Vector3, points: PackedVector3Array) -> float:
+	var best := INF
+	for q in points:
+		best = minf(best, p.distance_squared_to(q))
+	return sqrt(best)
+
+
+## Posed surface points on both hands (fingers included).
+func _hand_surface(actor: Actor) -> PackedVector3Array:
+	var surf := _surface(actor)
+	var sk := actor.skeleton()
+	var out := PackedVector3Array()
+	for i in surf.size():
+		var bone := actor.probe_bone[i]
+		if bone >= 0 and is_hand(sk.get_bone_name(bone)):
+			out.append(surf[i])
+	return out
+
+
+static func is_hand(bone: String) -> bool:
+	for part: String in ["Hand", "Thumb", "Index", "Middle", "Ring", "Little"]:
+		if bone.contains(part):
+			return true
+	return false
+
+
+## The cupped-hands charge pose for this actor: the wrists are placed (as
+## hips-relative reach targets) so the palms meet in front of the waist, clear
+## of the belly by the forearm's and the hand's measured thickness.
+func _cup_pose(actor: Actor) -> Dictionary:
+	if _cup.has(actor):
+		return _cup[actor]
+	var m := measure_cup(_rest_surface(actor), actor.probe_bone, actor.skeleton())
+	var hand := CUP_HAND.normalized()
+	var half: float = m["hand_half"]
+	var palm_x := half * 0.5 + 0.015
+	var cup_z: float = m["belly"] + maxf(m["forearm"], half) + 0.03
+	cup_z = maxf(cup_z, m["belly"] + m["forearm"] + hand.z * m["palm"] + 0.02)
+	var left_palm := Vector3(palm_x, 0.12, cup_z)
+	var left_wrist: Vector3 = left_palm - hand * m["palm"]
+	var mirror := Vector3(-1, 1, 1)
+	var aims := CHARGE_AIMS.duplicate()
+	aims[&"LeftHand"] = hand
+	aims[&"RightHand"] = hand * mirror
+	var reach := {
+		&"LeftUpperArm": [left_wrist, CUP_POLE],
+		&"RightUpperArm": [left_wrist * mirror, CUP_POLE * mirror],
+	}
+	print("cup: belly %.2f, forearm r %.3f, hand half %.3f, palm %.3f -> palms at z %.2f" % [m["belly"], m["forearm"], half, m["palm"], cup_z])
+	_cup[actor] = {"aims": aims, "reach": reach}
+	return _cup[actor]
+
+
+## Rest-pose measurements in skeleton space (+Z front), relative to the hips:
+## belly: the torso's front at the waist; forearm: the right forearm's radius
+## around elbow-wrist; palm: wrist to the right hand's centroid; hand_half:
+## the hand's radius around that axis.
+static func measure_cup(points: PackedVector3Array, bones: PackedInt32Array, sk: Skeleton3D) -> Dictionary:
+	var hips := sk.get_bone_global_rest(sk.find_bone(&"Hips")).origin
+	var wrist := sk.get_bone_global_rest(sk.find_bone(&"RightHand")).origin
+	var elbow := sk.get_bone_global_rest(sk.find_bone(&"RightLowerArm")).origin
+	var belly := 0.12
+	var forearm := 0.04
+	var hand := PackedVector3Array()
+	for i in points.size():
+		if bones[i] < 0:
+			continue
+		var name := sk.get_bone_name(bones[i])
+		var p := points[i]
+		if name in ["Hips", "Spine", "Chest"] and p.y > hips.y - 0.05 and p.y < hips.y + 0.3 and absf(p.x - hips.x) < 0.25:
+			belly = maxf(belly, p.z - hips.z)
+		elif name == "RightLowerArm":
+			forearm = maxf(forearm, p.distance_to(Geometry3D.get_closest_point_to_segment(p, elbow, wrist)))
+		elif name.begins_with("Right") and is_hand(name):
+			hand.append(p - wrist)
+	var centre := Vector3.ZERO
+	for o in hand:
+		centre += o
+	centre = centre / float(maxi(hand.size(), 1))
+	var axis := centre.normalized() if centre.length() > 0.001 else Vector3.DOWN
+	var half := 0.03
+	for o in hand:
+		half = maxf(half, (o - axis * o.dot(axis)).length())
+	return {"belly": belly, "forearm": forearm, "palm": maxf(centre.length(), 0.04), "hand_half": half}
+
+
+## Surface points in the rest pose, skeleton space.
+func _rest_surface(actor: Actor) -> PackedVector3Array:
+	var sk := actor.skeleton()
+	_surface(actor)
+	var mats: Array[Transform3D] = []
+	var bind_base := PackedInt32Array()
+	for skin in actor.probe_skins:
+		bind_base.append(mats.size())
+		for k in skin.get_bind_count():
+			var bone := skin.get_bind_bone(k)
+			if bone < 0:
+				bone = sk.find_bone(skin.get_bind_name(k))
+			mats.append(sk.get_bone_global_rest(maxi(bone, 0)) * skin.get_bind_pose(k))
+	var out := PackedVector3Array()
+	out.resize(actor.probe_rest.size())
+	for i in actor.probe_rest.size():
+		var base := bind_base[actor.probe_skin_of[i]]
+		var p := Vector3.ZERO
+		for j in 4:
+			var w := actor.probe_weights[i * 4 + j]
+			if w > 0.0:
+				p += (mats[base + actor.probe_binds[i * 4 + j]] * actor.probe_rest[i]) * w
+		out[i] = p
+	return out
+
+
+## Direction from the hips to the camera, in the actor's skeleton space.
+func _toward_camera(actor: Actor) -> Vector3:
+	var sk := actor.skeleton()
+	var to := _stage.camera.global_position - actor.bone(&"Hips")
+	return sk.global_basis.inverse() * to
+
+
+## Horizontal angle (degrees) between the posed hips' front and the camera.
+func _hips_camera_angle(actor: Actor) -> float:
+	var sk := actor.skeleton()
+	var hb := sk.find_bone(&"Hips")
+	var front := sk.global_basis * (sk.get_bone_global_pose(hb).basis * sk.get_bone_global_rest(hb).basis.inverse() * Vector3.BACK)
+	var to := _stage.camera.global_position - actor.bone(&"Hips")
+	return rad_to_deg(absf(LookdevPoseOverride.yaw_to_face(front, to)))
 
 
 func _update_fx() -> void:
@@ -1114,6 +1312,7 @@ func _update_fx() -> void:
 ## bodies, move the camera, save a frame. Hitstop freezes everything but the
 ## effects.
 func _tick(record := true) -> void:
+	_ticks += 1
 	var frozen := _hitstop > 0
 	if frozen:
 		_hitstop -= 1
@@ -1128,7 +1327,6 @@ func _tick(record := true) -> void:
 					actor.landed = false
 				actor.striking = f.move_tick >= maxi(f.move.startup_ticks - 4, 1) \
 					and f.move_tick < f.move.recovery_start_tick()
-				_whiff_fallback(actor)
 				if actor.f.move_tick < f.move.startup_ticks + f.move.active_ticks:
 					f.position += actor.forward() * f.move.step_distance / maxf(f.move.startup_ticks + f.move.active_ticks, 1)
 				if f.state == S.ATTACKING and f.move_tick >= f.move.total_ticks():
@@ -1148,6 +1346,8 @@ func _tick(record := true) -> void:
 		actor.flash = move_toward(actor.flash, 0.0, 0.12)
 		if actor.material != null:
 			actor.material.emission_energy_multiplier = actor.flash * 1.6
+	if not frozen:
+		_step_in()
 	_contacts()
 	_body_contacts()
 	var shadow := _stage.contact_shadow
@@ -1161,21 +1361,97 @@ func _tick(record := true) -> void:
 		await process_frame
 
 
-## A strike that never touched the body (the clip's reach falls short at this
-## spacing) still lands on its last active tick if the target is close, so a
-## move is never silently lost; out of reach it whiffs.
-func _whiff_fallback(attacker: Actor) -> void:
-	var f := attacker.f
-	if attacker.landed or f.move_tick != f.move.recovery_start_tick() - 1:
+## A strike whose clip falls short at this spacing (the 4 cm body contact
+## keeps bulky fighters further apart than the clips were authored for) steps
+## the attacker in over its strike window, by the measured gap between its hit
+## volume and the target, so it lands on its first touch. Further than
+## MAX_STEP_IN it whiffs.
+func _step_in() -> void:
+	if not (_hero.body.visible and _dummy.body.visible):
 		return
-	var target := _dummy if attacker == _hero else _hero
-	var reach := target.f.position - f.position
-	reach.y = 0.0
-	if not target.body.visible or reach.length() > 1.5 or target.f.state in [S.DASHING, S.KNOCKDOWN]:
-		return
-	attacker.landed = true
-	var heavy := f.move.knockback_type != MoveData.KnockbackType.NONE
-	_hit(target, 1.0 if heavy else 0.7, 7 if heavy else 4, target.f.blocking, f.move)
+	for att: Actor in [_hero, _dummy]:
+		var f := att.f
+		var def := _dummy if att == _hero else _hero
+		if f.state != S.ATTACKING or f.move == null or att.landed or not att.striking:
+			continue
+		if def.f.state in [S.DASHING, S.KNOCKDOWN]:
+			continue
+		var gap := _strike_gap(att, def)
+		var left := maxi(f.move.recovery_start_tick() - f.move_tick, 1)
+		if gap <= TOUCH or gap > MAX_STEP_IN:
+			continue
+		var dir := def.f.position - f.position
+		dir.y = 0.0
+		dir = dir.normalized() if dir.length() > 0.001 else att.forward()
+		var step := gap / float(left)
+		f.position += dir * step
+		att.body.position = f.position
+		att.stepped += step
+
+
+## How far the attacker must move toward the target before its hit volume
+## first touches: its posed hand, forearm, shin and foot surfaces against the
+## target's posed surface (kept BODY_GAP apart), or its strike points against
+## the target's body capsule, whichever is nearer. INF: never, along this line.
+func _strike_gap(att: Actor, def: Actor) -> float:
+	var dir := def.f.position - att.f.position
+	dir.y = 0.0
+	dir = dir.normalized() if dir.length() > 0.001 else att.forward()
+	var limbs := PackedVector3Array()
+	var surf := _surface(att)
+	for i in att.probe_limb:
+		limbs.append(surf[i])
+	var gap := step_to_touch(limbs, _surface(def), dir, BODY_GAP)
+	var a := def.bone(&"Hips")
+	var b := def.bone(&"Head")
+	for point in _strike_points(att):
+		var off := Geometry3D.get_closest_point_to_segment(point, a, b) - point
+		gap = minf(gap, off.length() - BODY_RADIUS - STRIKER_RADIUS)
+	return gap
+
+
+## Distance `points` must move along `dir` (horizontal) before one comes
+## within `gap` of a `target` point; negative: already that much too close.
+## Pairs more than MAX_OVERLAP past each other are ignored (other side). Both
+## sets are binned across the line of travel in cells of gap / 2, keeping
+## only the leading point of `points` and the nearest of `target` per cell.
+static func step_to_touch(points: PackedVector3Array, target: PackedVector3Array, dir: Vector3, gap: float) -> float:
+	dir.y = 0.0
+	dir = dir.normalized()
+	var side := dir.cross(Vector3.UP).normalized()
+	var cell := gap * 0.5
+	var near := _bin_leading(target, side, dir, cell, -1.0)
+	var lead := _bin_leading(points, side, dir, cell, 1.0)
+	var best := INF
+	for key: Vector2i in lead:
+		var p: Vector3 = lead[key]
+		for x in range(-2, 3):
+			for y in range(-2, 3):
+				var q: Variant = near.get(key + Vector2i(x, y))
+				if q == null:
+					continue
+				var du: float = q.x - p.x
+				var dy: float = q.y - p.y
+				var lat := du * du + dy * dy
+				if lat >= gap * gap:
+					continue
+				var s: float = q.z - p.z - sqrt(gap * gap - lat)
+				if s >= -MAX_OVERLAP:
+					best = minf(best, s)
+	return best
+
+
+## Points as (across, height, along dir), one per cell across the line of
+## travel: the one furthest along `sign` * dir.
+static func _bin_leading(points: PackedVector3Array, side: Vector3, dir: Vector3, cell: float, sign: float) -> Dictionary:
+	var bins := {}
+	for q in points:
+		var v := Vector3(q.dot(side), q.y, q.dot(dir))
+		var key := Vector2i(floori(v.x / cell), floori(v.y / cell))
+		var have: Variant = bins.get(key)
+		if have == null or (v.z - (have as Vector3).z) * sign > 0.0:
+			bins[key] = v
+	return bins
 
 
 ## The sim's pushboxes: two grounded fighters' centres stay 2 x pushbox_radius
@@ -1233,6 +1509,13 @@ func _contacts() -> void:
 					# The guard is pushed straight back, not sideways off the arm.
 					push_dir = away
 		if deepest <= 0.0:
+			if not att.landed and att.f.state == S.ATTACKING and _strike_gap(att, def) <= TOUCH:
+				# Touched the real surface (boulders, belly) outside the capsule:
+				# the hit lands; the body contact pushes both back equally.
+				att.landed = true
+				var touched: MoveData = att.f.move
+				var big := touched.knockback_type != MoveData.KnockbackType.NONE
+				_hit(def, 1.0 if big else 0.7, 7 if big else 4, def.f.blocking, touched)
 			continue
 		if push_dir.length() < 0.001:
 			push_dir = def.f.position - att.f.position
@@ -1270,47 +1553,29 @@ func _body_contacts() -> void:
 	if absf(a.position.y - b.position.y) > 1.2 or d.length() > 3.0:
 		return
 	var dir := d.normalized() if d.length() > 0.001 else _hero.forward()
-	var hero_pts := _posed_surface(_hero)
-	var cells := surface_cells(_posed_surface(_dummy), BODY_GAP)
-	var shift := 0.0
-	for attempt in 30:
-		if not surfaces_touch(hero_pts, cells, dir * shift, BODY_GAP):
-			break
-		shift += 0.01
+	var shift := -step_to_touch(_surface(_hero), _surface(_dummy), dir, BODY_GAP)
 	if shift <= 0.0:
 		return
+	shift += 0.002
 	a.position -= dir * shift * 0.5
 	b.position += dir * shift * 0.5
 	_hero.body.position = a.position
 	_dummy.body.position = b.position
 
 
-## Points bucketed into cells of size `gap` (for surfaces_touch).
-static func surface_cells(points: PackedVector3Array, gap: float) -> Dictionary:
-	var cells := {}
-	for p in points:
-		var key := Vector3i((p / gap).floor())
-		if not cells.has(key):
-			cells[key] = PackedVector3Array()
-		cells[key].append(p)
-	return cells
-
-
-## Whether any of `points`, moved back by `apart`, is within `gap` of a point in `cells`.
-static func surfaces_touch(points: PackedVector3Array, cells: Dictionary, apart: Vector3, gap: float) -> bool:
-	for h in points:
-		var p := h - apart
-		var key := Vector3i((p / gap).floor())
-		for x in range(-1, 2):
-			for y in range(-1, 2):
-				for z in range(-1, 2):
-					var near: Variant = cells.get(key + Vector3i(x, y, z))
-					if near == null:
-						continue
-					for q: Vector3 in near:
-						if p.distance_squared_to(q) < gap * gap:
-							return true
-	return false
+## The actor's posed surface this tick (moved along if the body moved since).
+func _surface(actor: Actor) -> PackedVector3Array:
+	var at := actor.body.global_position
+	if actor.surface_tick != _ticks:
+		actor.surface = _posed_surface(actor)
+		actor.surface_tick = _ticks
+		actor.surface_at = at
+	elif at != actor.surface_at:
+		var delta := at - actor.surface_at
+		for i in actor.surface.size():
+			actor.surface[i] += delta
+		actor.surface_at = at
+	return actor.surface
 
 
 ## The actor's sampled surface points, skinned to its current pose (global).
@@ -1367,9 +1632,27 @@ func _sample_surface(actor: Actor, sk: Skeleton3D) -> void:
 					continue
 				actor.probe_rest.append(verts[v])
 				actor.probe_skin_of.append(m)
+				var top := 0
 				for j in 4:
 					actor.probe_binds.append(bones[v * per + j])
 					actor.probe_weights.append(ws[v * per + j])
+					if ws[v * per + j] > ws[v * per + top]:
+						top = j
+				var bind := bones[v * per + top]
+				var bone := mi.skin.get_bind_bone(bind)
+				if bone < 0:
+					bone = sk.find_bone(mi.skin.get_bind_name(bind))
+				actor.probe_bone.append(bone)
+				if is_limb(sk.get_bone_name(bone) if bone >= 0 else ""):
+					actor.probe_limb.append(actor.probe_rest.size() - 1)
+
+
+## Bones that strike: hands and fingers, forearms, shins, feet and toes.
+static func is_limb(bone: String) -> bool:
+	for part: String in ["Hand", "LowerArm", "LowerLeg", "Foot", "Toes", "Thumb", "Index", "Middle", "Ring", "Little"]:
+		if bone.contains(part):
+			return true
+	return false
 
 
 ## A guarding fighter's forearms as segment pairs (elbow, past the fist); empty
@@ -1427,6 +1710,12 @@ func _camera() -> void:
 		"close":
 			height = 1.6
 			yaw_goal = rad_to_deg(_hero.f.facing_yaw - PI) + 50.0
+		"charge":
+			# Nearly frontal and waist-to-crown, so the cupped hands and the orb read.
+			target = Vector3(k.x, k.y - STAND + 0.92, k.z)
+			height = 1.5
+			yaw_goal = rad_to_deg(_hero.f.facing_yaw - PI) + 16.0
+			pitch = -5.0
 		"dash":
 			height = 2.2
 			yaw_goal = 10.0
@@ -1445,9 +1734,12 @@ func _camera() -> void:
 			var fwd := _hero.forward()
 			var right := Basis(Vector3.UP, _hero.f.facing_yaw) * Vector3.RIGHT
 			var ground := Vector3(k.x, 0.0, k.z)
-			# Tall hats, ears or long hair would hide the shooting arm: lift and
-			# widen the camera by how far the hero's crown and head extend.
-			var lift := _hero_extra
+			# Tall hats, ears, long hair or shoulder boulders would hide the
+			# dummy: lift and widen the camera until every sight line to the
+			# dummy clears the hero's measured head, shoulders and body.
+			if _shoulder_lift < 0.0:
+				_shoulder_lift = _measure_shoulder_lift(ground, fwd, right)
+			var lift := maxf(_hero_extra, _shoulder_lift * SHOULDER_LIFT)
 			var eye := ground + Vector3(0, 1.55 + lift * 1.1, 0) - fwd * (3.6 + lift) + right * (1.5 + lift * 1.4)
 			var look := ground + fwd * 2.4 + Vector3(0, 0.9 - lift * 0.2, 0)
 			_stage.camera.global_position = eye
@@ -1468,6 +1760,44 @@ func _camera() -> void:
 	# Stay on the open side of the cyclorama (the back wall is at -Z).
 	_cam_yaw = clampf(wrapf(_cam_yaw, -180.0, 180.0), -58.0, 58.0)
 	_stage.frame(_cam_target, _cam_height, 0.62, pitch, _cam_yaw)
+
+
+## Fraction (0..1) of the shoulder camera's lift range needed so the sight
+## lines to the dummy's head, chest, hips, sides and feet clear the hero's
+## posed surface (all but the forearms and hands, which move in the shots).
+func _measure_shoulder_lift(ground: Vector3, fwd: Vector3, right: Vector3) -> float:
+	var targets := _dummy_marks()
+	var surf := _surface(_hero)
+	var sk := _hero.skeleton()
+	var body := PackedVector3Array()
+	for i in surf.size():
+		var bone := _hero.probe_bone[i]
+		var name := sk.get_bone_name(bone) if bone >= 0 else ""
+		if not (is_hand(name) or name.contains("LowerArm")):
+			body.append(surf[i])
+	var base_lift := _hero_extra / SHOULDER_LIFT
+	var eye := func(t: float) -> Vector3:
+		var l := t * SHOULDER_LIFT
+		return ground + Vector3(0, 1.55 + l * 1.1, 0) - fwd * (3.6 + l) + right * (1.5 + l * 1.4)
+	var t := 1.0
+	for i in 41:
+		var ti := maxf(base_lift, i / 40.0)
+		if LookdevFraming.clearance(eye.call(ti), targets, body, SHOULDER_MARGIN) >= 0.0:
+			t = ti
+			break
+	var clear := LookdevFraming.clearance(eye.call(t), targets, body, 0.0)
+	print("shoulder cam: lift %.2f m, sight lines clear the hero by %.3f m" % [t * SHOULDER_LIFT, clear])
+	return t
+
+
+## Points on the dummy that must stay visible: crown, chest, hips, both sides, feet.
+func _dummy_marks() -> PackedVector3Array:
+	var side := Basis(Vector3.UP, _dummy.f.facing_yaw) * Vector3.RIGHT
+	var chest := _dummy.bone(&"Chest")
+	return PackedVector3Array([
+		_dummy.bone(&"Head") + Vector3(0, 0.25, 0), chest, _dummy.bone(&"Hips"),
+		chest + side * 0.35, chest - side * 0.35, _dummy.bone(&"LeftFoot"), _dummy.bone(&"RightFoot"),
+	])
 
 
 func _save() -> void:
