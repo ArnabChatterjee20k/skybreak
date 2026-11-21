@@ -1,4 +1,4 @@
-# Look-dev: Vexa (design sheet v1)
+# Look-dev: Vexa (design sheet v2)
 
 **Goal:** Vexa alone, in the approved voxel style (`docs/lookdev/kael.md`, `.claude/skills/voxel-character-lookdev/SKILL.md`), at the voxel Kael quality bar. Look before function: nothing from this sheet reaches `main` or the in-game roster until the owner approves the look.
 
@@ -43,10 +43,10 @@ Read at a glance: *tall hood with two swept-back ear points, a black visor with 
 ## Palette (muted base; violet is the one saturated accent)
 | Material | Base | Shadow | Notes |
 |---|---|---|---|
-| Hood, mantle | muted plum-violet `#3A2650` | `#22162F` | darker band in the tatters' folds |
+| Hood, mantle | muted plum-violet `#3A2650` | `#22162F` | v2: interior and undersides `#160E20`; lighter rim `#5E4482` on the hood edge and tatter tips; fold shading (light tatter ridges, dark valleys, drape folds on the hood back) |
 | Bodysuit, leggings | blue-black `#1A1C24` | `#0E0F14` | never pure black: the rim light needs something to catch |
-| Jacket | gunmetal silver `#8A8F9C` | `#565A66` | lighter edge voxels `#A9AEB9` on the collar and hem: her main light value |
-| Wraps | ash-lilac grey `#7A7484` | `#4C4756` | step ridges a touch lighter |
+| Jacket | slate `#5A5A70` | `#2E2E3C` | v2: darker edge `#3C3C4E` on the collar, cuffs and hem, dark seams; light zip teeth `#C4C8D2` (v1's silver read near-white on the GPU) |
+| Wraps | cool grey `#8A8AA0` | `#3A3848` | v2: a dark band every third wrap; step ridges a touch lighter; no edge-wear lightening |
 | Boots, holster | charcoal leather `#2C2A30` | `#18171B` | sole `#141316` |
 | Visor | smoked glass `#18141F` | `#0C0A10` | one specular glint row |
 | Skin | cool light `#E9C9B8` | `#B8958A` | |
@@ -61,7 +61,7 @@ Read at a glance: *tall hood with two swept-back ear points, a black visor with 
 | Brann | ember-red beard (~8°) | molten red-orange cracks, yellow core | mid-light stone grey |
 | Kael | burnt-orange scarf (~22°) | orange-white, reads white | mid teal |
 | Lyra | cerulean cape lining (~210°) | blue-white starlight | dark navy, light parchment |
-| Vexa | electric violet (~270°) | violet-white | near-black, light silver jacket |
+| Vexa | electric violet (~270°) | violet-white | near-black, slate jacket |
 
 No two accents are within 40° except Brann and Kael, who are split by value (Brann's red is dark and lives in a beard; Kael's orange is bright and lives in a ribbon) and by energy shape (Brann's glows in crack lines, Kael's as a white aura). In team modes `zone_match.gd` swaps the rim energy for team colours; the accents keep identity. Items stay in the gold family, which no legend uses as an accent.
 
@@ -109,3 +109,7 @@ Kael's stack unchanged (crevice AO, soft key and contact shadow, fill/bounce, vo
 | Chakram on back | fine-cell torus with 4 teeth, its own grid | rigid `UpperChest`; hidden while the chakram weapon is held (the weapon layer shows the held copy) |
 
 Grid bounds: body about `AABB(-0.55, -0.01, -0.35) + (1.10, 1.50, 0.70)`; the head grid tall enough for the ears (to y ≈ 2.0).
+
+## v2 value pass (from the v1 GPU renders)
+- The jacket and wraps read near-white and outweighed the purple and dark. Now purple and dark dominate; light values only at small accents (visor glint, zip teeth, coin, steel rivets).
+- The hood and mantle were one flat purple. Faces turned in toward the body or down are the dark interior; the outer panels get fold shading and a lighter rim on the hood edge and tatter tips. The violet lining stays the one saturated accent.
