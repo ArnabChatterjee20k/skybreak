@@ -172,14 +172,17 @@ On the owner's PC (Windows, GTX 1650):
 D:\Tools\Godot\Godot_v4.7.2-stable_win64_console.exe --path . --fullscreen --resolution 1920x1080 --disable-vsync -s res://tools/bench/zone_bench.gd -- --tiers=high,medium,low,web --json=zone_bench.json
 ```
 
-It exits 1 if any zone misses the medium budget (p95 <= 300k visible triangles and <= 250 draws).
+It exits 1 if any zone misses the medium budget (p95 <= 300k visible triangles and <= 250 draws),
+which it will today (see the open points). The first run voxelises and merges every prop into
+`user://voxel_prop_cache/` (a few minutes per zone); only the GPU/CPU ms of a run with a warm cache
+mean anything, and the build time isn't part of them anyway. `--zones=heartbloom` limits the run.
 
 ## Verification
 
 Official Godot 4.7.2 linux x86_64 (`Godot_v4.7.2-stable_linux.x86_64.zip`, SHA-512 `9aa00f7a...4c65`
-matches `SHA512-SUMS.txt`). In a fresh checkout of the branch head (`.godot` removed):
+matches `SHA512-SUMS.txt`). In a fresh checkout of `1b42538d` (the last code change; `.godot` removed):
 `godot --headless --path . --import` (exit 0), then the full GUT run: **1588 tests, 1582 passing,
-0 failing, 11 risky/pending** (the skipped live-service tests), exit 0, 604 s.
+0 failing, 11 risky/pending** (the skipped live-service tests), exit 0, 402 s.
 
 ## Not done / open
 
