@@ -236,10 +236,13 @@ func _ground() -> void:
 			if not close:
 				var key := Vector2i(floori(tx / 4.0), floori(tz / 4.0))
 				var arrays := _ground_mesh(o, 8.0).surface_get_arrays(0)
-				if not ring.has(key):
-					ring[key] = [PackedVector3Array(), PackedVector3Array()]
-				(ring[key][0] as PackedVector3Array).append_array(arrays[Mesh.ARRAY_VERTEX])
-				(ring[key][1] as PackedVector3Array).append_array(arrays[Mesh.ARRAY_NORMAL])
+				# Packed arrays are values: append to a local copy and store it back.
+				var pair: Array = ring.get(key, [PackedVector3Array(), PackedVector3Array()])
+				var verts: PackedVector3Array = pair[0]
+				var normals: PackedVector3Array = pair[1]
+				verts.append_array(arrays[Mesh.ARRAY_VERTEX])
+				normals.append_array(arrays[Mesh.ARRAY_NORMAL])
+				ring[key] = [verts, normals]
 				continue
 			for lod in [2.0, 8.0]:
 				var mesh := _ground_mesh(o, lod)
