@@ -116,6 +116,7 @@ static func pack(zone: VoxelZone, zone_id: StringName, tier: GraphicsSettings.Qu
 	# Meshes from VoxelProp's user:// disk cache would be saved as links to that cache
 	# (machine-local, and without their materials): embed them instead.
 	_embed_local(zone)
+	_embed_state(state, {})
 	for m in stripped:
 		m.remove_meta("faces")
 	var scene := PackedScene.new()
@@ -139,6 +140,19 @@ static func _embed_local(zone: Node) -> void:
 			found.append((n as GeometryInstance3D).material_override)
 		for r in found:
 			_embed(r, seen)
+
+
+## Embeds the resources held only in script state (e.g. a helper's LOD mesh arrays).
+static func _embed_state(v: Variant, seen: Dictionary) -> void:
+	if v is Resource:
+		_embed(v, seen)
+	elif v is Array:
+		for x: Variant in v:
+			_embed_state(x, seen)
+	elif v is Dictionary:
+		for k: Variant in v:
+			_embed_state(k, seen)
+			_embed_state(v[k], seen)
 
 
 static func _embed(r: Resource, seen: Dictionary) -> void:

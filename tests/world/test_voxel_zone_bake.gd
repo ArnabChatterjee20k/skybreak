@@ -169,3 +169,34 @@ func test_a_mesh_from_a_local_disk_cache_is_embedded_with_its_material() -> void
 		assert_ne(mesh.resource_path, cache, "embedded, not linked")
 		assert_not_null(mesh.surface_get_material(0), "with its material")
 	again.free()
+
+
+func test_a_cached_mesh_held_only_in_script_state_is_embedded() -> void:
+	# Shattered Mesa keeps its boulder LOD meshes in a helper's array, not on a node.
+	var cache := "user://test_zone_bake_state_mesh.res"
+	var made := ArrayMesh.new()
+	made.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, BoxMesh.new().get_mesh_arrays())
+	ResourceSaver.save(made, cache)
+	var cached := ResourceLoader.load(cache, "", ResourceLoader.CACHE_MODE_IGNORE) as ArrayMesh
+	cached.take_over_path(cache)
+	var zone := (load(STUB) as GDScript).new() as VoxelZone
+	add_child(zone)
+	zone.build()
+	zone.set(&"nested", {"meshes": [cached]})
+	var scene := VoxelZoneBake.pack(zone, &"stub", GraphicsSettings.Quality.HIGH, STUB, 1)
+	zone.free()
+	assert_eq(VoxelZoneBake.save(scene, TMP), OK)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(cache))
+	var loaded := ResourceLoader.load(TMP, "", ResourceLoader.CACHE_MODE_IGNORE) as PackedScene
+	assert_not_null(loaded, "the bake loads without the deleted cache file")
+	if loaded == null:
+		return
+	var again := loaded.instantiate() as VoxelZone
+	VoxelZoneBake.restore(again)
+	var meshes: Array = (again.get(&"nested") as Dictionary).get("meshes", [])
+	assert_eq(meshes.size(), 1)
+	if meshes.size() == 1:
+		assert_not_null(meshes[0], "the mesh is in the bake, not a link to the cache")
+		if meshes[0] != null:
+			assert_ne((meshes[0] as Resource).resource_path, cache, "embedded, not linked")
+	again.free()
