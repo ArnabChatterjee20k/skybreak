@@ -11,6 +11,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   test), keyboard/mouse bindings, debug overlay (fps, frame time), GUT, CI,
   `AGENTS.md`. Remaining: CI green on GitHub.
 
+- LOOKDEV-PERF [desktop] Voxel zone perf pass (branch `lookdev/zone-perf`, report `reports/perf/`):
+  all seven voxel zones on one branch; lossless prop face merge, HLOD far regions, terrain and
+  building occluders, quality tiers incl. a web tier (`VoxelQuality`), `tools/bench/zone_bench.gd`.
+  Open: GTX 1650 ms from the benchmark on the owner's PC; Medium still over 300k tris (see report);
+  the web tier measured with Forward+ counts, not yet in a real web export.
+
 - LOOKDEV-HB [desktop] Heartbloom voxel look v2 + the voxel zone kit (`game/world/voxel_zone_kit/`,
   branch `lookdev/heartbloom-zone`, report `reports/lookdev/heartbloom/v2/`). Waiting on the owner's
   draft-stills gate. Open for v3:

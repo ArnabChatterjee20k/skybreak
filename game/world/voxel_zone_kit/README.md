@@ -219,11 +219,24 @@ What keeps the look and cuts the cost:
 - **Materials.** Merged meshes get their own material (it holds the face texture).
   After changing a shared material's value (e.g. the lantern emission), call
   `VoxelProp.sync_materials()`; `VoxelStage.apply` does it for you.
-- **Tiers.** `VoxelQuality.tier = GraphicsSettings.Quality.MEDIUM` before `build()`,
-  `stage.apply_quality(tier)` after `setup()`. HIGH and MEDIUM keep the look; LOW and
-  WEB shorten LOD ranges, drop prop shadows to the first tier and shorten the sun.
-- **Terrain chunks** are 64 m (96 m on LOW, 128 m on WEB): fewer draws, bigger greedy
-  rectangles; the terrain shader works in world space, so chunking never shows.
+- **Far regions (HLOD).** `VoxelProp.place` gives each 4 x 4 block of tiles one node
+  holding the last LOD tier of all its copies; it shows only once every tile in the
+  block would show its last tier anyway, and the tiles hide behind it
+  (`visibility_parent`). The same picture, one draw per block. Below HIGH, scatter
+  whose last tier ends gets 3 x 3 blocks that end a block radius past its range.
+- **Occluders.** `VoxelHeightfield.build` adds a conservative occluder per chunk
+  (`<name>Occluders`, 4 m boxes inside the solid); `VoxelStage.apply_quality` turns
+  occlusion culling on for the viewport. Give big solid landmarks a `BoxOccluder3D`
+  inside their mass (Stormfall does this per building).
+- **Tiers.** `VoxelQuality.tier` (default: the player's saved quality, WEB on the web)
+  before `build()`, `stage.apply_quality(tier)` after `setup()`. HIGH, the GTX 1650's
+  1080p60 default, is the authored look. MEDIUM keeps gameplay distance and contact
+  shadows as they are and pulls far LOD in (0.8x; zones scale their own terrain and
+  building LOD distances with `VoxelQuality.far(m)`), with a 150 m sun. LOW and WEB
+  shorten ranges further, cast from the first tier only and use 64/128 m terrain
+  chunks; WEB has one shadow split and no SSAO.
+- **Terrain chunks** stay 32 m on HIGH/MEDIUM: zones that set LOD ranges per chunk after
+  `build()` (Frozen Peaks' mountains) depend on that size.
 
 ## Lessons from Heartbloom
 
