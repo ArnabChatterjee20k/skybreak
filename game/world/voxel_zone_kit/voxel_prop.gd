@@ -18,10 +18,16 @@ enum Surf { MATTE, METAL, WATER, PETAL, GLOW, BARK }
 
 const MERGED_SHADER := preload("res://game/world/voxel_zone_kit/voxel_merged_prop.gdshader")
 
+## voxel_figure.gdshader's parameters and defaults, copied per surface into
+## the merged meshes' materials.
+const MERGED_PARAMS := {
+	"roughness_value": 0.8, "metallic_value": 0.0, "specular_value": 0.4, "bevel_width": 0.16,
+	"bevel_tilt": 0.7, "edge_lift": 0.12, "corner_ao": 0.85, "emission_value": 0.0,
+}
+
 static var _materials: Array[Material] = []
-## Per-mesh copies of the shared materials for merged meshes (by Surf), kept in
-## step with the shared ones by sync_materials().
-static var _copies: Array = [[], [], [], [], [], []]
+## The merged meshes' materials, kept in step by sync_materials().
+static var _merged_materials: Array[ShaderMaterial] = []
 ## Set false to rebuild every mesh (ignores the disk cache).
 static var use_cache := true
 ## Greedy-merge coplanar faces (VoxelFaceMerge): same look, a fraction of the
@@ -34,7 +40,7 @@ static var merge_faces := true
 ## bump version when the design changes. soft: materials smooth() may clean.
 static func mesh(key: String, version: int, bounds: AABB, cell: float, paint: Callable, color: Callable,
 		surface: Callable, soft := []) -> ArrayMesh:
-	var path := CACHE_DIR + "%s_c%d_v%d%s.res" % [key, roundi(cell * 1000.0), version, "_m2" if merge_faces else ""]
+	var path := CACHE_DIR + "%s_c%d_v%d%s.res" % [key, roundi(cell * 1000.0), version, "_m3" if merge_faces else ""]
 	if use_cache and ResourceLoader.exists(path):
 		var cached := load(path) as ArrayMesh
 		if cached != null:
@@ -160,38 +166,36 @@ static func _multimesh(m: Mesh, transforms: Array[Transform3D]) -> MultiMeshInst
 	return node
 
 
-## Copies the shared materials' values to their merged copies (call after
-## changing a shared material, e.g. the lantern emission).
+## Copies the shared materials' values to the merged meshes' materials (call
+## after changing a shared material, e.g. the lantern emission).
 static func sync_materials() -> void:
-	for idx in _copies.size():
-		var shared := materials()[idx] as ShaderMaterial
-		for copy: ShaderMaterial in _copies[idx]:
-			for p: Dictionary in shared.shader.get_shader_uniform_list():
-				if copy.shader.get_shader_uniform_list().any(func(q: Dictionary) -> bool: return q.name == p.name):
-					copy.set_shader_parameter(p.name, shared.get_shader_parameter(p.name))
+	for m: ShaderMaterial in _merged_materials:
+		_copy_params(m)
 
 
 ## Attaches the shared materials to a loaded mesh (surfaces keep their
-## order); a merged mesh gets copies that read its face texture.
+## order); a merged mesh gets one material that reads its face texture and
+## carries every shared material's values per surface.
 static func _apply_materials(m: ArrayMesh) -> void:
-	var faces: ImageTexture = null
-	if m.has_meta("faces"):
-		faces = ImageTexture.create_from_image(m.get_meta("faces") as Image)
-	for s in m.get_surface_count():
-		var idx: int = m.surface_get_name(s).to_int()
-		if faces == null:
-			m.surface_set_material(s, materials()[idx])
-			continue
-		var shared := materials()[idx] as ShaderMaterial
-		var copy := ShaderMaterial.new()
-		copy.shader = MERGED_SHADER
-		for p: Dictionary in shared.shader.get_shader_uniform_list():
-			var value: Variant = shared.get_shader_parameter(p.name)
-			if value != null and p.name != "rim_energy_color" and p.name != "rim_energy_mix":
-				copy.set_shader_parameter(p.name, value)
-		copy.set_shader_parameter("faces", faces)
-		(_copies[idx] as Array).append(copy)
-		m.surface_set_material(s, copy)
+	if not m.has_meta("faces"):
+		for s in m.get_surface_count():
+			m.surface_set_material(s, materials()[m.surface_get_name(s).to_int()])
+		return
+	var mat := ShaderMaterial.new()
+	mat.shader = MERGED_SHADER
+	mat.set_shader_parameter("faces", ImageTexture.create_from_image(m.get_meta("faces") as Image))
+	_copy_params(mat)
+	_merged_materials.append(mat)
+	m.surface_set_material(0, mat)
+
+
+static func _copy_params(mat: ShaderMaterial) -> void:
+	for p: String in MERGED_PARAMS:
+		var values := PackedFloat32Array()
+		for shared: ShaderMaterial in materials():
+			var v: Variant = shared.get_shader_parameter(p)
+			values.append(float(v) if v != null else float(MERGED_PARAMS[p]))
+		mat.set_shader_parameter(p, values)
 
 
 ## Drops the bone/weight arrays (static props) and names each surface by its
