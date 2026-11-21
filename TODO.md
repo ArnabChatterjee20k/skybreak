@@ -26,6 +26,16 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - hoodoo lower 12 m and boulders at T1 (now T2 and 2xT1), caprock overhang lips, sand drifts
   - slot-canyon hero shot and chockstone, heat shimmer, sand drift off crests, scrub sway
   - the render benchmark on the GTX 1650
+- LOOKDEV-SC [desktop] Stormfall City voxel look v1 (`game/world/zones_voxel/stormfall_city/`, branch
+  `lookdev/zone-stormfall_city`, report `reports/lookdev/stormfall_city/v1/`). Waiting on the owner's
+  draft-stills gate. Open for v2:
+  - sim bug (gameplay lane): the Spire Tower landmark has no building in the sim; its block sits on the
+    raised district's slope, so `StormfallCityProps` skips it. The voxel Spire is visual only (no collider)
+  - bridges over the canal (sheet) need sim collision first; not built in v1
+  - draw calls: up to ~640 in the wide overview (budget 250): merge ground into 96 m chunks, cars per 96 m tile
+  - facade windows are shader colour above the third storey; real recesses only as sills/hoods (storeys 2-4)
+  - lightning is timed, not yet synced to `stormfall_thunder`; no flicker on signs; no puddle ripples
+  - readability strip (all four legends, Vexa row) and the render benchmark on the GTX 1650 not done
 
 - LOOKDEV-HB [desktop] Heartbloom voxel look v2 + the voxel zone kit (`game/world/voxel_zone_kit/`,
   branch `lookdev/heartbloom-zone`, report `reports/lookdev/heartbloom/v2/`). Waiting on the owner's
