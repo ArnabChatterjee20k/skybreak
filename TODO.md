@@ -102,6 +102,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
     5 cm). The voxel boots reach below the classic mesh bottom (sole below the ankle: Kael 13.0 ->
     14.0 cm, Vexa 10.4 -> 10.7, Lyra 10.4 -> 14.0, Brann 11.0 -> 12.0). Fix: lift each voxel model by
     its delta (or trim the boot soles), then re-check feet and weapon clearance.
+    FIXED on fix/voxel-soles-perf@1190b4b (also carries lyra v4, kael and vexa polish): merge that branch.
   - QA-22 [desktop, characters] voxel Brann's view still costs ~2x a classic legend per frame
     (1.20 vs ~0.55 ms for two fighters, headless) after the perf pass: `_keep_fist_clear` dominates.
   - Visual goldens: all 14 fail as expected from the art change; one refresh pass after merge.
