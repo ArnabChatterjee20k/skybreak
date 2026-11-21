@@ -1,11 +1,12 @@
 extends SceneTree
 ## Moves reel of a character on the look-dev stage, against a grey target
 ## dummy so the hits read (.claude/skills/voxel-character-lookdev/SKILL.md).
-##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots]
+##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots|travel|guard]
 ##       --scene=<character scene> --moves=res://game/combat/moves/<name>/
 ##       [--dummy=<scene>] [--stats=<FighterStats .tres>] [--energy=#ff9e40]
 ## Writes numbered JPG frames (f_00000.jpg...) for ffmpeg at 60 fps; "poses"
-## writes one still per procedural pose, "combat" only the melee segments.
+## writes one still per procedural pose, "combat" only the melee segments,
+## "travel" run, take-off, flight and dash, "guard" only the guard segment.
 ## Needs a GPU. --stats sets the pushbox spacing (default FighterStats').
 ##
 ## Everything here is look-dev only: the sim is faked (positions, states and
@@ -14,7 +15,7 @@ extends SceneTree
 ## hover, crossed guard, ki shot, kick, jump crouch, a big flinch) are layered
 ## over the clips by LookdevPoseOverride. Neither the sim nor the clips change.
 
-const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
+const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots|travel|guard] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
 ## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
 const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
@@ -25,6 +26,10 @@ const S := FighterState.State
 ## silhouette (waist radius ~0.2-0.3 m); plus the striking fist or boot's own radius.
 const BODY_RADIUS := 0.24
 const STRIKER_RADIUS := 0.07
+## A guarding target's forearms (elbow to past the fist, gauntlets ~1.4x) as
+## capsules of this radius: blocked strikes stop at the crossed arms.
+const FOREARM_RADIUS := 0.075
+const FIST_PAST_WRIST := 0.4
 
 # ---------------------------------------------------------------- poses
 # Skeleton space: +Z his front, +X his left, +Y up. See LookdevPoseOverride.
@@ -175,6 +180,8 @@ var _kicking := false
 ## How far the hero's crown (hat, ears, hair) and head width exceed a plain
 ## head, in metres: the over-the-shoulder camera lifts and widens by it.
 var _hero_extra := 0.0
+## Worst strike-into-guard overlap left after contacts resolve (look-dev check).
+var _guard_overlap := 0.0
 
 
 func _initialize() -> void:
@@ -259,12 +266,25 @@ func _run(what: String) -> void:
 		print("frames: %d" % _frame)
 		quit()
 		return
+	if what == "travel":
+		await _locomotion("Run", 9.0, 2.5)
+		await _takeoff_and_hover()
+		await _flight()
+		await _flight_dash()
+		print("frames: %d" % _frame)
+		quit()
+		return
+	if what == "guard":
+		await _guard()
+		print("frames: %d, guard overlap after contact %.3f m" % [_frame, _guard_overlap])
+		quit()
+		return
 	if what == "combat":
 		await _strikes("3-hit combo", ["light_1", "light_2", "light_3"], 1)
 		await _heavy_launcher()
 		await _kick()
 		await _guard()
-		print("frames: %d" % _frame)
+		print("frames: %d, guard overlap after contact %.3f m" % [_frame, _guard_overlap])
 		quit()
 		return
 	await _idle("Idle", 2.0)
@@ -783,7 +803,12 @@ func _hit(target: Actor, strength: float, hitstop: int, guarded: bool, move: Mov
 		target.f.stun_ticks = 14
 		target.f.blocking = true
 		target.f.position += away * 0.12
-		_flash_at(at + away * -0.25, 0.22, 8, Color(0.6, 0.85, 1.0))
+		var arms := _guard_segments(target)
+		if arms.size() == 4:
+			at = (arms[1] + arms[3]) * 0.5 - away * 0.08
+		else:
+			at -= away * 0.25
+		_flash_at(at, 0.22, 8, Color(0.6, 0.85, 1.0))
 		return
 	target.flash = 1.0 * clampf(strength, 0.4, 1.0)
 	_flash_at(at - away * 0.15, 0.16 + 0.12 * strength, 9)
@@ -1141,7 +1166,8 @@ func _pushboxes() -> void:
 
 
 ## Strikes stop at the target's surface: the attacker's fists, forearms and
-## boots are tested against the target's body capsule (hips to head). The
+## boots are tested against the target's body capsule (hips to head) and, while
+## it guards, its forearms, so a blocked strike stops at the arms. The
 ## first touch lands the hit (hitstop, flash, pop) and any overlap pushes the
 ## target back, so a fist never sinks into the body.
 func _contacts() -> void:
@@ -1156,6 +1182,9 @@ func _contacts() -> void:
 		var b := def.bone(&"Head")
 		var deepest := 0.0
 		var push_dir := Vector3.ZERO
+		var guard := _guard_segments(def)
+		var away := def.f.position - att.f.position
+		away.y = 0.0
 		for point in _strike_points(att):
 			var on := Geometry3D.get_closest_point_to_segment(point, a, b)
 			var off := on - point
@@ -1163,6 +1192,13 @@ func _contacts() -> void:
 			if pen > deepest:
 				deepest = pen
 				push_dir = Vector3(off.x, 0, off.z)
+			for k in range(0, guard.size(), 2):
+				var arm := Geometry3D.get_closest_point_to_segment(point, guard[k], guard[k + 1])
+				var arm_pen := FOREARM_RADIUS + STRIKER_RADIUS - arm.distance_to(point)
+				if arm_pen > deepest:
+					deepest = arm_pen
+					# The guard is pushed straight back, not sideways off the arm.
+					push_dir = away
 		if deepest <= 0.0:
 			continue
 		if push_dir.length() < 0.001:
@@ -1171,11 +1207,46 @@ func _contacts() -> void:
 		push_dir = push_dir.normalized()
 		def.f.position += push_dir * deepest
 		def.body.position = def.f.position
+		if not guard.is_empty():
+			# A horizontal push clears an oblique arm overlap only partly; repeat.
+			var back := away.normalized() if away.length() > 0.001 else push_dir
+			for it in 8:
+				var left := _arm_overlap(att, def)
+				if left <= 0.002:
+					break
+				def.f.position += back * left
+				def.body.position = def.f.position
+			_guard_overlap = maxf(_guard_overlap, _arm_overlap(att, def))
 		if not att.landed:
 			att.landed = true
 			var move: MoveData = att.f.move if att.f.state == S.ATTACKING else null
 			var heavy := move == null or move.knockback_type != MoveData.KnockbackType.NONE
 			_hit(def, 1.0 if heavy else 0.7, 7 if heavy else 4, def.f.blocking, move)
+
+
+## A guarding fighter's forearms as segment pairs (elbow, past the fist); empty
+## when not guarding.
+func _guard_segments(actor: Actor) -> PackedVector3Array:
+	var segs := PackedVector3Array()
+	if not (actor.f.blocking or actor.f.state in [S.BLOCKING, S.BLOCKSTUN]):
+		return segs
+	for side: String in ["Left", "Right"]:
+		var elbow := actor.bone(StringName(side + "LowerArm"))
+		var wrist := actor.bone(StringName(side + "Hand"))
+		segs.append(elbow)
+		segs.append(wrist + (wrist - elbow) * FIST_PAST_WRIST)
+	return segs
+
+
+## Deepest overlap left between att's strike points and def's guard arms (m).
+func _arm_overlap(att: Actor, def: Actor) -> float:
+	var guard := _guard_segments(def)
+	var worst := 0.0
+	for point in _strike_points(att):
+		for k in range(0, guard.size(), 2):
+			var arm := Geometry3D.get_closest_point_to_segment(point, guard[k], guard[k + 1])
+			worst = maxf(worst, FOREARM_RADIUS + STRIKER_RADIUS - arm.distance_to(point))
+	return worst
 
 
 func _strike_points(actor: Actor) -> PackedVector3Array:
