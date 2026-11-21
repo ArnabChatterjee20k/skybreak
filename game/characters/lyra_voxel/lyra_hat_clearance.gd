@@ -3,8 +3,9 @@ extends SkeletonModifier3D
 ## Keeps Lyra's hat off the floor (view-only): adds a Hat bone under Head that
 ## the hat is skinned to, and when the hat's lowest point would go below the
 ## floor (knockdown, lying down) rocks the hat on the top edge of her skull by
-## the smallest tilt that clears it, lifting the low side of the brim. Runs
-## last. Pure function of the pose, so the same clip frame gives the same hat.
+## the smallest tilt that clears it, lifting the low side of the brim (easing
+## in just above the floor). Runs last. Pure function of the pose, so the same
+## clip frame gives the same hat.
 
 ## The floor in skeleton space (her soles when standing).
 @export var floor_y := 0.0
@@ -15,6 +16,11 @@ extends SkeletonModifier3D
 @export var pivot_radius := 0.12
 ## Most the hat may tip off her head, in radians.
 @export var max_tilt := deg_to_rad(80.0)
+## The hat starts tipping this far above the floor, by anticipation_share of
+## the tilt that height would need, so it eases off her head over a few
+## frames instead of popping when she lands (and settles back on get-up).
+@export var anticipation := 0.45
+@export_range(0.0, 1.0) var anticipation_share := 0.5
 
 var _hat := -1
 var _head := -1
@@ -64,7 +70,8 @@ func _process_modification() -> void:
 	# Rest skeleton space -> current skeleton space for anything on the hat.
 	var m := pose * skeleton.get_bone_global_rest(_hat).affine_inverse()
 	var target := floor_y + clearance
-	if lowest(m) >= target:
+	var low_now := lowest(m)
+	if low_now >= target + anticipation:
 		return
 	var up := (m.basis * Vector3.UP).normalized()
 	# The brim's low side: straight down, flattened onto the brim's plane.
@@ -75,20 +82,32 @@ func _process_modification() -> void:
 	low = low.normalized()
 	var axis := low.cross(up).normalized()
 	var pivot := m * _crown_base - low * pivot_radius
-	var lo := 0.0
-	var hi := max_tilt
-	if lowest(_tilted(m, pivot, axis, hi)) >= target:
-		for _i in 12:
-			var mid := (lo + hi) * 0.5
-			if lowest(_tilted(m, pivot, axis, mid)) >= target:
-				hi = mid
-			else:
-				lo = mid
-	var global := _tilted(pose, pivot, axis, hi)
+	var tilt := maxf(_tilt_for(m, pivot, axis, target),
+		_tilt_for(m, pivot, axis, target + anticipation) * anticipation_share)
+	if tilt <= 0.0:
+		return
+	var global := _tilted(pose, pivot, axis, tilt)
 	var parent := skeleton.get_bone_global_pose(_head)
 	var local := parent.affine_inverse() * global
 	skeleton.set_bone_pose_position(_hat, local.origin)
 	skeleton.set_bone_pose_rotation(_hat, local.basis.get_rotation_quaternion())
+
+
+## The smallest tilt (up to max_tilt) that lifts the hat's lowest point to target.
+func _tilt_for(m: Transform3D, pivot: Vector3, axis: Vector3, target: float) -> float:
+	if lowest(m) >= target:
+		return 0.0
+	var lo := 0.0
+	var hi := max_tilt
+	if lowest(_tilted(m, pivot, axis, hi)) < target:
+		return hi
+	for _i in 12:
+		var mid := (lo + hi) * 0.5
+		if lowest(_tilted(m, pivot, axis, mid)) >= target:
+			hi = mid
+		else:
+			lo = mid
+	return hi
 
 
 ## The lowest point of the hat under the rest-to-now transform m.

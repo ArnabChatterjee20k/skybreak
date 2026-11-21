@@ -16,6 +16,9 @@ var _hat := -1
 var _hat_verts := PackedVector3Array()
 var _lowest := INF
 var _head_lowest := INF
+## The hat's tilt off the head at the last skeleton update, and per frame.
+var _tilt := 0.0
+var _tilts: Array[float] = []
 
 
 func before_all() -> void:
@@ -45,6 +48,7 @@ func _measure() -> void:
 	var m := to_view * _sk.get_bone_global_pose(_hat) * _sk.get_bone_global_rest(_hat).affine_inverse()
 	for v in _hat_verts:
 		_lowest = minf(_lowest, (m * v).y)
+	_tilt = _sk.get_bone_pose_rotation(_hat).get_angle()
 	_head_lowest = minf(_head_lowest, (to_view * _sk.get_bone_global_pose(_sk.find_bone(&"Head"))).origin.y)
 
 
@@ -57,9 +61,11 @@ func _play_down(state: FighterState.State) -> void:
 	fighter.stun_ticks = KNOCKDOWN_TICKS
 	_lowest = INF
 	_head_lowest = INF
-	for _t in KNOCKDOWN_TICKS:
+	_tilts.clear()
+	for _t in KNOCKDOWN_TICKS + 30:
 		_view.apply_state(fighter, FRAME)
 		await wait_process_frames(1)
+		_tilts.append(_tilt)
 		fighter.state_ticks += 1
 		fighter.stun_ticks = maxi(fighter.stun_ticks - 1, 0)
 
@@ -86,6 +92,16 @@ func test_the_lowest_hat_point_stays_above_the_floor_through_a_knockdown() -> vo
 	await _play_down(FighterState.State.KNOCKDOWN)
 	assert_lt(_head_lowest, FLOOR_Y + 0.35, "she really lies down (head near the floor)")
 	assert_gt(_lowest, FLOOR_Y, "lowest hat point %.3f vs floor %.3f" % [_lowest, FLOOR_Y])
+
+
+func test_the_hat_eases_off_and_back_on_without_a_pop() -> void:
+	await _play_down(FighterState.State.KNOCKDOWN)
+	var worst := 0.0
+	for i in range(1, _tilts.size()):
+		worst = maxf(worst, absf(_tilts[i] - _tilts[i - 1]))
+	assert_gt(_tilts.max(), deg_to_rad(30.0), "it really tips while she lies down")
+	assert_lt(rad_to_deg(worst), 30.0, "largest tilt change in one frame (deg)")
+	assert_almost_eq(_tilts[-1], 0.0, 1e-3, "back on her head once she stands")
 
 
 func test_the_lowest_hat_point_stays_above_the_floor_when_knocked_out() -> void:
