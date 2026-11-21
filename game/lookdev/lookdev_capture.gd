@@ -228,7 +228,7 @@ static func view_basis(pitch_deg: float, yaw_deg: float) -> Basis:
 
 
 static func is_head_bone(bone: String) -> bool:
-	for part: String in ["Head", "Jaw", "Eye", "Hair", "Ear"]:
+	for part: String in ["Head", "Jaw", "Eye", "Hair", "Ear", "Hat"]:
 		if bone.contains(part):
 			return true
 	return false
