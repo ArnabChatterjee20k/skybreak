@@ -24,6 +24,9 @@ enum Tag {
 	TORSO, NECK, ARM_L, ARM_R, LEG_L, LEG_R, APRON, BOULDER_L, BOULDER_R, HEAD, BEARD, BRAID,
 	GAUNT_L, GAUNT_R, THUMB_L, THUMB_R, FOOT_L, FOOT_R,
 }
+## The braid's chain: one bone per segment, the first parented to the head.
+## BrannBraidBones adds them to the rig; BrannVoxelView swings them.
+const BRAID_BONES: Array[StringName] = [&"Braid1", &"Braid2", &"Braid3"]
 ## Per-finger rig tags: FINGER_BASE + side (0 left, 1 right) * 4 + finger.
 const FINGER_BASE := 32
 const FINGERS: Array[String] = ["Index", "Middle", "Ring", "Little"]
@@ -55,9 +58,10 @@ const SHADOWS := {
 	Mat.BEARD: Color("7e2010"), Mat.BEARD_DARK: Color("5e180c"), Mat.BOOT: Color("24160f"),
 	Mat.WOOD: Color("44301f"),
 }
-## Value noise per material (sheet: 3% on stone and apron panels, up to 6% on moss, iron, straps).
+## Value noise per material (sheet: 3% on stone and apron panels, up to 6% on moss, iron, straps;
+## the big stone torso and denim legs stay at about 2% so they never read as speckle).
 const NOISE := {
-	Mat.STONE: 0.03, Mat.BOULDER: 0.035, Mat.LEATHER: 0.03, Mat.TROUSER: 0.025, Mat.BEARD: 0.04,
+	Mat.STONE: 0.022, Mat.BOULDER: 0.03, Mat.LEATHER: 0.03, Mat.TROUSER: 0.02, Mat.BEARD: 0.04,
 	Mat.MOSS: 0.06, Mat.MOSS_DARK: 0.06, Mat.IRON: 0.06, Mat.IRON_NEW: 0.04, Mat.BELT: 0.06,
 	Mat.LICHEN: 0.06, Mat.BOOT: 0.05,
 }
@@ -86,6 +90,10 @@ var _wedge := PackedFloat32Array()
 
 func _init(skel: Skeleton3D) -> void:
 	super(skel)
+	add_braid_bones(skel)
+	for i in skel.get_bone_count():
+		bones[StringName(skel.get_bone_name(i))] = i
+		rest[StringName(skel.get_bone_name(i))] = skel.get_bone_global_rest(i).origin
 	# Only axis-aligned faces and 45-degree chamfers: any other slope voxelises
 	# into long uneven terraces, which read as lumpy rather than carved.
 	_chest = planes([
@@ -124,7 +132,7 @@ func _init(skel: Skeleton3D) -> void:
 
 func build_grids() -> Array[VoxelGrid]:
 	return [build_body(), build_boulder(1.0), build_boulder(-1.0), build_arm(1.0), build_arm(-1.0),
-		build_head(), build_beard(), build_front()]
+		build_wrist(1.0), build_wrist(-1.0), build_head(), build_beard(), build_front()]
 
 
 ## No smoothing pass: the parts are planar or fine-cell, and it costs build time.
@@ -171,7 +179,9 @@ func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exp
 	var noise := VoxelSdf.hash3(c, mat) * 2.0 - 1.0
 	var drift := VoxelSdf.hash3(c, mat + 31) * 2.0 - 1.0
 	var col := base * (1.0 + noise * amp)
-	col = Color.from_hsv(fposmod(col.h + drift * 0.008, 1.0), clampf(col.s * (1.0 + drift * 0.04), 0.0, 1.0), col.v)
+	# Hue and saturation drift scale with the value noise (calm on big panels).
+	var hue := amp / 0.035
+	col = Color.from_hsv(fposmod(col.h + drift * 0.008 * hue, 1.0), clampf(col.s * (1.0 + drift * 0.04 * hue), 0.0, 1.0), col.v)
 	if mat == Mat.EMBER_CORE or mat == Mat.EMBER or mat == Mat.EMBER_DIM:
 		col.a = 1.0
 		return col
@@ -187,8 +197,10 @@ func color(mat: int, p: Vector3, c: Vector3i, _n: Vector3, occlusion: float, exp
 	if mat in WEARS:
 		var worn: Color = IRON_WEAR if mat == Mat.IRON or mat == Mat.RIVET else col.lightened(0.3)
 		col = col.lerp(worn, exposure * 0.7)
-	elif (mat == Mat.STONE or mat == Mat.BOULDER) and VoxelSdf.hash3(c / 2, 77) < 0.12 and exposure > 0.5:
-		col = col.lerp(col.lightened(0.22), exposure * 0.8)
+	elif mat == Mat.BOULDER and VoxelSdf.hash3(c / 3, 77) < 0.08 and exposure > 0.5:
+		# Sparse clumped chips on the boulders only: on the torso's stepped
+		# chamfers every step is an edge, so chips there read as salt noise.
+		col = col.lerp(col.lightened(0.18), exposure * 0.7)
 	col.a = 1.0
 	return col
 
@@ -399,8 +411,8 @@ func _pelvis_and_legs(g: VoxelGrid) -> void:
 		g.paint_surface(box, func(p: Vector3, _c: Vector3i):
 			return absf(p.y - 0.313) < BODY_CELL * 0.5, Mat.TROUSER_DARK, [Mat.TROUSER])
 		# Knee crease and a side seam.
-		g.paint_surface(box, func(p: Vector3, c: Vector3i):
-			var seam := absf(p.z - 0.005) < BODY_CELL * 0.5 and p.x * side > 0.18 + 0.1 and p.y > 0.36 and c.y % 2 == 0
+		g.paint_surface(box, func(p: Vector3, _c: Vector3i):
+			var seam := absf(p.z - 0.005) < BODY_CELL * 0.5 and p.x * side > 0.18 + 0.1 and p.y > 0.36
 			var crease := absf(p.y - 0.47) < BODY_CELL * 0.5 and p.z > 0.06
 			return seam or crease, Mat.TROUSER_DARK, [Mat.TROUSER])
 
@@ -454,15 +466,22 @@ func _torso(g: VoxelGrid) -> void:
 	# A short, thick neck column, almost hidden between the boulders.
 	g.paint(AABB(Vector3(-0.14, 1.5, -0.14), Vector3(0.28, 0.24, 0.3)), func(p: Vector3):
 		return maxf(octagon(p.x, p.z - 0.01, 0.115, 0.11), absf(p.y - 1.61) - 0.1), Mat.STONE, Tag.NECK, ADD)
-	# Chisel marks: short dark dashes on the facets (one per 4-cell block, some blocks).
+	# Chisel marks: short dark dashes on the flat facets only (on a stepped
+	# chamfer a dash breaks into scattered dots), in a few 4-cell blocks.
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
 		var blk := Vector3i(c.x >> 2, c.y >> 2, c.z >> 2)
-		if VoxelSdf.hash3(blk, 11) > 0.22:
+		if VoxelSdf.hash3(blk, 11) > 0.12 or not _on_flat_facet(p):
 			return false
 		var lx := c.x & 3
 		var ly := c.y & 3
 		var lz := c.z & 3
 		return (lx == ly and lz < 3) if VoxelSdf.hash3(blk, 12) < 0.5 else (lx + ly == 3 and lz < 3), Mat.STONE_DARK, [Mat.STONE])
+
+
+## Whether p is on one of the torso's axis-aligned faces, not a 45-degree chamfer.
+func _on_flat_facet(p: Vector3) -> bool:
+	var n := hull_normal(p, CHEST_C, _chest) if p.y > 1.22 else hull_normal(p, BELLY_C, _belly)
+	return maxf(absf(n.x), maxf(absf(n.y), absf(n.z))) > 0.99
 
 
 func _upper_arms(g: VoxelGrid) -> void:
@@ -754,6 +773,61 @@ func _flower(g: VoxelGrid, near: Vector3, tag: int, rock: Callable) -> void:
 
 # ---------------------------------------------------------------- forearms and fists
 
+## The wrist cuff's centre and half length along the arm, and the hand bone's
+## rest x (the wrist pivot).
+const CUFF_X := 0.926
+const CUFF_HALF := 0.027
+const WRIST_X := 0.92
+
+
+## The palm block and the wrist plug (rest space, rigid on the hand): the plug
+## is a stone stub round the wrist pivot, hidden inside the forearm and the
+## palm at rest, that fills the cuff's mouth when the hand bends.
+static func palm_sdf(p: Vector3, side: float) -> float:
+	var palm := Vector3(0.975 * side, SHOULDER_Y, -0.003)
+	return VoxelSdf.box(p, palm, Vector3(0.064, 0.086, 0.14), 0.018)
+
+
+static func wrist_plug_sdf(p: Vector3, side: float) -> float:
+	var ax := p.x * side
+	return maxf(octagon(p.y - SHOULDER_Y, p.z, 0.118, 0.118), maxf(0.862 - ax, ax - 0.95))
+
+
+## The wrist plug on its own grid, so its faces exist inside the forearm and
+## show only when the hand bends out of the cuff.
+func build_wrist(side: float) -> VoxelGrid:
+	var c := Vector3(0.906 * side, SHOULDER_Y, 0.0)
+	var g := VoxelGrid.new(box_of(c, Vector3(0.07, 0.15, 0.15)), FINE_CELL)
+	var gtag := Tag.GAUNT_L if side > 0 else Tag.GAUNT_R
+	var box := AABB(g.origin, Vector3(g.size) * g.cell)
+	g.paint(box, func(p: Vector3): return wrist_plug_sdf(p, side), Mat.STONE_DARK, gtag)
+	return g
+
+
+## Points round the middle of the cuff's mouth (rest space, on the forearm)
+## that the hand's palm or plug must cover in every pose, or a slit opens
+## between the cuff and the fist. The radius is the palm's inscribed one, so
+## twisting the fist (free) never uncovers them; the rest of the mouth is the
+## cuff's solid iron face.
+static func cuff_mouth_points(side: float) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for a in 12:
+		var t := TAU * a / 12.0
+		out.append(Vector3((CUFF_X + CUFF_HALF + 0.004) * side, SHOULDER_Y + cos(t) * 0.075, sin(t) * 0.075))
+	return out
+
+
+## Seams the move scan checks for gaps: points on one bone that another
+## bone's solid must cover ({name: [points bone, points, cover bone, sdf]}).
+func gap_checks() -> Dictionary:
+	var out := {}
+	for side: float in [1.0, -1.0]:
+		var prefix := "Left" if side > 0 else "Right"
+		out[prefix + " wrist"] = [StringName(prefix + "LowerArm"), cuff_mouth_points(side), StringName(prefix + "Hand"),
+			func(p: Vector3) -> float: return minf(palm_sdf(p, side), wrist_plug_sdf(p, side))]
+	return out
+
+
 func _forearm_r(ax: float) -> float:
 	return lerpf(0.122, 0.152, clampf((ax - 0.64) / 0.28, 0.0, 1.0))
 
@@ -807,11 +881,14 @@ func build_arm(side: float) -> VoxelGrid:
 		var at := plate + Vector3(corner.x * 0.038, 0.01, corner.y * 0.105)
 		g.paint(box_of(at, Vector3(0.012, 0.012, 0.012)), func(p: Vector3): return VoxelSdf.sphere(p, at, FINE_CELL * 0.75),
 			Mat.RIVET, gtag, ADD)
-	# Wrist cuff: a thick iron ring where the stone meets the hand.
-	g.paint(AABB(Vector3(0.90 * side - 0.03, y - 0.2, -0.2), Vector3(0.06, 0.4, 0.4)), func(p: Vector3):
-		if absf(p.x * side - 0.925) > 0.016:
+	# Wrist cuff: a deep iron ring where the stone meets the hand, overlapping
+	# the palm so the wrist plug fills its mouth when the hand bends.
+	g.paint(AABB(Vector3(0.925 * side - 0.04, y - 0.2, -0.2), Vector3(0.08, 0.4, 0.4)), func(p: Vector3):
+		var off := absf(p.x * side - CUFF_X)
+		if off > CUFF_HALF:
 			return 1.0
-		return octagon(p.y - y, p.z, 0.165, 0.158), Mat.IRON, tag)
+		var r := 0.165 - (0.006 if off > CUFF_HALF - 0.008 else 0.0)
+		return octagon(p.y - y, p.z, r, r * 0.957), Mat.IRON, tag)
 	# Fingers: thick planar stone blocks, one per segment with a dark seam at
 	# each joint, a forged iron knuckle plate on each first segment (flat face,
 	# bevelled edges, hammer-peened dents).
@@ -1002,9 +1079,28 @@ func _lock(g: VoxelGrid, box: AABB, a: Vector3, bend: Vector3, tip: Vector3, r0:
 
 # ---------------------------------------------------------------- beard + braid grid
 
-func braid_points() -> PackedVector3Array:
-	return PackedVector3Array([Vector3(0, 1.42, 0.33), Vector3(0, 1.22, 0.40), Vector3(0, 1.08, 0.43),
-		Vector3(0, 1.0, 0.44)])
+## The braid's joints in rest space, root (in the beard's bottom lobe) to tip:
+## it hangs straight down the bib, a bead's width plus air in front of it.
+static func braid_points() -> PackedVector3Array:
+	return PackedVector3Array([Vector3(0, 1.40, 0.36), Vector3(0, 1.24, 0.386), Vector3(0, 1.15, 0.39),
+		Vector3(0, 1.02, 0.39)])
+
+
+## Adds the braid chain bones to a rig that lacks them (idempotent): rest at
+## braid_points, model-aligned bases, the first under Head.
+static func add_braid_bones(skel: Skeleton3D) -> void:
+	if skel.find_bone(BRAID_BONES[0]) >= 0:
+		return
+	var pts := braid_points()
+	var parent := skel.find_bone(&"Head")
+	var parent_global := skel.get_bone_global_rest(parent)
+	for k in BRAID_BONES.size():
+		var index := skel.add_bone(BRAID_BONES[k])
+		skel.set_bone_parent(index, parent)
+		skel.set_bone_rest(index, parent_global.affine_inverse() * Transform3D(Basis(), pts[k]))
+		skel.reset_bone_pose(index)
+		parent = index
+		parent_global = Transform3D(Basis(), pts[k])
 
 
 func build_beard() -> VoxelGrid:
@@ -1167,7 +1263,8 @@ func clearance_parts() -> Dictionary:
 		&"LeftShoulder": func(p: Vector3) -> float: return boulder_sdf(p, 1.0),
 		&"RightShoulder": func(p: Vector3) -> float: return boulder_sdf(p, -1.0),
 		&"Head": func(p: Vector3) -> float: return head_sdf(p),
-		&"Spine": [func(p: Vector3) -> float: return hull(p, BELLY_C, _belly), [&"BeardBraid"]],
+		&"Spine": [func(p: Vector3) -> float: return hull(p, BELLY_C, _belly), BRAID_BONES],
+		&"UpperChest": [func(p: Vector3) -> float: return hull(p, CHEST_C, _chest), BRAID_BONES],
 	}
 
 
@@ -1215,8 +1312,13 @@ func weights(tag: int, p: Vector3) -> Array:
 			_add(w, &"Head", 1.0 - k)
 			_add(w, &"Neck", k)
 		Tag.BRAID:
-			# Rigid on the spring bone; its root is hidden in the beard.
-			_add(w, &"BeardBraid", 1.0)
+			# Along the chain, blended at the joints so it bends like a plait;
+			# the joints sit between the iron rings, which stay rigid.
+			var pts := braid_points()
+			pts.append(pts[-1] + Vector3(0, -0.1, 0))
+			var names: Array = BRAID_BONES.duplicate()
+			names.append(BRAID_BONES[-1])
+			_chain_w(p, w, pts, names)
 		Tag.GAUNT_L, Tag.GAUNT_R:
 			# Rigid with the hand; the seam hides under the forearm's wrist cuff.
 			_add(w, &"LeftHand" if tag == Tag.GAUNT_L else &"RightHand", 1.0)

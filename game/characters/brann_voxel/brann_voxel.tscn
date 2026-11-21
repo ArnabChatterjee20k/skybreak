@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://game/characters/brann_voxel/brann_voxel_view.gd" id="1_view"]
 [ext_resource type="Resource" path="res://game/characters/brann/brann_clip_set.tres" id="2_clips"]
@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://game/combat/moves/brann/brann_move_set.tres" id="5_moves"]
 [ext_resource type="Script" path="res://game/characters/voxel_kit/voxel_body.gd" id="6_voxel"]
 [ext_resource type="Script" path="res://game/characters/brann_voxel/brann_voxel_design.gd" id="7_design"]
+[ext_resource type="Script" path="res://game/characters/brann_voxel/brann_braid_bones.gd" id="8_braid"]
 
 [node name="BrannVoxel" type="Node3D" node_paths=PackedStringArray("model")]
 script = ExtResource("1_view")
@@ -20,6 +21,10 @@ transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, -1, 0)
 [node name="BrannFigure" type="Node3D" parent="Model"]
 script = ExtResource("3_figure")
 design = ExtResource("4_design")
+
+[node name="BraidBones" type="Node" parent="."]
+script = ExtResource("8_braid")
+skeleton_path = NodePath("../Model/BrannFigure/GeneralSkeleton")
 
 [node name="VoxelBody" type="Node" parent="."]
 script = ExtResource("6_voxel")
