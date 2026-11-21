@@ -26,7 +26,7 @@ const FINGERS: Array[String] = ["Index", "Middle", "Ring", "Little"]
 
 const COLORS := {
 	Mat.COAT: Color("#1e2546"), Mat.COAT_DARK: Color("#11152b"),
-	Mat.CAPE: Color("#161a33"), Mat.LINING: Color("#1e7fd8"),
+	Mat.CAPE: Color("#161a33"), Mat.LINING: Color("#3a6fb0"),
 	Mat.HAT: Color("#1e2546"), Mat.HAT_BAND: Color("#1e7fd8"),
 	Mat.STOLE: Color("#cdb892"), Mat.INK: Color("#4a3f52"), Mat.SCROLL: Color("#c6b08a"),
 	Mat.BRASS: Color("#b49a64"), Mat.BRASS_DARK: Color("#7a6540"), Mat.RIVET: Color("#d0bc8c"),
@@ -57,7 +57,11 @@ const RINGS := [Vector3(0.15, 0.0165, 0.011), Vector3(0.12, 0.0165, 0.011), Vect
 const ASTROLABE_CENTER := Vector3(0.31, 1.42, -0.34)
 
 const HAT_Y := 1.672  # underside of the brim
-const BRIM_R := 0.46
+const BRIM_R := 0.36
+## The brim's wave: the front tilts up, the back droops, from the crown's edge.
+const BRIM_FRONT_TILT := 13.0
+const BRIM_BACK_DROOP := 6.0
+const CROWN_BASE_R := 0.172
 
 
 func build_grids() -> Array[VoxelGrid]:
@@ -397,7 +401,7 @@ func _collar(g: VoxelGrid) -> void:
 
 
 func _cape(g: VoxelGrid) -> void:
-	# Planar pleated panel two voxels thick (navy outside, cerulean lining
+	# Planar pleated panel two voxels thick (navy outside, muted blue lining
 	# inside) from the shoulders to the ankles; each pleat plane is flat, the
 	# fold ridges are where the planes step; a hard level hem.
 	var box := AABB(Vector3(-0.47, 0.07, -0.37), Vector3(0.94, 1.26, 0.29))
@@ -642,23 +646,35 @@ func _lock(g: VoxelGrid, box: AABB, a: Vector3, bend: Vector3, tip: Vector3, r0:
 
 # ---------------------------------------------------------------- hat grids
 
-## The brim's underside at radius r: flat, with the outer third one voxel
-## lower (a planar tier, so the brim reads as curving down, not as a card).
+## The brim's flat profile at radius r: the outer third one voxel lower (a
+## planar tier, so the brim reads as curving down, not as a card).
 static func brim_base(r: float) -> float:
 	return HAT_Y - (FINE_CELL if r > BRIM_R * 0.62 else 0.0)
+
+
+## The brim's underside at (x, z): the flat profile plus the wave, which lifts
+## the front (eyes read from a high camera) and droops the back.
+static func brim_base_at(x: float, z: float) -> float:
+	var r := Vector2(x, z).length()
+	if r <= CROWN_BASE_R:
+		return brim_base(r)
+	var f := (z / r + 1.0) * 0.5
+	var down := tan(deg_to_rad(BRIM_BACK_DROOP))
+	var slope := -down + (tan(deg_to_rad(BRIM_FRONT_TILT)) + down) * f * f
+	return brim_base(r) + (r - CROWN_BASE_R) * slope
 
 
 ## The brim: fine-cell planar tiers, three voxels thick round the crown and
 ## two further out, the outer edge turned up three voxels, a stitched ring
 ## inside the edge and star lights set in it.
 func build_brim() -> VoxelGrid:
-	var g := VoxelGrid.new(AABB(Vector3(-0.475, HAT_Y - FINE_CELL, -0.475), Vector3(0.95, 0.07, 0.95)), FINE_CELL)
+	var g := VoxelGrid.new(AABB(Vector3(-0.375, HAT_Y - 0.044, -0.375), Vector3(0.75, 0.165, 0.75)), FINE_CELL)
 	var box := AABB(g.origin, Vector3(g.size) * g.cell)
 	g.paint(box, func(p: Vector3):
 		var r := Vector2(p.x, p.z).length()
 		if r > BRIM_R:
 			return 1.0
-		var h := p.y - brim_base(r)
+		var h := p.y - brim_base_at(p.x, p.z)
 		if h < 0.0:
 			return 1.0
 		var thick := 3.0 if r < 0.24 else 2.0
@@ -667,20 +683,20 @@ func build_brim() -> VoxelGrid:
 		return -1.0 if h < FINE_CELL * thick else 1.0, Mat.HAT, Tag.HAT)
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
 		var r := Vector2(p.x, p.z).length()
-		var h := p.y - brim_base(r)
+		var h := p.y - brim_base_at(p.x, p.z)
 		return h > FINE_CELL and h < FINE_CELL * 2.0 and absf(r - (BRIM_R - FINE_CELL * 4.5)) < FINE_CELL * 0.6 \
 			and posmod(c.x + c.z, 3) != 0, Mat.STITCH, [Mat.HAT])
 	# A dark crease where the tiers meet.
 	g.paint_surface(box, func(p: Vector3, _c: Vector3i):
 		var r := Vector2(p.x, p.z).length()
-		return absf(r - BRIM_R * 0.62) < FINE_CELL * 0.7 and p.y > HAT_Y, Mat.COAT_DARK, [Mat.HAT])
+		return absf(r - BRIM_R * 0.62) < FINE_CELL * 0.7 and p.y > brim_base_at(p.x, p.z) + FINE_CELL, Mat.COAT_DARK, [Mat.HAT])
 	# Star lights: a bright core with four dim arms, seven round the brim.
 	for s: Vector2 in [Vector2(-60, 0.80), Vector2(-24, 0.64), Vector2(18, 0.84), Vector2(52, 0.66),
 			Vector2(108, 0.78), Vector2(160, 0.70), Vector2(-128, 0.74)]:
 		var a := deg_to_rad(s.x)
 		var at := Vector2(sin(a), cos(a)) * BRIM_R * s.y
 		g.paint_surface(box, func(p: Vector3, _c: Vector3i):
-			if p.y < brim_base(Vector2(p.x, p.z).length()) + FINE_CELL:
+			if p.y < brim_base_at(p.x, p.z) + FINE_CELL:
 				return false
 			var d := Vector2(p.x, p.z) - at
 			return absf(d.x) < FINE_CELL * 1.0 and absf(d.y) < FINE_CELL * 1.0 or \
