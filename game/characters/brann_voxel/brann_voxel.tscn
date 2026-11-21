@@ -17,7 +17,7 @@ move_set = ExtResource("5_moves")
 model = NodePath("Model/BrannFigure")
 
 [node name="Model" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, -1, 0)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, -0.99, 0)
 
 [node name="BrannFigure" type="Node3D" parent="Model"]
 script = ExtResource("3_figure")

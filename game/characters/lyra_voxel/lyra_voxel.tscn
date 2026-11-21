@@ -16,7 +16,7 @@ clips = ExtResource("2_clips")
 model = NodePath("Model/KaelChunkyBody")
 
 [node name="Model" type="Node3D" parent="."]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, -1, 0)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, -0.99, 0)
 
 [node name="KaelChunkyBody" parent="Model" instance=ExtResource("3_body")]
 
