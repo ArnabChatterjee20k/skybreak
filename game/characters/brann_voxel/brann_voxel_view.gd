@@ -60,6 +60,8 @@ var _head_skin := Transform3D()
 ## Frame time apply_state gave the braid that BraidPose hasn't spent yet.
 var _pose_delta := 0.0
 var _braid_pose: BraidPose
+## Upper-arm turns _keep_fist_clear has made (tests read it to know the solver ran).
+var fist_turns := 0
 
 
 ## Poses the braid as the skeleton's last modifier, on the body as drawn (MotionLayers
@@ -326,6 +328,7 @@ func _keep_fist_clear(side: float) -> void:
 		var root := _skeleton.get_bone_global_pose(upper).origin
 		var turn := Quaternion((at - root).normalized(), (at + push - root).normalized())
 		_turn_bone(upper, turn)
+		fist_turns += 1
 
 
 ## Turns a bone by a skeleton-space rotation, changing only its local rotation: a global
