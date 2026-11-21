@@ -26,6 +26,11 @@ const MOUNTAIN_LOD := 240.0
 ## T2 foothills: this far (m) from the valley line, over this x range.
 const FOOTHILL_HALF := 100.0
 const FOOTHILL_X := Vector2(-800, -495)
+## Past this distance (m) foothill chunks stop casting on HIGH, and switch to a
+## coarse tier (FOOTHILL_FAR_CELL, still casting) below HIGH, scaled per tier:
+## their T2 steps were most of the opening overview's shadow pass.
+const FOOTHILL_FAR := 120.0
+const FOOTHILL_FAR_CELL := T2 * 2.0
 ## Glacier half-width (m) and the crevasse band beside it.
 const GLACIER_HALF := 12.0
 
@@ -190,19 +195,70 @@ func _is_foothill(x: float, z: float) -> bool:
 func _foothills() -> void:
 	var lo := Vector2(FOOTHILL_X.x - 2.0, centre.y + 30.0 - 70.0 - FOOTHILL_HALF - 2.0)
 	var hi := Vector2(FOOTHILL_X.y + 2.0, centre.y + 30.0 + 70.0 + FOOTHILL_HALF + 2.0)
-	var hf := VoxelHeightfield.new(T2, lo, hi)
+	var near := _foothill_field(T2, lo, hi, 12)
+	var mat := _terrain_material(near)
+	mat.set_shader_parameter("strata_cells", 4.0)
+	if VoxelQuality.tier == GraphicsSettings.Quality.HIGH:
+		# HIGH keeps the authored steps: past FOOTHILL_FAR the same chunks only stop casting.
+		var node := near.build(self, mat, "Foothills")
+		var far_node := Node3D.new()
+		far_node.name = "FoothillsFar"
+		add_child(far_node)
+		for c: MeshInstance3D in node.get_children():
+			var copy := c.duplicate() as MeshInstance3D
+			copy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			far_node.add_child(copy)
+		link_far_chunks(node, far_node, near.origin, near.chunk * near.cell, FOOTHILL_FAR)
+		stats["foothill_quads"] = VoxelHeightfield.count_quads(node)
+		return
+	# Below HIGH, a coarse far tier that still casts (MEDIUM: far LOD may differ).
+	var far := _foothill_field(FOOTHILL_FAR_CELL, lo, hi, roundi(12.0 * T2 / FOOTHILL_FAR_CELL))
+	# Same chunk squares in both tiers, so each pair switches as one.
+	near.chunk = far.chunk * roundi(FOOTHILL_FAR_CELL / T2)
+	var node := near.build(self, mat, "Foothills")
+	var fmat := _terrain_material(far)
+	fmat.set_shader_parameter("strata_cells", 4.0 * T2 / FOOTHILL_FAR_CELL)
+	var far_node := far.build(self, fmat, "FoothillsFar")
+	link_far_chunks(node, far_node, near.origin, near.chunk * near.cell, VoxelQuality.far(FOOTHILL_FAR))
+	stats["foothill_quads"] = VoxelHeightfield.count_quads(node)
+	stats["foothill_far_quads"] = VoxelHeightfield.count_quads(far_node)
+
+
+func _foothill_field(cell: float, lo: Vector2, hi: Vector2, depth: int) -> VoxelHeightfield:
+	var hf := VoxelHeightfield.new(cell, lo, hi)
 	for z in hf.size.y:
 		for x in hf.size.x:
 			var w := hf.centre(x, z)
 			if not _is_foothill(w.x, w.y):
 				continue
 			var h := ground_at(w.x, w.y)
-			var lv := roundi(h / T2)
-			hf.set_column(x, z, lv, lv - 12, _rock_colour(w, h))
-	var mat := _terrain_material(hf)
-	mat.set_shader_parameter("strata_cells", 4.0)
-	var node := hf.build(self, mat, "Foothills")
-	stats["foothill_quads"] = VoxelHeightfield.count_quads(node)
+			var lv := roundi(h / cell)
+			hf.set_column(x, z, lv, lv - depth, _rock_colour(w, h))
+	return hf
+
+
+## Pairs near and far tier chunks that cover the same chunk square (side
+## chunk_m from origin): each pair shares one box, so the switch at `switch`
+## metres happens to both at once (no gap, no overlap).
+static func link_far_chunks(near: Node3D, far: Node3D, origin: Vector2, chunk_m: float, switch: float) -> void:
+	var pairs := {}
+	for tier in 2:
+		for mi: MeshInstance3D in (near if tier == 0 else far).get_children():
+			var c := mi.mesh.get_aabb().get_center()
+			var key := Vector2i(((Vector2(c.x, c.z) - origin) / chunk_m).floor())
+			if not pairs.has(key):
+				pairs[key] = [[], AABB()]
+			var entry: Array = pairs[key]
+			entry[1] = mi.mesh.get_aabb() if (entry[0] as Array).is_empty() else (entry[1] as AABB).merge(mi.mesh.get_aabb())
+			(entry[0] as Array).append(mi)
+	for key: Vector2i in pairs:
+		var entry: Array = pairs[key]
+		for mi: MeshInstance3D in entry[0]:
+			mi.custom_aabb = entry[1]
+			if mi.get_parent() == near:
+				mi.visibility_range_end = switch
+			else:
+				mi.visibility_range_begin = switch
 
 
 func _floor() -> void:
