@@ -14,7 +14,7 @@ enum Mat {
 	EMPTY, COAT, COAT_DARK, CAPE, LINING, HAT, HAT_BAND, STOLE, INK, SCROLL, BRASS, BRASS_DARK,
 	RIVET, ENGRAVE, LEATHER, LEATHER_DARK, SOLE, LEGGING, GLOVE, HAIR, HAIR_DARK, BROW, SKIN,
 	SKIN_SHADE, BLUSH, LID, IRIS, IRIS_DEEP, EYE_WHITE, GLINT, MOUTH, STITCH, STAR, STARLINE,
-	PENCIL, EMBLEM, QUILL, PETAL, STRING, INK_STAIN, BRASS_FILED,
+	PENCIL, EMBLEM, QUILL, PETAL, STRING, INK_STAIN, BRASS_FILED, LINING_SHADE,
 }
 enum Tag {
 	TORSO, COLLAR, ARM_L, ARM_R, LEG_L, LEG_R, SKIRT, CAPE, STOLE, HEAD, HAIR, HAT,
@@ -26,7 +26,7 @@ const FINGERS: Array[String] = ["Index", "Middle", "Ring", "Little"]
 
 const COLORS := {
 	Mat.COAT: Color("#1e2546"), Mat.COAT_DARK: Color("#11152b"),
-	Mat.CAPE: Color("#161a33"), Mat.LINING: Color("#3a6fb0"),
+	Mat.CAPE: Color("#161a33"), Mat.LINING: Color("#44709f"),
 	Mat.HAT: Color("#1e2546"), Mat.HAT_BAND: Color("#1e7fd8"),
 	Mat.STOLE: Color("#cdb892"), Mat.INK: Color("#4a3f52"), Mat.SCROLL: Color("#c6b08a"),
 	Mat.BRASS: Color("#b49a64"), Mat.BRASS_DARK: Color("#7a6540"), Mat.RIVET: Color("#d0bc8c"),
@@ -40,12 +40,13 @@ const COLORS := {
 	Mat.STITCH: Color("#363f66"), Mat.STAR: Color("#eaf4ff"), Mat.STARLINE: Color("#9fcaf2"),
 	Mat.PENCIL: Color("#5a8cc8"), Mat.EMBLEM: Color("#cdb892"), Mat.QUILL: Color("#e6e0d2"),
 	Mat.PETAL: Color("#e48aae"), Mat.STRING: Color("#b8a47a"), Mat.INK_STAIN: Color("#1a1c30"),
+	Mat.LINING_SHADE: Color("#2a496b"),
 }
 ## Shadow tones from the sheet, used where a part's own shadow side is painted.
 const HAT_SHADOW := Color("#11152b")
 
 ## Big cloth: calm noise, never edge-lightened.
-const QUIET: Array = [Mat.COAT, Mat.COAT_DARK, Mat.CAPE, Mat.LINING, Mat.HAT, Mat.HAT_BAND, Mat.LEGGING]
+const QUIET: Array = [Mat.COAT, Mat.COAT_DARK, Mat.CAPE, Mat.LINING, Mat.LINING_SHADE, Mat.HAT, Mat.HAT_BAND, Mat.LEGGING]
 ## Worn on exposed edges (stole edges, leather, brass, boot toes, caps).
 const WEARS: Array = [Mat.STOLE, Mat.SCROLL, Mat.BRASS, Mat.RIVET, Mat.LEATHER, Mat.GLOVE, Mat.SOLE]
 ## Small parts get up to +-6% value noise (the house recipe gives +-3.5%).
@@ -62,6 +63,8 @@ const BRIM_R := 0.36
 const BRIM_FRONT_TILT := 13.0
 const BRIM_BACK_DROOP := 6.0
 const CROWN_BASE_R := 0.172
+## The hat's own bone: a child of Head at Head's rest, added at runtime.
+const HAT_BONE := &"Hat"
 
 
 func build_grids() -> Array[VoxelGrid]:
@@ -426,7 +429,8 @@ func _cape(g: VoxelGrid) -> void:
 		var beside := cape_strip(p.x + BODY_CELL * signf(p.x), p.y)
 		return here != beside and (here == 0 or here == 2), Mat.COAT_DARK, [Mat.CAPE])
 	# A navy facing down both sides of the lining (so at rest only a strip of
-	# cerulean shows past her; it opens up in flight) with a pale piping line.
+	# lining shows past her; it opens up in flight), edged in the lining's
+	# shadow tone so the edge never reads brighter than the stole.
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
 		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or not lining.call(p):
 			return false
@@ -434,10 +438,10 @@ func _cape(g: VoxelGrid) -> void:
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
 		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or not lining.call(p):
 			return false
-		return absf(absf(p.x) - (cape_half_w(p.y) - facing_w(p.y))) < BODY_CELL * 0.5, Mat.STARLINE, [Mat.LINING, Mat.CAPE])
-	# The lining shows as piping along the hem on the outside.
+		return absf(absf(p.x) - (cape_half_w(p.y) - facing_w(p.y))) < BODY_CELL * 0.5, Mat.LINING_SHADE, [Mat.LINING, Mat.CAPE])
+	# The lining shows as piping along the hem on the outside, in its shadow tone.
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
-		return g.tags[g.index(c.x, c.y, c.z)] == Tag.CAPE and p.y < 0.08 + BODY_CELL, Mat.LINING, [Mat.CAPE])
+		return g.tags[g.index(c.x, c.y, c.z)] == Tag.CAPE and p.y < 0.08 + BODY_CELL, Mat.LINING_SHADE, [Mat.CAPE])
 	# Emblem embroidered on the outer back (viewed from behind, u = -x is right).
 	g.paint_surface(box, func(p: Vector3, c: Vector3i):
 		if g.tags[g.index(c.x, c.y, c.z)] != Tag.CAPE or lining.call(p):
@@ -765,6 +769,31 @@ func build_crown() -> VoxelGrid:
 	return g
 
 
+## The hat's extreme points in rest skeleton space, as (x, y, z, radius):
+## the brim's rim (underside and turned-up top), the crown's spine, the charm
+## and the quill. LyraHatClearance keeps their lowest point off the floor.
+static func hat_extremes() -> PackedVector4Array:
+	var out := PackedVector4Array()
+	for k in 48:
+		var a := TAU * k / 48.0
+		for r: float in [BRIM_R, BRIM_R * 0.62]:
+			var x := sin(a) * r
+			var z := cos(a) * r
+			var y := brim_base_at(x, z)
+			out.append(Vector4(x, y, z, 0.0))
+			out.append(Vector4(x, y + FINE_CELL * 5.0, z, 0.0))
+	for i in CROWN.size() - 1:
+		for k in 4:
+			var t := k / 4.0
+			var c: Vector3 = (CROWN[i][0] as Vector3).lerp(CROWN[i + 1][0], t)
+			out.append(Vector4(c.x, c.y, c.z, lerpf(CROWN[i][1], CROWN[i + 1][1], t) + FINE_CELL))
+	var tip: Vector3 = CROWN[-1][0]
+	out.append(Vector4(tip.x, tip.y - 0.03, tip.z, 0.022))
+	out.append(Vector4(tip.x, tip.y - 0.106, tip.z, 0.046))
+	out.append(Vector4(-0.17, 1.89, -0.06, 0.012))
+	return out
+
+
 ## A plain eight-point star of radius r (the charm).
 static func wayfinder_star(q: Vector2, r: float) -> bool:
 	for k in 8:
@@ -1084,8 +1113,11 @@ func weights(tag: int, p: Vector3) -> Array:
 			for b: StringName in tmp:
 				_add(w, b, tmp[b] * (1.0 - hips))
 			_add(w, &"Hips", hips)
-		Tag.HEAD, Tag.HAT:
+		Tag.HEAD:
 			_add(w, &"Head", 1.0)
+		Tag.HAT:
+			# Its own bone (added by LyraHatClearance) so the hat can tip off the floor.
+			_add(w, HAT_BONE if bones.has(HAT_BONE) else &"Head", 1.0)
 		Tag.HAIR:
 			_piecewise(p.y, [[1.18, "UpperChest"], [1.31, "Neck"], [1.44, "Head"]], w, true)
 		Tag.BRACER_L, Tag.BRACER_R:
