@@ -6,6 +6,24 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In progress
 
+- VOXEL-SHIP open items [desktop unless tagged] (voxel art shipped on `main`, see
+  `reports/ship/voxel-ship.md`), ranked:
+  1. VOXEL-BAKES [owner decision]: the 28 zone bakes (844 MB) are still not in git; a fresh clone
+     builds zones live until `tools/voxel_zone_bake.gd` runs (~20 min, 2 jobs). The play builds on
+     `web-build` and `play-windows` carry them.
+  2. LOOKDEV-PERF [developer, GPU]: GTX 1650 render benchmark for every voxel zone (Frozen Peaks
+     HIGH/MEDIUM first); cloud ms are lavapipe only.
+  3. QA-12 view soak: foot_ground 4/21 quick matches, 8 frames (worst Lyra +22 cm, frozen_peaks seed
+     117 t268), same as main before the merge.
+  4. Windows build (`play-windows`, from 46da3b2) not boot-tested on Windows; the Linux export of
+     012ec23 boots the menu and voxel Frozen Peaks / Shattered Mesa matches from their bakes.
+  5. Appwrite deploy of the new web build: about 250 MB with the zone packs (`web-build` BUILD.md);
+     check the site's upload limit [owner, Mac].
+  6. run_qa.sh defaults to 8 soak jobs; on a 4-core box that doubles sim/view ms (use QA_JOBS=nproc)
+     [developer, tools/].
+  7. Filed earlier, still open: QA-22 (voxel Brann view cost), VOXEL-PALETTE, the classic menu
+     backdrop, Brann's off hand on the cannon fore-grip, T-KI1-b, QA-11.
+
 - T-001 [developer] Milestone 0 skeleton: Godot 4.7.2 project, combat seam
   (`FighterInput`, `CombatSim` fixed 60 Hz tick, seeded RNG, determinism
   test), keyboard/mouse bindings, debug overlay (fps, frame time), GUT, CI,
@@ -59,71 +77,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - stream, Blossom Falls, petal whirlwinds, fireflies, the nearest-4 lantern OmniLights
 
 ## In review
-- T-VOX-INT [desktop] Voxel art in the game (`integration/voxel-art`): the look-dev branches merged
-  (squashed, render media left on them), Art style Voxel (default) / Classic in settings, roster and
-  CharacterView on the baked voxel legends, voxel weapons held, stowed and as pickups (baked), the
-  voxel zone builders in zone_match for all 7 zones (VoxelZoneView, visual only, sim bit-identical),
-  voxel zone cards, quality tie-in (Low: LOD ranges x0.6, far tiers shadowless, 2K atlas, no SSAO).
-  Open:
-  - VOXEL-LOAD [desktop] done on the branch: zones load from offline bakes per tier
-    (`tools/voxel_zone_bake.gd`, `VoxelZoneBake`) behind a threaded `LoadingScreen`: 1.0-2.0 s per
-    zone on lavapipe (were 1-484 s live builds). Stale bakes fail `test_voxel_zone_bake`.
-  - VOXEL-BAKES [desktop, owner decision] the 28 zone bakes are 836 MB (14-58 MB each; terrain
-    triangles dominate), so they are gitignored and baked locally (~15 min, 2 jobs, see the kit
-    README). Owner: pick storage (Git LFS, a release asset fetched by a script, or a smaller bake
-    format, e.g. indexed terrain chunks). Until then CI marks the bake test pending.
-  - VOXEL-PALETTE [desktop, characters] voxel bodies bake their colours, so team palettes don't
-    apply: a mirror match tells P1 from P2 only by energy rim and team ring.
-  - QA-20 done on the branch: the clearance solver keeps out the voxel weapon a voxel legend draws,
-    and voxel Brann's stone torso keeps bone scale 1 (weapon_vs_holder 3667 -> 7 frames over 9 runs).
-    FIXED on fix/brann-weapon-grip@20a9655: merge that branch, do not re-fix (it already merges
-    5c8f5af; optional on top of 6b145f7: arm turn without scale writes, classic + voxel boxes for every
-    weapon, per-pose test, previews in reports/integration/brann_grip/). VisualQa heartbloom/1,
-    frozen/2, mesa/3 weapon_vs_holder kael/vexa/lyra/brann 0/0/1/1126 -> 0/0/0/0; weapon_vs_body
-    (all Ki Gauntlets) 0/6/4/8 -> 0/6/4/1, same as 5c8f5af alone. Open: Brann's off hand misses the
-    Scatter Cannon fore-grip in guard (before and after).
-  - QA-21 done on the branch: fix/lyra-cape-pops@295bd83 merged (cape clearance inside the chain sim);
-    regression tests `test_lyra_cape.gd`, `test_lyra_voxel_cape.gd` (150 pops -> 0).
-  - VOXEL-COMPAT / VOXEL-WEB done on the branch: zone-perf's merged props use no instance uniforms
-    (0 overflow errors in a gl_compatibility WEB-tier match); web ships only the `*_web.scn` bakes,
-    zone lamps drop shadows and fade past 60 m on the web tier.
-    - FIXED on fix/web-voxel-compat@626d3c6: merge that branch, do not re-fix. Cause confirmed in the
-      engine: each instance-uniform user takes 16 slots of Compatibility's 4096 (256 instances; WebGL2
-      reports the same 64 KiB). Unmerged props now use voxel_prop.gdshader (no instance uniforms; figures
-      keep the rim via voxel_surface.gdshaderinc), WebTierBudget + tests check all 7 zones at WEB (0 slots,
-      lights, 1 shadowed, textures) and a 4-player match with worst VFX (<= 256); previews in
-      reports/integration/web/. Merges cleanly onto 8ee1ee7, voxel tests 81/81 there. Pre-existing on
-      22d7008: test_moves_reel glow_material fails (unshaded vs the test), not touched.
-    - FIXED on fix/web-size@8b3cd12: merge that branch. pck 254.3 -> 56.5 MB (index.pck bytes, official
-      4.7.2). The 7 WEB bakes (187.6 MiB, 15-57 MB each) leave index.pck; build_web.sh packs each byte for
-      byte into zones/<zone>_web.<sha>.pck + manifest.json (stale bakes refused) and the LoadingScreen
-      fetches, SHA-checks, caches (user://) and mounts the zone's pack. WEB-tier gl_compatibility stills
-      of 3 zones byte-identical before/after; headless Chromium: 1.0-2.0 s fetch+mount, 1.4-1.9 s load.
-      A lossless compact format doesn't reach the budget (bakes ~gzip floor; indexed layout was bigger).
-      DONE: merged into integration/voxel-art (final assembly, reports/integration/final-assemble.md).
-  - QA-23 done on the branch: voxel Brann's braid popped (Braid2 1.7 rad on weapon pickups, 42 pop
-    frames in the quick run): it is now posed by a last skeleton modifier on the drawn body and
-    turns at most 54 rad/s (`test_brann_voxel_braid.gd`).
-  - QA-24 [desktop, characters] voxel soles sit ~1 cm lower than the classic ones on the same clips:
-    foot_error_p95 is +1.0 cm in every quick-run match (kael/vexa-only too; 1.0 -> 2.0 cm, tolerance
-    5 cm). The voxel boots reach below the classic mesh bottom (sole below the ankle: Kael 13.0 ->
-    14.0 cm, Vexa 10.4 -> 10.7, Lyra 10.4 -> 14.0, Brann 11.0 -> 12.0). Fix: lift each voxel model by
-    its delta (or trim the boot soles), then re-check feet and weapon clearance.
-    FIXED on fix/voxel-soles-perf@1190b4b (also carries lyra v4, kael and vexa polish): merge that branch.
-    DONE: merged at e7736e6 into integration/voxel-art (final assembly).
-  - QA-22 [desktop, characters] voxel Brann's view still costs ~2x a classic legend per frame
-    (1.20 vs ~0.55 ms for two fighters, headless) after the perf pass: `_keep_fist_clear` dominates.
-  - Visual goldens: all 14 fail as expected from the art change; one refresh pass after merge.
-  - The menu backdrop is still the classic world fly-through; MotionLayers' weapon clearance uses the
-    classic weapon boxes (voxel models keep the old size and grip).
-  - ZONE-POLISH FIXED on fix/zone-polish@4938c10: merge that branch. DONE: merged into integration/voxel-art.
-  - REEL-FIXES DONE: lookdev/reel-fixes@d3a75e4 merged into integration/voxel-art (moves_reel takes
-    the reel-fixes side, which carries the Brann-lane lit glow: black albedo, emission x GLOW_GAIN 0.27).
-  - zone_capture.gd prints the real video adapter instead of a fixed "(software)" (test_zone_capture.gd).
-  - MOTION-CACHE done on the branch: `MotionClips.build` cached the rig-fitted derived clips per
-    library only, so the first legend loaded fixed them for all (in a match: load-order dependent;
-    in GUT: voxel Brann's fist golden failed after the motion tests). Now keyed by library and rig
-    (`test_motion_clips_cache.gd`).
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
   all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
   energy on GLOW, emblems at 5.5 mm), drop-in behind `VoxelArmory` / `WeaponModels.voxel_everywhere`
@@ -430,6 +383,77 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+- T-VOX-INT [desktop] SHIPPED: merged into `main` at 62cd986 (PR #148, `--no-ff`), goldens refreshed at
+  46da3b2; evidence in `reports/ship/voxel-ship.md`. Voxel art in the game (`integration/voxel-art`): the look-dev branches merged
+  (squashed, render media left on them), Art style Voxel (default) / Classic in settings, roster and
+  CharacterView on the baked voxel legends, voxel weapons held, stowed and as pickups (baked), the
+  voxel zone builders in zone_match for all 7 zones (VoxelZoneView, visual only, sim bit-identical),
+  voxel zone cards, quality tie-in (Low: LOD ranges x0.6, far tiers shadowless, 2K atlas, no SSAO).
+  Open:
+  - VOXEL-LOAD [desktop] done on the branch: zones load from offline bakes per tier
+    (`tools/voxel_zone_bake.gd`, `VoxelZoneBake`) behind a threaded `LoadingScreen`: 1.0-2.0 s per
+    zone on lavapipe (were 1-484 s live builds). Stale bakes fail `test_voxel_zone_bake`.
+  - VOXEL-BAKES [desktop, owner decision] the 28 zone bakes are 836 MB (14-58 MB each; terrain
+    triangles dominate), so they are gitignored and baked locally (~15 min, 2 jobs, see the kit
+    README). Owner: pick storage (Git LFS, a release asset fetched by a script, or a smaller bake
+    format, e.g. indexed terrain chunks). Until then CI marks the bake test pending.
+  - VOXEL-PALETTE [desktop, characters] voxel bodies bake their colours, so team palettes don't
+    apply: a mirror match tells P1 from P2 only by energy rim and team ring.
+  - QA-20 done on the branch: the clearance solver keeps out the voxel weapon a voxel legend draws,
+    and voxel Brann's stone torso keeps bone scale 1 (weapon_vs_holder 3667 -> 7 frames over 9 runs).
+    FIXED on fix/brann-weapon-grip@20a9655: merge that branch, do not re-fix (it already merges
+    5c8f5af; optional on top of 6b145f7: arm turn without scale writes, classic + voxel boxes for every
+    weapon, per-pose test, previews in reports/integration/brann_grip/). VisualQa heartbloom/1,
+    frozen/2, mesa/3 weapon_vs_holder kael/vexa/lyra/brann 0/0/1/1126 -> 0/0/0/0; weapon_vs_body
+    (all Ki Gauntlets) 0/6/4/8 -> 0/6/4/1, same as 5c8f5af alone. Open: Brann's off hand misses the
+    Scatter Cannon fore-grip in guard (before and after).
+  - QA-21 done on the branch: fix/lyra-cape-pops@295bd83 merged (cape clearance inside the chain sim);
+    regression tests `test_lyra_cape.gd`, `test_lyra_voxel_cape.gd` (150 pops -> 0).
+  - VOXEL-COMPAT / VOXEL-WEB done on the branch: zone-perf's merged props use no instance uniforms
+    (0 overflow errors in a gl_compatibility WEB-tier match); web ships only the `*_web.scn` bakes,
+    zone lamps drop shadows and fade past 60 m on the web tier.
+    - FIXED on fix/web-voxel-compat@626d3c6: merge that branch, do not re-fix. Cause confirmed in the
+      engine: each instance-uniform user takes 16 slots of Compatibility's 4096 (256 instances; WebGL2
+      reports the same 64 KiB). Unmerged props now use voxel_prop.gdshader (no instance uniforms; figures
+      keep the rim via voxel_surface.gdshaderinc), WebTierBudget + tests check all 7 zones at WEB (0 slots,
+      lights, 1 shadowed, textures) and a 4-player match with worst VFX (<= 256); previews in
+      reports/integration/web/. Merges cleanly onto 8ee1ee7, voxel tests 81/81 there. Pre-existing on
+      22d7008: test_moves_reel glow_material fails (unshaded vs the test), not touched.
+    - FIXED on fix/web-size@8b3cd12: merge that branch. pck 254.3 -> 56.5 MB (index.pck bytes, official
+      4.7.2). The 7 WEB bakes (187.6 MiB, 15-57 MB each) leave index.pck; build_web.sh packs each byte for
+      byte into zones/<zone>_web.<sha>.pck + manifest.json (stale bakes refused) and the LoadingScreen
+      fetches, SHA-checks, caches (user://) and mounts the zone's pack. WEB-tier gl_compatibility stills
+      of 3 zones byte-identical before/after; headless Chromium: 1.0-2.0 s fetch+mount, 1.4-1.9 s load.
+      A lossless compact format doesn't reach the budget (bakes ~gzip floor; indexed layout was bigger).
+      DONE: merged into integration/voxel-art (final assembly, reports/integration/final-assemble.md).
+  - QA-23 done on the branch: voxel Brann's braid popped (Braid2 1.7 rad on weapon pickups, 42 pop
+    frames in the quick run): it is now posed by a last skeleton modifier on the drawn body and
+    turns at most 54 rad/s (`test_brann_voxel_braid.gd`).
+  - QA-24 [desktop, characters] voxel soles sit ~1 cm lower than the classic ones on the same clips:
+    foot_error_p95 is +1.0 cm in every quick-run match (kael/vexa-only too; 1.0 -> 2.0 cm, tolerance
+    5 cm). The voxel boots reach below the classic mesh bottom (sole below the ankle: Kael 13.0 ->
+    14.0 cm, Vexa 10.4 -> 10.7, Lyra 10.4 -> 14.0, Brann 11.0 -> 12.0). Fix: lift each voxel model by
+    its delta (or trim the boot soles), then re-check feet and weapon clearance.
+    FIXED on fix/voxel-soles-perf@1190b4b (also carries lyra v4, kael and vexa polish): merge that branch.
+    DONE: merged at e7736e6 into integration/voxel-art (final assembly).
+  - QA-22 [desktop, characters] voxel Brann's view still costs ~2x a classic legend per frame
+    (1.20 vs ~0.55 ms for two fighters, headless) after the perf pass: `_keep_fist_clear` dominates.
+  - Visual goldens: DONE, the 14 shots re-blessed once on main (46da3b2) and checked by eye.
+  - The menu backdrop is still the classic world fly-through; MotionLayers' weapon clearance uses the
+    classic weapon boxes (voxel models keep the old size and grip).
+  - ZONE-POLISH FIXED on fix/zone-polish@4938c10: merge that branch. DONE: merged into integration/voxel-art.
+  - REEL-FIXES DONE: lookdev/reel-fixes@d3a75e4 merged into integration/voxel-art (moves_reel takes
+    the reel-fixes side, which carries the Brann-lane lit glow: black albedo, emission x GLOW_GAIN 0.27).
+  - zone_capture.gd prints the real video adapter instead of a fixed "(software)" (test_zone_capture.gd).
+  - VOXEL-BAKE-EMBED done on main (012ec23): `VoxelZoneBake.pack` embedded user:// prop-cache meshes
+    found on nodes only; Shattered Mesa's WEB bake linked the baking machine's cache for its boulder
+    LOD meshes (held in `MesaProps`), so it failed to load on every other machine (web smoke test: 16
+    console errors). The state's resources are embedded too
+    (`test_a_cached_mesh_held_only_in_script_state_is_embedded`).
+  - MOTION-CACHE done on the branch: `MotionClips.build` cached the rig-fitted derived clips per
+    library only, so the first legend loaded fixed them for all (in a match: load-order dependent;
+    in GUT: voxel Brann's fist golden failed after the motion tests). Now keyed by library and rig
+    (`test_motion_clips_cache.gd`).
 
 - T-D33 [desktop] (#94, merged) Sim correctness bugs from the QA harness: QA-6 (a grab placed the target at
   the hold point after its step without clamping it to the arena or the terrain, so it read
