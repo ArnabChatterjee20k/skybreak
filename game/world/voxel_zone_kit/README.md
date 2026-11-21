@@ -222,8 +222,9 @@ What keeps the look and cuts the cost:
 - **Far regions (HLOD).** `VoxelProp.place` gives each 4 x 4 block of tiles one node
   holding the last LOD tier of all its copies; it shows only once every tile in the
   block would show its last tier anyway, and the tiles hide behind it
-  (`visibility_parent`). The same picture, one draw per block. Below HIGH, scatter
-  whose last tier ends gets 3 x 3 blocks that end a block radius past its range.
+  (`visibility_parent`). The same picture, one draw per block. (Blocks for scatter
+  whose last tier ends were tried: they drew dense tufts a block radius further and
+  cost more triangles than the draws they saved.)
 - **Occluders.** `VoxelHeightfield.build` adds a conservative occluder per chunk
   (`<name>Occluders`, 4 m boxes inside the solid); `VoxelStage.apply_quality` turns
   occlusion culling on for the viewport. Give big solid landmarks a `BoxOccluder3D`
