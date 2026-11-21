@@ -1,202 +1,165 @@
 class_name LyraCapeClearance
-extends SkeletonModifier3D
-## Keeps Lyra's cape behind her legs and forearms (view-only): runs after
-## ScarfLag and swings the cape chain back wherever a thigh, shin, boot or
-## forearm would reach through the cape's inner face (LyraVoxelDesign's
-## cape_inner_z), then re-aims the chain. The push eases in and out and no cape
-## bone turns faster than MAX_TURN_RATE, so a leg crossing the cape swings it
-## over a few frames instead of flipping it in one (QA-21).
+extends ScarfLag
+## Lyra's cape chain: ScarfLag's trailing chain that also stays behind her legs
+## and forearms (view-only). Every step pushes the simulated joints back wherever
+## a thigh, shin, boot or forearm would reach through the cape's inner face
+## (LyraVoxelDesign's cape_inner_z), keeping segment lengths and adding no
+## velocity, so the turn limit and spring shape every frame of the cape.
 
-@export var bones: Array[StringName] = [&"Scarf1", &"Scarf2", &"Scarf3", &"Scarf4", &"Scarf5"]
 ## How far the chain runs on past the last bone to the hem (as in the design's weights).
 @export var end_extension := 2.4
 ## Gap kept between a leg's back and the cape's inner face.
 @export var clearance := 0.05
+## Width over which a limb at the cape's side edge fades in (m), so it never pushes all at once.
+@export var edge_fade := 0.04
 
 ## Leg capsules: bone, child bone, outer radius (legging, boot shaft, boot).
-## Fastest a cape bone may turn in skeleton space (rad/s), as ScarfLag and MotionLayers.
-const MAX_TURN_RATE := 54.0
-## How fast a joint's push may grow and relax (m/s).
-const PUSH_RISE := 6.0
-const PUSH_FALL := 3.0
-## Largest push on a joint (m).
-const MAX_PUSH := 0.6
-
 const LEGS := [
 	[&"UpperLeg", &"LowerLeg", 0.075], [&"LowerLeg", &"Foot", 0.065], [&"Foot", &"Toes", 0.065],
 	[&"LowerArm", &"Hand", 0.055], [&"Hand", &"MiddleProximal", 0.05],
 ]
+## Furthest a joint is pushed back in one step (m).
+const MAX_PUSH := 0.6
+## Push passes per step; keeping lengths after a push gives some of it back.
+const PASSES := 2
 
-var _ids := PackedInt32Array()
-var _hips := -1
+var _chest := -1
 var _legs: Array = []
-var _tail := Vector3.ZERO
-## The chain joints at rest, in the hips' rest frame.
+## The chain joints at rest (bone heads, then the hem), in the chest's rest frame.
 var _rest_joints := PackedVector3Array()
-var _hips_rest := Transform3D()
-## The eased push per joint, last frame's cape bone rotations (skeleton space) and output.
-var _push := PackedFloat32Array()
-var _last_global: Array = []
-var _out: Array[Quaternion] = []
-# Frame stepping (advance_frame): delta still to step (-1 once stepped this frame).
-var _frame_delta := -1.0
-var _frame_driven := false
+var _chest_rest := Transform3D()
+## This frame's chest pose (world, orthonormal) and limb samples [point in chest frame, radius].
+var _chest_world := Transform3D()
+var _samples: Array = []
 
 
-## Steps the cape by delta (the view's frame time) on the next skeleton update; further updates
-## in the same frame (Godot also runs a delta-0 pass) re-apply that result.
-func advance_frame(delta: float) -> void:
-	_frame_delta = maxf(delta, 0.0)
-	_frame_driven = true
+func _begin_frame(skeleton: Skeleton3D, to_world: Transform3D) -> void:
+	if not _setup_clearance(skeleton):
+		_samples.clear()
+		return
+	var chest := to_world * skeleton.get_bone_global_pose(_chest)
+	_chest_world = Transform3D(chest.basis.orthonormalized(), chest.origin)
+	var to_chest := _chest_world.affine_inverse() * to_world
+	_samples.clear()
+	for l: Array in _legs:
+		var a := to_chest * skeleton.get_bone_global_pose(l[0]).origin
+		var b := to_chest * skeleton.get_bone_global_pose(l[1]).origin
+		var n := maxi(2, ceili(a.distance_to(b) / 0.04))
+		for k in n + 1:
+			_samples.append([a.lerp(b, float(k) / n), l[2]])
 
 
-## Forgets the eased push and last rotations, so the next update snaps to the pose.
-func reset_cape() -> void:
-	_push = PackedFloat32Array()
-	_last_global.clear()
-	_out.clear()
-
-
-func _setup(skeleton: Skeleton3D) -> bool:
-	if _ids.size() == bones.size():
+func _setup_clearance(skeleton: Skeleton3D) -> bool:
+	if _chest >= 0:
 		return true
-	_ids.clear()
-	for b in bones:
-		var id := skeleton.find_bone(b)
-		if id < 0:
-			return false
-		_ids.append(id)
-	_hips = skeleton.get_bone_parent(_ids[0])
+	if _bone_ids.size() < 2:
+		return false
+	_chest = skeleton.get_bone_parent(_bone_ids[0])
 	for side: String in ["Left", "Right"]:
 		for l: Array in LEGS:
 			_legs.append([skeleton.find_bone(StringName(side + l[0])), skeleton.find_bone(StringName(side + l[1])), l[2]])
-	var last := skeleton.get_bone_global_rest(_ids[-1])
-	var before := skeleton.get_bone_global_rest(_ids[-2])
-	_tail = last.affine_inverse() * (last.origin + (last.origin - before.origin) * end_extension)
-	_hips_rest = skeleton.get_bone_global_rest(_hips)
-	var to_hips := _hips_rest.affine_inverse()
-	for id in _ids:
-		_rest_joints.append(to_hips * skeleton.get_bone_global_rest(id).origin)
-	_rest_joints.append(to_hips * (last * _tail))
+	_chest_rest = skeleton.get_bone_global_rest(_chest)
+	var to_chest := _chest_rest.affine_inverse()
+	for id in _bone_ids:
+		_rest_joints.append(to_chest * skeleton.get_bone_global_rest(id).origin)
+	var last := _rest_joints[-1]
+	_rest_joints.append(last + (last - _rest_joints[-2]) * end_extension)
 	return true
 
 
-func _process_modification_with_delta(delta: float) -> void:
-	var skeleton := get_skeleton()
-	if skeleton == null or not _setup(skeleton):
+func _constrain() -> void:
+	if _samples.is_empty() or _points.size() != _rest_joints.size():
 		return
-	if _frame_driven and _frame_delta < 0.0 and _out.size() == _ids.size():
-		for i in _ids.size():
-			skeleton.set_bone_pose_rotation(_ids[i], _out[i])
-		return
-	if _frame_driven:
-		delta = _frame_delta
-		_frame_delta = -1.0
-	var step := delta if delta > 0.0 else 1.0 / 60.0
-	# Work in the frame of the cape's root (UpperChest): +Y up her body, +Z her
-	# front, so a twisted waist doesn't skew the cape's width test.
-	var hips := skeleton.get_bone_global_pose(_hips)
-	hips = Transform3D(hips.basis.orthonormalized(), hips.origin)
-	var to_hips := hips.affine_inverse()
-	var fwd := Vector3.BACK
-	# Leg sample points (every ~4 cm) with their radii.
-	var samples: Array = []
-	for l: Array in _legs:
-		var a := skeleton.get_bone_global_pose(l[0]).origin
-		var b := skeleton.get_bone_global_pose(l[1]).origin
-		var n := maxi(2, ceili(a.distance_to(b) / 0.04))
-		for k in n + 1:
-			samples.append([to_hips * a.lerp(b, float(k) / n), l[2]])
-	# Chain joints now (after ScarfLag), the hem end included.
+	for _pass in PASSES:
+		if not _push_out():
+			return
+
+
+## One pushing pass; false when nothing reached through.
+func _push_out() -> bool:
+	var to_chest := _chest_world.affine_inverse()
+	var count := _points.size()
+	# Chain joints in the chest frame, the last tail swapped for the hem.
 	var joints := PackedVector3Array()
-	for id in _ids:
-		joints.append(to_hips * skeleton.get_bone_global_pose(id).origin)
-	joints.append(to_hips * (skeleton.get_bone_global_pose(_ids[-1]) * _tail))
-	# How far each joint must go back: the cape between two joints follows
-	# both, so a leg point anywhere within a joint's two segments counts,
-	# weighted by how close it is to that joint along the cape.
+	for p in _points:
+		joints.append(to_chest * p)
+	joints[-1] = joints[-2] + (joints[-1] - joints[-2]) * end_extension
+	var push := _chain_push(joints)
+	if push.is_empty():
+		return false
+	for k in range(1, count):
+		joints[k].z -= push[k]
+	joints[-1] = joints[-2] + (joints[-1] - joints[-2]) / end_extension
+	# Back to world, keeping each segment's length, and carry _previous along so the push adds
+	# no velocity.
+	for k in range(1, count):
+		var wanted := _chest_world * joints[k]
+		var segment := wanted - _points[k - 1]
+		if segment.length() > 0.0001:
+			wanted = _points[k - 1] + segment.normalized() * _lengths[k - 1]
+		_previous[k] += wanted - _points[k]
+		_points[k] = wanted
+	return true
+
+
+## How far back (chest -Z) each joint of the chain (chest frame, hem last) must go so
+## no limb sample reaches through the cape's inner face; empty when none does.
+func _chain_push(joints: PackedVector3Array) -> PackedFloat32Array:
 	var push := PackedFloat32Array()
 	push.resize(joints.size())
-	for j in range(1, joints.size()):
-		var need := 0.0
-		for s: Array in samples:
-			var q: Vector3 = s[0]
-			# Where q's height falls on the chain now (segment k, fraction f),
-			# and the same spot at rest, where the design gives the cape's depth.
-			var hit := _locate(joints, q.y)
-			if hit.x < 0.0:
+	var any := false
+	# The cape between two joints follows both, so a limb point anywhere within a joint's two
+	# segments counts, weighted by how close it is to that joint along the cape.
+	for s: Array in _samples:
+		var reach := _reach(joints, s[0], s[1])
+		if reach.z <= 0.0:
+			continue
+		var k := int(reach.x)
+		var f := reach.y
+		var rest_y := (_chest_rest * _rest_joints[k].lerp(_rest_joints[k + 1], f)).y
+		var follows := 1.0 - LyraVoxelDesign.cape_hips_share(rest_y)
+		for j: int in [k, k + 1]:
+			var share := (1.0 - f) if j == k else f
+			if j == 0 or share <= 0.0:
 				continue
-			var k := int(hit.x)
-			var f := hit.y
-			var share := (1.0 - f) if k == j else (f if k == j - 1 else 0.0)
-			if share <= 0.0:
-				continue
-			var rest := _rest_joints[k].lerp(_rest_joints[k + 1], f)
-			var rest_y := (_hips_rest * rest).y
-			if absf(q.x) > LyraVoxelDesign.cape_half_w(rest_y) + s[1]:
-				continue
-			var offset := LyraVoxelDesign.cape_inner_z(q.x, rest_y) - (_hips_rest * rest).z
-			var face_z := joints[k].lerp(joints[k + 1], f).z + offset
-			var want: float = q.z - s[1] - clearance - face_z
-			if want < 0.0:
-				var follows := 1.0 - LyraVoxelDesign.cape_hips_share(rest_y)
-				need = maxf(need, -want / maxf(share * follows, 0.35))
-		push[j] = minf(need, MAX_PUSH)
-	# Ease the push, so a leg entering or leaving the cape doesn't swing it in one frame.
-	if _push.size() != push.size():
-		_push = push.duplicate()
-	for j in push.size():
-		var rate := PUSH_RISE if push[j] > _push[j] else PUSH_FALL
-		_push[j] = move_toward(_push[j], push[j], rate * step)
-	var pushed := not _no_push_below(_push, 1)
-	# Re-aim each bone at its pushed tail, top down, then cap its turn since last frame.
-	if _out.size() != _ids.size():
-		_out.resize(_ids.size())
-	for i in _ids.size():
-		var id := _ids[i]
-		var pose := skeleton.get_bone_global_pose(id)
-		var basis := pose.basis
-		var tail := hips * (joints[i + 1] - fwd * _push[i + 1])
-		var cur := (pose * (_child_local(skeleton, i))) - pose.origin
-		var want := tail - pose.origin
-		if pushed and cur.length() >= 1e-5 and want.length() >= 1e-5:
-			basis = Basis(Quaternion(cur.normalized(), want.normalized())) * basis
-		var limited := _limit_turn(i, basis.get_rotation_quaternion(), MAX_TURN_RATE * step)
-		var parent := skeleton.get_bone_parent(id)
-		var parent_pose := skeleton.get_bone_global_pose(parent) if parent >= 0 else Transform3D()
-		_out[i] = (parent_pose.basis.orthonormalized().inverse() * Basis(limited)).get_rotation_quaternion()
-		skeleton.set_bone_pose_rotation(id, _out[i])
+			push[j] = minf(maxf(push[j], reach.z / maxf(share * follows, 0.35)), MAX_PUSH)
+			any = true
+	return push if any else PackedFloat32Array()
 
 
-## Cape bone i's skeleton-space rotation, turned at most max_turn from last frame's.
-func _limit_turn(i: int, q: Quaternion, max_turn: float) -> Quaternion:
-	if _last_global.size() != _ids.size():
-		_last_global.resize(_ids.size())
-		_last_global.fill(null)
-	if _last_global[i] != null:
-		var last: Quaternion = _last_global[i]
-		if last.dot(q) < 0.0:
-			q = -q
-		var angle := last.angle_to(q)
-		if angle > max_turn:
-			q = last.slerp(q, max_turn / angle).normalized()
-	_last_global[i] = q
-	return q
+## Deepest a limb reaches through the cape's inner face in the skeleton's current pose (m,
+## 0 when clear), against this frame's limb samples.
+func reach_through(skeleton: Skeleton3D) -> float:
+	if _samples.is_empty() or _rest_joints.is_empty():
+		return 0.0
+	var chest := skeleton.get_bone_global_pose(_chest)
+	var to_chest := Transform3D(chest.basis.orthonormalized(), chest.origin).affine_inverse()
+	var joints := PackedVector3Array()
+	for id in _bone_ids:
+		joints.append(to_chest * skeleton.get_bone_global_pose(id).origin)
+	var tail := to_chest * (skeleton.get_bone_global_pose(_bone_ids[-1]) * _tails[-1])
+	joints.append(joints[-1] + (tail - joints[-1]) * end_extension)
+	var deepest := 0.0
+	for s: Array in _samples:
+		deepest = maxf(deepest, _reach(joints, s[0], s[1]).z)
+	return deepest
 
 
-## The tail of chain bone i in its own frame.
-func _child_local(skeleton: Skeleton3D, i: int) -> Vector3:
-	if i + 1 < _ids.size():
-		var rest := skeleton.get_bone_global_rest(_ids[i])
-		return rest.affine_inverse() * skeleton.get_bone_global_rest(_ids[i + 1]).origin
-	return _tail
-
-
-func _no_push_below(push: PackedFloat32Array, from: int) -> bool:
-	for k in range(from, push.size()):
-		if push[k] > 0.0:
-			return false
-	return true
+## Where limb point q (chest frame, radius) falls on the cape (segment k, fraction f) and how
+## deep it reaches through the inner face there, as (k, f, depth); depth 0 when clear.
+func _reach(joints: PackedVector3Array, q: Vector3, radius: float) -> Vector3:
+	# The same spot at rest gives the cape's depth and width from the design.
+	var hit := _locate(joints, q.y)
+	if hit.x < 0.0:
+		return Vector3.ZERO
+	var k := int(hit.x)
+	var f := hit.y
+	var rest := _chest_rest * _rest_joints[k].lerp(_rest_joints[k + 1], f)
+	var inside := clampf((LyraVoxelDesign.cape_half_w(rest.y) + radius - absf(q.x)) / edge_fade, 0.0, 1.0)
+	if inside <= 0.0:
+		return Vector3.ZERO
+	var face_z := joints[k].lerp(joints[k + 1], f).z + LyraVoxelDesign.cape_inner_z(q.x, rest.y) - rest.z
+	return Vector3(k, f, maxf(0.0, face_z + radius + clearance - q.z) * inside)
 
 
 ## Segment k of the chain spanning height y and how far down it (k = -1 when
