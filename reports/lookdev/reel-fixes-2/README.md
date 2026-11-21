@@ -44,3 +44,6 @@ Lyra's full reel: 1730 frames (3459 ticks), exit 0. Kael's travel reel: 350 fram
 - Lyra's head and brim stay out of the dummy through the combo and hit react (clearance >= 0), and the hits still land
 - Kael stays inside the 10% safe area on every dash frame (120 frames)
 - screen-box projection, safe-area shift, and a hat counted as part of the head
+
+## GUT (full suite: Godot 4.7.2 official linux x86_64, SHA-512 checked, `rm -rf .godot`, `--headless --import`)
+1581 tests in 141 scripts: 1575 passing, **0 failing**, 11 risky or pending (the known QA-11/QA-12 issues, renderer-only checks and the live Appwrite test), 256,318 asserts, exit 0.
