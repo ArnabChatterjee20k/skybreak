@@ -69,6 +69,14 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
     weapon_vs_holder ~700 frames per 3600-tick run); arm clearance still fits the classic body.
   - VOXEL-WEB [desktop] the web build carries the voxel art (+15 MB pck) but a voxel zone build in
     the browser would take minutes: decide Classic zones on web or baked zones.
+  - QA-21 [desktop, characters] voxel Lyra's cape chain (Scarf1-5, ScarfLag + LyraCapeClearance)
+    flips ~3 rad in one frame: 43 pops per fighter-minute in run_qa --quick (budget 2).
+  - VOXEL-COMPAT [desktop] the voxel figure shader's `instance uniform` on thousands of zone props
+    overflows the Compatibility renderer's 4096-slot buffer (visual goldens log ~3000 errors per
+    shot): the web build would mis-draw voxel zones. Forward+ (65536) is fine.
+  - Feel trend vs the last quick run: view_ms_per_frame 1.41 -> 2.56 (+82%), foot_error_p95
+    0.87 -> 1.73 cm (+97%), both from the voxel legends and zones.
+  - Visual goldens: all 14 fail as expected from the art change; one refresh pass after merge.
   - The menu backdrop is still the classic world fly-through; MotionLayers' weapon clearance uses the
     classic weapon boxes (voxel models keep the old size and grip).
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
