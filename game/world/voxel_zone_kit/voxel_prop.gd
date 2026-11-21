@@ -16,9 +16,17 @@ const TILE := 48.0
 ## The shared surfaces a design's surface(mat) picks from.
 enum Surf { MATTE, METAL, WATER, PETAL, GLOW, BARK }
 
+const MERGED_SHADER := preload("res://game/world/voxel_zone_kit/voxel_merged_prop.gdshader")
+
 static var _materials: Array[Material] = []
+## Per-mesh copies of the shared materials for merged meshes (by Surf), kept in
+## step with the shared ones by sync_materials().
+static var _copies: Array = [[], [], [], [], [], []]
 ## Set false to rebuild every mesh (ignores the disk cache).
 static var use_cache := true
+## Greedy-merge coplanar faces (VoxelFaceMerge): same look, a fraction of the
+## triangles. False keeps one quad per voxel face.
+static var merge_faces := true
 
 
 ## Builds (or loads) a mesh. paint(grid) fills a VoxelGrid; color(mat, p, c, n,
@@ -26,7 +34,7 @@ static var use_cache := true
 ## bump version when the design changes. soft: materials smooth() may clean.
 static func mesh(key: String, version: int, bounds: AABB, cell: float, paint: Callable, color: Callable,
 		surface: Callable, soft := []) -> ArrayMesh:
-	var path := CACHE_DIR + "%s_c%d_v%d.res" % [key, roundi(cell * 1000.0), version]
+	var path := CACHE_DIR + "%s_c%d_v%d%s.res" % [key, roundi(cell * 1000.0), version, "_m1" if merge_faces else ""]
 	if use_cache and ResourceLoader.exists(path):
 		var cached := load(path) as ArrayMesh
 		if cached != null:
@@ -40,8 +48,11 @@ static func mesh(key: String, version: int, bounds: AABB, cell: float, paint: Ca
 	var m := VoxelMesher.build(g, color, surface, func(_t: int, _p: Vector3) -> Array: return none,
 		materials(), 2 if cell > 0.05 else 3)
 	var out := _strip_skin(m)
+	if merge_faces:
+		out = VoxelFaceMerge.merge(out)
 	DirAccess.make_dir_recursive_absolute(CACHE_DIR)
 	ResourceSaver.save(out, path)
+	_apply_materials(out)
 	return out
 
 
@@ -140,11 +151,38 @@ static func _multimesh(m: Mesh, transforms: Array[Transform3D]) -> MultiMeshInst
 	return node
 
 
-## Re-attaches the shared materials to a loaded mesh (surfaces keep their order).
+## Copies the shared materials' values to their merged copies (call after
+## changing a shared material, e.g. the lantern emission).
+static func sync_materials() -> void:
+	for idx in _copies.size():
+		var shared := materials()[idx] as ShaderMaterial
+		for copy: ShaderMaterial in _copies[idx]:
+			for p: Dictionary in shared.shader.get_shader_uniform_list():
+				if copy.shader.get_shader_uniform_list().any(func(q: Dictionary) -> bool: return q.name == p.name):
+					copy.set_shader_parameter(p.name, shared.get_shader_parameter(p.name))
+
+
+## Attaches the shared materials to a loaded mesh (surfaces keep their
+## order); a merged mesh gets copies that read its face texture.
 static func _apply_materials(m: ArrayMesh) -> void:
+	var faces: ImageTexture = null
+	if m.has_meta("faces"):
+		faces = ImageTexture.create_from_image(m.get_meta("faces") as Image)
 	for s in m.get_surface_count():
 		var idx: int = m.surface_get_name(s).to_int()
-		m.surface_set_material(s, materials()[idx])
+		if faces == null:
+			m.surface_set_material(s, materials()[idx])
+			continue
+		var shared := materials()[idx] as ShaderMaterial
+		var copy := ShaderMaterial.new()
+		copy.shader = MERGED_SHADER
+		for p: Dictionary in shared.shader.get_shader_uniform_list():
+			var value: Variant = shared.get_shader_parameter(p.name)
+			if value != null and p.name != "rim_energy_color" and p.name != "rim_energy_mix":
+				copy.set_shader_parameter(p.name, value)
+		copy.set_shader_parameter("faces", faces)
+		(_copies[idx] as Array).append(copy)
+		m.surface_set_material(s, copy)
 
 
 ## Drops the bone/weight arrays (static props) and names each surface by its

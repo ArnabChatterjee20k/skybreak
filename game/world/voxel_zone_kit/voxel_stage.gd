@@ -152,6 +152,7 @@ func apply(preset: Variant) -> void:
 		_deck_mat.set_shader_parameter("shadow_color", p.cloud_shadow)
 	for m in lantern_materials:
 		m.set_shader_parameter("emission_value", 1.2 * float(p.lantern))
+	VoxelProp.sync_materials()
 
 
 ## The cloud sea: a soft deck shader plane plus T3 voxel puffs on it.
