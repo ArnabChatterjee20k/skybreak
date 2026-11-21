@@ -18,26 +18,27 @@ static var tier: GraphicsSettings.Quality = GraphicsSettings.load_saved().qualit
 ## near_split (m, the first split's far edge), shadow_atlas (px): the sun.
 ## terrain_chunk: heightfield chunk side (m). ssao: screen-space AO.
 ## clutter_range: scale on ranges of props that end under 60 m (scatter).
+## skip_finest: props start at their second LOD tier (to the first tier's range).
 const VALUES := {
 	GraphicsSettings.Quality.HIGH: {
 		"range_scale": 1.0, "clutter_range": 1.0, "clutter_size": 0.0, "shadow_tiers": 0,
 		"shadow_distance": 180.0, "shadow_splits": 2, "near_split": 32.4, "shadow_atlas": 4096,
-		"terrain_chunk": 32.0, "ssao": true,
+		"terrain_chunk": 32.0, "ssao": true, "skip_finest": false,
 	},
 	GraphicsSettings.Quality.MEDIUM: {
 		"range_scale": 0.8, "clutter_range": 0.8, "clutter_size": 0.5, "shadow_tiers": 0,
 		"shadow_distance": 150.0, "shadow_splits": 2, "near_split": 32.4, "shadow_atlas": 4096,
-		"terrain_chunk": 32.0, "ssao": true,
+		"terrain_chunk": 32.0, "ssao": true, "skip_finest": false,
 	},
 	GraphicsSettings.Quality.LOW: {
 		"range_scale": 0.6, "clutter_range": 0.6, "clutter_size": 1.5, "shadow_tiers": 1,
 		"shadow_distance": 110.0, "shadow_splits": 2, "near_split": 28.0, "shadow_atlas": 2048,
-		"terrain_chunk": 64.0, "ssao": true,
+		"terrain_chunk": 64.0, "ssao": true, "skip_finest": false,
 	},
 	GraphicsSettings.Quality.WEB: {
 		"range_scale": 0.45, "clutter_range": 0.4, "clutter_size": 3.0, "shadow_tiers": 1,
 		"shadow_distance": 80.0, "shadow_splits": 1, "near_split": 80.0, "shadow_atlas": 2048,
-		"terrain_chunk": 128.0, "ssao": false,
+		"terrain_chunk": 128.0, "ssao": false, "skip_finest": true,
 	},
 }
 

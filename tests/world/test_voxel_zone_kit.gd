@@ -240,3 +240,22 @@ func test_tiles_of_a_far_region_hide_behind_one_merged_far_node() -> void:
 		if node != far:
 			assert_eq(node.get_node(node.visibility_parent), far)
 
+
+
+func test_web_starts_props_at_their_second_tier() -> void:
+	var parent := Node3D.new()
+	add_child_autofree(parent)
+	var meshes: Array[ArrayMesh] = []
+	for m: PrimitiveMesh in [BoxMesh.new(), SphereMesh.new()]:
+		var am := ArrayMesh.new()
+		am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, m.get_mesh_arrays())
+		meshes.append(am)
+	var xfs: Array[Transform3D] = [Transform3D.IDENTITY]
+	var keep := VoxelQuality.tier
+	VoxelQuality.tier = GraphicsSettings.Quality.WEB
+	var root := VoxelProp.place(parent, "Rocks", meshes, [60.0, 0.0], xfs, 2)
+	VoxelQuality.tier = keep
+	assert_eq(root.get_child_count(), 1, "one tier left")
+	var mmi := root.get_child(0) as MultiMeshInstance3D
+	assert_eq(mmi.multimesh.mesh, meshes[1])
+	assert_eq(mmi.visibility_range_begin, 0.0)

@@ -122,6 +122,12 @@ static func place(parent: Node3D, node_name: String, meshes: Array[ArrayMesh], r
 		if not tiles.has(key):
 			tiles[key] = [] as Array[Transform3D]
 		(tiles[key] as Array[Transform3D]).append(xf)
+	# WEB starts at the second tier, which then covers the first tier's range too.
+	if VoxelQuality.value("skip_finest") and meshes.size() >= 2:
+		var kept: Array[ArrayMesh] = meshes.slice(1)
+		meshes = kept
+		ranges = ranges.slice(1)
+		shadow_tiers = mini(shadow_tiers, 1)
 	# Quality tier: scaled ranges, fewer shadow tiers, no shadows from clutter.
 	var scale: float = VoxelQuality.value("clutter_range" if float(ranges[0]) > 0.0 and float(ranges[0]) < 60.0
 		else "range_scale")
