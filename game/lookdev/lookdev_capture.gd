@@ -15,6 +15,10 @@ const ASPECT := 16.0 / 9.0
 ## Close-up margins, as a fraction of the frame's half-extent.
 const HEAD_PAD := 0.16
 const HAND_PAD := 0.14
+## How far below the head joint the jaw ends (the head close-up's lower bound).
+const JAW_BELOW_HEAD := 0.1
+## Widest a head with hair, ears or a brim reaches from the neck (m).
+const HEAD_RADIUS := 0.3
 
 var _scene := ""
 var _compare := ""
@@ -132,22 +136,35 @@ func _full(yaw: float, name: String) -> void:
 
 ## The head close-up, framed from the head's measured posed vertices (hair,
 ## ears, hats included) with padding; the camera tilts down further while big
-## shoulder pieces would cover the chin.
+## shoulder pieces would cover the face.
 func _head(name: String) -> void:
 	_pivot.rotation.y = deg_to_rad(-28.0)
 	await _advance(1)
-	var head := LookdevFraming.skinned_points(_skeleton(), is_head_bone, 2)
+	var head := PackedVector3Array()
+	var joint := _bone_position(&"Head")
+	# A long beard and parts of big shoulder pieces are skinned to the head
+	# too; the face is framed from the jaw up, within HEAD_RADIUS of the neck.
+	for p in LookdevFraming.skinned_points(_skeleton(), is_head_bone, 2):
+		if p.y >= joint.y - JAW_BELOW_HEAD and Vector2(p.x - joint.x, p.z - joint.z).length() <= HEAD_RADIUS:
+			head.append(p)
 	var shoulders := LookdevFraming.skinned_points(_skeleton(), is_shoulder_bone, 3)
 	_stage.camera.fov = 24.0
-	var pitch := -6.0
-	while pitch > -22.0:
-		var basis := view_basis(pitch, 0.0)
-		var eye := LookdevFraming.fit(head, basis, _stage.camera.fov, ASPECT, HEAD_PAD)
-		if LookdevFraming.clearance(eye, _chin_marks(head, basis), shoulders, 0.01, 0.1) >= 0.0:
+	# Swing round toward the front and tilt down until the shoulder pieces
+	# stop covering the face; failing that, the clearest view.
+	var face := face_marks(head, view_basis(-6.0, 0.0), _bone_position(&"Head").y + 0.1)
+	var best := [-INF, -6.0, 0.0]
+	for yaw: float in [0.0, 8.0, 16.0, 24.0]:
+		for pitch: float in [-6.0, -10.0, -14.0, -18.0]:
+			var basis := view_basis(pitch, yaw)
+			var eye := LookdevFraming.fit(head, basis, _stage.camera.fov, ASPECT, HEAD_PAD)
+			var clear := LookdevFraming.clearance(eye, face, shoulders, 0.01, 0.1)
+			if clear > best[0]:
+				best = [clear, pitch, yaw]
+		if best[0] >= 0.0:
 			break
-		pitch -= 2.0
-	_place(head, pitch, 0.0, HEAD_PAD)
-	print("%s: %d head points, pitch %.0f, inside frame %s" % [name, head.size(), pitch, _inside(head)])
+	var pitch: float = best[1]
+	_place(head, pitch, best[2], HEAD_PAD)
+	print("%s: %d head points, pitch %.0f, yaw %.0f, face clear by %.3f m, inside frame %s" % [name, head.size(), pitch, best[2], best[0], _inside(head)])
 	await _save(name)
 	_stage.camera.fov = 30.0
 
@@ -199,18 +216,16 @@ static func is_shoulder_bone(bone: String) -> bool:
 	return bone in ["Chest", "UpperChest", "LeftShoulder", "RightShoulder", "LeftUpperArm", "RightUpperArm"]
 
 
-## The lowest head points facing the camera (the chin and jaw line).
-static func _chin_marks(head: PackedVector3Array, basis: Basis) -> PackedVector3Array:
-	var low := INF
-	for p in head:
-		low = minf(low, p.y)
-	var marks := PackedVector3Array()
+## Head points facing the camera at eye height (`eye_y` +- 6 cm): the face
+## a big beard or collar mustn't decide the tilt by.
+static func face_marks(head: PackedVector3Array, basis: Basis, eye_y: float) -> PackedVector3Array:
 	var centre := Vector3.ZERO
 	for p in head:
 		centre += p
 	centre /= maxf(head.size(), 1.0)
+	var marks := PackedVector3Array()
 	for p in head:
-		if p.y < low + 0.04 and (p - centre).dot(basis.z) > 0.0:
+		if absf(p.y - eye_y) < 0.06 and (p - centre).dot(basis.z) > 0.0:
 			marks.append(p)
 	return marks
 
