@@ -1,7 +1,7 @@
 extends SceneTree
 ## Moves reel of a character on the look-dev stage, against a grey target
 ## dummy so the hits read (.claude/skills/voxel-character-lookdev/SKILL.md).
-##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots|travel|guard|knockdown]
+##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots|beam|travel|guard|knockdown]
 ##       --scene=<character scene> --moves=res://game/combat/moves/<name>/
 ##       [--dummy=<scene>] [--stats=<FighterStats .tres>] [--energy=#ff9e40] [--fps=60]
 ## Writes numbered JPG frames (f_00000.jpg...) for ffmpeg at --fps (60, or 30
@@ -16,7 +16,7 @@ extends SceneTree
 ## hover, crossed guard, ki shot, kick, jump crouch, a big flinch) are layered
 ## over the clips by LookdevPoseOverride. Neither the sim nor the clips change.
 
-const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots|travel|guard|knockdown] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed] [--fps=60]"
+const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots|beam|travel|guard|knockdown] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed] [--fps=60]"
 ## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
 const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
@@ -186,7 +186,7 @@ class Actor:
 
 	func bone(name: StringName) -> Vector3:
 		var sk := skeleton()
-		return sk.global_transform * sk.get_bone_global_pose(sk.find_bone(name)).origin
+		return sk.global_transform * pose.bone_pose(sk, sk.find_bone(name)).origin
 
 	func forward() -> Vector3:
 		return Basis(Vector3.UP, f.facing_yaw) * Vector3.FORWARD
@@ -316,6 +316,10 @@ func _run(what: String) -> void:
 		await _tick(false)
 	if what == "poses":
 		await _pose_stills()
+		quit()
+		return
+	if what == "beam":
+		await _beam()
 		quit()
 		return
 	if what == "shots":
@@ -616,8 +620,6 @@ func _beam() -> void:
 		orb.scale = Vector3.ONE * grow
 		var hands := _hand_surface(_hero)
 		orb.global_position = orb_centre(_palms_point(), _hero.forward(), hands, ORB_RADIUS * grow)
-		if t % 30 == 0 and OS.has_environment("REEL_DEBUG"):
-			print("dbg t%d palms %s orb %s L %s R %s n %d fwd %s hips %s cam %s" % [t, _palms_point(), orb.global_position, _hero.bone(&"LeftHand"), _hero.bone(&"RightHand"), hands.size(), _hero.forward(), _hero.bone(&"Hips"), _stage.camera.global_position])
 		if t >= 30:
 			_orb_clearance = minf(_orb_clearance, nearest(orb.global_position, hands) - ORB_RADIUS * grow)
 			_charge_square_err = maxf(_charge_square_err, _hips_camera_angle(_hero))
@@ -1264,7 +1266,7 @@ func _toward_camera(actor: Actor) -> Vector3:
 func _hips_camera_angle(actor: Actor) -> float:
 	var sk := actor.skeleton()
 	var hb := sk.find_bone(&"Hips")
-	var front := sk.global_basis * (sk.get_bone_global_pose(hb).basis * sk.get_bone_global_rest(hb).basis.inverse() * Vector3.BACK)
+	var front := sk.global_basis * (actor.pose.bone_pose(sk, hb).basis * sk.get_bone_global_rest(hb).basis.inverse() * Vector3.BACK)
 	var to := _stage.camera.global_position - actor.bone(&"Hips")
 	return rad_to_deg(absf(LookdevPoseOverride.yaw_to_face(front, to)))
 
@@ -1594,7 +1596,7 @@ func _posed_surface(actor: Actor) -> PackedVector3Array:
 			var bone := skin.get_bind_bone(k)
 			if bone < 0:
 				bone = sk.find_bone(skin.get_bind_name(k))
-			mats.append(sk.global_transform * sk.get_bone_global_pose(maxi(bone, 0)) * skin.get_bind_pose(k))
+			mats.append(sk.global_transform * actor.pose.bone_pose(sk, maxi(bone, 0)) * skin.get_bind_pose(k))
 	var out := PackedVector3Array()
 	out.resize(actor.probe_rest.size())
 	for i in actor.probe_rest.size():

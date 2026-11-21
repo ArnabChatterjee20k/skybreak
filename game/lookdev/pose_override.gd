@@ -12,9 +12,10 @@ extends SkeletonModifier3D
 ##   about Z), a rotation of the bone (and everything below it) about its joint.
 ## keep_feet lowers the hips by however much the legs' aims lifted the feet,
 ## so a crouch stays planted on the floor.
-## reach: upper-arm bone -> [wrist target, elbow pole] (skeleton space), solved
+## reach: upper-arm bone -> [wrist target relative to the hips, elbow pole]
+## (skeleton space), solved
 ## as a two-bone chain into that arm's aims, so a pose can place the hands.
-## square: a skeleton-space direction the hips and chest are yawed to face
+## square: a skeleton-space direction the hips (and the body above) are yawed to face
 ## (zero: off), whatever stance the clip had.
 
 const CHILD := {
@@ -39,8 +40,13 @@ var keep_feet := false
 var drop := 0.0
 var reach: Dictionary = {}
 var square := Vector3.ZERO
+## Global bone poses as this modifier left them (skeleton space): outside the
+## modification step the skeleton reports the clip's pose without it.
+var posed: Array[Transform3D] = []
 
-const SQUARED: Array[StringName] = [&"Hips", &"Spine", &"Chest", &"UpperChest"]
+## Only the hips are squared; the spine follows them. Squaring each spine bone
+## too compounded the turn (each read its parent's pose before the update).
+const SQUARED: Array[StringName] = [&"Hips"]
 
 
 func set_pose(new_aims: Dictionary, new_turns := {}, feet := false) -> void:
@@ -51,7 +57,10 @@ func set_pose(new_aims: Dictionary, new_turns := {}, feet := false) -> void:
 
 func _process_modification() -> void:
 	var skeleton := get_skeleton()
-	if skeleton == null or weight <= 0.001:
+	if skeleton == null:
+		return
+	if weight <= 0.001:
+		_snapshot(skeleton)
 		return
 	var feet_before := _feet(skeleton)
 	for bone_name in ORDER:
@@ -92,6 +101,18 @@ func _process_modification() -> void:
 		var pose := skeleton.get_bone_global_pose(hips)
 		pose.origin.y -= lift + drop * weight
 		skeleton.set_bone_global_pose(hips, pose)
+	_snapshot(skeleton)
+
+
+func _snapshot(skeleton: Skeleton3D) -> void:
+	posed.resize(skeleton.get_bone_count())
+	for i in posed.size():
+		posed[i] = skeleton.get_bone_global_pose(i)
+
+
+## A bone's global pose (skeleton space) including this modifier.
+func bone_pose(skeleton: Skeleton3D, bone: int) -> Transform3D:
+	return posed[bone] if bone < posed.size() else skeleton.get_bone_global_pose(bone)
 
 
 ## Yaw (radians, about +Y) that turns `front` to face `toward` in the ground plane.
@@ -124,8 +145,10 @@ func _solve_reach(skeleton: Skeleton3D, bone_name: StringName, bone: int) -> voi
 	var e := skeleton.get_bone_global_pose(lower).origin
 	var w := skeleton.get_bone_global_pose(wrist).origin
 	var goal: Array = reach[bone_name]
-	var elbow := elbow_for(s, goal[0], s.distance_to(e), e.distance_to(w), goal[1])
-	var dir: Vector3 = goal[0] - s
+	var hips := skeleton.find_bone(&"Hips")
+	var target: Vector3 = goal[0] + (skeleton.get_bone_global_pose(hips).origin if hips >= 0 else Vector3.ZERO)
+	var elbow := elbow_for(s, target, s.distance_to(e), e.distance_to(w), goal[1])
+	var dir: Vector3 = target - s
 	var hand := s + dir.normalized() * minf(dir.length(), s.distance_to(e) + e.distance_to(w) - 0.001)
 	var solved := aims.duplicate()
 	solved[bone_name] = elbow - s
