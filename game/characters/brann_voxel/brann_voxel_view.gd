@@ -17,15 +17,17 @@ const EMBER_MAX := 2.6
 ## fronts (the bib plus the bead radius: it lies on the bib), the widest it may swing off his body's down
 ## axis, gravity, a weak pull back to its rest hang, damping, and how much of
 ## his own movement blows it back.
-const BRAID_CLEARANCE := 0.055
+const BRAID_CLEARANCE := 0.06
 const BRAID_MAX_SWING := deg_to_rad(32.0)
 const BRAID_GRAVITY := 9.8
 const BRAID_FOLLOW := 15.0
 const BRAID_DAMPING := 0.88
 const BRAID_DRAG := 0.6
 const BRAID_ITERATIONS := 4
+## How far the tufted tip and the end ring hang below the last joint.
+const BRAID_TAIL := 0.09
 ## Rest heights (low, high) of the stone each of Spine, Chest and UpperChest moves.
-const TORSO_BANDS: Array[Vector2] = [Vector2(0.90, 1.10), Vector2(1.04, 1.26), Vector2(1.20, 1.48)]
+const TORSO_BANDS: Array[Vector2] = [Vector2(0.90, 1.24), Vector2(1.04, 1.30), Vector2(1.22, 1.48)]
 ## The most the fist may swing off the forearm's line; the wrist plug fills
 ## the cuff's mouth up to this bend (twist about the forearm is free).
 const WRIST_MAX_SWING := deg_to_rad(24.0)
@@ -115,22 +117,36 @@ func _constrain_braid(rest: PackedVector3Array, target: PackedVector3Array, down
 
 
 ## Puts each joint at its segment's rest length from the one above, its
-## direction held within BRAID_MAX_SWING of `down` (and out of the torso).
+## direction held within BRAID_MAX_SWING of `down`. With `clear`, the joint,
+## the segment's middle and (below the tip) the end ring are pushed out of
+## the chest and belly first.
 func _hang_segments(rest: PackedVector3Array, target: PackedVector3Array, down: Vector3, clear: bool) -> void:
 	for i in range(1, rest.size()):
 		var length := rest[i - 1].distance_to(rest[i])
-		var dir := _braid_now[i] - _braid_now[i - 1]
-		if clear:
-			dir = _clear_of_torso(_braid_now[i - 1] + dir) - _braid_now[i - 1]
+		var start := _braid_now[i - 1]
+		var dir := _braid_now[i] - start
 		if dir.length_squared() < 1e-8:
 			dir = target[i] - target[i - 1]
 		dir = dir.normalized()
+		if clear:
+			for attempt in 3:
+				var tail := length + (BRAID_TAIL if i == rest.size() - 1 else 0.0)
+				var push := Vector3.ZERO
+				for f: float in [0.5, 1.0, tail / length]:
+					var p := start + dir * length * f
+					push += (_clear_of_torso(p) - p) / f
+				if push.length_squared() < 1e-8:
+					break
+				dir = (dir * length + push).normalized()
 		if dir.angle_to(down) > BRAID_MAX_SWING:
 			var axis := down.cross(dir)
 			if axis.length_squared() < 1e-8:
 				axis = Vector3.RIGHT
-			dir = down.rotated(axis.normalized(), BRAID_MAX_SWING)
-		_braid_now[i] = _braid_now[i - 1] + dir * length
+			var held := down.rotated(axis.normalized(), BRAID_MAX_SWING)
+			# The body wins over the swing limit: never hold it inside the stone.
+			if not clear or _clear_of_torso(start + held * length).is_equal_approx(start + held * length):
+				dir = held
+		_braid_now[i] = start + dir * length
 
 
 ## p pushed straight out of the chest and belly fronts (skeleton space).
