@@ -2,7 +2,7 @@ class_name ZoneBakeDownload
 extends Node
 ## Fetches and mounts one zone bake's pack for the web build (ZoneBakePacks):
 ## reads zones/manifest.json next to the page, reuses a whole cached pack or
-## downloads it to user://, checks size and SHA-256, then mounts it. Emits
+## downloads it, checks size and SHA-256, keeps it in user:// and mounts it. Emits
 ## finished(ok, why) once; on failure the zone builds live, as without a bake.
 
 signal finished(ok: bool, why: String)
@@ -31,6 +31,8 @@ func _ready() -> void:
 		return
 	_http = HTTPRequest.new()
 	_http.accept_gzip = false
+	# Packs are 15-57 MB: read up to 4 MiB a frame, not the 64 KiB default.
+	_http.download_chunk_size = 4 << 20
 	add_child(_http)
 	_http.request_completed.connect(_on_manifest, CONNECT_ONE_SHOT)
 	_request(base_url + ZoneBakePacks.DIR + "/" + ZoneBakePacks.MANIFEST)
@@ -72,25 +74,25 @@ func _on_manifest(result: int, code: int, _headers: PackedStringArray, body: Pac
 	if ZoneBakePacks.cached_ok(path, _entry):
 		_mount(path)
 		return
-	_http.download_file = path + ".part"
 	_http.request_completed.connect(_on_pack, CONNECT_ONE_SHOT)
 	_request(base_url + ZoneBakePacks.DIR + "/" + String(_entry.file).uri_encode())
 
 
-func _on_pack(result: int, code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
-	var part := _cache_path() + ".part"
+func _on_pack(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
-		DirAccess.remove_absolute(part)
 		_finish(false, "downloading %s failed (result %d, HTTP %d)" % [_entry.file, result, code])
 		return
-	if not ZoneBakePacks.cached_ok(part, _entry):
-		DirAccess.remove_absolute(part)
-		_finish(false, "%s arrived damaged (size or SHA-256 differs)" % _entry.file)
+	if not ZoneBakePacks.whole(body, _entry):
+		_finish(false, "%s arrived damaged (%d bytes, expected %d, or SHA-256 differs)" % [_entry.file, body.size(),
+			int(_entry.size)])
 		return
-	DirAccess.remove_absolute(_cache_path())
-	if DirAccess.rename_absolute(part, _cache_path()) != OK:
-		_finish(false, "can't keep %s" % _entry.file)
+	# Written here, not via HTTPRequest.download_file: on the web that leaves an empty file.
+	var f := FileAccess.open(_cache_path(), FileAccess.WRITE)
+	if f == null:
+		_finish(false, "can't keep %s (%s)" % [_entry.file, error_string(FileAccess.get_open_error())])
 		return
+	f.store_buffer(body)
+	f.close()
 	_mount(_cache_path())
 
 

@@ -102,12 +102,14 @@ static func mount(pck_path: String) -> bool:
 	return true
 
 
-## Whether a cached pack is whole: its size and SHA-256 match the manifest.
-static func cached_ok(path: String, entry: Dictionary) -> bool:
-	if not FileAccess.file_exists(path):
-		return false
-	var bytes := FileAccess.get_file_as_bytes(path)
+## Whether a pack's bytes are whole: size and SHA-256 match the manifest entry.
+static func whole(bytes: PackedByteArray, entry: Dictionary) -> bool:
 	return bytes.size() == int(entry.size) and _sha256(bytes) == String(entry.sha256)
+
+
+## Whether a cached pack is whole.
+static func cached_ok(path: String, entry: Dictionary) -> bool:
+	return FileAccess.file_exists(path) and whole(FileAccess.get_file_as_bytes(path), entry)
 
 
 ## Removes cached packs other than keep (older bakes of any zone at this tier).

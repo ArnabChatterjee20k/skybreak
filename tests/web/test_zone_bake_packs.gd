@@ -260,7 +260,6 @@ func test_a_damaged_or_missing_pack_fails_and_leaves_nothing_behind() -> void:
 	assert_string_contains(String(result[1]), "damaged")
 	assert_false(ResourceLoader.exists(e.bake))
 	assert_false(FileAccess.file_exists(ZoneBakePacks.CACHE_DIR.path_join(e.file)))
-	assert_false(FileAccess.file_exists(ZoneBakePacks.CACHE_DIR.path_join(String(e.file) + ".part")))
 	server.files.clear()
 	result = await _download(VoxelZoneBake.path_for(&"gut_nothing", WEB), server.port)
 	assert_eq(result[0], false, "no manifest: the zone builds live")
