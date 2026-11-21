@@ -260,6 +260,14 @@ func _keep_fist_clear(side: float) -> void:
 		_skeleton.set_bone_global_pose(upper, arm)
 
 
+## Stone neither breathes nor squashes: the layer's bone scales would also grow his arms and the
+## held weapon past where the weapon clearance solver (rotations only) placed them (QA-20).
+func _apply_layer(layer: Dictionary) -> void:
+	for bone: StringName in layer:
+		layer[bone].scale = Vector3.ONE
+	super._apply_layer(layer)
+
+
 func _stow_weapons() -> void:
 	if stow_old_weapons or bool(_skeleton.get_meta(WeaponModels.VOXEL_META, false)):
 		super._stow_weapons()
