@@ -76,6 +76,9 @@ godot --headless --path . -s res://tools/voxel_bake.gd -- --check      # exit 1 
 godot --headless --path . -s res://tools/voxel_bake.gd -- --time       # live build timings, writes nothing
 ```
 
+Rigid parts are baked too, to `baked/rigid/`: every `VoxelWeapons` design and Lyra's
+astrolabe rings (`VoxelBake.load_rigid`, hashed with the scripts that build them).
+
 The tool finds every `.tscn` under `game/characters/` that uses `voxel_body.gd`, opens
 it in the tree with the VoxelBody swapped out (so figures that build their skeleton in
 `_ready` work), builds the design and saves it.

@@ -54,6 +54,23 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - stream, Blossom Falls, petal whirlwinds, fireflies, the nearest-4 lantern OmniLights
 
 ## In review
+- T-VOX-INT [desktop] Voxel art in the game (`integration/voxel-art`): the look-dev branches merged
+  (squashed, render media left on them), Art style Voxel (default) / Classic in settings, roster and
+  CharacterView on the baked voxel legends, voxel weapons held, stowed and as pickups (baked), the
+  voxel zone builders in zone_match for all 7 zones (VoxelZoneView, visual only, sim bit-identical),
+  voxel zone cards, quality tie-in (Low: LOD ranges x0.6, far tiers shadowless, 2K atlas, no SSAO).
+  Open:
+  - VOXEL-LOAD [desktop, perf lane] voxel zone build at match start (cloud CPU, cold / warm cache):
+    Heartbloom 200 / 65 s, Skyhold 105 / 32 s, Frozen Peaks 94 / 62 s, Shattered Mesa 86 / 1 s,
+    Stormfall 5 / 5 s (rest in the PR). Needs the kit perf work or baked zones, and a loading screen.
+  - VOXEL-PALETTE [desktop, characters] voxel bodies bake their colours, so team palettes don't
+    apply: a mirror match tells P1 from P2 only by energy rim and team ring.
+  - QA-20 [desktop, characters] voxel Brann's held weapons dip into his voxel chest (VisualQa
+    weapon_vs_holder ~700 frames per 3600-tick run); arm clearance still fits the classic body.
+  - VOXEL-WEB [desktop] the web build carries the voxel art (+15 MB pck) but a voxel zone build in
+    the browser would take minutes: decide Classic zones on web or baked zones.
+  - The menu backdrop is still the classic world fly-through; MotionLayers' weapon clearance uses the
+    classic weapon boxes (voxel models keep the old size and grip).
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
   all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
   energy on GLOW, emblems at 5.5 mm), drop-in behind `VoxelArmory` / `WeaponModels.voxel_everywhere`
