@@ -1423,7 +1423,7 @@ func flight() -> Array[Dictionary]:
 		{"from": Vector3(-78, 250, -40), "at": Vector3(bc.x, 262, bc.y), "fov": 60.0},
 		{"from": Vector3(-200, 286, 20), "at": Vector3(fc.x, fc.y, fc.z), "fov": 55.0},
 		{"from": Vector3(-112, 296, 104), "at": Vector3(fc.x, fc.y + 2, fc.z), "fov": 55.0},
-		{"from": Vector3(-60, g + 7, 30), "at": Vector3(a.x + 4, g + 2, a.y + 9), "fov": 55.0},
+		{"from": Vector3(-60, g + 8, 20), "at": Vector3(a.x + 4, g + 2, a.y + 9), "fov": 55.0},  # between the cherry canopies
 		{"from": Vector3(-6, g + 5, 2), "at": Vector3(a.x + 4, g + 3, a.y + 9), "fov": 55.0},
 		{"from": Vector3(40, g + 46, 70), "at": Vector3(0, g + 12, -20), "fov": 58.0},
 	]
