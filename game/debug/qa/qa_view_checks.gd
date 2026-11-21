@@ -33,6 +33,8 @@ const SLIDE_SETTLE_FRAMES := 10
 ## A sim move this large between two frames is a teleport (vanish, reset), not a slide (m).
 const TELEPORT_DISTANCE := 0.5
 const FOOT_BONES: Array[StringName] = [&"LeftFoot", &"RightFoot"]
+## Bones whose vertices make the sole.
+const SOLE_BONES: Array[StringName] = [&"LeftFoot", &"RightFoot", &"LeftToes", &"RightToes"]
 const TORSO_BONES: Array[StringName] = [&"Hips", &"UpperChest"]
 
 var level: ZoneMatch
@@ -140,17 +142,52 @@ func _rig_of(view: FighterView) -> Dictionary:
 	# Sole below the ankle: rest foot height over the bind-pose mesh bottom, in skeleton space.
 	# Skinned body meshes only: props hung on bones (Brann's stowed cannon) are not the sole.
 	var bottom := INF
+	var box_bottom := INF
 	for mesh: MeshInstance3D in view._character.model.find_children("*", "MeshInstance3D", true, false):
 		if mesh.mesh == null or mesh.skin == null:
 			continue
-		var box := skeleton.global_transform.affine_inverse() * mesh.global_transform * mesh.get_aabb()
-		bottom = minf(bottom, box.position.y)
+		var to_skeleton := skeleton.global_transform.affine_inverse() * mesh.global_transform
+		box_bottom = minf(box_bottom, (to_skeleton * mesh.get_aabb()).position.y)
+		bottom = minf(bottom, foot_bottom(mesh, skeleton, to_skeleton))
+	if not is_finite(bottom):
+		bottom = box_bottom
 	var ankle := INF
 	for bone: int in rig.feet:
 		if bone >= 0:
 			ankle = minf(ankle, skeleton.get_bone_global_rest(bone).origin.y)
 	rig.sole = (ankle - bottom) * skeleton.global_basis.get_scale().y if is_finite(ankle - bottom) else 0.0
 	return rig
+
+
+## Lowest bind-pose vertex skinned mostly to a foot or toe bone (skeleton
+## space), INF if none: a cape or robe hem below the boots is not the sole.
+static func foot_bottom(mesh: MeshInstance3D, skeleton: Skeleton3D, to_skeleton: Transform3D) -> float:
+	var foot_binds := {}
+	for b in mesh.skin.get_bind_count():
+		var bone_name := mesh.skin.get_bind_name(b)
+		if bone_name == &"":
+			bone_name = skeleton.get_bone_name(mesh.skin.get_bind_bone(b))
+		if bone_name in SOLE_BONES:
+			foot_binds[b] = true
+	var lowest := INF
+	if foot_binds.is_empty():
+		return lowest
+	for s in mesh.mesh.get_surface_count():
+		var arrays := mesh.mesh.surface_get_arrays(s)
+		var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var bones: Variant = arrays[Mesh.ARRAY_BONES]
+		var weights: Variant = arrays[Mesh.ARRAY_WEIGHTS]
+		if bones == null or weights == null or verts.is_empty():
+			continue
+		var per := (bones as PackedInt32Array).size() / verts.size()
+		for v in verts.size():
+			var best := 0
+			for k in range(1, per):
+				if (weights as PackedFloat32Array)[v * per + k] > (weights as PackedFloat32Array)[v * per + best]:
+					best = k
+			if foot_binds.has((bones as PackedInt32Array)[v * per + best]):
+				lowest = minf(lowest, (to_skeleton * verts[v]).y)
+	return lowest
 
 
 static func _remember_pose(skeleton: Skeleton3D, poses: Array[Transform3D]) -> void:

@@ -240,6 +240,16 @@ static func sync_materials() -> void:
 	_merged_materials = alive
 
 
+## A loaded zone bake's own copies of the shared materials become the shared
+## ones (the stage drives them), and its merged materials follow them.
+static func adopt(shared: Array, merged: Array[ShaderMaterial]) -> void:
+	if shared.size() == materials().size():
+		_materials.assign(shared)
+	for m in merged:
+		_merged_materials.append(weakref(m))
+	sync_materials()
+
+
 ## Attaches the shared materials to a loaded mesh (surfaces keep their
 ## order); a merged mesh gets one material that reads its face texture and
 ## carries every shared material's values per surface.

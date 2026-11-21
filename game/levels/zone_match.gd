@@ -160,7 +160,7 @@ func _build_voxel_zone() -> void:
 	add_child(voxel_zone)
 	move_child(voxel_zone, 1)
 	VoxelZoneView.hide_classic(world)
-	voxel_zone.build(zone_id, GraphicsSettings.load_saved().quality)
+	voxel_zone.build(zone_id, int(config.get("quality", GraphicsSettings.load_saved().quality)))
 
 
 func _build_fighters() -> void:

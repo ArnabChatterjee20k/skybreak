@@ -37,3 +37,16 @@ func test_web_main_menu_has_no_quit() -> void:
 func test_desktop_main_menu_keeps_quit() -> void:
 	var ids := MainMenu.entries(false).map(func(entry: Dictionary) -> StringName: return entry.id)
 	assert_true(ids.has(&"quit"))
+
+
+func test_web_build_ships_only_the_web_tier_zone_bakes() -> void:
+	var filter := _web_exclude_filter()
+	for tier in ["high", "medium", "low"]:
+		assert_string_contains(filter, "game/world/voxel_zone_kit/baked/*_%s.scn" % tier)
+	assert_false(filter.contains("*_web.scn"))
+
+
+func test_web_loads_the_web_tier_bake() -> void:
+	var settings := GraphicsSettings.new(true)
+	assert_eq(settings.quality, GraphicsSettings.Quality.WEB)
+	assert_string_ends_with(VoxelZoneBake.path_for(&"ember_rift", settings.quality), "ember_rift_web.scn")

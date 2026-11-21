@@ -1,7 +1,8 @@
 class_name VoxelZoneView
 extends Node3D
-## The voxel look of one zone in a match (Voxel art style): builds the zone's
-## VoxelZone builder and its VoxelStage as siblings under this node (zones look
+## The voxel look of one zone in a match (Voxel art style): loads the zone's
+## offline bake for the quality tier (or builds its VoxelZone builder live when
+## the bake is missing or stale) and its VoxelStage as siblings under this node (zones look
 ## for the stage among their siblings), drives the zone's animation, and hides
 ## the classic world's visuals. The classic WorldMap stays in the tree: the sim's
 ## ground, the camera's obstacles and the spawns still come from it. View-only.
@@ -26,23 +27,8 @@ const HERO_PRESETS := {
 	&"verdant_falls": "day",
 	&"ember_rift": "night",
 }
-## Per quality: LOD range scale (smaller = coarser tiers sooner), shadow atlas,
-## soft shadow filter, sun shadow distance (m), blended splits, SSAO.
-const QUALITY := {
-	GraphicsSettings.Quality.LOW: {
-		"lod_scale": 0.6, "atlas": 2048, "filter": RenderingServer.SHADOW_QUALITY_SOFT_LOW,
-		"shadow_distance": 100.0, "blend_splits": false, "ssao": false, "far_tier_shadows": false,
-	},
-	GraphicsSettings.Quality.MEDIUM: {
-		"lod_scale": 0.8, "atlas": 4096, "filter": RenderingServer.SHADOW_QUALITY_SOFT_LOW,
-		"shadow_distance": 150.0, "blend_splits": true, "ssao": true, "far_tier_shadows": true,
-	},
-	GraphicsSettings.Quality.HIGH: {
-		"lod_scale": 1.0, "atlas": 4096, "filter": RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM,
-		"shadow_distance": 180.0, "blend_splits": true, "ssao": true, "far_tier_shadows": true,
-	},
-}
-
+## Web tier: zone lamps fade out from this far (m).
+const WEB_LIGHT_FADE := 60.0
 ## The builder that draws each zone (starts as BUILDERS; tests swap in stand-ins).
 static var builders := BUILDERS.duplicate()
 
@@ -50,8 +36,10 @@ var zone_id: StringName
 var zone: VoxelZone
 var stage: VoxelStage
 var quality: GraphicsSettings.Quality = GraphicsSettings.Quality.HIGH
-## Milliseconds the zone's build() took.
+## Milliseconds the zone took to appear (bake load or live build).
 var build_ms := 0
+## True when the zone came from its offline bake (VoxelZoneBake), false when built live.
+var from_bake := false
 var _clock := 0.0
 
 
@@ -59,53 +47,72 @@ static func supports(id: StringName) -> bool:
 	return builders.has(id)
 
 
-## Builds the zone and its stage; call after adding this node to the tree.
+## Shows the zone and its stage; call after adding this node to the tree. Loads
+## the zone's bake for the tier when it is current, else builds it live.
 func build(id: StringName, tier: GraphicsSettings.Quality = GraphicsSettings.Quality.HIGH) -> void:
-	show_zone((load(builders[id]) as GDScript).new() as VoxelZone, id, tier)
+	var t := Time.get_ticks_msec()
+	var why := []
+	var baked := VoxelZoneBake.instantiate(id, tier, builders[id], why) if builders[id] == BUILDERS.get(id) else null
+	if baked != null:
+		show_baked(baked, id, tier)
+	else:
+		push_warning("VoxelZoneView: building %s live (%s); run tools/voxel_zone_bake.gd" % [id, why[0] if why else "no bake"])
+		show_zone((load(builders[id]) as GDScript).new() as VoxelZone, id, tier)
+	build_ms = Time.get_ticks_msec() - t
 
 
-## Builds a given VoxelZone (not yet in the tree) and its stage under this node.
+## Builds a given VoxelZone (not yet in the tree) at a tier, and its stage.
 func show_zone(built: VoxelZone, id: StringName, tier: GraphicsSettings.Quality) -> void:
+	_begin(id, tier)
+	zone = built
+	add_child(zone)
+	var t := Time.get_ticks_msec()
+	zone.build()
+	build_ms = Time.get_ticks_msec() - t
+	from_bake = false
+	_finish()
+
+
+## Shows an already built zone (a loaded bake, state restored) and its stage.
+func show_baked(baked: VoxelZone, id: StringName, tier: GraphicsSettings.Quality) -> void:
+	_begin(id, tier)
+	zone = baked
+	add_child(zone)
+	from_bake = true
+	_finish()
+
+
+func _begin(id: StringName, tier: GraphicsSettings.Quality) -> void:
 	zone_id = id
 	quality = tier
 	name = "VoxelZone"
-	var t := Time.get_ticks_msec()
-	zone = built
-	add_child(zone)
-	zone.build()
-	build_ms = Time.get_ticks_msec() - t
+	# The kit reads the tier while it builds (prop ranges, clutter shadows, chunks).
+	VoxelQuality.tier = tier
+
+
+func _finish() -> void:
 	stage = VoxelStage.new()
 	stage.name = "Stage"
 	add_child(stage)
 	stage.setup(zone.presets(), zone.cloud_sea())
 	stage.lantern_materials = zone.lantern_materials
-	stage.apply(HERO_PRESETS.get(id, "day"))
-	apply_quality(tier)
+	stage.apply(HERO_PRESETS.get(zone_id, "day"))
+	stage.apply_quality(quality)
+	if quality == GraphicsSettings.Quality.WEB:
+		light_tier(zone)
 	zone.animate(0.0)
 
 
-## The quality tier's LOD ranges and shadows (WEB counts as LOW).
-func apply_quality(tier: GraphicsSettings.Quality) -> void:
-	var values: Dictionary = QUALITY.get(tier, QUALITY[GraphicsSettings.Quality.LOW])
-	RenderingServer.directional_soft_shadow_filter_set_quality(values.filter)
-	RenderingServer.directional_shadow_atlas_set_size(values.atlas, true)
-	stage.sun.directional_shadow_max_distance = values.shadow_distance
-	stage.sun.directional_shadow_blend_splits = values.blend_splits
-	stage.env.ssao_enabled = values.ssao
-	scale_lod_ranges(zone, values.lod_scale, values.far_tier_shadows)
-
-
-## Scales every visibility range under root by k (tiers that chain end-to-begin
-## stay seamless); without far_tier_shadows, only the nearest tiers cast shadows.
-static func scale_lod_ranges(root: Node, k: float, far_tier_shadows := true) -> void:
-	for node in root.find_children("*", "GeometryInstance3D", true, false):
-		var gi := node as GeometryInstance3D
-		gi.visibility_range_begin *= k
-		gi.visibility_range_end *= k
-		gi.visibility_range_begin_margin *= k
-		gi.visibility_range_end_margin *= k
-		if not far_tier_shadows and gi.visibility_range_begin > 0.0:
-			gi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+## The web tier's lights: zone lamps cast no shadows and fade out past
+## WEB_LIGHT_FADE metres, so WebGL draws only the few near the fight.
+static func light_tier(root: Node) -> void:
+	for node in root.find_children("*", "Light3D", true, false):
+		if node is OmniLight3D or node is SpotLight3D:
+			var light := node as Light3D
+			light.shadow_enabled = false
+			light.distance_fade_enabled = true
+			light.distance_fade_begin = WEB_LIGHT_FADE
+			light.distance_fade_length = 10.0
 
 
 ## Hides the classic world's look (terrain, props, planes, sky, lights, weather)
