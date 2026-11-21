@@ -2,7 +2,7 @@ extends SceneTree
 ## Look-dev stills and clips of a character on the neutral stage
 ## (.claude/skills/voxel-character-lookdev/SKILL.md, step 3).
 ##   godot --path . --disable-vsync -s res://game/lookdev/lookdev_capture.gd -- <out dir>
-##       [quick|turntable|closeups|knockdown|spin|idle|compare|all]
+##       [quick|turntable|closeups|knockdown|feet|spin|idle|compare|all]
 ##       --scene=res://game/characters/<name>_voxel/<name>_voxel.tscn
 ##       [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0]
 ## Needs a GPU (not headless); renders at exactly 1920x1080 through a
@@ -100,6 +100,8 @@ func _run(what: String) -> void:
 		await _hand("closeup_gauntlet")
 	if what in ["knockdown", "all"]:
 		await _knockdown()
+	if what in ["feet", "all"]:
+		await _feet()
 	if what in ["spin", "all"]:
 		DirAccess.make_dir_recursive_absolute(_out.path_join("spin"))
 		_stage.frame(Vector3(0, 0.93, 0), 1.9, 0.82, -4.0)
@@ -146,6 +148,19 @@ func _knockdown() -> void:
 		_pivot.rotation.y = deg_to_rad(shot.x)
 		_stage.frame(Vector3(0, 0.25, 0), 0.9, 0.5, shot.y)
 		await _save("knockdown_%03d" % int(shot.x))
+	await _spawn(_scene)
+
+
+## Standing in guard, seen low at the boots from the side and a 3/4 angle, so the soles'
+## contact with the floor shows.
+func _feet() -> void:
+	_fighter.enter_state(FighterState.State.BLOCKING)
+	_fighter.blocking = true
+	await _advance(40)
+	for shot: Vector2 in [Vector2(90.0, -2.0), Vector2(35.0, -8.0)]:
+		_pivot.rotation.y = deg_to_rad(shot.x)
+		_stage.frame(Vector3(0, 0.12, 0), 0.45, 0.5, shot.y)
+		await _save("feet_%03d" % int(shot.x))
 	await _spawn(_scene)
 
 
