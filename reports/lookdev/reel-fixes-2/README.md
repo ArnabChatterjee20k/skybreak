@@ -25,8 +25,19 @@ These are lavapipe renders (llvmpipe, Godot 4.7.2 official linux x86_64) at 1920
 - Afterimages aren't baked on the headless dummy renderer, which has no skinning (this showed up as engine errors in the test).
 
 ## Grabs
-- `kael_travel_dash_f288-348_every6.jpg`, `kael_travel_dash_f310.jpg`
-- `lyra_combo_*.jpg`, `lyra_hit_react_*.jpg` (see below)
+Lyra's full reel: 1730 frames (3459 ticks), exit 0. Kael's travel reel: 350 frames (700 ticks), exit 0.
+- `kael_travel_dash_f288-348_every6.jpg`, `kael_travel_dash_f310.jpg`: the dash. Kael stays between about 25% and 52% of the width, with room ahead and the afterimages behind.
+- `lyra_combo_f1100-1220_every8.jpg`, `lyra_combo_f1143_f1148_crop.jpg` (GPU f2286): the combo. The brim stays clear of the dummy's head and the strikes land (flash at f1148). At f1143 the brim's front edge comes within a few pixels of the dummy's hair and ear on screen. It's measured >= 2 cm clear along the line between them, but it reads tight.
+- `lyra_guard_hit_react_f1440-1530_every6.jpg`, `lyra_hit_react_f1482_f1488_crop.jpg` (GPU f2974 and f3010): hit react. At f1482 the dummy's spiky hair overlaps the brim edge on screen. The dummy is nearer the camera (the pair camera sits 18° off side-on), and the check measured no contact, but from this single view it can't be told apart from contact. Check it on the GPU.
+- `lyra_launcher_f1180-1240_every4_camera_loses_dummy.jpg`: an issue that was already there, not fixed (see the critique).
+
+## Ranked critique (most severe first)
+1. **The launcher's pair camera loses the dummy** (f1196-1240): the "pair" camera locks its framed height at 2.3 m and its target at 0.95 m, so the launched dummy leaves through the top of the frame and Lyra drifts to the left edge. This was already in the reel (the camera code is unchanged), but it's the worst shot in it. Fix: frame both fighters' measured bounds in pair mode, like the dash.
+2. **Contact is judged along the line between the fighters only.** `step_to_touch` checks overlap along that line with 4 cm lateral bins. A part that sweeps in sideways is caught, but only as a push along the line. The head check uses the same measure, so the test and the fix share an assumption. f1143 and f1482 read tight on screen.
+3. **Lavapipe only.** Colour, AO and PCSS still need the GTX 1650 run. In particular, the brim-to-hair spacing at f1143 and f1482 should be looked at with GPU shadows.
+4. **The dash camera is a rigid tracking shot.** At 26 m/s the backdrop whips past, and the hero creeps right as the dash slows (still inside the safe area). A small ease on the lead would read smoother.
+5. **The reel is slower per tick.** The dense contact samples (1.5 cm cells) and the head check (6 mm cells) add CPU time each tick in the melee segments. Lavapipe rendering still dominates, so wall-clock time barely changed.
+6. **No before-and-after on the old code with the new check.** The "before" is the v3 notes' 112-118 brim-contact frames, not a re-measurement.
 
 ## Tests
 `tests/lookdev/test_moves_reel_staging.gd` (new; drives the reel headless through `setup()`, `combo_check()` and `dash_check()`):
