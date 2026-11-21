@@ -14,16 +14,18 @@ const EMBER_MAX := 2.6
 @export var stow_old_weapons := false
 
 ## Braid chain: how far its centre line stays in front of the chest and belly
-## fronts (bib, bead radius, air), the widest it may swing off his body's down
+## fronts (the bib plus the bead radius: it lies on the bib), the widest it may swing off his body's down
 ## axis, gravity, a weak pull back to its rest hang, damping, and how much of
 ## his own movement blows it back.
-const BRAID_CLEARANCE := 0.062
+const BRAID_CLEARANCE := 0.055
 const BRAID_MAX_SWING := deg_to_rad(32.0)
 const BRAID_GRAVITY := 9.8
-const BRAID_FOLLOW := 45.0
+const BRAID_FOLLOW := 15.0
 const BRAID_DAMPING := 0.88
 const BRAID_DRAG := 0.6
 const BRAID_ITERATIONS := 4
+## Rest heights (low, high) of the stone each of Spine, Chest and UpperChest moves.
+const TORSO_BANDS: Array[Vector2] = [Vector2(0.90, 1.10), Vector2(1.04, 1.26), Vector2(1.20, 1.48)]
 ## The most the fist may swing off the forearm's line; the wrist plug fills
 ## the cuff's mouth up to this bend (twist about the forearm is free).
 const WRIST_MAX_SWING := deg_to_rad(24.0)
@@ -68,6 +70,7 @@ func _swing_braid(fighter: FighterState, delta: float) -> void:
 			_torso_bones.append(_skeleton.find_bone(bone))
 		if _braid_bones.has(-1):
 			_braid_bones.clear()
+			_torso_bones.clear()
 			return
 	var rest := BrannVoxelDesign.braid_points()
 	var head := _skin_of(_torso_bones[3])
@@ -135,7 +138,8 @@ func _clear_of_torso(p: Vector3) -> Vector3:
 	for k in 3:
 		var skin := _skin_of(_torso_bones[k])
 		var q := skin.affine_inverse() * p
-		if q.y < BrannVoxelDesign.SKIRT_TOP or q.y > BrannVoxelDesign.SHOULDER_Y or absf(q.x) > 0.42:
+		# Each torso bone only for the band of stone it skins (spine, chest, upper chest).
+		if q.y < TORSO_BANDS[k].x or q.y > TORSO_BANDS[k].y or absf(q.x) > 0.42:
 			continue
 		var deficit := BrannVoxelDesign.FRONT_Z + BRAID_CLEARANCE - q.z
 		if deficit > 0.0:

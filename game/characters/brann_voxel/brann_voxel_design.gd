@@ -1082,8 +1082,8 @@ func _lock(g: VoxelGrid, box: AABB, a: Vector3, bend: Vector3, tip: Vector3, r0:
 ## The braid's joints in rest space, root (in the beard's bottom lobe) to tip:
 ## it hangs straight down the bib, a bead's width plus air in front of it.
 static func braid_points() -> PackedVector3Array:
-	return PackedVector3Array([Vector3(0, 1.40, 0.36), Vector3(0, 1.24, 0.386), Vector3(0, 1.15, 0.39),
-		Vector3(0, 1.02, 0.39)])
+	return PackedVector3Array([Vector3(0, 1.40, 0.375), Vector3(0, 1.24, 0.385), Vector3(0, 1.15, 0.388),
+		Vector3(0, 1.02, 0.388)])
 
 
 ## Adds the braid chain bones to a rig that lacks them (idempotent): rest at
