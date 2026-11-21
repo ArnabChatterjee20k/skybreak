@@ -34,8 +34,7 @@ func test_shattered_mesa_passes_every_geometric_check() -> void:
 ## One frame is invisible at 60 fps (down from 9170 clipping frames); more fails.
 const PLATFORM_TOLERANCE := {&"weapon_vs_holder": 1, &"bow_vs_head": 1}
 ## Zone/check pairs over tolerance because of a filed bug: pending in CI, failing under run_qa.sh.
-const KNOWN_EXCESS := {"shattered_mesa/bow_vs_head": &"QA-19", "heartbloom_gardens/weapon_vs_holder": &"QA-20",
-	"frozen_peaks/weapon_vs_holder": &"QA-20", "shattered_mesa/weapon_vs_holder": &"QA-20"}
+const KNOWN_EXCESS := {"shattered_mesa/bow_vs_head": &"QA-19"}
 
 
 func _assert_clean(qa: VisualQa) -> void:

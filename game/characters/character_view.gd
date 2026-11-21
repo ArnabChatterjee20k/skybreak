@@ -678,9 +678,13 @@ func _hold_weapon(kind: Weapon.Kind) -> void:
 	var skeleton := model.get_node("%GeneralSkeleton") as Skeleton3D
 	var hands := WeaponGrip.hands_of(kind)
 	layers.weapon_hand = hands[0] if hands.size() == 1 else &""
-	layers.weapon_boxes = WeaponGrip.clearance_boxes(kind) if hands.size() == 1 else ([] as Array[Transform3D])
-	var bow := hands.size() == 1 and WeaponGrip.clearance_boxes(kind).size() != WeaponGrip.model_boxes(kind).size()
-	layers.weapon_drawn_boxes = WeaponGrip.model_boxes(kind) if bow else ([] as Array[Transform3D])
+	# The boxes of the model actually drawn in this hand: a voxel weapon is bulkier than the classic one.
+	var voxel := WeaponModels.is_voxel_for(kind, skeleton)
+	var clear := WeaponGrip.clearance_boxes(kind, voxel)
+	var drawn := WeaponGrip.model_boxes(kind, voxel)
+	layers.weapon_boxes = clear if hands.size() == 1 else ([] as Array[Transform3D])
+	var bow := hands.size() == 1 and clear.size() != drawn.size()
+	layers.weapon_drawn_boxes = drawn if bow else ([] as Array[Transform3D])
 	layers.weapon_off_hand = WeaponGrip.off_hand_of(kind)
 	if hands.size() == 1:
 		layers.weapon_grip = WeaponGrip.grip_transform(skeleton, kind, hands[0])

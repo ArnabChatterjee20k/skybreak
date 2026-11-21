@@ -179,21 +179,26 @@ static func voxel_slices(mesh: Mesh) -> Array[AABB]:
 static var _box_cache := {}
 
 
-## Part boxes of a freshly built model of kind (cached per kind).
-static func model_boxes(kind: Weapon.Kind) -> Array[Transform3D]:
-	if not _box_cache.has(kind):
-		var model := WeaponModels.build(kind)
+## Part boxes of a freshly built model of kind, classic or voxel (cached per kind and look).
+static func model_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]:
+	var key := Vector2i(kind, int(voxel))
+	if not _box_cache.has(key):
+		var model := VoxelWeapons.build(kind) if voxel and VoxelWeapons.has(kind) else WeaponModels.build(kind)
 		model.transform = Transform3D.IDENTITY
-		_box_cache[kind] = part_boxes(model)
-		_clear_cache[kind] = part_boxes(model, true)
+		_box_cache[key] = part_boxes(model)
+		_clear_cache[key] = part_boxes(model, true)
 		model.free()
-	return _box_cache[kind]
+		if voxel and Weapon.is_bow(kind):
+			# A voxel bow also keeps the classic bow's wider limbs out: the draw is tuned to that margin.
+			(_box_cache[key] as Array[Transform3D]).append_array(model_boxes(kind))
+			(_clear_cache[key] as Array[Transform3D]).append_array(clearance_boxes(kind))
+	return _box_cache[key]
 
 
 static var _clear_cache := {}
 
 
 ## What the holder's clearance keeps out of the body: the part boxes plus a bow's resting string.
-static func clearance_boxes(kind: Weapon.Kind) -> Array[Transform3D]:
-	model_boxes(kind)
-	return _clear_cache[kind]
+static func clearance_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]:
+	model_boxes(kind, voxel)
+	return _clear_cache[Vector2i(kind, int(voxel))]
