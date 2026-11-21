@@ -31,7 +31,7 @@ const COLORS := {
 	Mat.HOOD: Color("#3a2650"), Mat.HOOD_DARK: Color("#271a37"), Mat.LINING: Color("#8a3cf0"),
 	Mat.SUIT: Color("#1a1c24"), Mat.SUIT_SEAM: Color("#2a2d3a"),
 	Mat.HOOD_INNER: Color("#160e20"), Mat.HOOD_RIM: Color("#5e4482"),
-	Mat.JACKET: Color("#3a3a4c"), Mat.JACKET_EDGE: Color("#343445"), Mat.JACKET_DARK: Color("#2e2e3c"),
+	Mat.JACKET: Color("#3c3a48"), Mat.JACKET_EDGE: Color("#363441"), Mat.JACKET_DARK: Color("#302e38"),
 	Mat.ZIP: Color("#c4c8d2"),
 	Mat.WRAP: Color("#6a6a80"), Mat.WRAP_RIDGE: Color("#76768c"), Mat.WRAP_BAND: Color("#302e3c"),
 	Mat.BOOT: Color("#2c2a30"), Mat.SOLE: Color("#141316"), Mat.PAD: Color("#3a3840"),
