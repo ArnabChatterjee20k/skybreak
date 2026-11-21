@@ -221,7 +221,13 @@ godot --headless --path . -s res://tools/voxel_zone_bake.gd -- --check   # exit 
 - A helper object whose constructor takes arguments needs `make_restored()` in the zone
   (Shattered Mesa's `MesaProps`). A helper the bake can't rebuild stays null after a load,
   so `animate()` must not depend on it.
-- The desktop export leaves out `*_web.scn`; the web export ships only `*_web.scn`.
+- The desktop export leaves out `*_web.scn`. The web export leaves every bake out of
+  `index.pck`: `tools/web/build_web.sh` runs `tools/web/pack_zone_bakes.gd`, which packs each
+  zone's `*_web.scn` byte for byte into `build/web/zones/<zone>_web.<sha>.pck` plus
+  `manifest.json` (it refuses a missing or stale bake). In the browser, `MatchConfig` puts up the
+  `LoadingScreen` with a `ZoneBakeDownload`: it fetches the zone's pack, checks size and SHA-256,
+  keeps it in `user://zone_bakes/` for the next visit and mounts it, so the bake loads from its
+  usual `res://` path (`ZoneBakePacks`). Host the `zones/` folder next to `index.html`.
 
 ## Performance
 

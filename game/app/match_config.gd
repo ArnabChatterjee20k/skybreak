@@ -56,6 +56,8 @@ func launch() -> String:
 		var screen := LoadingScreen.new()
 		screen.title = String(zone).capitalize()
 		screen.paths.assign([path, bake])
+		if not ResourceLoader.exists(bake):
+			screen.download = ZoneBakeDownload.new(bake)
 		screen.done = func(loaded: Dictionary) -> void:
 			if loaded.get(bake) is PackedScene:
 				VoxelZoneBake.preloaded[bake] = loaded[bake]
@@ -68,11 +70,12 @@ func launch() -> String:
 
 
 ## The zone's voxel bake for the saved quality when the match will draw it, else "".
+## On the web it is fetched as a pack (ZoneBakePacks) behind the loading screen.
 func zone_bake_path() -> String:
 	if not ArtStyle.is_voxel() or not VoxelZoneView.supports(zone):
 		return ""
 	var bake := VoxelZoneBake.path_for(zone, GraphicsSettings.load_saved().quality)
-	return bake if ResourceLoader.exists(bake) else ""
+	return bake if ResourceLoader.exists(bake) or ZoneBakePacks.downloadable(bake) else ""
 
 
 func _start(path: String) -> String:
