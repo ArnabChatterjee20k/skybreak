@@ -42,6 +42,9 @@ var _chain_ends: Array = []
 
 ## Each island's box (zone space) shared by its near and far tier chunks.
 var _island_boxes := {}
+## Crown and Watch Island as plain values: a bake can't keep the layout's inner
+## Island objects, and flight() needs these two after a load (restored()).
+var _kept_islands := {}
 
 
 func _init() -> void:
@@ -53,6 +56,7 @@ func build() -> void:
 	layout = SkyholdRuinsLayout.read()
 	crown = layout.named("Crown Island")
 	watch = layout.named("Watch Island")
+	_kept_islands = {"crown": _island_values(crown), "watch": _island_values(watch)}
 	for isl in layout.islands:
 		_chords.append(_outline(isl))
 	lantern_materials.append(VoxelProp.materials()[VoxelProp.Surf.GLOW] as ShaderMaterial)
@@ -64,6 +68,24 @@ func build() -> void:
 		stats["ms_" + step.get_method().trim_prefix("_")] = Time.get_ticks_msec() - s
 	stats["islands"] = layout.islands.size()
 	stats["ms_total"] = Time.get_ticks_msec() - t
+
+
+func restored() -> void:
+	if crown == null and _kept_islands.has("crown"):
+		crown = _island_from(_kept_islands.crown)
+		watch = _island_from(_kept_islands.watch)
+
+
+static func _island_values(isl: SkyholdRuinsLayout.Island) -> Dictionary:
+	return {"centre": isl.centre, "top": isl.top, "radius": isl.radius, "depth": isl.depth, "yaw": isl.yaw,
+		"name": isl.name, "arch": isl.arch}
+
+
+static func _island_from(v: Dictionary) -> SkyholdRuinsLayout.Island:
+	var isl := SkyholdRuinsLayout.Island.new()
+	for k: String in v:
+		isl.set(k, v[k])
+	return isl
 
 
 func presets() -> Dictionary:
