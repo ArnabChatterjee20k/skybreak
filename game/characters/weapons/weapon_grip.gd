@@ -179,21 +179,41 @@ static func voxel_slices(mesh: Mesh) -> Array[AABB]:
 static var _box_cache := {}
 
 
-## Part boxes of a freshly built model of kind (cached per kind).
-static func model_boxes(kind: Weapon.Kind) -> Array[Transform3D]:
-	if not _box_cache.has(kind):
-		var model := WeaponModels.build(kind)
-		model.transform = Transform3D.IDENTITY
-		_box_cache[kind] = part_boxes(model)
-		_clear_cache[kind] = part_boxes(model, true)
-		model.free()
-	return _box_cache[kind]
+## Part boxes of a freshly built model of kind (cached per kind and look); with voxel (and a
+## voxel model of kind) the voxel model's boxes too, so the clearance covers the drawn shape.
+static func model_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]:
+	var key := _box_key(kind, voxel)
+	if not _box_cache.has(key):
+		var boxes: Array[Transform3D] = []
+		var clear: Array[Transform3D] = []
+		# A voxel holder keeps out the classic shape the holds were tuned on as well as the drawn voxel one.
+		var models: Array[Node3D] = [WeaponModels.build(kind)]
+		if key.y == 1:
+			models.append(VoxelWeapons.build(kind))
+		for model in models:
+			model.transform = Transform3D.IDENTITY
+			boxes.append_array(part_boxes(model))
+			clear.append_array(part_boxes(model, true))
+			model.free()
+		_box_cache[key] = boxes
+		_clear_cache[key] = clear
+	return _box_cache[key]
 
 
 static var _clear_cache := {}
 
 
 ## What the holder's clearance keeps out of the body: the part boxes plus a bow's resting string.
-static func clearance_boxes(kind: Weapon.Kind) -> Array[Transform3D]:
-	model_boxes(kind)
-	return _clear_cache[kind]
+static func clearance_boxes(kind: Weapon.Kind, voxel := false) -> Array[Transform3D]:
+	model_boxes(kind, voxel)
+	return _clear_cache[_box_key(kind, voxel)]
+
+
+## Whether a holder draws kind as its voxel model (WeaponModels.build_for's rule).
+static func voxel_for(kind: Weapon.Kind, holder: Node) -> bool:
+	return VoxelWeapons.has(kind) and (WeaponModels.voxel_everywhere
+		or (holder != null and bool(holder.get_meta(WeaponModels.VOXEL_META, false))))
+
+
+static func _box_key(kind: Weapon.Kind, voxel: bool) -> Vector2i:
+	return Vector2i(kind, 1 if voxel and VoxelWeapons.has(kind) else 0)

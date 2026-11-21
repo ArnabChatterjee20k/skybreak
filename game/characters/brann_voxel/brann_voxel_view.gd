@@ -253,11 +253,20 @@ func _keep_fist_clear(side: float) -> void:
 				push = shoulder_basis * _design.boulder_normal(q, side) * deficit * 1.3
 		if worst <= 0.002:
 			return
-		var arm := _skeleton.get_bone_global_pose(upper)
-		var root := arm.origin
+		var root := _skeleton.get_bone_global_pose(upper).origin
 		var turn := Quaternion((at - root).normalized(), (at + push - root).normalized())
-		arm.basis = Basis(turn) * arm.basis
-		_skeleton.set_bone_global_pose(upper, arm)
+		_turn_bone(upper, turn)
+
+
+## Turns a bone by a skeleton-space rotation, changing only its local rotation: a global
+## pose write would fold the parent's breath scale into the arm (skew, and a hand the
+## weapon clearance does not expect).
+func _turn_bone(bone: int, turn: Quaternion) -> void:
+	var parent := _skeleton.get_bone_parent(bone)
+	var parent_turn := _skeleton.get_bone_global_pose(parent).basis.get_rotation_quaternion() if parent >= 0 \
+		else Quaternion.IDENTITY
+	var local := _skeleton.get_bone_pose_rotation(bone)
+	_skeleton.set_bone_pose_rotation(bone, (parent_turn.inverse() * turn * parent_turn * local).normalized())
 
 
 func _stow_weapons() -> void:
