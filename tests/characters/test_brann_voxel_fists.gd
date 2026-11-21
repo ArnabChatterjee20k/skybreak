@@ -85,6 +85,7 @@ func test_fists_and_forearms_land_where_the_original_solver_put_them() -> void:
 		if d > worst:
 			worst = d
 			where = i
+	gut.p("largest difference %s m over %d frames, %d turns" % [String.num_scientific(worst), got.points.size() / 12, got.turns])
 	assert_lt(worst, TOLERANCE, "largest fist or forearm difference %s m (frame %d, %s)" % [String.num_scientific(worst), where / 12,
 		BONES[(where % 12) / 3] if where >= 0 else &""])
 	assert_eq(int(got.turns), int(want.turns), "the solver turned the arms as often as the original")

@@ -44,6 +44,9 @@ const FIST_CLEARANCE := 0.01
 ## boxes are farther than that from the rock and skip its hull test.
 const BOULDER_BOX := AABB(Vector3(-0.17, -0.17, -0.23), Vector3(0.38, 0.32, 0.43))
 const WEDGE_BOX := AABB(Vector3(-0.01, 0.07, -0.20), Vector3(0.18, 0.12, 0.16))
+## Slack on the fist and forearm bounding spheres' box test (m), so it never skips a point
+## the per-point test would keep.
+const SPHERE_MARGIN := 0.01
 
 var _glow: ShaderMaterial
 var _design: BrannVoxelDesign
@@ -62,6 +65,8 @@ var _pose_delta := 0.0
 var _braid_pose: BraidPose
 ## Upper-arm turns _keep_fist_clear has made (tests read it to know the solver ran).
 var fist_turns := 0
+## Per side (left, right): _fist_arm's cached setup.
+var _fist_arms: Array[FistArm] = [null, null]
 
 
 ## Poses the braid as the skeleton's last modifier, on the body as drawn (MotionLayers
@@ -267,9 +272,9 @@ func braid_joints() -> PackedVector3Array:
 ## A stone wrist barely bends: limit the hand's swing off the forearm's line
 ## so the palm and plug always fill the cuff (no gap), keeping its twist.
 func _clamp_wrist(side: float) -> void:
-	var prefix := "Left" if side > 0 else "Right"
-	var lower := _skeleton.find_bone(StringName(prefix + "LowerArm"))
-	var hand := _skeleton.find_bone(StringName(prefix + "Hand"))
+	var arm := _fist_arm(side)
+	var lower := arm.lower
+	var hand := arm.hand
 	var fore := _skin_of(lower).basis.orthonormalized()
 	var pose := _skeleton.get_bone_global_pose(hand)
 	var hand_skin := (pose * _skeleton.get_bone_global_rest(hand).affine_inverse()).basis.orthonormalized()
@@ -294,27 +299,30 @@ func _clamp_wrist(side: float) -> void:
 ## His clips cock the fists by the shoulders, where the boulders sit: swing
 ## the upper arm about its root until the fist and forearm clear the rock.
 func _keep_fist_clear(side: float) -> void:
-	var prefix := "Left" if side > 0 else "Right"
-	var shoulder := _skeleton.find_bone(StringName(prefix + "Shoulder"))
-	var upper := _skeleton.find_bone(StringName(prefix + "UpperArm"))
-	var hand := _skeleton.find_bone(StringName(prefix + "Hand"))
-	var lower := _skeleton.find_bone(StringName(prefix + "LowerArm"))
-	if _design == null:
-		_design = BrannVoxelDesign.new(_skeleton)
-	var points := BrannVoxelDesign.fist_points(side)
-	var fore := BrannVoxelDesign.forearm_points(side)
-	var centre := BrannVoxelDesign.boulder_center(side)
+	var arm := _fist_arm(side)
+	var points := arm.points
+	var fore := arm.fore
+	var centre := arm.centre
 	for attempt in 6:
-		var to_rock := (_skeleton.get_bone_global_pose(shoulder) * _skeleton.get_bone_global_rest(shoulder).affine_inverse()).affine_inverse()
-		var shoulder_basis := _skeleton.get_bone_global_pose(shoulder).basis.orthonormalized() \
-			* _skeleton.get_bone_global_rest(shoulder).basis.orthonormalized().inverse()
-		var skin := _skeleton.get_bone_global_pose(hand) * _skeleton.get_bone_global_rest(hand).affine_inverse()
-		var fore_skin := _skeleton.get_bone_global_pose(lower) * _skeleton.get_bone_global_rest(lower).affine_inverse()
+		var shoulder_pose := _skeleton.get_bone_global_pose(arm.shoulder)
+		var to_rock := (shoulder_pose * arm.shoulder_unrest).affine_inverse()
+		var skin := _skeleton.get_bone_global_pose(arm.hand) * arm.hand_unrest
+		var fore_skin := _skeleton.get_bone_global_pose(arm.lower) * arm.lower_unrest
+		# Most frames neither the fist nor the forearm is anywhere near the rock: bound each
+		# point set by a sphere and skip the set when the sphere misses both boxes.
+		var fist_near := _sphere_near_boulder(to_rock * skin, arm.fist_sphere, centre, side)
+		var fore_near := _sphere_near_boulder(to_rock * fore_skin, arm.fore_sphere, centre, side)
+		if not fist_near and not fore_near:
+			return
+		var shoulder_basis := shoulder_pose.basis.orthonormalized() * arm.shoulder_rest_basis_inverse
 		var worst := 0.0
 		var at := Vector3.ZERO
 		var push := Vector3.ZERO
 		for k in points.size() + fore.size():
-			var posed := skin * points[k] if k < points.size() else fore_skin * fore[k - points.size()]
+			var is_fist := k < points.size()
+			if (is_fist and not fist_near) or (not is_fist and not fore_near):
+				continue
+			var posed := skin * points[k] if is_fist else fore_skin * fore[k - points.size()]
 			var q := to_rock * posed
 			if not _near_boulder(q, centre, side):
 				continue
@@ -325,10 +333,94 @@ func _keep_fist_clear(side: float) -> void:
 				push = shoulder_basis * _design.boulder_normal(q, side) * deficit * 1.3
 		if worst <= 0.002:
 			return
-		var root := _skeleton.get_bone_global_pose(upper).origin
+		var root := _skeleton.get_bone_global_pose(arm.upper).origin
 		var turn := Quaternion((at - root).normalized(), (at + push - root).normalized())
-		_turn_bone(upper, turn)
+		_turn_bone(arm.upper, turn)
 		fist_turns += 1
+
+
+## One side's arm as the fist clearance sees it: bones, the fist and forearm points with
+## their bounding spheres (rest space), and the rest inverses the solver needs.
+class FistArm:
+	var shoulder: int
+	var upper: int
+	var lower: int
+	var hand: int
+	var points: PackedVector3Array
+	var fore: PackedVector3Array
+	var fist_sphere: Vector4
+	var fore_sphere: Vector4
+	var centre: Vector3
+	var shoulder_unrest: Transform3D
+	var hand_unrest: Transform3D
+	var lower_unrest: Transform3D
+	var shoulder_rest_basis_inverse: Basis
+
+
+## A side's FistArm, built on first use.
+func _fist_arm(side: float) -> FistArm:
+	var index := 0 if side > 0 else 1
+	if _fist_arms[index] != null:
+		return _fist_arms[index]
+	if _design == null:
+		_design = BrannVoxelDesign.new(_skeleton)
+	var prefix := "Left" if side > 0 else "Right"
+	var arm := FistArm.new()
+	arm.shoulder = _skeleton.find_bone(StringName(prefix + "Shoulder"))
+	arm.upper = _skeleton.find_bone(StringName(prefix + "UpperArm"))
+	arm.lower = _skeleton.find_bone(StringName(prefix + "LowerArm"))
+	arm.hand = _skeleton.find_bone(StringName(prefix + "Hand"))
+	arm.points = BrannVoxelDesign.fist_points(side)
+	arm.fore = BrannVoxelDesign.forearm_points(side)
+	arm.fist_sphere = _bounding_sphere(arm.points)
+	arm.fore_sphere = _bounding_sphere(arm.fore)
+	arm.centre = BrannVoxelDesign.boulder_center(side)
+	arm.shoulder_unrest = _skeleton.get_bone_global_rest(arm.shoulder).affine_inverse()
+	arm.hand_unrest = _skeleton.get_bone_global_rest(arm.hand).affine_inverse()
+	arm.lower_unrest = _skeleton.get_bone_global_rest(arm.lower).affine_inverse()
+	arm.shoulder_rest_basis_inverse = _skeleton.get_bone_global_rest(arm.shoulder).basis.orthonormalized().inverse()
+	_fist_arms[index] = arm
+	return arm
+
+
+## Centre (xyz) and radius (w) of a sphere around points: the box centre and the farthest point.
+static func _bounding_sphere(points: PackedVector3Array) -> Vector4:
+	var box := AABB(points[0], Vector3.ZERO)
+	for p in points:
+		box = box.expand(p)
+	var c := box.get_center()
+	var r := 0.0
+	for p in points:
+		r = maxf(r, c.distance_to(p))
+	return Vector4(c.x, c.y, c.z, r)
+
+
+## Whether a rest-space sphere carried by a transform could put any point inside either
+## boulder box: its centre within (radius times the transform's largest stretch) of a box.
+static func _sphere_near_boulder(to_rock: Transform3D, sphere: Vector4, centre: Vector3, side: float) -> bool:
+	var r := sphere.w * _stretch(to_rock.basis) + SPHERE_MARGIN
+	var q := to_rock * Vector3(sphere.x, sphere.y, sphere.z)
+	var local := Vector3((q.x - centre.x) * side, q.y - centre.y, q.z - centre.z)
+	return _box_distance(BOULDER_BOX, local) <= r or _box_distance(WEDGE_BOX, local) <= r
+
+
+## An upper bound on how far a basis can stretch a vector (its largest singular value): the
+## square root of the largest row sum of |B^T B| (Gershgorin). Exactly 1 for a rotation.
+static func _stretch(b: Basis) -> float:
+	var xx := b.x.dot(b.x)
+	var yy := b.y.dot(b.y)
+	var zz := b.z.dot(b.z)
+	var xy := absf(b.x.dot(b.y))
+	var xz := absf(b.x.dot(b.z))
+	var yz := absf(b.y.dot(b.z))
+	return sqrt(maxf(xx + xy + xz, maxf(xy + yy + yz, xz + yz + zz)))
+
+
+static func _box_distance(box: AABB, p: Vector3) -> float:
+	var lo := box.position
+	var hi := box.end
+	return Vector3(maxf(maxf(lo.x - p.x, p.x - hi.x), 0.0), maxf(maxf(lo.y - p.y, p.y - hi.y), 0.0),
+		maxf(maxf(lo.z - p.z, p.z - hi.z), 0.0)).length()
 
 
 ## Turns a bone by a skeleton-space rotation, changing only its local rotation: a global
