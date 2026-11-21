@@ -150,8 +150,8 @@ func _floor(root: Node3D) -> int:
 			# Flat treads under a high sun: let the rock and props cast.
 			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			if near:
-				mi.visibility_range_begin = 0.0 if tier == 1 else NEAR_END
-				mi.visibility_range_end = NEAR_END if tier == 1 else 0.0
+				mi.visibility_range_begin = 0.0 if tier == 1 else VoxelQuality.far(NEAR_END)
+				mi.visibility_range_end = VoxelQuality.far(NEAR_END) if tier == 1 else 0.0
 			node.add_child(mi)
 			if tier == 1 or not near:
 				tris += mesh.surface_get_array_len(0) / 3
@@ -265,8 +265,8 @@ func _rock(root: Node3D) -> int:
 	root.add_child(node)
 	var tris := 0
 	# Near: T2 over the zone box. Far: T3 over the zone box (LOD) and the ring.
-	tris += _rock_field(node, "near", VoxelZone.T2, near_min, near_max, 1, 0.0, NEAR_END, true)
-	_rock_field(node, "far", VoxelZone.T3, near_min, near_max, 4, NEAR_END, 0.0, false)
+	tris += _rock_field(node, "near", VoxelZone.T2, near_min, near_max, 1, 0.0, VoxelQuality.far(NEAR_END), true)
+	_rock_field(node, "far", VoxelZone.T3, near_min, near_max, 4, VoxelQuality.far(NEAR_END), 0.0, false)
 	tris += _rock_field(node, "ring", VoxelZone.T3, inner_min, inner_max, 4, 0.0, 0.0, false, true)
 	return tris
 

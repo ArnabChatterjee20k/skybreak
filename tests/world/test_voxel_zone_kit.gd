@@ -192,21 +192,22 @@ func test_built_chunks_keep_only_meshes_under_their_root() -> void:
 	assert_not_null(parent.get_node_or_null("FieldOccluders"))
 
 
-func test_medium_keeps_the_high_look_and_web_shortens_ranges() -> void:
+func test_high_is_the_authored_look_and_lower_tiers_pull_ranges_in() -> void:
 	var high: Dictionary = VoxelQuality.VALUES[GraphicsSettings.Quality.HIGH]
 	var medium: Dictionary = VoxelQuality.VALUES[GraphicsSettings.Quality.MEDIUM]
 	var web: Dictionary = VoxelQuality.VALUES[GraphicsSettings.Quality.WEB]
-	assert_eq(medium.range_scale, high.range_scale)
+	assert_eq(high.range_scale, 1.0)
+	assert_eq(high.clutter_size, 0.0, "every prop casts as authored")
+	assert_eq(high.shadow_distance, 180.0)
 	assert_eq(medium.near_split, high.near_split, "contact shadows as sharp")
-	assert_eq(medium.shadow_distance, high.shadow_distance, "far shadows (islands on the cloud sea) stay")
-	assert_lt(float(web.range_scale), 1.0)
+	assert_gt(float(medium.range_scale), float(web.range_scale))
 
 
 func test_place_drops_shadows_from_clutter_on_medium() -> void:
 	var parent := Node3D.new()
 	add_child_autofree(parent)
 	var box := BoxMesh.new()
-	box.size = Vector3(0.2, 0.2, 0.2)
+	box.size = Vector3(0.3, 0.3, 0.3)
 	var am := ArrayMesh.new()
 	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, box.get_mesh_arrays())
 	var keep := VoxelQuality.tier

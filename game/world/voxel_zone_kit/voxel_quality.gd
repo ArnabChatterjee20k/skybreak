@@ -2,8 +2,10 @@ class_name VoxelQuality
 extends RefCounted
 ## Per-tier costs of a voxel zone, read by the kit while a zone builds
 ## (VoxelProp.place, VoxelHeightfield.build) and by VoxelStage.apply_quality.
-## Tiers are GraphicsSettings.Quality. HIGH and MEDIUM keep the look: they only
-## change what can't be seen at gameplay distance. LOW and WEB trade detail.
+## Tiers are GraphicsSettings.Quality. HIGH (the GTX 1650's 1080p60 default)
+## draws exactly the authored look; MEDIUM keeps everything within gameplay
+## distance and the contact shadows as they are and pulls far LOD switches in;
+## LOW and WEB trade detail.
 ##   VoxelQuality.tier = GraphicsSettings.Quality.MEDIUM   # before zone.build()
 
 ## The tier zones build at: WEB in a web build, else the player's saved quality.
@@ -23,17 +25,17 @@ const VALUES := {
 		"terrain_chunk": 32.0, "ssao": true,
 	},
 	GraphicsSettings.Quality.MEDIUM: {
-		"range_scale": 1.0, "clutter_range": 1.0, "clutter_size": 0.3, "shadow_tiers": 0,
-		"shadow_distance": 180.0, "shadow_splits": 2, "near_split": 32.4, "shadow_atlas": 4096,
+		"range_scale": 0.8, "clutter_range": 0.8, "clutter_size": 0.5, "shadow_tiers": 0,
+		"shadow_distance": 150.0, "shadow_splits": 2, "near_split": 32.4, "shadow_atlas": 4096,
 		"terrain_chunk": 32.0, "ssao": true,
 	},
 	GraphicsSettings.Quality.LOW: {
-		"range_scale": 0.75, "clutter_range": 0.7, "clutter_size": 1.5, "shadow_tiers": 1,
+		"range_scale": 0.6, "clutter_range": 0.6, "clutter_size": 1.5, "shadow_tiers": 1,
 		"shadow_distance": 110.0, "shadow_splits": 2, "near_split": 28.0, "shadow_atlas": 2048,
-		"terrain_chunk": 96.0, "ssao": true,
+		"terrain_chunk": 64.0, "ssao": true,
 	},
 	GraphicsSettings.Quality.WEB: {
-		"range_scale": 0.6, "clutter_range": 0.5, "clutter_size": 3.0, "shadow_tiers": 1,
+		"range_scale": 0.45, "clutter_range": 0.4, "clutter_size": 3.0, "shadow_tiers": 1,
 		"shadow_distance": 80.0, "shadow_splits": 1, "near_split": 80.0, "shadow_atlas": 2048,
 		"terrain_chunk": 128.0, "ssao": false,
 	},
@@ -42,6 +44,11 @@ const VALUES := {
 
 static func value(key: String) -> Variant:
 	return VALUES[tier][key]
+
+
+## A zone's own far LOD distance (terrain or building tiers) at this tier.
+static func far(metres: float) -> float:
+	return metres * float(VALUES[tier].range_scale)
 
 
 ## Tier names as the benchmark and the command line spell them.

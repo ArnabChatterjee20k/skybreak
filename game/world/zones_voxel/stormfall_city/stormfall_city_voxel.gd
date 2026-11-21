@@ -186,9 +186,9 @@ func _commit_tiles() -> void:
 		var box := fm.get_aabb().merge(nm.get_aabb())
 		fi.custom_aabb = box
 		ni.custom_aabb = box
-		fi.visibility_range_begin = NEAR_RANGE
+		fi.visibility_range_begin = VoxelQuality.far(NEAR_RANGE)
 		fi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		ni.visibility_range_end = NEAR_RANGE
+		ni.visibility_range_end = VoxelQuality.far(NEAR_RANGE)
 	for k: Vector2i in _near:
 		var near: CityBlocks = _near[k]
 		if _far.has(k) or near.is_empty():
@@ -198,7 +198,7 @@ func _commit_tiles() -> void:
 		ni.name = "Near_%d_%d" % [k.x, k.y]
 		ni.mesh = near.commit()
 		ni.material_override = block_mat
-		ni.visibility_range_end = NEAR_RANGE * 1.5
+		ni.visibility_range_end = VoxelQuality.far(NEAR_RANGE * 1.5)
 		root.add_child(ni)
 	_tris["blocks_near_all_tiles"] = near_tris
 	_tris["blocks_far_all_tiles"] = far_tris
@@ -249,9 +249,9 @@ func _ground() -> void:
 				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				if close:
 					if lod == 2.0:
-						mi.visibility_range_end = GROUND_NEAR
+						mi.visibility_range_end = VoxelQuality.far(GROUND_NEAR)
 					else:
-						mi.visibility_range_begin = GROUND_NEAR
+						mi.visibility_range_begin = VoxelQuality.far(GROUND_NEAR)
 				root.add_child(mi)
 				tris += mesh.surface_get_array_len(0) / 3 if lod == 2.0 else 0
 	for key: Vector2i in ring:
