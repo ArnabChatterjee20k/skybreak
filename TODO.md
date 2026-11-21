@@ -90,6 +90,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - QA-23 done on the branch: voxel Brann's braid popped (Braid2 1.7 rad on weapon pickups, 42 pop
     frames in the quick run): it is now posed by a last skeleton modifier on the drawn body and
     turns at most 54 rad/s (`test_brann_voxel_braid.gd`).
+  - QA-24 [desktop, characters] voxel soles sit ~1 cm lower than the classic ones on the same clips:
+    foot_error_p95 is +1.0 cm in every quick-run match (kael/vexa-only too; 1.0 -> 2.0 cm, tolerance
+    5 cm). The voxel boots reach below the classic mesh bottom (sole below the ankle: Kael 13.0 ->
+    14.0 cm, Vexa 10.4 -> 10.7, Lyra 10.4 -> 14.0, Brann 11.0 -> 12.0). Fix: lift each voxel model by
+    its delta (or trim the boot soles), then re-check feet and weapon clearance.
   - QA-22 [desktop, characters] voxel Brann's view still costs ~2x a classic legend per frame
     (1.20 vs ~0.55 ms for two fighters, headless) after the perf pass: `_keep_fist_clear` dominates.
   - Visual goldens: all 14 fail as expected from the art change; one refresh pass after merge.
