@@ -1,0 +1,42 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://game/characters/character_view.gd" id="1_view"]
+[ext_resource type="Resource" path="res://game/characters/lyra_voxel/lyra_voxel_clip_set.tres" id="2_clips"]
+[ext_resource type="PackedScene" path="res://game/characters/kael_chunky/kael_chunky.glb" id="3_body"]
+[ext_resource type="Script" path="res://game/characters/kael_chunky/scarf_lag.gd" id="4_scarf"]
+[ext_resource type="Script" path="res://game/characters/voxel_kit/voxel_body.gd" id="5_voxel"]
+[ext_resource type="Script" path="res://game/characters/lyra_voxel/lyra_voxel_design.gd" id="6_design"]
+[ext_resource type="Script" path="res://game/characters/lyra_voxel/lyra_astrolabe.gd" id="7_astrolabe"]
+[ext_resource type="Script" path="res://game/characters/lyra_voxel/lyra_cape_clearance.gd" id="8_cape"]
+[ext_resource type="Script" path="res://game/characters/lyra_voxel/lyra_hat_clearance.gd" id="9_hat"]
+
+[node name="LyraVoxel" type="Node3D" node_paths=PackedStringArray("model")]
+script = ExtResource("1_view")
+clips = ExtResource("2_clips")
+model = NodePath("Model/KaelChunkyBody")
+
+[node name="Model" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, -1, 0)
+
+[node name="KaelChunkyBody" parent="Model" instance=ExtResource("3_body")]
+
+[node name="ScarfLag" type="SkeletonModifier3D" parent="Model/KaelChunkyBody/KaelChunky/GeneralSkeleton"]
+script = ExtResource("4_scarf")
+
+[node name="CapeClearance" type="SkeletonModifier3D" parent="Model/KaelChunkyBody/KaelChunky/GeneralSkeleton"]
+script = ExtResource("8_cape")
+
+[node name="HatClearance" type="SkeletonModifier3D" parent="Model/KaelChunkyBody/KaelChunky/GeneralSkeleton"]
+script = ExtResource("9_hat")
+
+[node name="AstrolabeMount" type="BoneAttachment3D" parent="Model/KaelChunkyBody/KaelChunky/GeneralSkeleton"]
+bone_name = "UpperChest"
+
+[node name="Astrolabe" type="Node3D" parent="Model/KaelChunkyBody/KaelChunky/GeneralSkeleton/AstrolabeMount"]
+script = ExtResource("7_astrolabe")
+design = ExtResource("6_design")
+
+[node name="VoxelBody" type="Node" parent="."]
+script = ExtResource("5_voxel")
+design = ExtResource("6_design")
+mesh_path = NodePath("../Model/KaelChunkyBody/KaelChunky/GeneralSkeleton/KaelChunkyMesh")

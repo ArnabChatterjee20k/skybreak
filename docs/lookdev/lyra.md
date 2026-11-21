@@ -50,7 +50,8 @@ Read at a glance: *huge bent-tip hat with star lights, ankle-long star-map cape,
 | Leather (belt, bracers, boots) | cool grey-brown `#4A3E3A` | `#2D2523` | sole `#1E1918` |
 | Hair | soft dusk lavender-grey `#9C93B4` | `#625A7E` | muted; cool shadow |
 | Skin | warm light `#F0C8AE` | `#BE9580` | |
-| **Accent:** cape lining, hat band | cerulean `#1E7FD8` | `#12509A` | the one strong colour; flashes big when the cape opens in flight |
+| **Accent:** hat band | cerulean `#1E7FD8` | `#12509A` | the one strong colour |
+| Cape lining | muted cerulean `#44709F` (v4) | `#2A496B` | authored at sat 0.57: the GPU stage key light lifts it about 0.1, to about 0.67 on screen (v3's `#3A6FB0` rendered `#24579B`, sat 0.77). Its shadow tone edges the facing and pipes the hem, so the stole stays the brightest accent. Flashes big when the cape opens in flight |
 | **Energy:** star lights, ki, constellation dots | blue-white core `#EAF4FF`, glow `#7FC0FF` | glow falls off to `#3E7FD0` | |
 
 **Roster palette note (same in all four sheets).** Each legend owns one hue quadrant for accent and energy, and a different base value, so the four don't clash or blur:
@@ -91,6 +92,9 @@ Kael's stack unchanged. Lyra notes:
 - Animates on the current rig: cape doesn't cut through the legs in a run or a kick; the brim doesn't cut the shoulders on a head turn; the bell skirt doesn't tear at the knees.
 - In the silhouette lineup a viewer names her in each pose.
 
+## Knockdown: the hat stays off the floor (v4)
+The hat is skinned to its own `Hat` bone (a child of `Head`, added at runtime by `LyraHatClearance`). When she lies down, that modifier (the last one on the skeleton) rocks the hat on the top edge of her skull by the smallest tilt that keeps its lowest point (brim rim, crown, hook and charm) 2 cm above the floor. It eases in from 0.45 m above the floor, so the hat tips over a few frames rather than popping. The approved brim (0.36 m, front up 13°, back droop 6°) is unchanged. `tests/characters/test_lyra_voxel.gd` plays KNOCKDOWN and KO_DOWN and checks the lowest real hat vertex against the floor.
+
 ## Build notes (for the coder)
 | Part | Build | Rig tag / skinning |
 |---|---|---|
@@ -98,7 +102,7 @@ Kael's stack unchanged. Lyra notes:
 | Bell skirt | Kael's `_skirt` pattern, wider; a front split to the knee | `SKIRT`: Hips → UpperLeg by `x`, stronger leg weight at the hem (up to 0.6) so knees don't punch through |
 | Cape | one planar panel, 2 voxels thick, with 4–5 vertical fold ridges and a hard hem; lining painted with the map | new `CAPE`: a chain on the existing `Scarf1`–`Scarf5` bones (driven by `scarf_lag.gd`) down the spine; the outer columns blend 30% to UpperLeg L/R near the hem |
 | Stole strips | two planar strips with inked lines | `TORSO` with the tips 20% UpperLeg |
-| Hat brim | a flat fine-cell annulus 2 voxels thick with the edge raised 2 voxels; no ellipsoid | new `HAT`: rigid `Head` |
+| Hat brim | a flat fine-cell annulus 2 voxels thick with the edge raised 2 voxels; no ellipsoid | new `HAT`: rigid on its own `Hat` bone under `Head` (tips off the floor, v4) |
 | Hat crown | capsule chain at the fine cell bending back, the charm on 2 chain links | `HAT` (charm rigid with it in v1) |
 | Hair | straight sheet locks (`_lock`), back sheet ends at the shoulder blades | `HEAD`; the back sheet blends Head → Neck → UpperChest |
 | Astrolabe rings | three fine-cell tori with spokes, their own grids | **not skinned**: separate `MeshInstance3D`s under an UpperChest attachment, turned by the view at a slow constant rate (view-only, no sim) |
