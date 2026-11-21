@@ -58,6 +58,7 @@ func _process_modification_with_delta(delta: float) -> void:
 		_frame_delta = -1.0
 	var to_world := skeleton.global_transform
 	_turn_step = MAX_TURN_RATE * (delta if delta > 0.0 else 1.0 / 60.0)
+	_begin_frame(skeleton, to_world)
 	advance(_targets(skeleton, to_world), delta)
 	_apply(skeleton, to_world)
 
@@ -108,6 +109,18 @@ func _step(targets: PackedVector3Array) -> void:
 		var segment := _points[i] - _points[i - 1]
 		_points[i] = _points[i - 1] + segment.normalized() * _lengths[i - 1] if segment.length() > 0.0001 \
 			else targets[i]
+	_constrain()
+
+
+## Called once per frame before the chain steps (world transform of the skeleton); for
+## subclasses that collide the chain with the posed body.
+func _begin_frame(_skeleton: Skeleton3D, _to_world: Transform3D) -> void:
+	pass
+
+
+## Called after every step on _points and _previous (world space); no-op here.
+func _constrain() -> void:
+	pass
 
 
 func _ensure_chain(skeleton: Skeleton3D) -> bool:

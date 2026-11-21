@@ -20,6 +20,7 @@ var _pages: Dictionary = {}
 var _tab_buttons: Dictionary = {}
 var _value_labels: Dictionary = {}
 var _quality_buttons: Array[Button] = []
+var _style_buttons: Array[Button] = []
 var _key_buttons: Dictionary = {}
 var _vsync: Button
 var _fullscreen: Button
@@ -114,6 +115,14 @@ func set_volume(bus: StringName, linear: float) -> void:
 		(_value_labels[bus] as Label).text = "%d%%" % roundi(audio.volume(bus) * 100)
 	if sliders.has(bus) and not is_equal_approx(sliders[bus].value, audio.volume(bus)):
 		sliders[bus].set_value_no_signal(audio.volume(bus))
+
+
+## Voxel or Classic art; models and zones built from now on use it.
+func set_art_style(kind: ArtStyle.Kind) -> void:
+	graphics.art_style = kind
+	if save_path == GraphicsSettings.SAVE_PATH:
+		ArtStyle.set_current(kind)
+	_apply_graphics()
 
 
 func set_quality(quality: GraphicsSettings.Quality) -> void:
@@ -218,6 +227,15 @@ func _audio_page() -> Control:
 
 func _graphics_page() -> Control:
 	var rows := _page_rows()
+	var style_row := HBoxContainer.new()
+	style_row.add_theme_constant_override("separation", 12)
+	for kind: ArtStyle.Kind in [ArtStyle.Kind.VOXEL, ArtStyle.Kind.CLASSIC]:
+		var b := make_button(String(ArtStyle.NAMES[kind]).to_upper(), set_art_style.bind(kind), 28)
+		b.custom_minimum_size = Vector2(190, 60)
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		style_row.add_child(b)
+		_style_buttons.append(b)
+	rows.add_child(_row("ART STYLE", style_row))
 	var quality_row := HBoxContainer.new()
 	quality_row.add_theme_constant_override("separation", 12)
 	for quality_name: String in GraphicsSettings.Quality.keys():
@@ -272,6 +290,10 @@ func _controls_page() -> Control:
 
 
 func _refresh_graphics() -> void:
+	for i in _style_buttons.size():
+		var on := i == graphics.art_style
+		_style_buttons[i].add_theme_stylebox_override("normal", MenuTheme.box(MenuTheme.GOLD if on else MenuTheme.PANEL_LIGHT, MenuTheme.INK, 4))
+		_style_buttons[i].add_theme_color_override("font_color", MenuTheme.INK if on else MenuTheme.TEXT)
 	for i in _quality_buttons.size():
 		var on := i == graphics.quality
 		_quality_buttons[i].add_theme_stylebox_override("normal", MenuTheme.box(MenuTheme.GOLD if on else MenuTheme.PANEL_LIGHT, MenuTheme.INK, 4))

@@ -45,9 +45,40 @@ static func match_scene_path() -> String:
 
 
 ## Starts the current config: the level gets configure() before it enters the
-## tree (zone_match requires that). Returns the scene path, or "" on failure.
+## tree (zone_match requires that). A voxel zone's bake loads first on a
+## background thread behind a LoadingScreen. Returns the scene path, or "" on
+## failure.
 func launch() -> String:
 	var path := match_scene_path()
+	var bake := zone_bake_path()
+	if bake != "" and path == ZONE_MATCH_SCENE and not VoxelZoneBake.preloaded.has(bake) and is_inside_tree():
+		_reset_engine_state()
+		var screen := LoadingScreen.new()
+		screen.title = String(zone).capitalize()
+		screen.paths.assign([path, bake])
+		if not ResourceLoader.exists(bake):
+			screen.download = ZoneBakeDownload.new(bake)
+		screen.done = func(loaded: Dictionary) -> void:
+			if loaded.get(bake) is PackedScene:
+				VoxelZoneBake.preloaded[bake] = loaded[bake]
+			_start(path)
+		if get_tree().change_scene_to_node(screen) != OK:
+			screen.free()
+			return _start(path)
+		return path
+	return _start(path)
+
+
+## The zone's voxel bake for the saved quality when the match will draw it, else "".
+## On the web it is fetched as a pack (ZoneBakePacks) behind the loading screen.
+func zone_bake_path() -> String:
+	if not ArtStyle.is_voxel() or not VoxelZoneView.supports(zone):
+		return ""
+	var bake := VoxelZoneBake.path_for(zone, GraphicsSettings.load_saved().quality)
+	return bake if ResourceLoader.exists(bake) or ZoneBakePacks.downloadable(bake) else ""
+
+
+func _start(path: String) -> String:
 	var level := prepare_level(load(path) as PackedScene)
 	if level == null:
 		return ""

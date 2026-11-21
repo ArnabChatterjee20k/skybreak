@@ -1,0 +1,24 @@
+ERROR: No GDExtension library found for current OS and architecture (linux.x86_64) in configuration file: res://addons/webrtc_native/webrtc_native.gdextension
+   at: parse_gdextension_file (core/extension/gdextension_library_loader.cpp:369)
+ERROR: GDExtension dynamic library not found: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: open_library (core/extension/gdextension.cpp:810)
+ERROR: Error loading extension: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: load_extensions (core/extension/gdextension_manager.cpp:333)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[qa] match 3 103:frozen_peaks:1v1:vexa,brann:44: 2400 ticks, 2 violation kinds, 190.1 s
+  _floor: 113115 ms
+  _cliff: 7326 ms
+  _backdrop: 1368 ms
+  _water: 1 ms
+  _falls: 7 ms
+  _trees: 67 ms
+  _canopies: 25 ms
+  _scatter: 3102 ms
+  _shore: 74 ms
+  _story_props: 128 ms
+  _mist: 1 ms
+  _shafts: 0 ms
+  _particles: 5 ms
+[qa] match 11 111:verdant_falls:2v2:lyra,kael,vexa,brann:4432: 2400 ticks, 2 violation kinds, 153.9 s
+[qa] match 19 119:ember_rift:ffa4:brann,lyra,kael,vexa:4433: 2400 ticks, 2 violation kinds, 71.4 s
