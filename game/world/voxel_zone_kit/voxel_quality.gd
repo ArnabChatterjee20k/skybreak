@@ -20,12 +20,12 @@ const VALUES := {
 	GraphicsSettings.Quality.HIGH: {
 		"range_scale": 1.0, "clutter_range": 1.0, "clutter_size": 0.0, "shadow_tiers": 0,
 		"shadow_distance": 180.0, "shadow_splits": 2, "near_split": 32.4, "shadow_atlas": 4096,
-		"terrain_chunk": 64.0, "ssao": true,
+		"terrain_chunk": 32.0, "ssao": true,
 	},
 	GraphicsSettings.Quality.MEDIUM: {
 		"range_scale": 1.0, "clutter_range": 1.0, "clutter_size": 0.6, "shadow_tiers": 0,
 		"shadow_distance": 150.0, "shadow_splits": 2, "near_split": 32.4, "shadow_atlas": 4096,
-		"terrain_chunk": 64.0, "ssao": true,
+		"terrain_chunk": 32.0, "ssao": true,
 	},
 	GraphicsSettings.Quality.LOW: {
 		"range_scale": 0.75, "clutter_range": 0.7, "clutter_size": 1.5, "shadow_tiers": 1,

@@ -98,7 +98,7 @@ func _measure(zone_name: String, tier_name: String) -> Dictionary:
 	var samples := int(_args.get("samples", "48"))
 	var frames := int(_args.get("frames", "3"))
 	var series := {"tris": [], "draws": [], "shadow_tris": [], "shadow_draws": [], "gpu": [], "cpu": []}
-	for i in 30:
+	for i in 60:  # the occlusion buffer needs a few frames
 		await process_frame
 	for s in samples:
 		var u := float(s) / float(samples - 1) * float(pts.size() - 1)
@@ -184,11 +184,13 @@ func _breakdown(zone: Node, cam: Camera3D) -> void:
 		var shadow := gi.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var g: Array = groups.get(key, [0, 0, 0, 0])
 		groups[key] = [g[0] + mesh.get_surface_count(), g[1] + tris * count, g[2] + (tris * count if shadow else 0), g[3] + 1]
-	var keys := groups.keys()
-	keys.sort_custom(func(a: String, b: String) -> bool: return groups[a][0] > groups[b][0])
-	print("  breakdown at the worst sample (group: draws, tris, shadow-casting tris, nodes):")
-	for k: String in keys.slice(0, 25):
-		print("    %-40s %4d %9d %9d %4d" % [k, groups[k][0], groups[k][1], groups[k][2], groups[k][3]])
+	print("  breakdown at the worst sample (group: draws, tris, shadow-casting tris, nodes; occlusion not applied):")
+	for col in [0, 1]:
+		var keys := groups.keys()
+		keys.sort_custom(func(a: String, b: String) -> bool: return groups[a][col] > groups[b][col])
+		print("   top by %s:" % ["draws", "tris"][col])
+		for k: String in keys.slice(0, 12):
+			print("    %-40s %4d %9d %9d %4d" % [k, groups[k][0], groups[k][1], groups[k][2], groups[k][3]])
 
 
 ## Stand-ins for the fighters (voxel Kael) round the first shot's subject, so
