@@ -63,9 +63,11 @@ static func build(kind: Weapon.Kind) -> Node3D:
 
 
 ## The model of kind for a holder: the voxel one (VoxelWeapons) when the holder's skeleton
-## is tagged by a VoxelArmory or voxel_everywhere is on, otherwise build(kind).
+## is tagged by a VoxelArmory or voxel_everywhere is on, otherwise build(kind). With no
+## holder (pickups, thrown weapons) the art style decides.
 static func build_for(kind: Weapon.Kind, holder: Node = null) -> Node3D:
-	var voxel := voxel_everywhere or (holder != null and bool(holder.get_meta(VOXEL_META, false)))
+	var voxel := voxel_everywhere or (holder != null and bool(holder.get_meta(VOXEL_META, false))) \
+		or (holder == null and ArtStyle.is_voxel())
 	if voxel and VoxelWeapons.has(kind):
 		return VoxelWeapons.build(kind)
 	return build(kind)

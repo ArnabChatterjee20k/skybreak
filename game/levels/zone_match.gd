@@ -36,6 +36,8 @@ var config := {}
 var zone_id: StringName
 var sim := CombatSim.new()
 var world: WorldMap
+## The zone's voxel look (Voxel art style), or null in Classic.
+var voxel_zone: VoxelZoneView
 var ground: ZoneGround
 ## Team per fighter, as configured.
 var teams: Array[int] = []
@@ -70,7 +72,8 @@ var contact_shadows := ContactShadows.new()
 
 
 ## {zone, fighters: [{character, team, is_ai, ai_level}], rounds, mode}; missing keys
-## fall back to DEFAULT_CONFIG.
+## fall back to DEFAULT_CONFIG. Optional voxel_zone (bool) overrides the art style for
+## the zone only (characters follow ArtStyle).
 func configure(match_config: Dictionary) -> void:
 	assert(not is_inside_tree(), "configure the zone match before adding it to the tree")
 	_apply_config(match_config)
@@ -147,6 +150,17 @@ func _build_world() -> void:
 	sim.arena_centre = data.centre
 	ground = ZoneGround.bake(world.heightmap, world.islands, data.centre, arena.x)
 	sim.ground_height = ground.height_at
+	if bool(config.get("voxel_zone", ArtStyle.is_voxel())) and VoxelZoneView.supports(zone_id):
+		_build_voxel_zone()
+
+
+## Voxel art style: the zone's voxel look over the same ground (visual only).
+func _build_voxel_zone() -> void:
+	voxel_zone = VoxelZoneView.new()
+	add_child(voxel_zone)
+	move_child(voxel_zone, 1)
+	VoxelZoneView.hide_classic(world)
+	voxel_zone.build(zone_id, GraphicsSettings.load_saved().quality)
 
 
 func _build_fighters() -> void:

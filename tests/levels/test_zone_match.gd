@@ -3,10 +3,14 @@ extends GutTest
 const SCENE := preload("res://game/levels/zone_match.tscn")
 
 
+## Classic zone look: these tests are about layout and the sim; a voxel zone takes a
+## minute to build (tests/world/test_voxel_zone_view.gd covers that hookup).
 func _match(config: Dictionary) -> ZoneMatch:
 	var zone_match: ZoneMatch = SCENE.instantiate()
-	if not config.is_empty():
-		zone_match.configure(config)
+	var with_look := config.duplicate()
+	if not with_look.has("voxel_zone"):
+		with_look["voxel_zone"] = false
+	zone_match.configure(with_look)
 	add_child_autofree(zone_match)
 	zone_match.set_physics_process(false)
 	zone_match.set_process(false)

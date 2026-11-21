@@ -1,6 +1,8 @@
 extends SceneTree
 ## Bakes every voxel character (a scene with a VoxelBody) to
-## game/characters/voxel_kit/baked/<design>.res, so it loads in milliseconds.
+## game/characters/voxel_kit/baked/<design>.res, so it loads in milliseconds,
+## plus the rigid parts (every VoxelWeapons design, Lyra's astrolabe rings)
+## to baked/rigid/.
 ##   godot --headless --path . -s res://tools/voxel_bake.gd [-- options]
 ## Options:
 ##   --scene=<res://...tscn>  only this scene (repeatable); default: every
@@ -31,13 +33,54 @@ func _main() -> void:
 			printerr("voxel_bake: unknown option ", a)
 			quit(1)
 			return
+	var only_scenes := not scenes.is_empty()
 	if scenes.is_empty():
 		scenes = voxel_scenes(SEARCH_ROOT)
 	var failed := false
 	for path in scenes:
 		var ok := _run(path, check, time)
 		failed = failed or not ok
+	if not time and not only_scenes:
+		for kind: Weapon.Kind in VoxelWeapons.DESIGNS:
+			var ok := _run_weapon(kind, check)
+			failed = failed or not ok
 	quit(1 if failed else 0)
+
+
+func _run_weapon(kind: Weapon.Kind, check: bool) -> bool:
+	var script := load(VoxelWeapons.DESIGNS[kind]) as Script
+	if check:
+		return _check_rigid(script, VoxelWeapons.BAKE_SOURCES, "")
+	var t0 := Time.get_ticks_msec()
+	var built: Array[ArrayMesh] = [VoxelWeapons.build_mesh(script.new() as VoxelWeaponDesign)]
+	return _save_rigid(script, built, VoxelWeapons.BAKE_SOURCES, "", Time.get_ticks_msec() - t0)
+
+
+static func _check_rigid(script: Script, sources: Array[String], key: String) -> bool:
+	var why := []
+	if VoxelBake.load_rigid(script, sources, key, why).is_empty():
+		printerr("voxel_bake: %s: %s" % [VoxelBake.rigid_path_for(script, key), why[0]])
+		return false
+	print("voxel_bake: %s: current" % VoxelBake.rigid_path_for(script, key))
+	return true
+
+
+static func _save_rigid(script: Script, built: Array[ArrayMesh], sources: Array[String], key: String, built_ms: int) -> bool:
+	var bake := VoxelBake.make_rigid(script, built, sources)
+	var out := VoxelBake.rigid_path_for(script, key)
+	var err := bake.save_rigid_to(out)
+	if err != OK:
+		printerr("voxel_bake: saving %s failed (%s)" % [out, error_string(err)])
+		return false
+	var t0 := Time.get_ticks_usec()
+	var loaded := ResourceLoader.load(out, "", ResourceLoader.CACHE_MODE_IGNORE) as VoxelBake
+	var load_ms := (Time.get_ticks_usec() - t0) / 1000.0
+	var reloaded := VoxelBake.make_rigid(script, loaded.parts, sources)
+	var ok := reloaded.vertex_count == bake.vertex_count and reloaded.mesh_checksum == bake.mesh_checksum
+	print("voxel_bake: %s -> %s: built %d ms, loads %.1f ms, %d verts, %s, %d KiB%s" % [
+		script.resource_path.get_file(), out, built_ms, load_ms, bake.vertex_count, bake.mesh_checksum.left(16),
+		FileAccess.get_file_as_bytes(out).size() / 1024, "" if ok else " RELOAD MISMATCH"])
+	return ok
 
 
 ## Every .tscn under dir whose text uses voxel_body.gd, sorted.
@@ -119,6 +162,19 @@ func _run(path: String, check: bool, time: bool) -> bool:
 			print("voxel_bake: %s -> %s: built %d ms, loads %.1f ms, %d verts, %s, %d KiB%s" % [
 				path, out, built_ms, load_ms, bake.vertex_count, bake.mesh_checksum.left(16),
 				FileAccess.get_file_as_bytes(out).size() / 1024, "" if ok else " RELOAD MISMATCH"])
+	if not time:
+		for n in root.find_children("*", "Node3D", true, false):
+			if n is LyraAstrolabe:
+				var ring_design: Script = n.design
+				if check:
+					ok = _check_rigid(ring_design, LyraAstrolabe.BAKE_SOURCES, LyraAstrolabe.BAKE_KEY) and ok
+				else:
+					# Built fresh here (never from an old bake), so the bake matches the sources.
+					var t0 := Time.get_ticks_msec()
+					var built: Array[ArrayMesh] = []
+					built.assign(LyraAstrolabe.build(ring_design.new(skeleton) as LyraVoxelDesign))
+					ok = _save_rigid(ring_design, built, LyraAstrolabe.BAKE_SOURCES, LyraAstrolabe.BAKE_KEY,
+						Time.get_ticks_msec() - t0) and ok
 	root.free()
 	return ok
 

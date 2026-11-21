@@ -79,10 +79,20 @@ func test_old_weapons_stay_the_default() -> void:
 	var model := WeaponModels.build_for(Weapon.Kind.TITAN_HAMMER, holder)
 	assert_false(model.has_meta(&"voxel"), "without a VoxelArmory the old mesh is used")
 	model.free()
+	ArtStyle.set_current(ArtStyle.Kind.CLASSIC)
 	model = WeaponModels.build_for(Weapon.Kind.TITAN_HAMMER)
-	assert_false(model.has_meta(&"voxel"), "pickups use the old mesh by default")
+	assert_false(model.has_meta(&"voxel"), "pickups use the old mesh in the Classic art style")
 	model.free()
+	ArtStyle.reset()
 	holder.free()
+
+
+func test_pickups_follow_the_voxel_art_style() -> void:
+	ArtStyle.set_current(ArtStyle.Kind.VOXEL)
+	var model := WeaponModels.build_for(Weapon.Kind.EMBER_SCYTHE)
+	assert_true(model.has_meta(&"voxel"), "a pickup (no holder) is the voxel model in the Voxel art style")
+	model.free()
+	ArtStyle.reset()
 
 
 func test_a_tagged_holder_or_the_global_flag_gets_the_voxel_model() -> void:

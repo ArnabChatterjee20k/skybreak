@@ -10,6 +10,9 @@ extends Node3D
 @export var spin := Vector3(0.35, -0.5, 0.8)
 
 const AXES: Array[Vector3] = [Vector3.UP, Vector3.RIGHT, Vector3.BACK]
+## Scripts besides the design chain and the kit that shape the rings, and the bake's key.
+const BAKE_SOURCES: Array[String] = ["res://game/characters/lyra_voxel/lyra_astrolabe.gd"]
+const BAKE_KEY := "astrolabe"
 
 static var _cache := {}
 
@@ -25,7 +28,13 @@ func _ready() -> void:
 	transform = skeleton.get_bone_global_rest(bone).affine_inverse() * Transform3D(Basis(), LyraVoxelDesign.ASTROLABE_CENTER)
 	var key := design.resource_path
 	if not _cache.has(key):
-		_cache[key] = build(d)
+		var why := []
+		var baked := VoxelBake.load_rigid(design, BAKE_SOURCES, BAKE_KEY, why)
+		if baked.is_empty():
+			push_warning("LyraAstrolabe: building %s live (%s); run tools/voxel_bake.gd" % [key, why[0]])
+			_cache[key] = build(d)
+		else:
+			_cache[key] = baked
 	var meshes: Array = _cache[key]
 	for i in meshes.size():
 		var mi := MeshInstance3D.new()

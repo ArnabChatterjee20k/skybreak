@@ -10,7 +10,7 @@ const EMBER_MIN := 1.0
 const EMBER_MAX := 2.6
 
 ## Hang the old smooth weapon models on his back and hip. Off by default:
-## they don't match the voxel style, and the voxel weapons are their own lane.
+## they don't match the voxel style. A VoxelArmory in the scene stows the voxel ones.
 @export var stow_old_weapons := false
 
 ## How far the braid's centre line stays in front of his chest and belly
@@ -111,7 +111,7 @@ func _keep_fist_clear(side: float) -> void:
 
 
 func _stow_weapons() -> void:
-	if stow_old_weapons:
+	if stow_old_weapons or bool(_skeleton.get_meta(WeaponModels.VOXEL_META, false)):
 		super._stow_weapons()
 
 

@@ -51,7 +51,9 @@ func run() -> void:
 	for i in legends.size():
 		var legend := legends[(i + seed_value) % legends.size()]
 		fighters.append({"character": legend, "team": i, "is_ai": true, "ai_level": 3})
-	match_node.configure({"zone": zone, "fighters": fighters, "rounds": 99})
+	# Classic zone look: the checks measure the fighters against RenderedGround (the classic
+	# world's mesh); the voxel lawns sit within 4.4 cm of it, and a voxel zone takes a minute.
+	match_node.configure({"zone": zone, "fighters": fighters, "rounds": 99, "voxel_zone": false})
 	add_child(match_node)
 	match_node.set_process(false)
 	match_node.set_physics_process(false)

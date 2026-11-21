@@ -21,6 +21,9 @@ const DESIGNS := {
 	Weapon.Kind.HEARTSTRING_BOW: "res://game/characters/voxel_weapons/heartstring_bow.gd",
 }
 
+## Scripts besides the design chain and the kit that shape a weapon's mesh.
+const BAKE_SOURCES: Array[String] = ["res://game/characters/voxel_weapons/voxel_weapons.gd"]
+
 static var _meshes := {}
 
 
@@ -32,10 +35,18 @@ static func design_of(kind: Weapon.Kind) -> VoxelWeaponDesign:
 	return (load(DESIGNS[kind]) as Script).new() as VoxelWeaponDesign
 
 
-## The kind's voxel mesh (built on first use, then shared).
+## The kind's voxel mesh: its bake (tools/voxel_bake.gd) when current, else
+## built on first use with a warning; shared after that.
 static func mesh_of(kind: Weapon.Kind) -> ArrayMesh:
 	if not _meshes.has(kind):
-		_meshes[kind] = build_mesh(design_of(kind))
+		var script := load(DESIGNS[kind]) as Script
+		var why := []
+		var baked := VoxelBake.load_rigid(script, BAKE_SOURCES, "", why)
+		if baked.is_empty():
+			push_warning("VoxelWeapons: building %s live (%s); run tools/voxel_bake.gd" % [script.resource_path, why[0]])
+			_meshes[kind] = build_mesh(script.new() as VoxelWeaponDesign)
+		else:
+			_meshes[kind] = baked[0]
 	return _meshes[kind]
 
 

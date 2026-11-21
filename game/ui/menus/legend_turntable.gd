@@ -49,9 +49,9 @@ func set_legend(id: StringName) -> void:
 		character_view.queue_free()
 		character_view = null
 	var entry := LegendCatalog.character(id)
-	if entry == null or entry.scene == null:
+	if entry == null or entry.scene_for() == null:
 		return
-	character_view = entry.scene.instantiate() as CharacterView
+	character_view = entry.scene_for().instantiate() as CharacterView
 	if character_view == null:
 		return
 	_pivot.add_child(character_view)
