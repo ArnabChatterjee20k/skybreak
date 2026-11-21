@@ -87,6 +87,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - VOXEL-COMPAT / VOXEL-WEB done on the branch: zone-perf's merged props use no instance uniforms
     (0 overflow errors in a gl_compatibility WEB-tier match); web ships only the `*_web.scn` bakes,
     zone lamps drop shadows and fade past 60 m on the web tier.
+    - FIXED on fix/web-voxel-compat@626d3c6: merge that branch, do not re-fix. Cause confirmed in the
+      engine: each instance-uniform user takes 16 slots of Compatibility's 4096 (256 instances; WebGL2
+      reports the same 64 KiB). Unmerged props now use voxel_prop.gdshader (no instance uniforms; figures
+      keep the rim via voxel_surface.gdshaderinc), WebTierBudget + tests check all 7 zones at WEB (0 slots,
+      lights, 1 shadowed, textures) and a 4-player match with worst VFX (<= 256); previews in
+      reports/integration/web/. Merges cleanly onto 8ee1ee7, voxel tests 81/81 there. Pre-existing on
+      22d7008: test_moves_reel glow_material fails (unshaded vs the test), not touched.
   - QA-23 done on the branch: voxel Brann's braid popped (Braid2 1.7 rad on weapon pickups, 42 pop
     frames in the quick run): it is now posed by a last skeleton modifier on the drawn body and
     turns at most 54 rad/s (`test_brann_voxel_braid.gd`).
