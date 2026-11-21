@@ -3,10 +3,16 @@ extends SceneTree
 ## with the body actually travelling (run circle, take-off, banking flight, a
 ## flight dash), so ScarfLag swings the chain, and measures every face skinned
 ## only to the chain bones each frame. A strand or gap shows up as a face whose
-## edges grow or shrink against rest. Headless is fine.
+## edges grow or shrink against rest. Edge-on joint continuity: wherever two
+## rows of the chain meet on its side faces, their shared depth (the overlap the
+## edge-on silhouette passes through) must stay at least --min-overlap cells
+## under the real bends, or a notch shows. Headless is fine.
 ##   godot --headless --path . -s res://game/lookdev/scarf_scan.gd -- --scene=<character scene>
 ##       [--bones=Scarf1,Scarf2,Scarf3,Scarf4,Scarf5] [--limit=1.6]
-## Prints the worst face per segment; exits 1 if any face edge grows past limit x rest.
+##       [--moves=res://game/combat/moves/kael/] [--cell=0.011] [--min-overlap=1.0]
+## Prints the worst face, the largest bend at each chain joint and the thinnest
+## joint overlap per segment; exits 1 if any face edge grows past limit x rest
+## or any overlap drops below min-overlap cells.
 
 const S := FighterState.State
 const DT := 1.0 / 60.0
@@ -21,6 +27,16 @@ var _faces := PackedInt32Array()  # (surface, first vertex) pairs
 var _limit := 1.6
 var _worst := 0.0
 var _worst_label := ""
+var _moves := ""
+var _cell := 0.011
+var _min_overlap := 1.0
+var _chain_ids := PackedInt32Array()
+## Row junctions on the chain's side faces: (surface, vertex at one end of the
+## shared depth, vertex at the other end, rest length) per junction.
+var _junctions := []
+var _thinnest := INF
+var _thinnest_label := ""
+var _bend_max := PackedFloat32Array()
 
 
 func _initialize():
@@ -33,6 +49,9 @@ func _go():
 	if scene == "":
 		return
 	_limit = float(args.get_option("limit", "1.6"))
+	_moves = args.get_option("moves", "res://game/combat/moves/kael/")
+	_cell = float(args.get_option("cell", "0.011"))
+	_min_overlap = float(args.get_option("min-overlap", "1.0"))
 	_body = Node3D.new()
 	_body.position = Vector3(3.4, 0, 0)  # on the run circle, so nothing teleports
 	root.add_child(_body)
@@ -42,8 +61,12 @@ func _go():
 	_mesh = _skeleton.find_children("*", "MeshInstance3D", false, false)[0]
 	for b in args.get_option("bones", "Scarf1,Scarf2,Scarf3,Scarf4,Scarf5").split(","):
 		_chain[_skeleton.find_bone(b)] = true
+		_chain_ids.append(_skeleton.find_bone(b))
+	_bend_max.resize(_chain_ids.size() - 1)
+	_bend_max.fill(0.0)
 	_collect_faces()
-	print("chain faces ", _faces.size() / 2)
+	_collect_junctions()
+	print("chain faces %d, side-face row junctions %d" % [_faces.size() / 2, _junctions.size()])
 	_fighter.position = Vector3(3.4, 1, 0)
 	_fighter.enter_state(S.IDLE)
 	await _steps("settle", 40, func(_i): pass)
@@ -91,8 +114,34 @@ func _go():
 		_fighter.facing_yaw += PI / 20.0 if i < 20 else 0.0
 		_fighter.velocity = Basis(Vector3.UP, _fighter.facing_yaw) * Vector3.FORWARD * 8.0
 		_fighter.position += _fighter.velocity * DT)
+	# The 3-hit combo twice, as the reel plays it (side-on, stepping in).
+	_fighter.velocity = Vector3.ZERO
+	_fighter.position = Vector3(3.4, 1, 0)
+	_fighter.facing_yaw = -PI * 0.5
+	_fighter.enter_state(S.IDLE)
+	await _steps("combo settle", 30, func(_i): pass)
+	var ids := ["light_1", "light_2", "light_3"]
+	for loop in 2:
+		for k in ids.size():
+			var move: MoveData = load(_moves + ids[k] + ".tres")
+			if move == null:
+				break
+			_fighter.begin_move(move)
+			var last := move.total_ticks() if k == ids.size() - 1 else move.recovery_start_tick() + 4
+			await _steps("combo %s" % ids[k], last - 1, func(_i):
+				_fighter.move_tick += 1
+				if _fighter.move_tick < move.startup_ticks + move.active_ticks:
+					var fwd := Basis(Vector3.UP, _fighter.facing_yaw) * Vector3.FORWARD
+					_fighter.position += fwd * move.step_distance / maxf(move.startup_ticks + move.active_ticks, 1))
+		_fighter.enter_state(S.IDLE)
+		await _steps("combo rest", 24, func(_i): pass)
+	var bends := []
+	for b in _bend_max:
+		bends.append("%.0f" % rad_to_deg(b))
+	print("largest bend per chain joint (deg): %s" % ", ".join(bends))
 	print("worst chain face edge %.2fx rest (%s), limit %.2fx" % [_worst, _worst_label, _limit])
-	quit(0 if _worst <= _limit else 1)
+	print("thinnest edge-on joint overlap %.2f cells (%s), minimum %.2f" % [_thinnest, _thinnest_label, _min_overlap])
+	quit(0 if _worst <= _limit and _thinnest >= _min_overlap else 1)
 
 
 func _collect_faces() -> void:
@@ -116,6 +165,7 @@ func _collect_faces() -> void:
 func _steps(label: String, ticks: int, move: Callable) -> void:
 	var seg_worst := 0.0
 	var seg_low := INF
+	var seg_thin := INF
 	for i in ticks:
 		move.call(i)
 		_fighter.state_ticks += 1
@@ -135,12 +185,18 @@ func _steps(label: String, ticks: int, move: Callable) -> void:
 		var r := _measure(mats)
 		seg_worst = maxf(seg_worst, r.x)
 		seg_low = minf(seg_low, r.y)
+		seg_thin = minf(seg_thin, _overlap(mats))
+		if label != "settle":
+			_track_bends(mats)
 	if label == "settle":
 		return  # warm-up: the chain starts from its rest shape
 	if seg_worst > _worst:
 		_worst = seg_worst
 		_worst_label = label
-	print("%s: longest chain face edge %.2fx rest, shortest %.2fx" % [label, seg_worst, seg_low])
+	if seg_thin < _thinnest:
+		_thinnest = seg_thin
+		_thinnest_label = label
+	print("%s: longest chain face edge %.2fx rest, shortest %.2fx, thinnest joint overlap %.2f cells" % [label, seg_worst, seg_low, seg_thin])
 
 
 ## (longest, shortest) posed/rest edge ratio over the chain's faces.
@@ -169,3 +225,91 @@ func _measure(mats: Array) -> Vector2:
 			hi = maxf(hi, ratio)
 			lo = minf(lo, ratio)
 	return Vector2(hi, lo)
+
+
+## Finds where two rows of the chain meet on its side faces (normal +-x): the
+## depth both rows share at that height is what the edge-on silhouette passes
+## through, so it must not pinch below a cell when the chain bends.
+func _collect_junctions() -> void:
+	for si in _mesh.mesh.get_surface_count():
+		var arr: Array = _mesh.mesh.surface_get_arrays(si)
+		var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		# side -> {"x|y" boundary -> {"above": [[z0, z1]...], "below": [...], "at": {z key: vertex}}}
+		var sides := {}
+		for n in range(0, _faces.size(), 2):
+			if _faces[n] != si:
+				continue
+			var v0 := _faces[n + 1]
+			var lo := verts[v0]
+			var hi := verts[v0]
+			for k in 4:
+				lo = lo.min(verts[v0 + k])
+				hi = hi.max(verts[v0 + k])
+			if hi.x - lo.x > 0.0001:
+				continue  # not a side face
+			for edge: Array in [["above", lo.y], ["below", hi.y]]:
+				var key := "%d|%d" % [roundi(lo.x / 0.0005), roundi(float(edge[1]) / 0.0005)]
+				if not sides.has(key):
+					sides[key] = {"above": [], "below": [], "at": {}}
+				sides[key][edge[0]].append([lo.z, hi.z])
+				for k in 4:
+					if absf(verts[v0 + k].y - float(edge[1])) < 0.0001:
+						sides[key]["at"][roundi(verts[v0 + k].z / 0.0005)] = v0 + k
+		for key: String in sides:
+			var j: Dictionary = sides[key]
+			if j["above"].is_empty() or j["below"].is_empty():
+				continue
+			var a := _merged(j["above"])
+			var b := _merged(j["below"])
+			for ia: Vector2 in a:
+				for ib: Vector2 in b:
+					var z0 := maxf(ia.x, ib.x)
+					var z1 := minf(ia.y, ib.y)
+					if z1 - z0 < 0.0001:
+						continue
+					var e0: int = j["at"].get(roundi(z0 / 0.0005), -1)
+					var e1: int = j["at"].get(roundi(z1 / 0.0005), -1)
+					if e0 >= 0 and e1 >= 0:
+						_junctions.append([si, e0, e1, z1 - z0])
+
+
+## Sorted z intervals merged where they touch.
+static func _merged(list: Array) -> Array:
+	list.sort_custom(func(p: Array, q: Array): return p[0] < q[0])
+	var out := []
+	for iv: Array in list:
+		if not out.is_empty() and iv[0] <= (out[-1] as Vector2).y + 0.0001:
+			out[-1] = Vector2((out[-1] as Vector2).x, maxf((out[-1] as Vector2).y, iv[1]))
+		else:
+			out.append(Vector2(iv[0], iv[1]))
+	return out
+
+
+## Thinnest posed joint overlap this frame, in cells.
+func _overlap(mats: Array) -> float:
+	var thin := INF
+	var cache := {}
+	for jn: Array in _junctions:
+		var si: int = jn[0]
+		if not cache.has(si):
+			cache[si] = _mesh.mesh.surface_get_arrays(si)
+		var arr: Array = cache[si]
+		var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var bones: PackedInt32Array = arr[Mesh.ARRAY_BONES]
+		var ws: PackedFloat32Array = arr[Mesh.ARRAY_WEIGHTS]
+		var ends := []
+		for v: int in [jn[1], jn[2]]:
+			var p := Vector3.ZERO
+			for k in 4:
+				p += (mats[bones[v * 4 + k]] * verts[v]) * ws[v * 4 + k]
+			ends.append(p)
+		thin = minf(thin, (ends[0] as Vector3).distance_to(ends[1]) / _cell)
+	return thin
+
+
+## Records the largest bend at each chain joint: the child bone's skin rotation against its parent's.
+func _track_bends(mats: Array) -> void:
+	for i in _chain_ids.size() - 1:
+		var parent: Quaternion = (mats[_chain_ids[i]] as Transform3D).basis.get_rotation_quaternion()
+		var child: Quaternion = (mats[_chain_ids[i + 1]] as Transform3D).basis.get_rotation_quaternion()
+		_bend_max[i] = maxf(_bend_max[i], parent.angle_to(child))
