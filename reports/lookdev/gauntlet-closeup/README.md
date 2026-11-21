@@ -40,3 +40,6 @@ The GPU check at reel-fixes@cf1de58 found Brann's `_hand` close-up cropping the 
 - `contact_sheet_gauntlets.jpg`: Kael and Vexa on top, Lyra and Brann below.
 - `<hero>_gauntlet.jpg`: each hand close-up.
 - `<hero>_head.jpg`: the head close-ups from the same run, with framing unchanged.
+
+## Verification
+Official Godot 4.7.2 linux x86_64 (SHA-512 checked against `SHA512-SUMS.txt`), then `rm -rf .godot` and `--headless --import`. Full GUT run: 142 scripts, 1588 tests, 1582 passing, **0 failing**, 11 pending (renderer-only and known-issue tests, as before), 256357 asserts, 463.9 s.
