@@ -175,7 +175,12 @@ func _breakdown(zone: Node, cam: Camera3D) -> void:
 		for s in mesh.get_surface_count():
 			var il: int = mesh.surface_get_array_index_len(s)
 			tris += (il if il > 0 else mesh.surface_get_array_len(s)) / 3
-		var key := String(n.name).get_slice("_", 0) + "/" + String(n.get_parent().name).get_slice("_", 0)
+		var own := String(n.name)
+		var up := String(n.get_parent().name)
+		if own.begins_with("@"):
+			own = up
+			up = String(n.get_parent().get_parent().name)
+		var key := own.get_slice("_", 0) + "/" + up.get_slice("_", 0)
 		var shadow := gi.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var g: Array = groups.get(key, [0, 0, 0, 0])
 		groups[key] = [g[0] + mesh.get_surface_count(), g[1] + tris * count, g[2] + (tris * count if shadow else 0), g[3] + 1]

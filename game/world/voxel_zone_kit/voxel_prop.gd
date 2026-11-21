@@ -12,6 +12,8 @@ const CACHE_DIR := "user://voxel_prop_cache/"
 ## Side of a placement tile (m): each tile is its own MultiMesh, so visibility
 ## ranges and frustum culling work per tile, not per zone.
 const TILE := 48.0
+## Tiles per side of a far region (HLOD, see _far_regions).
+const REGION := 4
 
 ## The shared surfaces a design's surface(mat) picks from.
 enum Surf { MATTE, METAL, WATER, PETAL, GLOW, BARK }
@@ -128,12 +130,17 @@ static func place(parent: Node3D, node_name: String, meshes: Array[ArrayMesh], r
 		shadow_tiers = mini(shadow_tiers, cap)
 	if meshes[0].get_aabb().get_longest_axis_size() < float(VoxelQuality.value("clutter_size")):
 		shadow_tiers = 0
+	var tile_nodes := {}
+	var last_begin := 0.0
 	for key: Vector2i in tiles:
 		var list: Array[Transform3D] = tiles[key]
 		var begin := 0.0
+		tile_nodes[key] = [] as Array[MultiMeshInstance3D]
 		for t in meshes.size():
 			var end := float(ranges[t]) * scale
+			last_begin = begin
 			var node := _multimesh(meshes[t], list)
+			(tile_nodes[key] as Array[MultiMeshInstance3D]).append(node)
 			node.name = "%s_%d_%d_t%d" % [node_name, key.x, key.y, t]
 			# Hard switches, no margins: with fading off, Godot treats margins as
 			# hysteresis, and after a camera cut a tile can sit in neither tier.
@@ -144,7 +151,48 @@ static func place(parent: Node3D, node_name: String, meshes: Array[ArrayMesh], r
 				else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			root.add_child(node)
 			begin = end
+	if float(ranges[-1]) == 0.0:
+		_far_regions(root, node_name, meshes[-1], tiles, tile_nodes, last_begin, meshes.size() - 1 < shadow_tiers)
 	return root
+
+
+## HLOD for a placement whose last tier never ends: each REGION x REGION
+## block of tiles also gets one node with the last tier of all its copies,
+## shown from far enough that every tile in the block would show its last
+## tier anyway (its begin plus the farthest tile centre), and the tiles take
+## it as visibility parent, so they hide while it shows. The same picture,
+## one draw per block instead of one per tile.
+static func _far_regions(root: Node3D, node_name: String, far_mesh: ArrayMesh, tiles: Dictionary,
+		tile_nodes: Dictionary, last_begin: float, shadows: bool) -> void:
+	var regions := {}
+	for key: Vector2i in tiles:
+		var r := Vector2i(floori(key.x / float(REGION)), floori(key.y / float(REGION)))
+		if not regions.has(r):
+			regions[r] = []
+		(regions[r] as Array).append(key)
+	for r: Vector2i in regions:
+		var keys: Array = regions[r]
+		if keys.size() < 2:
+			continue
+		var all: Array[Transform3D] = []
+		for key: Vector2i in keys:
+			all.append_array(tiles[key])
+		var far := _multimesh(far_mesh, all)
+		far.name = "%s_far_%d_%d" % [node_name, r.x, r.y]
+		var centre := _bounds(far_mesh, all).get_center()
+		var reach := 0.0
+		for key: Vector2i in keys:
+			var n: MultiMeshInstance3D = tile_nodes[key][0]
+			var list: Array[Transform3D] = tiles[key]
+			reach = maxf(reach, _bounds(n.multimesh.mesh, list).get_center().distance_to(centre))
+		far.visibility_range_begin = last_begin + reach + 1.0
+		far.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+		far.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows \
+			else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(far)
+		for key: Vector2i in keys:
+			for n: MultiMeshInstance3D in tile_nodes[key]:
+				n.visibility_parent = n.get_path_to(far)
 
 
 ## One mesh placed once (a landmark), optionally with a coarser far tier.
@@ -152,6 +200,14 @@ static func single(parent: Node3D, node_name: String, meshes: Array[ArrayMesh], 
 		xf: Transform3D) -> Node3D:
 	var list: Array[Transform3D] = [xf]
 	return place(parent, node_name, meshes, ranges, list, meshes.size())
+
+
+## The bounds of a mesh's copies (what the renderer measures visibility ranges from).
+static func _bounds(m: Mesh, transforms: Array[Transform3D]) -> AABB:
+	var box := transforms[0] * m.get_aabb()
+	for xf in transforms:
+		box = box.merge(xf * m.get_aabb())
+	return box
 
 
 static func _multimesh(m: Mesh, transforms: Array[Transform3D]) -> MultiMeshInstance3D:

@@ -216,3 +216,24 @@ func test_place_drops_shadows_from_clutter_on_medium() -> void:
 	VoxelQuality.tier = keep
 	var mmi := root.get_child(0) as MultiMeshInstance3D
 	assert_eq(mmi.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+
+
+func test_tiles_of_a_far_region_hide_behind_one_merged_far_node() -> void:
+	var parent := Node3D.new()
+	add_child_autofree(parent)
+	var meshes: Array[ArrayMesh] = []
+	for m: PrimitiveMesh in [BoxMesh.new(), BoxMesh.new()]:
+		var am := ArrayMesh.new()
+		am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, m.get_mesh_arrays())
+		meshes.append(am)
+	var xfs: Array[Transform3D] = []
+	for i in 4:
+		xfs.append(Transform3D(Basis(), Vector3(VoxelProp.TILE * i + 1.0, 0, 1)))
+	var root := VoxelProp.place(parent, "Things", meshes, [60.0, 0.0], xfs, 1)
+	var far := root.get_node("Things_far_0_0") as MultiMeshInstance3D
+	assert_eq(far.multimesh.instance_count, 4, "every copy, last tier")
+	# The farthest tile centre is 1.5 tiles from the region centre.
+	assert_almost_eq(far.visibility_range_begin, 60.0 + VoxelProp.TILE * 1.5 + 1.0, 0.01)
+	for node: MultiMeshInstance3D in root.get_children():
+		if node != far:
+			assert_eq(node.get_node(node.visibility_parent), far)
