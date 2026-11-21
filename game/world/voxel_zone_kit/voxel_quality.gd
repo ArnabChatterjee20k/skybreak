@@ -3,8 +3,8 @@ extends RefCounted
 ## Per-tier costs of a voxel zone, read by the kit while a zone builds
 ## (VoxelProp.place, VoxelHeightfield.build) and by VoxelStage.apply_quality.
 ## Tiers are GraphicsSettings.Quality. HIGH (the GTX 1650's 1080p60 default)
-## draws exactly the authored look; MEDIUM keeps everything within gameplay
-## distance and the contact shadows as they are and pulls far LOD switches in;
+## draws exactly the authored look; MEDIUM keeps the sun and everything within
+## gameplay distance as they are and pulls far prop LOD switches in;
 ## LOW and WEB trade detail.
 ##   VoxelQuality.tier = GraphicsSettings.Quality.MEDIUM   # before zone.build()
 
@@ -27,7 +27,7 @@ const VALUES := {
 	},
 	GraphicsSettings.Quality.MEDIUM: {
 		"range_scale": 0.8, "clutter_range": 0.8, "clutter_size": 0.5, "shadow_tiers": 0,
-		"shadow_distance": 150.0, "shadow_splits": 2, "near_split": 32.4, "shadow_atlas": 4096,
+		"shadow_distance": 180.0, "shadow_splits": 2, "near_split": 32.4, "shadow_atlas": 4096,
 		"terrain_chunk": 32.0, "ssao": true, "skip_finest": false,
 	},
 	GraphicsSettings.Quality.LOW: {

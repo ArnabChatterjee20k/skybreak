@@ -200,6 +200,7 @@ func test_high_is_the_authored_look_and_lower_tiers_pull_ranges_in() -> void:
 	assert_eq(high.clutter_size, 0.0, "every prop casts as authored")
 	assert_eq(high.shadow_distance, 180.0)
 	assert_eq(medium.near_split, high.near_split, "contact shadows as sharp")
+	assert_eq(medium.shadow_distance, high.shadow_distance, "far shadows stay (islands, mountains)")
 	assert_gt(float(medium.range_scale), float(web.range_scale))
 
 
