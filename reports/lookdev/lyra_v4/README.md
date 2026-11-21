@@ -30,3 +30,6 @@ There is no `tools/voxel_bake.gd` and no baked mesh on this branch: `VoxelBody` 
 - the lining value (`#44709f`, sat 0.57 ± 0.02, hue 211°)
 - the edge tone is darker than both the lining and the stole
 - no pale piping on the cape's facing edge
+
+## GUT (full suite, Godot 4.7.2 official linux x86_64 with SHA-512 checked, `rm -rf .godot`, `--headless --import`)
+1539 tests: 1533 passing, **0 failing**, 11 risky/pending (the known QA-11/QA-12 issues and the live Appwrite test, which needs credentials), 255,552 asserts, exit 0.
