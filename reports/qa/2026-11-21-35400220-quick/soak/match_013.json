@@ -1,0 +1,141 @@
+{
+	"hitstops": {
+		"breaker": {
+			"8": 3,
+			"10": 1
+		},
+		"breaker+counter": {
+			"11": 1,
+			"14": 1
+		},
+		"launcher": {
+			"7": 1
+		},
+		"light_1": {
+			"3": 5,
+			"4": 2,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 5,
+			"8": 7,
+			"9": 3
+		},
+		"light_2": {
+			"3": 6,
+			"4": 8,
+			"5": 4
+		},
+		"light_3": {
+			"3": 2,
+			"4": 4,
+			"5": 3,
+			"8": 3
+		},
+		"scythe/breaker+counter": {
+			"13": 1
+		},
+		"scythe/light_1": {
+			"5": 3
+		},
+		"scythe/light_1+counter": {
+			"9": 5
+		},
+		"scythe/light_2": {
+			"5": 2
+		},
+		"scythe/light_3": {
+			"7": 2
+		},
+		"smash+counter": {
+			"11": 1
+		},
+		"spike": {
+			"7": 1
+		}
+	},
+	"id": "113:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:2553",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		5,
+		5,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 113,
+	"sim_ms_per_tick": 1.44298541666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00962397828698158,
+		"finger_pops_per_fighter_minute": 1.12546894539391,
+		"foot_error_p95_cm": 2.07484420309356,
+		"foot_slide_cm_per_frame": 0.0184535574510648,
+		"foot_slide_frames": 665,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.993330554397666,
+		"pops_per_fighter_minute": 36.7653188828679
+	},
+	"view_ms_per_frame": 2.09328125,
+	"violations": [
+		{
+			"check": "pop",
+			"count": 97,
+			"detail": "Scarf3 turned 3.13 rad in one frame (HITSTUN, move , clip hit_stagger)",
+			"fighter": 3,
+			"first_tick": 11,
+			"legend": "lyra",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 2025,
+			"worst_value": 3.12814474105835
+		},
+		{
+			"check": "pop",
+			"count": 1,
+			"detail": "LeftLowerArm turned 1.24 rad in one frame (ATTACKING, move breaker, clip fit_breaker)",
+			"fighter": 2,
+			"first_tick": 2350,
+			"legend": "brann",
+			"limit": 1.2,
+			"weapon": "",
+			"worst_tick": 2350,
+			"worst_value": 1.23535561561584
+		},
+		{
+			"check": "pop_budget",
+			"count": 1,
+			"detail": "98 pops in 2.7 fighter-minutes (budget 2.0/min)",
+			"fighter": -1,
+			"first_tick": 2400,
+			"legend": "",
+			"limit": 5.33111111111111,
+			"weapon": "",
+			"worst_tick": 2400,
+			"worst_value": 98
+		}
+	],
+	"wall_seconds": 150.008,
+	"zone": "heartbloom_gardens"
+}

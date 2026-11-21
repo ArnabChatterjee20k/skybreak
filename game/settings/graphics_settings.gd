@@ -65,6 +65,8 @@ var resolution_scale: float = 1.0:
 var vsync_enabled: bool = true
 ## Borderless fullscreen at the desktop resolution; false = centred window.
 var fullscreen: bool = true
+## Voxel (default) or the classic models and zones; see ArtStyle.
+var art_style: ArtStyle.Kind = ArtStyle.Kind.VOXEL
 
 
 func _init(is_web: bool = OS.has_feature("web")) -> void:
@@ -110,6 +112,7 @@ func save(path: String = SAVE_PATH) -> Error:
 	config.set_value(SECTION, "resolution_scale", resolution_scale)
 	config.set_value(SECTION, "vsync_enabled", vsync_enabled)
 	config.set_value(SECTION, "fullscreen", fullscreen)
+	config.set_value(SECTION, "art_style", art_style)
 	return config.save(path)
 
 
@@ -126,6 +129,9 @@ static func load_saved(
 	settings.resolution_scale = config.get_value(SECTION, "resolution_scale", settings.resolution_scale)
 	settings.vsync_enabled = config.get_value(SECTION, "vsync_enabled", settings.vsync_enabled)
 	settings.fullscreen = config.get_value(SECTION, "fullscreen", settings.fullscreen)
+	var saved_style: int = config.get_value(SECTION, "art_style", settings.art_style)
+	if ArtStyle.NAMES.has(saved_style):
+		settings.art_style = saved_style as ArtStyle.Kind
 	return settings
 
 

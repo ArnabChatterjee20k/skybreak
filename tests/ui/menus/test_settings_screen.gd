@@ -56,6 +56,15 @@ func test_graphics_persist() -> void:
 	assert_false(loaded.vsync_enabled)
 
 
+func test_art_style_persists_without_touching_the_running_style() -> void:
+	screen.set_art_style(ArtStyle.Kind.CLASSIC)
+	assert_eq(GraphicsSettings.load_saved(PATH).art_style, ArtStyle.Kind.CLASSIC)
+	screen.set_art_style(ArtStyle.Kind.VOXEL)
+	assert_eq(GraphicsSettings.load_saved(PATH).art_style, ArtStyle.Kind.VOXEL)
+	ArtStyle.reset()
+	assert_eq(ArtStyle.current(), GraphicsSettings.load_saved().art_style, "a test save path leaves the game's style alone")
+
+
 func test_camera_sensitivity_persists_and_is_clamped() -> void:
 	screen.set_sensitivity(1.75)
 	assert_almost_eq(ControlSettings.load_saved(PATH).sensitivity, 1.75, 0.001)

@@ -45,10 +45,12 @@ const HAND_GAP := 0.13
 static var _cache := {}
 
 
-## The library plus the derived clips, built once per library.
+## The library plus the derived clips, built once per library and rig (the derived clips are
+## fitted to the skeleton's rest pose, so one rig's clips must not serve another).
 static func build(source: MotionLibrary, skeleton: Skeleton3D) -> MotionLibrary:
-	if _cache.has(source):
-		return _cache[source]
+	var key := [source, rig_signature(skeleton)]
+	if _cache.has(key):
+		return _cache[key]
 	var library := MotionLibrary.new()
 	for clip in source.get_animation_list():
 		library.add_animation(clip, source.get_animation(clip))
@@ -79,8 +81,16 @@ static func build(source: MotionLibrary, skeleton: Skeleton3D) -> MotionLibrary:
 			library.strike_bones[clip] = source.strike_bones[base]
 		library.clip_sources[clip] = "derived from %s (%s)" % [base, source.clip_sources.get(base, "")]
 	rig.free_layers()
-	_cache[source] = library
+	_cache[key] = library
 	return library
+
+
+## Hash of a skeleton's bone names, parents and rest transforms: equal for the same rig.
+static func rig_signature(skeleton: Skeleton3D) -> int:
+	var parts := []
+	for i in skeleton.get_bone_count():
+		parts.append([skeleton.get_bone_name(i), skeleton.get_bone_parent(i), skeleton.get_bone_rest(i)])
+	return var_to_str(parts).hash()
 
 
 ## The library with its hips heights rescaled for a rig whose legs differ from Kael's, so the

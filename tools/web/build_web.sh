@@ -53,6 +53,8 @@ if [[ ! -d "${ROOT}/.godot/imported" ]]; then
 	"${GODOT}" --headless --path "${ROOT}" --import
 fi
 "${GODOT}" --headless --path "${ROOT}" --export-release "Web" "${OUT}/index.html"
+# Zone bakes ship as one pack per zone, fetched when a match needs it (ZoneBakePacks).
+"${GODOT}" --headless --path "${ROOT}" -s res://tools/web/pack_zone_bakes.gd -- "${OUT}"
 
 # Pre-compressed copies for hosts that serve them; most hosts compress on the fly.
 for f in "${OUT}"/*.{wasm,pck,js}; do
@@ -68,6 +70,7 @@ printf '%-34s %12s %12s %12s\n' file raw gzip brotli
 total_raw=0; total_gz=0; total_br=0
 for f in "${OUT}"/*; do
 	case "${f}" in *.gz|*.br) continue ;; esac
+	[[ -f "${f}" ]] || continue
 	raw=$(stat -c%s "${f}")
 	gz=$(if [[ -f "${f}.gz" ]]; then stat -c%s "${f}.gz"; else gzip -9 -c "${f}" | wc -c; fi)
 	br=$(if [[ -f "${f}.br" ]]; then stat -c%s "${f}.br"; else echo "${gz}"; fi)
@@ -76,3 +79,12 @@ for f in "${OUT}"/*; do
 done
 mb() { awk -v b="$1" 'BEGIN { printf "%.1f MB", b / 1048576 }'; }
 printf '%-34s %12s %12s %12s\n' TOTAL "$(mb ${total_raw})" "$(mb ${total_gz})" "$(mb ${total_br})"
+echo
+echo "Zone packs in ${OUT}/zones (fetched per match, not on first load):"
+zones_raw=0
+for f in "${OUT}"/zones/*.pck; do
+	raw=$(stat -c%s "${f}")
+	zones_raw=$((zones_raw + raw))
+	printf '%-44s %12s\n' "$(basename "${f}")" "$(mb "${raw}")"
+done
+printf '%-44s %12s\n' TOTAL "$(mb ${zones_raw})"

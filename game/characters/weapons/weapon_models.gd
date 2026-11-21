@@ -21,6 +21,11 @@ const TEAL := Color(0.1, 0.62, 0.6)
 const PINK := Color(1.0, 0.45, 0.68)
 const ROSE := Color(0.86, 0.16, 0.4)
 
+## Skeletons tagged with this meta (VoxelArmory) get voxel weapons from build_for.
+const VOXEL_META := &"voxel_weapons"
+
+## Every weapon drawn through build_for uses its voxel model (look-dev and pickups too).
+static var voxel_everywhere := false
 static var _materials: Dictionary = {}
 static var _outline: ShaderMaterial
 
@@ -55,6 +60,22 @@ static func build(kind: Weapon.Kind) -> Node3D:
 	if Weapon.is_ranged(kind) and kind != Weapon.Kind.KI_BOW and kind != Weapon.Kind.HEARTSTRING_BOW:
 		root.scale = Vector3.ONE * 1.3
 	return root
+
+
+## The model of kind for a holder: the voxel one (VoxelWeapons) when the holder's skeleton
+## is tagged by a VoxelArmory or voxel_everywhere is on, otherwise build(kind). With no
+## holder (pickups, thrown weapons) the art style decides.
+static func build_for(kind: Weapon.Kind, holder: Node = null) -> Node3D:
+	if is_voxel_for(kind, holder):
+		return VoxelWeapons.build(kind)
+	return build(kind)
+
+
+## Whether build_for draws kind's voxel model for this holder.
+static func is_voxel_for(kind: Weapon.Kind, holder: Node = null) -> bool:
+	var voxel := voxel_everywhere or (holder != null and bool(holder.get_meta(VOXEL_META, false))) \
+		or (holder == null and ArtStyle.is_voxel())
+	return voxel and VoxelWeapons.has(kind)
 
 
 ## Centre of the model's meshes, for framing and pickups.
@@ -257,28 +278,33 @@ static func _bow(root: Node3D, limb: Color, trim: Color, string_color: Color, he
 		_heart(root, 0.26, GOLD, Vector3(-0.06, 0, -0.04))
 		_heart(root, 0.16, ROSE, Vector3(0.05, 0.62, 0.22))
 		_heart(root, 0.16, ROSE, Vector3(0.05, -0.62, 0.22))
-		var sparkles := CPUParticles3D.new()
-		sparkles.name = "Sparkles"
-		sparkles.amount = 24
-		sparkles.lifetime = 0.8
-		sparkles.local_coords = false
-		sparkles.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
-		sparkles.emission_box_extents = Vector3(0.05, 0.6, 0.15)
-		sparkles.gravity = Vector3(0, 0.6, 0)
-		sparkles.initial_velocity_min = 0.1
-		sparkles.initial_velocity_max = 0.4
-		sparkles.scale_amount_min = 0.5
-		sparkles.scale_amount_max = 1.0
-		var quad := QuadMesh.new()
-		quad.size = Vector2(0.07, 0.07)
-		var sparkle_material := StandardMaterial3D.new()
-		sparkle_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		sparkle_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-		sparkle_material.albedo_color = Color(1.0, 0.85, 0.5)
-		sparkle_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		quad.material = sparkle_material
-		sparkles.mesh = quad
-		root.add_child(sparkles)
+		root.add_child(sparkles())
+
+
+## The Heartstring Bow's rising gold sparkles (shared with its voxel model).
+static func sparkles() -> CPUParticles3D:
+	var made := CPUParticles3D.new()
+	made.name = "Sparkles"
+	made.amount = 24
+	made.lifetime = 0.8
+	made.local_coords = false
+	made.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	made.emission_box_extents = Vector3(0.05, 0.6, 0.15)
+	made.gravity = Vector3(0, 0.6, 0)
+	made.initial_velocity_min = 0.1
+	made.initial_velocity_max = 0.4
+	made.scale_amount_min = 0.5
+	made.scale_amount_max = 1.0
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.07, 0.07)
+	var sparkle_material := StandardMaterial3D.new()
+	sparkle_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	sparkle_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	sparkle_material.albedo_color = Color(1.0, 0.85, 0.5)
+	sparkle_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	quad.material = sparkle_material
+	made.mesh = quad
+	return made
 
 
 static func _revolver(root: Node3D) -> void:

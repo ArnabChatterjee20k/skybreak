@@ -1,14 +1,16 @@
-[gd_resource type="Resource" script_class="RosterCharacter" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="RosterCharacter" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://game/characters/roster/roster_character.gd" id="1_entry"]
 [ext_resource type="PackedScene" path="res://game/characters/kael_chunky/kael_chunky.tscn" id="2_scene"]
 [ext_resource type="Resource" path="res://game/combat/default_fighter_stats.tres" id="3_stats"]
+[ext_resource type="PackedScene" path="res://game/characters/kael_voxel/kael_voxel.tscn" id="9_voxel"]
 
 [resource]
 script = ExtResource("1_entry")
 id = &"kael"
 display_name = "Kael"
 scene = ExtResource("2_scene")
+voxel_scene = ExtResource("9_voxel")
 stats = ExtResource("3_stats")
 palettes = Array[Dictionary]([{}, {
 "boots": Color(0.15, 0.5, 0.9, 1),

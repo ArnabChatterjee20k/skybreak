@@ -3,10 +3,14 @@ extends GutTest
 const SCENE := preload("res://game/levels/zone_match.tscn")
 
 
+## Classic zone look: these tests are about layout and the sim; a voxel zone takes a
+## minute to build (tests/world/test_voxel_zone_view.gd covers that hookup).
 func _match(config: Dictionary) -> ZoneMatch:
 	var zone_match: ZoneMatch = SCENE.instantiate()
-	if not config.is_empty():
-		zone_match.configure(config)
+	var with_look := config.duplicate()
+	if not with_look.has("voxel_zone"):
+		with_look["voxel_zone"] = false
+	zone_match.configure(with_look)
 	add_child_autofree(zone_match)
 	zone_match.set_physics_process(false)
 	zone_match.set_process(false)
@@ -60,7 +64,6 @@ func test_fighters_spawn_standing_on_the_zone_ground() -> void:
 			assert_eq(fighter.state, FighterState.State.IDLE, "%s: standing" % zone_id)
 			var floor_y := zone_match.world.ground_height_at(fighter.position.x, fighter.position.z)
 			assert_almost_eq(fighter.position.y, floor_y + zone_match.sim.tuning.ground_height, 0.05)
-		zone_match.free()
 
 
 func test_the_arena_box_and_ground_follow_the_zone() -> void:
@@ -122,3 +125,24 @@ func test_the_camera_knows_the_zone_obstacles() -> void:
 	var zone_match := _match({"zone": &"stormfall_city"})
 	assert_not_null(zone_match.camera.obstacles)
 	assert_gt(zone_match.camera.obstacles.boxes.size(), 50, "buildings and props become boxes")
+
+
+func test_the_voxel_zone_look_leaves_the_sim_bit_identical() -> void:
+	# A stand-in builder: the real ones take a minute (tests/world has theirs).
+	VoxelZoneView.builders[&"skyhold_ruins"] = "res://tests/world/stub_voxel_zone.gd"
+	var hashes := []
+	for voxel: bool in [false, true]:
+		var zone_match := _match({"zone": &"skyhold_ruins", "voxel_zone": voxel, "fighters": [
+			{"character": &"lyra", "team": 0, "is_ai": true, "ai_level": 4},
+			{"character": &"brann", "team": 1, "is_ai": true, "ai_level": 4},
+		]})
+		zone_match.sim.rng.seed = 77
+		assert_eq(zone_match.voxel_zone != null, voxel)
+		for t in 900:
+			zone_match.step_tick()
+		hashes.append(zone_match.sim.state_hash())
+		if voxel:
+			assert_false(zone_match.world.terrain.visible, "the classic terrain is hidden")
+			assert_eq(zone_match.voxel_zone.zone_id, &"skyhold_ruins")
+	VoxelZoneView.builders = VoxelZoneView.BUILDERS.duplicate()
+	assert_eq(hashes[0], hashes[1], "same seed and inputs give the same match in both looks")

@@ -1,0 +1,28 @@
+ERROR: No GDExtension library found for current OS and architecture (linux.x86_64) in configuration file: res://addons/webrtc_native/webrtc_native.gdextension
+   at: parse_gdextension_file (core/extension/gdextension_library_loader.cpp:369)
+ERROR: GDExtension dynamic library not found: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: open_library (core/extension/gdextension.cpp:810)
+ERROR: Error loading extension: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: load_extensions (core/extension/gdextension_manager.cpp:333)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  _floor: 178128 ms
+  _cliff: 8888 ms
+  _backdrop: 1344 ms
+  _water: 7 ms
+  _falls: 8 ms
+  _trees: 137 ms
+  _canopies: 75 ms
+  _scatter: 2885 ms
+  _shore: 82 ms
+  _story_props: 256 ms
+  _mist: 6 ms
+  _shafts: 0 ms
+  _particles: 1 ms
+[qa] match 4 104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243: 2400 ticks, 2 violation kinds, 237.2 s
+[qa] match 12 112:ember_rift:1v1:kael,vexa:45: 2400 ticks, 0 violation kinds, 98.4 s
+[qa] match 20 120:heartbloom_gardens:2v2:brann,lyra,kael,vexa:5245: 2400 ticks, 2 violation kinds, 90.6 s
+WARNING: 32 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 12 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
