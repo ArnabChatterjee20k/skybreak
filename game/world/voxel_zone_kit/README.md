@@ -24,7 +24,9 @@ within 4.4 cm of the sim's surface (the QA foot check allows 5 cm).
 | `voxel_sky.gdshader` | | Gradient sky, white cloud sea below the horizon, fbm puff clouds in a band, sun disc with halo, or moon and stars. |
 | `voxel_cloud_deck.gdshader` | | The cloud sea's floor: a flat deck with billows snapped to T3 cells. |
 | `voxel_face_merge.gd` | `VoxelFaceMerge` | Greedy 2D merge of a prop mesh with no change in look: per-face colour, corner AO, bevel flags and surface move into a face texture, coplanar faces become rectangles, all materials one surface. |
+| `voxel_prop.gdshader` | | The props' shader for unmerged meshes: the figure surface without the per-instance rim (each instance uniform user takes 16 of the web build's 4096 global-buffer slots). |
 | `voxel_merged_prop.gdshader` | | The props' shader for merged meshes: finds the voxel face under each pixel and shades it exactly as `voxel_figure.gdshader` shades the per-face mesh. |
+| `web_tier_budget.gd` | `WebTierBudget` | Measures a built scene against the Compatibility/WebGL2 limits (instance-uniform instances, lights, texture size, surface size); `game/debug/web_tier_probe.gd` runs it on every zone match. |
 | `voxel_quality.gd` | `VoxelQuality` | Quality tiers (`GraphicsSettings.Quality`): prop LOD range scale, clutter shadows, shadow tiers, terrain chunk size, sun shadow distance/splits/atlas, SSAO. Set `VoxelQuality.tier` before `build()`. |
 | `zone_capture.gd` | (SceneTree script) | Hero stills, the fly-through video, voxel Kael for scale, and render stats per shot. |
 
