@@ -3,8 +3,9 @@ extends SceneTree
 ## dummy so the hits read (.claude/skills/voxel-character-lookdev/SKILL.md).
 ##   godot --path . --disable-vsync -s res://game/lookdev/moves_reel.gd -- <out dir> [full|poses|combat|shots]
 ##       --scene=<character scene> --moves=res://game/combat/moves/<name>/
-##       [--dummy=<scene>] [--stats=<FighterStats .tres>] [--energy=#ff9e40]
-## Writes numbered JPG frames (f_00000.jpg...) for ffmpeg at 60 fps; "poses"
+##       [--dummy=<scene>] [--stats=<FighterStats .tres>] [--energy=#ff9e40] [--fps=60]
+## Writes numbered JPG frames (f_00000.jpg...) for ffmpeg at --fps (60, or 30
+## to record every second tick at the same speed); "poses"
 ## writes one still per procedural pose, "combat" only the melee segments.
 ## Needs a GPU. --stats sets the pushbox spacing (default FighterStats').
 ##
@@ -14,7 +15,7 @@ extends SceneTree
 ## hover, crossed guard, ki shot, kick, jump crouch, a big flinch) are layered
 ## over the clips by LookdevPoseOverride. Neither the sim nor the clips change.
 
-const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed]"
+const USAGE := "moves_reel.gd -- <out dir> [full|poses|combat|shots] --scene=<character scene> --moves=<move dir/> [--dummy=<scene>] [--stats=<.tres>] [--energy=#rrggbb] [--hide-stowed] [--fps=60]"
 ## Any humanoid CharacterView on the shared skeleton; it's rendered flat grey.
 const DEFAULT_DUMMY := "res://game/characters/kael_chunky/kael_chunky.tscn"
 const DT := 1.0 / 60.0
@@ -25,6 +26,15 @@ const S := FighterState.State
 ## silhouette (waist radius ~0.2-0.3 m); plus the striking fist or boot's own radius.
 const BODY_RADIUS := 0.24
 const STRIKER_RADIUS := 0.07
+## Emission per unit of the effects' nominal energy: about 1.2 keeps the
+## energy colour's hue through the filmic tonemap (higher washes to peach).
+const GLOW_GAIN := 0.27
+## Molten core of beams and shots, a thin hot line inside the energy colour.
+const CORE_COLOR := Color("ffd9a0")
+## Body contact: surface points sampled per fighter, and how close two
+## fighters' surfaces may come before both are pushed apart.
+const BODY_SAMPLES := 6000
+const BODY_GAP := 0.04
 
 # ---------------------------------------------------------------- poses
 # Skeleton space: +Z his front, +X his left, +Y up. See LookdevPoseOverride.
@@ -133,6 +143,13 @@ class Actor:
 	## procedural kick); landed once the strike has connected.
 	var striking := false
 	var landed := false
+	## Sampled surface points for body contact: skeleton-space rest positions,
+	## their skin binds and weights (4 each), and each bind's bone.
+	var probe_rest := PackedVector3Array()
+	var probe_binds := PackedInt32Array()
+	var probe_weights := PackedFloat32Array()
+	var probe_skins: Array[Skin] = []
+	var probe_skin_of := PackedInt32Array()
 
 	func skeleton() -> Skeleton3D:
 		return view.model.get_node("%GeneralSkeleton") as Skeleton3D
@@ -155,6 +172,9 @@ var PUSHBOX_RADIUS := 0.5
 ## Ki / energy colour of the character's shots and beam.
 var KI_COLOR := Color(1.0, 0.62, 0.25)
 var _frame := 0
+## Record every n-th tick (--fps=30 records every second one); frames written.
+var _every := 1
+var _written := 0
 var _viewport: SubViewport
 var _stage: LookdevStage
 var _caption: Label
@@ -195,6 +215,7 @@ func _initialize() -> void:
 		PUSHBOX_RADIUS = FighterStats.new().pushbox_radius
 	if args.options.has("energy"):
 		KI_COLOR = Color.html(args.get_option("energy"))
+	_every = maxi(1, roundi(60.0 / float(args.get_option("fps", "60"))))
 	DirAccess.make_dir_recursive_absolute(_out)
 	_viewport = SubViewport.new()
 	_viewport.size = Vector2i(1920, 1080)
@@ -264,7 +285,7 @@ func _run(what: String) -> void:
 		await _heavy_launcher()
 		await _kick()
 		await _guard()
-		print("frames: %d" % _frame)
+		print("frames: %d (ticks %d)" % [_written, _frame])
 		quit()
 		return
 	await _idle("Idle", 2.0)
@@ -285,7 +306,7 @@ func _run(what: String) -> void:
 	await _guard()
 	await _knockdown()
 	await _outro()
-	print("frames: %d" % _frame)
+	print("frames: %d (ticks %d)" % [_written, _frame])
 	quit()
 
 
@@ -842,17 +863,19 @@ func _react(actor: Actor) -> void:
 # ---------------------------------------------------------------- effects
 
 func _glow_material(energy: float, color := Color.TRANSPARENT) -> StandardMaterial3D:
-	if color.a == 0.0:
-		color = KI_COLOR
+	return glow_material(energy, KI_COLOR if color.a == 0.0 else color)
+
+
+## Lit, black albedo: the emission alone gives the colour (an unshaded
+## material ignores emission and showed its pale albedo instead).
+static func glow_material(energy: float, color: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	# The core is the energy colour lifted a little toward white (it was a fixed
-	# warm white, so every character's orbs and beams read white-peach), and the
-	# emission stays low enough that the hue survives tone mapping and bloom.
-	mat.albedo_color = color.lerp(Color.WHITE, 0.25)
+	mat.albedo_color = Color.BLACK
+	mat.roughness = 1.0
+	mat.metallic_specular = 0.0
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.emission_energy_multiplier = energy * 0.45
+	mat.emission_energy_multiplier = energy * GLOW_GAIN
 	return mat
 
 
@@ -871,7 +894,7 @@ func _glow_orb(radius: float) -> MeshInstance3D:
 	halo.mesh = outer
 	var mat := _glow_material(2.0)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.albedo_color = Color(KI_COLOR, 0.35)
+	mat.albedo_color = Color(0, 0, 0, 0.5)
 	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	halo.material_override = mat
 	halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -898,7 +921,7 @@ func _flash_at(at: Vector3, radius: float, life: int, color := Color.TRANSPARENT
 	var mat := _glow_material(5.0, color)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	mat.albedo_color = Color(color.lerp(Color.WHITE, 0.5), 0.9)
+	mat.albedo_color = Color(0, 0, 0, 0.9)
 	node.material_override = mat
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var light := OmniLight3D.new()
@@ -931,10 +954,19 @@ func _beam_mesh() -> MeshInstance3D:
 	var mat := _glow_material(1.6)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	mat.albedo_color = Color(KI_COLOR, 0.3)
+	mat.albedo_color = Color(0, 0, 0, 0.45)
 	shell.material_override = mat
 	shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	beam.add_child(shell)
+	var core := MeshInstance3D.new()
+	var line := CylinderMesh.new()
+	line.top_radius = 0.03
+	line.bottom_radius = 0.04
+	line.height = 1.01
+	core.mesh = line
+	core.material_override = _glow_material(4.5, CORE_COLOR)
+	core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	beam.add_child(core)
 	_stage.add_child(beam)
 	_fx.append(beam)
 	return beam
@@ -1030,7 +1062,7 @@ func _update_fx() -> void:
 			node.scale = Vector3.ONE * (0.6 + 1.6 * t)
 			var mat := (node as MeshInstance3D).material_override as StandardMaterial3D
 			mat.albedo_color.a = 0.9 * (1.0 - t)
-			mat.emission_energy_multiplier = 5.0 * (1.0 - t)
+			mat.emission_energy_multiplier = 5.0 * GLOW_GAIN * (1.0 - t)
 			(node.get_child(0) as OmniLight3D).light_energy = 2.5 * (1.0 - t)
 			if life <= 0:
 				_fx.erase(node)
@@ -1092,6 +1124,7 @@ func _tick(record := true) -> void:
 		if actor.material != null:
 			actor.material.emission_energy_multiplier = actor.flash * 1.6
 	_contacts()
+	_body_contacts()
 	var shadow := _stage.contact_shadow
 	shadow.position = Vector3(_hero.f.position.x, 0.002, _hero.f.position.z + 0.02)
 	shadow.visible = _hero.f.position.y < STAND + 0.35
@@ -1178,6 +1211,121 @@ func _contacts() -> void:
 			_hit(def, 1.0 if heavy else 0.7, 7 if heavy else 4, def.f.blocking, move)
 
 
+## Bodies never pass into each other: sampled surface points of both posed
+## meshes (boulders, back, beard, the dummy's thrown arms) are kept BODY_GAP
+## apart by pushing both fighters back equally along the line between them,
+## like the pushboxes but with the real silhouettes.
+func _body_contacts() -> void:
+	if not (_hero.body.visible and _dummy.body.visible):
+		return
+	var a := _hero.f
+	var b := _dummy.f
+	var d := Vector3(b.position.x - a.position.x, 0, b.position.z - a.position.z)
+	if absf(a.position.y - b.position.y) > 1.2 or d.length() > 3.0:
+		return
+	var dir := d.normalized() if d.length() > 0.001 else _hero.forward()
+	var hero_pts := _posed_surface(_hero)
+	var cells := surface_cells(_posed_surface(_dummy), BODY_GAP)
+	var shift := 0.0
+	for attempt in 30:
+		if not surfaces_touch(hero_pts, cells, dir * shift, BODY_GAP):
+			break
+		shift += 0.01
+	if shift <= 0.0:
+		return
+	a.position -= dir * shift * 0.5
+	b.position += dir * shift * 0.5
+	_hero.body.position = a.position
+	_dummy.body.position = b.position
+
+
+## Points bucketed into cells of size `gap` (for surfaces_touch).
+static func surface_cells(points: PackedVector3Array, gap: float) -> Dictionary:
+	var cells := {}
+	for p in points:
+		var key := Vector3i((p / gap).floor())
+		if not cells.has(key):
+			cells[key] = PackedVector3Array()
+		cells[key].append(p)
+	return cells
+
+
+## Whether any of `points`, moved back by `apart`, is within `gap` of a point in `cells`.
+static func surfaces_touch(points: PackedVector3Array, cells: Dictionary, apart: Vector3, gap: float) -> bool:
+	for h in points:
+		var p := h - apart
+		var key := Vector3i((p / gap).floor())
+		for x in range(-1, 2):
+			for y in range(-1, 2):
+				for z in range(-1, 2):
+					var near: Variant = cells.get(key + Vector3i(x, y, z))
+					if near == null:
+						continue
+					for q: Vector3 in near:
+						if p.distance_squared_to(q) < gap * gap:
+							return true
+	return false
+
+
+## The actor's sampled surface points, skinned to its current pose (global).
+func _posed_surface(actor: Actor) -> PackedVector3Array:
+	var sk := actor.skeleton()
+	if actor.probe_rest.is_empty():
+		_sample_surface(actor, sk)
+	var mats: Array[Transform3D] = []
+	var bind_base := PackedInt32Array()
+	for skin in actor.probe_skins:
+		bind_base.append(mats.size())
+		for k in skin.get_bind_count():
+			var bone := skin.get_bind_bone(k)
+			if bone < 0:
+				bone = sk.find_bone(skin.get_bind_name(k))
+			mats.append(sk.global_transform * sk.get_bone_global_pose(maxi(bone, 0)) * skin.get_bind_pose(k))
+	var out := PackedVector3Array()
+	out.resize(actor.probe_rest.size())
+	for i in actor.probe_rest.size():
+		var base := bind_base[actor.probe_skin_of[i]]
+		var p := Vector3.ZERO
+		for j in 4:
+			var w := actor.probe_weights[i * 4 + j]
+			if w > 0.0:
+				p += (mats[base + actor.probe_binds[i * 4 + j]] * actor.probe_rest[i]) * w
+		out[i] = p
+	return out
+
+
+func _sample_surface(actor: Actor, sk: Skeleton3D) -> void:
+	var meshes: Array[MeshInstance3D] = []
+	var total := 0
+	for node in actor.view.model.find_children("*", "MeshInstance3D", true, false):
+		var mi := node as MeshInstance3D
+		if mi.mesh == null or mi.skin == null or not mi.is_visible_in_tree():
+			continue
+		meshes.append(mi)
+		for s in mi.mesh.get_surface_count():
+			total += mi.mesh.surface_get_array_len(s)
+	var stride := maxi(1, total / BODY_SAMPLES)
+	var at := 0
+	for m in meshes.size():
+		var mi := meshes[m]
+		actor.probe_skins.append(mi.skin)
+		for s in mi.mesh.get_surface_count():
+			var arr: Array = mi.mesh.surface_get_arrays(s)
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var bones: PackedInt32Array = arr[Mesh.ARRAY_BONES]
+			var ws: PackedFloat32Array = arr[Mesh.ARRAY_WEIGHTS]
+			var per := bones.size() / maxi(verts.size(), 1)
+			for v in verts.size():
+				at += 1
+				if at % stride != 0 or per < 4:
+					continue
+				actor.probe_rest.append(verts[v])
+				actor.probe_skin_of.append(m)
+				for j in 4:
+					actor.probe_binds.append(bones[v * per + j])
+					actor.probe_weights.append(ws[v * per + j])
+
+
 func _strike_points(actor: Actor) -> PackedVector3Array:
 	var pts := PackedVector3Array()
 	for side: String in ["Left", "Right"]:
@@ -1252,9 +1400,17 @@ func _camera() -> void:
 
 
 func _save() -> void:
+	if _frame % _every != 0:
+		# A tick between recorded frames: step without rendering.
+		_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		await process_frame
+		_frame += 1
+		return
+	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	await process_frame
 	await RenderingServer.frame_post_draw
-	_viewport.get_texture().get_image().save_jpg(_out.path_join("f_%05d.jpg" % _frame), 0.93)
+	_viewport.get_texture().get_image().save_jpg(_out.path_join("f_%05d.jpg" % _written), 0.93)
+	_written += 1
 	_frame += 1
 
 

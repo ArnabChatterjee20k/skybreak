@@ -105,3 +105,28 @@ Kael's stack unchanged. Brann notes:
 | Trousers, boots | profile slices; planar soles and toe caps with hobnails | `LEG_L/R` |
 
 The hammer and cannon are pickup weapons built by the weapon layer; they show on his idle pose only.
+
+## v2 self-review (lavapipe; values and colour still need the GPU)
+Ranked, worst first. Stills: `reports/lookdev/brann/voxel_v1_lavapipe_*.png` and `voxel_v2_lavapipe_*.png`.
+
+| # | Problem in v1 | v2 |
+|---|---|---|
+| 1 | Old smooth hammer and cannon stowed on him dominated every angle | Hidden: `BrannVoxelView.stow_old_weapons` (off) skips stowing; voxel weapons are their own lane |
+| 2 | Braid sank into the belly in every move (spring follows the head; 18 cm deep) and was invisible at rest | `_keep_braid_clear` turns it in front of the bib each frame; braid moved forward, root up in the beard. Still swings off the body in profile: a GPU-reel call |
+| 3 | Boulders cut into the head on a chin tuck (10 cm in guard) | Re-cut boulder with a deep inner-top notch, moved out 2 cm: boulder-vs-head clipping gone except sweep (7 cm, head leans into it) |
+| 4 | Fists cocked by the ear went 10–15 cm into the boulders | `_keep_fist_clear` swings the upper arm out; fists and forearms mostly clear. Raised upper-arm roots still enter the boulder underside 5–10 cm, and grab/knockdown/light_2 keep deep spots: needs Brann's clips retimed for the boulders (outside this lane) |
+| 5 | Torso and boulders were lumpy terraces from arbitrary facet slopes | Only axis faces and 45° chamfers (narrow on the torso): flat carved planes. The 45° chamfers still show as step stripes up close |
+| 6 | Speckled chisel marks and lichen noise on the boulders | Halved and clumped |
+| 7 | Ember cracks read as blobs (wide white core) | Core narrowed to a short hot stretch; flat faces keep the seams one cell wide. Glow strength: GPU |
+
+Kept as is: fist size (about 0.28 m across, the sheet's 0.30 m), the apron (stitched hem, pockets, patch, burns read as leather), three-scale detail.
+Checks: `game/lookdev/move_scan.gd` (stretch + clipping over every move) and `game/lookdev/review_capture.gd` (angles, close-ups, guard and move poses).
+
+## v3 fixes (owner's note on the v2 reel, ~0:09 walk, side view; lavapipe)
+| # | Problem in v2 | v3 |
+|---|---|---|
+| 1 | Beard braid: one rigid stick on the `BeardBraid` spring, hung 8–10 cm in front of the bib and pushed further out by `_keep_braid_clear`; it jutted out horizontally in walk, run, flight and dash | A chain of three bones (`Braid1`–`Braid3`, under `Head`, added by `BrannBraidBones` before the mesh is skinned). The braid is skinned along the chain and blended at the joints, which sit between the iron rings so the rings stay rigid. `BrannVoxelView._swing_braid` runs verlet joints under gravity with a weak pull toward the head's hang and drag from his movement. Each segment stays within 32° of the chest's down axis and in front of the chest and belly. The root rides in the beard's bottom lobe (head/neck blend like the beard). It now hangs a bead's width in front of the bib |
+| 2 | Fist floated in front of the forearm with a see-through slit at the cuff: the palm pivots at the wrist and the cuff was only 3 cm deep | A hand-rigid stone wrist plug on its own grid, hidden inside the forearm and palm at rest, fills the cuff's mouth when the hand bends. The cuff is deeper (5.4 cm, bevelled). `_clamp_wrist` limits the hand's swing off the forearm to 24° and leaves twist free. Checked by `gap_checks()` in `move_scan.gd` and a GUT test over every move |
+| 3 | Salt-and-pepper speckle on the stone torso and the denim | Two causes. **Design (fixed):** light "chips" lightened 12% of exposed stone voxels, and on the torso's stepped 45° chamfers every step is an edge, so they read as salt. Chisel dashes broke into dots on the chamfers, and the trouser side seam was dashed. Chips are now on the boulders only (clumped, 8%), chisel marks only on flat facets, the seam is solid, and value noise is ~2% on the torso and denim, with hue drift scaled to match. **Renderer (not design):** the per-pixel grain is PCSS soft-shadow sampling. It lives only in the key light's soft-shadow term. With the same build, pose and camera: SSAO and SSIL off keeps it, hard shadows (no PCSS) remove it, and it is absent in lavapipe frames where the key's self-shadow on the body isn't drawn at all, which is probably why some v2 stills looked clean (`reports/lookdev/brann_v3/speckle_proof.png`). On the GTX 1650, check whether PCSS grain shows without TAA. If it does, the fix belongs in the stage (TAA, or a smaller `light_angular_distance`), not in the voxels |
+| 4 | Reel: the dummy sank into his back and boulders (3-hit combo) and its arm into his beard (hit react). Only fists and boots were tested against a capsule | `moves_reel.gd` also keeps the two posed meshes' sampled surfaces 4 cm apart, pushing both back equally along the line between them (like the pushboxes, with the real silhouettes). Pushbox and hurtbox values are unchanged |
+| 5 | Beam and ki read pale peach | The reel's glow material was unshaded, so its emission never showed and only the peach albedo did. It's now lit, with black albedo and emission in the energy colour at ~1.2, which keeps #FF4A12 through the filmic tonemap, plus a thin #FFD9A0 core in the beam |
