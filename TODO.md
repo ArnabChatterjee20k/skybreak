@@ -100,6 +100,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
       fetches, SHA-checks, caches (user://) and mounts the zone's pack. WEB-tier gl_compatibility stills
       of 3 zones byte-identical before/after; headless Chromium: 1.0-2.0 s fetch+mount, 1.4-1.9 s load.
       A lossless compact format doesn't reach the budget (bakes ~gzip floor; indexed layout was bigger).
+      DONE: merged into integration/voxel-art (final assembly, reports/integration/final-assemble.md).
   - QA-23 done on the branch: voxel Brann's braid popped (Braid2 1.7 rad on weapon pickups, 42 pop
     frames in the quick run): it is now posed by a last skeleton modifier on the drawn body and
     turns at most 54 rad/s (`test_brann_voxel_braid.gd`).
@@ -109,12 +110,16 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
     14.0 cm, Vexa 10.4 -> 10.7, Lyra 10.4 -> 14.0, Brann 11.0 -> 12.0). Fix: lift each voxel model by
     its delta (or trim the boot soles), then re-check feet and weapon clearance.
     FIXED on fix/voxel-soles-perf@1190b4b (also carries lyra v4, kael and vexa polish): merge that branch.
+    DONE: merged at e7736e6 into integration/voxel-art (final assembly).
   - QA-22 [desktop, characters] voxel Brann's view still costs ~2x a classic legend per frame
     (1.20 vs ~0.55 ms for two fighters, headless) after the perf pass: `_keep_fist_clear` dominates.
   - Visual goldens: all 14 fail as expected from the art change; one refresh pass after merge.
   - The menu backdrop is still the classic world fly-through; MotionLayers' weapon clearance uses the
     classic weapon boxes (voxel models keep the old size and grip).
-  - ZONE-POLISH FIXED on fix/zone-polish@4938c10: merge that branch.
+  - ZONE-POLISH FIXED on fix/zone-polish@4938c10: merge that branch. DONE: merged into integration/voxel-art.
+  - REEL-FIXES DONE: lookdev/reel-fixes@d3a75e4 merged into integration/voxel-art (moves_reel takes
+    the reel-fixes side, which carries the Brann-lane lit glow: black albedo, emission x GLOW_GAIN 0.27).
+  - zone_capture.gd prints the real video adapter instead of a fixed "(software)" (test_zone_capture.gd).
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
   all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
   energy on GLOW, emblems at 5.5 mm), drop-in behind `VoxelArmory` / `WeaponModels.voxel_everywhere`

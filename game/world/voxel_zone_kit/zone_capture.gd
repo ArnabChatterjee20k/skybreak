@@ -136,8 +136,8 @@ func _shot(name: String) -> void:
 		RenderingServer.VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME)
 	var shadow_draws := RenderingServer.viewport_get_render_info(rid, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_SHADOW,
 		RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME)
-	print("%s: gpu %.1f ms (software), %d tris, %d draws, shadow %d tris, %d draws"
-		% [name, gpu, prims, draws, shadow_prims, shadow_draws])
+	print("%s: gpu %.1f ms (%s), %d tris, %d draws, shadow %d tris, %d draws"
+		% [name, gpu, RenderingServer.get_video_adapter_name(), prims, draws, shadow_prims, shadow_draws])
 
 
 # ---------------------------------------------------------------- fly-through
