@@ -91,3 +91,32 @@ func test_the_fly_through_clears_every_sim_spire() -> void:
 	zone._story_layout()
 	var pts := zone.flight()
 	assert_eq(zone._flight_hit(pts), -1)
+
+
+func _foothill_field(cell: float) -> VoxelHeightfield:
+	var hf := VoxelHeightfield.new(cell, Vector2(0, 0), Vector2(89, 44))
+	for z in hf.size.y:
+		for x in hf.size.x:
+			var lv := roundi((2.0 + 0.1 * hf.centre(x, z).x) / cell)
+			hf.set_column(x, z, lv, lv - 4, Color.WHITE)
+	return hf
+
+
+func test_foothill_chunks_pair_with_their_far_tier_and_switch_as_one() -> void:
+	var near := _foothill_field(VoxelZone.T2)
+	var far := _foothill_field(FrozenPeaksVoxel.FOOTHILL_FAR_CELL)
+	near.chunk = far.chunk * 2
+	var parent := Node3D.new()
+	add_child_autofree(parent)
+	var near_root := near.build(parent, StandardMaterial3D.new(), "Near")
+	var far_root := far.build(parent, StandardMaterial3D.new(), "Far")
+	assert_eq(near_root.get_child_count(), far_root.get_child_count(), "one far chunk per near chunk")
+	FrozenPeaksVoxel.link_far_chunks(near_root, far_root, near.origin, near.chunk * near.cell, 120.0)
+	for k in near_root.get_child_count():
+		var a := near_root.get_child(k) as MeshInstance3D
+		assert_eq(a.visibility_range_end, 120.0)
+		assert_eq(a.visibility_range_begin, 0.0)
+		var twins := far_root.get_children().filter(func(b: MeshInstance3D) -> bool: return b.custom_aabb == a.custom_aabb)
+		assert_eq(twins.size(), 1, "chunk %d has one far twin with the same box" % k)
+		assert_eq((twins[0] as MeshInstance3D).visibility_range_begin, 120.0)
+		assert_true(a.custom_aabb.encloses(a.mesh.get_aabb()) and a.custom_aabb.encloses((twins[0] as MeshInstance3D).mesh.get_aabb()))

@@ -227,6 +227,8 @@ static func _multimesh(m: Mesh, transforms: Array[Transform3D]) -> MultiMeshInst
 		mm.set_instance_transform(i, transforms[i])
 	var node := MultiMeshInstance3D.new()
 	node.multimesh = mm
+	# The headless renderer keeps no MultiMesh data; checks (FlightClearance) read this.
+	node.set_meta(PropKit.INSTANCE_TRANSFORMS_META, transforms)
 	return node
 
 

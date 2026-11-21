@@ -96,3 +96,16 @@ func test_an_island_switches_to_its_far_tier_all_at_once() -> void:
 	for mi: MeshInstance3D in roots[1].get_children():
 		assert_eq(mi.visibility_range_begin, switch)
 		assert_true((roots[1].transform * mi.custom_aabb).is_equal_approx(_zone._island_boxes[0]), "the same box")
+
+
+func test_a_loaded_bake_gets_crown_and_watch_back_for_the_fly_through() -> void:
+	var z := SkyholdRuinsVoxel.new()
+	autofree(z)
+	var crown := _zone.layout.named("Crown Island")
+	z._kept_islands = {"crown": SkyholdRuinsVoxel._island_values(crown),
+		"watch": SkyholdRuinsVoxel._island_values(_zone.layout.named("Watch Island"))}
+	z.restored()
+	assert_not_null(z.crown)
+	assert_eq(z.crown.yaw, crown.yaw)
+	assert_eq(z.crown.centre, crown.centre)
+	assert_eq(z.watch.name, "Watch Island")

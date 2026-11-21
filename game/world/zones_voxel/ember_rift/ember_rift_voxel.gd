@@ -1009,9 +1009,9 @@ func flight() -> Array[Dictionary]:
 		{"from": Vector3(645, 80, -665), "at": Vector3(650, 42, -560), "fov": 58.0},
 		{"from": Vector3(640, 50, -610), "at": Vector3(660, 40, -525), "fov": 56.0},
 		{"from": Vector3(650, 40, -570), "at": Vector3(665, 45, -510), "fov": 56.0},
-		{"from": Vector3(718, 52, -566), "at": Vector3(660, 72, -518), "fov": 56.0},
+		{"from": Vector3(710, 52, -566), "at": Vector3(660, 72, -518), "fov": 56.0},  # clear of the basalt spires
 		{"from": Vector3(728, 66, -490), "at": Vector3(660, 85, -522), "fov": 56.0},
-		{"from": vb + Vector3(24, 10, 18), "at": vb + Vector3(0, 10, 0), "fov": 56.0},
+		{"from": vb + Vector3(24, 10, 10), "at": vb + Vector3(0, 10, 0), "fov": 56.0},
 		{"from": Vector3(620, 46, -430), "at": Vector3(560, 46, -395), "fov": 56.0},
 		{"from": Vector3(560, 58, -392), "at": Vector3(notch.x, 62, notch.z), "fov": 56.0},
 		{"from": Vector3(505, 85, -340), "at": Vector3(notch.x - 80, 60, notch.z + 80), "fov": 58.0},

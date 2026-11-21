@@ -301,6 +301,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+- ZONE-POLISH [desktop] open after `fix/zone-polish` (report `reports/perf/zone-polish/`): run the
+  zone bench on the GTX 1650 for Frozen Peaks HIGH and MEDIUM (target HIGH p95 under ~14 ms; HIGH
+  now drops foothill shadows past 120 m, -39% shadow triangles in the opening). If HIGH still
+  misses, the 2xT2 foothill tier MEDIUM uses is the next lever (measured; it changes the far
+  foothills in the overview). Fly-through clearance runs only with local bakes (VOXEL-BAKES).
 - DEF2-1 [desktop] Perfect-dodge view slow (0.85x for 8 frames, local offline only), proposal M2; not
   built in T-DEF2.
 - DEF2-2 [desktop] An ideal-read spot dodge evades all 12 matrix attacks (like vanish). It is minus

@@ -20,6 +20,8 @@ const TILE := 48.0
 ## Near tier ends here (m); the far tier takes over to the fog.
 const NEAR_RANGE := 170.0
 const GROUND_NEAR := 140.0
+## The coarse far ground reaches this far (m) past the ground tiles.
+const FAR_GROUND := 1800.0
 const STOREY := 3.5
 
 ## Palette (sRGB), from the sheet.
@@ -271,6 +273,59 @@ func _ground() -> void:
 		root.add_child(mi)
 		tris += mesh.surface_get_array_len(0) / 3
 	_tris["ground_all_tiles"] = tris
+	_tris["ground_far"] = _ground_far(root, Rect2(lo, hi - lo))
+
+
+## Coarse matte ground from the tiles' edge on past the fog (FAR_GROUND m each
+## way), so from the high fly-through no straight terrain edge cuts the sky. It
+## starts one step inside the tiles and a metre lower, so no seam shows.
+func _ground_far(root: Node3D, tiles: Rect2) -> int:
+	var step := 64.0
+	var outer := tiles.grow(FAR_GROUND)
+	var verts := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var inner := tiles.grow(-step)
+	var nx := ceili(outer.size.x / step)
+	var nz := ceili(outer.size.y / step)
+	# Past the heightmap's square the ground eases down to the city's level (no
+	# clamped plateau at the map edge).
+	var base := heightmap.ground_height_at(zone.centre.x, zone.centre.y)
+	var map := Rect2(heightmap.origin, Vector2.ONE * heightmap.cell_size * (heightmap.size - 1))
+	var h := func(x: float, z: float) -> float:
+		var out := maxf(maxf(map.position.x - x, x - map.end.x), maxf(map.position.y - z, z - map.end.y))
+		return lerpf(heightmap.ground_height_at(x, z), base, clampf(out / 400.0, 0.0, 1.0)) - 1.0
+	for j in nz:
+		for i in nx:
+			var o := outer.position + Vector2(i, j) * step
+			if inner.encloses(Rect2(o, Vector2(step, step))):
+				continue
+			var p00 := Vector3(o.x, h.call(o.x, o.y), o.y)
+			var p10 := Vector3(o.x + step, h.call(o.x + step, o.y), o.y)
+			var p01 := Vector3(o.x, h.call(o.x, o.y + step), o.y + step)
+			var p11 := Vector3(o.x + step, h.call(o.x + step, o.y + step), o.y + step)
+			for tri: Array in [[p00, p10, p11], [p00, p11, p01]]:
+				var nn := ((tri[2] as Vector3) - (tri[0] as Vector3)).cross((tri[1] as Vector3) - (tri[0] as Vector3)).normalized()
+				for v: Vector3 in tri:
+					verts.append(v)
+					normals.append(nn)
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var mi := MeshInstance3D.new()
+	mi.name = "GroundFar"
+	mi.mesh = mesh
+	# Matte: the street shader's wet glints read as bright patches in the fog.
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color("#3a3944")
+	mat.roughness = 1.0
+	mat.metallic_specular = 0.0
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(mi)
+	return verts.size() / 3
 
 
 func _ground_mesh(o: Vector2, step: float) -> ArrayMesh:
@@ -1505,10 +1560,10 @@ func flight() -> Array[Dictionary]:
 	var spire: Vector3 = towers["Spire Tower"].origin if towers.has("Spire Tower") else Vector3(-102, 80, 618)
 	var top: float = stats.get("spire_top", 200.0)
 	return [
-		{"from": Vector3(30, g + 3.0, 404), "at": Vector3(-40, g + 4.0, 402), "fov": 60.0},
+		{"from": Vector3(30, g + 6.6, 404), "at": Vector3(-40, g + 4.0, 402), "fov": 60.0},  # the street rises here
 		{"from": Vector3(-6, g + 2.6, 403), "at": Vector3(-62, g + 3.0, 412), "fov": 60.0},
-		{"from": Vector3(-46, g + 3.2, 404), "at": Vector3(-78, g + 3.0, 440), "fov": 60.0},
-		{"from": Vector3(-74, g + 4.0, 432), "at": bus + Vector3(0, 0, 0), "fov": 58.0},
+		{"from": Vector3(-46, g + 4.7, 400), "at": Vector3(-78, g + 3.0, 440), "fov": 60.0},
+		{"from": Vector3(-74, g + 4.0, 427), "at": bus + Vector3(0, 0, 0), "fov": 58.0},  # clear of the corner block
 		{"from": Vector3(-56, g + 2.0, bus.z - 2.0), "at": bus + Vector3(-30, 0, 4), "fov": 58.0},
 		{"from": Vector3(-30, g + 10.0, bus.z - 14.0), "at": gd + Vector3(0, 0, 0), "fov": 58.0},
 		{"from": gd + Vector3(14, 6, 16), "at": gd, "fov": 56.0},
