@@ -435,7 +435,10 @@ static func scarf_depth(y: float) -> float:
 static func scarf_tail_sdf(p: Vector3) -> float:
 	var hw := SCARF_END_HALF_W if p.y < SCARF_END + 0.11 else SCARF_HALF_W
 	var u := (p.x - SCARF_X) / hw
-	var d := maxf(absf(p.x - SCARF_X) - hw, absf(p.z - scarf_depth(p.y)) - SCARF_HALF_T)
+	# Each row also covers the row below's depth, so neighbouring rows share the
+	# full thickness at every fold and joint and bends can't pinch a notch.
+	var dz := minf(absf(p.z - scarf_depth(p.y)), absf(p.z - scarf_depth(p.y - FINE_CELL)))
+	var d := maxf(absf(p.x - SCARF_X) - hw, dz - SCARF_HALF_T)
 	d = maxf(d, p.y - SCARF_TOP)
 	# The end: a shallow V a cell deep, then the fringe tabs below it.
 	var cut := SCARF_END - FINE_CELL * (1.0 - absf(u)) - p.y

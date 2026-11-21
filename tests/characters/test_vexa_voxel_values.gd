@@ -23,6 +23,21 @@ func test_jacket_is_a_mid_dark_slate_below_the_wraps() -> void:
 	assert_lt(_lum(VexaVoxelDesign.Mat.JACKET), _lum(VexaVoxelDesign.Mat.WRAP), "jacket darker than the wraps")
 
 
+func test_jacket_is_a_neutral_slate_not_navy() -> void:
+	# The stage key pushes blue up (#3a3a4c rendered #282940), so the authored
+	# jacket family leans no more than 12/255 blue over red and green, with red at least green.
+	for mat: int in [VexaVoxelDesign.Mat.JACKET, VexaVoxelDesign.Mat.JACKET_EDGE, VexaVoxelDesign.Mat.JACKET_DARK]:
+		var c: Color = VexaVoxelDesign.COLORS[mat]
+		assert_lte(c.b8 - maxi(c.r8, c.g8), 12, "%s leans no further blue than #3c3a48" % c.to_html(false))
+		assert_gte(c.r8, c.g8, "%s is not green-grey" % c.to_html(false))
+
+
+func test_jacket_value_stays_below_the_wraps_and_the_purple() -> void:
+	var jacket: Color = VexaVoxelDesign.COLORS[VexaVoxelDesign.Mat.JACKET]
+	assert_lt(jacket.v, (VexaVoxelDesign.COLORS[VexaVoxelDesign.Mat.WRAP] as Color).v, "below the wraps")
+	assert_lt(jacket.v, (VexaVoxelDesign.COLORS[VexaVoxelDesign.Mat.HOOD] as Color).v, "below the hood purple")
+
+
 func test_jacket_edge_and_seams_are_darker_than_the_jacket() -> void:
 	assert_lt(_lum(VexaVoxelDesign.Mat.JACKET_EDGE), _lum(VexaVoxelDesign.Mat.JACKET))
 	assert_lt(_lum(VexaVoxelDesign.Mat.JACKET_DARK), _lum(VexaVoxelDesign.Mat.JACKET_EDGE))

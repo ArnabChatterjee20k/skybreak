@@ -45,7 +45,7 @@ Read at a glance: *tall hood with two swept-back ear points, a black visor with 
 |---|---|---|---|
 | Hood, mantle | muted plum-violet `#3A2650` | `#22162F` | v2: interior and undersides `#160E20`; lighter rim `#5E4482` on the hood edge and tatter tips; fold shading (light tatter ridges, dark valleys, drape folds on the hood back) |
 | Bodysuit, leggings | blue-black `#1A1C24` | `#0E0F14` | never pure black: the rim light needs something to catch |
-| Jacket | slate `#5A5A70` | `#2E2E3C` | v2: darker edge `#3C3C4E` on the collar, cuffs and hem, dark seams; light zip teeth `#C4C8D2` (v1's silver read near-white on the GPU) |
+| Jacket | neutral dark slate `#3C3A48` | `#302E38` | v4: shifted off navy (v3's `#3A3A4C` rendered `#282940` under the stage key, blue well above red and green); same luminance, HSV value 0.28, below the hood purple (0.31) and the wraps (0.50). Edge `#363441` on the collar, cuffs and hem, dark seams `#302E38`; light zip teeth `#C4C8D2` (v1's silver read near-white on the GPU). History: v1 `#5A5A70`, v3 `#3A3A4C` |
 | Wraps | cool grey `#8A8AA0` | `#3A3848` | v2: a dark band every third wrap; step ridges a touch lighter; no edge-wear lightening |
 | Boots, holster | charcoal leather `#2C2A30` | `#18171B` | sole `#141316` |
 | Visor | smoked glass `#18141F` | `#0C0A10` | one specular glint row |
@@ -113,3 +113,7 @@ Grid bounds: body about `AABB(-0.55, -0.01, -0.35) + (1.10, 1.50, 0.70)`; the he
 ## v2 value pass (from the v1 GPU renders)
 - The jacket and wraps read near-white and outweighed the purple and dark. Now purple and dark dominate; light values only at small accents (visor glint, zip teeth, coin, steel rivets).
 - The hood and mantle were one flat purple. Faces turned in toward the body or down are the dark interior; the outer panels get fold shading and a lighter rim on the hood edge and tatter tips. The violet lining stays the one saturated accent.
+
+## Jacket neutral (polish, from the GTX 1650 renders)
+- Under the stage key the v3 jacket `#3A3A4C` rendered navy-slate (`#282940`, blue clearly above red and green). It is now authored `#3C3A48` (edge `#363441`, seams `#302E38`): the same luminance, red nudged up and blue down, so it renders as a neutral dark slate.
+- Its HSV value (0.28) stays below the hood purple (0.31) and the wraps (0.50); `tests/characters/test_vexa_voxel_values.gd` guards both and the blue lean.
