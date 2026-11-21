@@ -76,6 +76,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
     apply: a mirror match tells P1 from P2 only by energy rim and team ring.
   - QA-20 done on the branch: the clearance solver keeps out the voxel weapon a voxel legend draws,
     and voxel Brann's stone torso keeps bone scale 1 (weapon_vs_holder 3667 -> 7 frames over 9 runs).
+    FIXED on fix/brann-weapon-grip@20a9655: merge that branch, do not re-fix (it already merges
+    5c8f5af; optional on top of 6b145f7: arm turn without scale writes, classic + voxel boxes for every
+    weapon, per-pose test, previews in reports/integration/brann_grip/). VisualQa heartbloom/1,
+    frozen/2, mesa/3 weapon_vs_holder kael/vexa/lyra/brann 0/0/1/1126 -> 0/0/0/0; weapon_vs_body
+    (all Ki Gauntlets) 0/6/4/8 -> 0/6/4/1, same as 5c8f5af alone. Open: Brann's off hand misses the
+    Scatter Cannon fore-grip in guard (before and after).
   - QA-21 done on the branch: fix/lyra-cape-pops@295bd83 merged (cape clearance inside the chain sim);
     regression tests `test_lyra_cape.gd`, `test_lyra_voxel_cape.gd` (150 pops -> 0).
   - VOXEL-COMPAT / VOXEL-WEB done on the branch: zone-perf's merged props use no instance uniforms
