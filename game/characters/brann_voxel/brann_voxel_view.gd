@@ -24,6 +24,10 @@ const BRAID_FOLLOW := 15.0
 const BRAID_DAMPING := 0.88
 const BRAID_DRAG := 0.6
 const BRAID_ITERATIONS := 4
+## How much further than BRAID_MAX_SWING the body may tilt the braid out.
+const BRAID_BODY_TILT := deg_to_rad(20.0)
+## The most his movement may blow the braid (m/s^2): a dash leans it, never flings it.
+const BRAID_MAX_DRAG := 12.0
 ## How far the tufted tip and the end ring hang below the last joint.
 const BRAID_TAIL := 0.09
 ## Rest heights (low, high) of the stone each of Spine, Chest and UpperChest moves.
@@ -86,7 +90,7 @@ func _swing_braid(fighter: FighterState, delta: float) -> void:
 	var gravity := Vector3.DOWN
 	if _skeleton.is_inside_tree():
 		gravity = (_skeleton.global_transform.basis.inverse() * Vector3.DOWN).normalized()
-	var push := -_model_velocity(fighter) * CLOTH_DRAG * BRAID_DRAG
+	var push := (-_model_velocity(fighter) * CLOTH_DRAG * BRAID_DRAG).limit_length(BRAID_MAX_DRAG)
 	_braid_time += delta
 	while _braid_time >= SPRING_STEP:
 		_braid_time -= SPRING_STEP
@@ -142,10 +146,19 @@ func _hang_segments(rest: PackedVector3Array, target: PackedVector3Array, down: 
 			var axis := down.cross(dir)
 			if axis.length_squared() < 1e-8:
 				axis = Vector3.RIGHT
-			var held := down.rotated(axis.normalized(), BRAID_MAX_SWING)
-			# The body wins over the swing limit: never hold it inside the stone.
-			if not clear or _clear_of_torso(start + held * length).is_equal_approx(start + held * length):
-				dir = held
+			dir = down.rotated(axis.normalized(), BRAID_MAX_SWING)
+			if clear:
+				# Held inside the stone at the limit: tilt it out over the chest
+				# a little further (bounded, so it never swings up).
+				var front := (_skin_of(_torso_bones[2]).basis * Vector3.BACK).normalized()
+				for step in 4:
+					var end := start + dir * length
+					if _clear_of_torso(end).is_equal_approx(end):
+						break
+					var out_axis := dir.cross(front)
+					if out_axis.length_squared() < 1e-8:
+						break
+					dir = dir.rotated(out_axis.normalized(), BRAID_BODY_TILT / 4.0)
 		_braid_now[i] = start + dir * length
 
 

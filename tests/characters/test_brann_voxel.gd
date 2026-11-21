@@ -110,18 +110,25 @@ func test_braid_is_skinned_only_to_the_chain() -> void:
 
 
 ## Steps the view through a state with a velocity (model space +Z forward) and
-## returns the widest angle of any braid segment off straight down (world).
-func _widest_braid_angle(state: FighterState.State, velocity: Vector3, ticks: int) -> float:
+## returns the widest angle of any braid segment off straight down (world) and
+## off his chest's down axis, in degrees.
+func _widest_braid_angles(state: FighterState.State, velocity: Vector3, ticks: int) -> Vector2:
 	var fighter := FighterState.new()
 	fighter.enter_state(state)
 	fighter.velocity = Basis(Vector3.UP, fighter.facing_yaw) * Vector3(-velocity.x, velocity.y, -velocity.z)
-	var widest := 0.0
+	var skeleton := _skeleton()
+	var chest := skeleton.find_bone(&"UpperChest")
+	var widest := Vector2.ZERO
 	for t in ticks:
 		fighter.state_ticks += 1
 		_view.apply_state(fighter, 1.0 / 60.0)
+		var down := ((skeleton.get_bone_global_pose(chest) * skeleton.get_bone_global_rest(chest).affine_inverse()).basis
+			* Vector3.DOWN).normalized()
 		var j := _view.braid_joints()
 		for i in j.size() - 1:
-			widest = maxf(widest, rad_to_deg((j[i + 1] - j[i]).angle_to(Vector3.DOWN)))
+			var d := j[i + 1] - j[i]
+			widest.x = maxf(widest.x, rad_to_deg(d.angle_to(Vector3.DOWN)))
+			widest.y = maxf(widest.y, rad_to_deg(d.angle_to(down)))
 	return widest
 
 
@@ -135,12 +142,13 @@ func test_braid_never_sticks_out_in_walk_run_dash_or_flight() -> void:
 		"dash back": [FighterState.State.DASHING, Vector3(0, 0, -16.0)],
 	}
 	for label: String in cases:
-		var widest := _widest_braid_angle(cases[label][0], cases[label][1], 90)
-		assert_lt(widest, 55.0, "%s: braid segment off vertical (deg)" % label)
+		var widest := _widest_braid_angles(cases[label][0], cases[label][1], 90)
+		assert_lt(widest.y, 55.0, "%s: braid segment off his chest's down axis (deg)" % label)
+		assert_lt(widest.x, 70.0, "%s: braid segment off vertical (deg), never near horizontal" % label)
 
 
 func test_braid_root_stays_in_the_beard() -> void:
-	_widest_braid_angle(FighterState.State.DASHING, Vector3(0, 0, 16.0), 30)
+	_widest_braid_angles(FighterState.State.DASHING, Vector3(0, 0, 16.0), 30)
 	var skeleton := _skeleton()
 	var head := skeleton.find_bone(&"Head")
 	var head_skin := skeleton.get_bone_global_pose(head) * skeleton.get_bone_global_rest(head).affine_inverse()
