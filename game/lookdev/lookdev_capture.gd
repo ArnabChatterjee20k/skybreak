@@ -9,7 +9,7 @@ extends SceneTree
 ## SubViewport. spin and idle write numbered PNG frames (30 fps) for ffmpeg;
 ## compare renders the old scene at the same angles (skipped without --compare).
 
-const USAGE := "lookdev_capture.gd -- <out dir> [mode] --scene=<character scene> [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0]"
+const USAGE := "lookdev_capture.gd -- <out dir> [mode] --scene=<character scene> [--compare=<old scene>] [--hand=RightHand] [--hand-yaw=0] [--hide-stowed]"
 const CLIP_FPS := 30
 
 var _scene := ""
@@ -17,6 +17,7 @@ var _compare := ""
 ## The signature-part close-up: this hand bone, the figure turned by hand_yaw.
 var _hand_bone := &"RightHand"
 var _hand_yaw_deg := 0.0
+var _hide_stowed := false
 
 var _out := ""
 ## Renders go through a fixed-size viewport so stills and clips are exactly
@@ -36,6 +37,7 @@ func _initialize() -> void:
 	_compare = args.get_option("compare")
 	_hand_bone = StringName(args.get_option("hand", "RightHand"))
 	_hand_yaw_deg = float(args.get_option("hand-yaw", "0"))
+	_hide_stowed = args.options.has("hide-stowed")
 	if _scene == "" or _out == "":
 		return
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -65,6 +67,7 @@ func _spawn(scene: String) -> void:
 	body.position = Vector3(0, 1, 0)
 	facing.add_child(body)
 	body.add_child(_view)
+	_hide_weapons(_view)
 	_fighter = FighterState.new()
 	_fighter.enter_state(FighterState.State.IDLE)
 	await _advance(40)
@@ -154,3 +157,11 @@ func _save(name: String) -> void:
 		await process_frame
 	await RenderingServer.frame_post_draw
 	_viewport.get_texture().get_image().save_png(_out.path_join(name + ".png"))
+
+
+## --hide-stowed: look-dev only, hides a view's stowed weapons (views with
+## stowed_weapons(); they're still the old smooth meshes).
+func _hide_weapons(view: CharacterView) -> void:
+	if _hide_stowed and view.has_method(&"stowed_weapons"):
+		for w: Node3D in view.call(&"stowed_weapons"):
+			w.visible = false
