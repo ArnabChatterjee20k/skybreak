@@ -39,11 +39,9 @@ func test_desktop_main_menu_keeps_quit() -> void:
 	assert_true(ids.has(&"quit"))
 
 
-func test_web_build_ships_only_the_web_tier_zone_bakes() -> void:
-	var filter := _web_exclude_filter()
-	for tier in ["high", "medium", "low"]:
-		assert_string_contains(filter, "game/world/voxel_zone_kit/baked/*_%s.scn" % tier)
-	assert_false(filter.contains("*_web.scn"))
+func test_web_build_keeps_zone_bakes_out_of_index_pck() -> void:
+	# The WEB bakes ship as per-zone packs (ZoneBakePacks, test_zone_bake_packs.gd); none in index.pck.
+	assert_string_contains(_web_exclude_filter(), "game/world/voxel_zone_kit/baked/*")
 
 
 func test_web_loads_the_web_tier_bake() -> void:
