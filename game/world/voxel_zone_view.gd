@@ -43,6 +43,9 @@ const QUALITY := {
 	},
 }
 
+## The builder that draws each zone (starts as BUILDERS; tests swap in stand-ins).
+static var builders := BUILDERS.duplicate()
+
 var zone_id: StringName
 var zone: VoxelZone
 var stage: VoxelStage
@@ -53,12 +56,12 @@ var _clock := 0.0
 
 
 static func supports(id: StringName) -> bool:
-	return BUILDERS.has(id)
+	return builders.has(id)
 
 
 ## Builds the zone and its stage; call after adding this node to the tree.
 func build(id: StringName, tier: GraphicsSettings.Quality = GraphicsSettings.Quality.HIGH) -> void:
-	show_zone((load(BUILDERS[id]) as GDScript).new() as VoxelZone, id, tier)
+	show_zone((load(builders[id]) as GDScript).new() as VoxelZone, id, tier)
 
 
 ## Builds a given VoxelZone (not yet in the tree) and its stage under this node.

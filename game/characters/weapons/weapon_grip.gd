@@ -138,9 +138,42 @@ static func part_boxes(model: Node3D, with_string := false) -> Array[Transform3D
 		while at != model and at != null:
 			to_model = (at as Node3D).transform * to_model
 			at = at.get_parent()
-		var box := part.get_aabb()
-		boxes.append(to_model * Transform3D(Basis.from_scale(box.size * 0.5), box.get_center()))
+		# A voxel weapon is one merged mesh: its slices along the long axis stand in for parts.
+		var parts: Array[AABB] = [part.get_aabb()]
+		if model.has_meta(&"voxel"):
+			parts = voxel_slices(part.mesh)
+		for box in parts:
+			boxes.append(to_model * Transform3D(Basis.from_scale(box.size * 0.5), box.get_center()))
 	return boxes
+
+
+## Slice height (m) of a merged voxel mesh's part boxes.
+const VOXEL_SLICE := 0.06
+static var _slice_cache := {}
+
+
+## Tight boxes of a mesh's vertices in VOXEL_SLICE slabs along +Y (cached per mesh).
+static func voxel_slices(mesh: Mesh) -> Array[AABB]:
+	var key := mesh.get_instance_id()
+	if _slice_cache.has(key):
+		return _slice_cache[key]
+	var slabs := {}
+	for s in mesh.get_surface_count():
+		for v: Vector3 in mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]:
+			var i := floori(v.y / VOXEL_SLICE)
+			if slabs.has(i):
+				slabs[i] = (slabs[i] as AABB).expand(v)
+			else:
+				slabs[i] = AABB(v, Vector3.ZERO)
+	var out: Array[AABB] = []
+	var keys := slabs.keys()
+	keys.sort()
+	for i: int in keys:
+		# At least a few millimetres thick on every axis, so the box stays invertible.
+		var box: AABB = slabs[i]
+		out.append(box.grow(0.002))
+	_slice_cache[key] = out
+	return out
 
 
 static var _box_cache := {}

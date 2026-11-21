@@ -24,8 +24,12 @@ func _skeleton() -> Skeleton3D:
 
 
 func test_old_weapons_are_not_stowed_by_default() -> void:
-	assert_eq(_view.stowed_weapons().size(), 0)
-	assert_eq(_skeleton().find_children("Stowed*", "", false, false).size(), 0)
+	# The scene's VoxelArmory stows the voxel pair instead.
+	var stowed := _skeleton().find_children("Stowed*", "", false, false)
+	assert_eq(stowed.size(), 2)
+	for attachment in stowed:
+		for model in attachment.get_children():
+			assert_true(model.has_meta(&"voxel"), "%s is the voxel model" % attachment.name)
 
 
 func test_old_weapons_can_still_be_stowed() -> void:

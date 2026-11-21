@@ -4,6 +4,10 @@ extends GutTest
 const KAEL := preload("res://game/characters/kael_chunky/kael_chunky.tscn")
 
 
+func after_each() -> void:
+	ArtStyle.reset()
+
+
 func _albedo_of(root: Node, part: String) -> Color:
 	for mesh: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
 		for surface in mesh.mesh.get_surface_count():
@@ -44,7 +48,9 @@ func test_palette_never_edits_the_shared_material() -> void:
 	assert_eq(_albedo_of(_view({}), "coat"), before, "a later plain Kael keeps its coat")
 
 
+## Palettes recolour the classic models (the voxel ones bake their colours: TODO VOXEL-PALETTE).
 func test_arena_p2_vexa_wears_her_alt_palette() -> void:
+	ArtStyle.set_current(ArtStyle.Kind.CLASSIC)
 	var arena: Node = load("res://game/levels/test_arena.tscn").instantiate()
 	add_child_autofree(arena)
 	var p2: Node = arena.get_node("Fighter2")

@@ -4,6 +4,8 @@ extends RefCounted
 
 ## Card art: copies of the T-D12 flythrough renders (that folder is not imported).
 const ART_DIR := "res://game/ui/menus/zone_cards/"
+## Card art in the Voxel art style (look-dev hero stills, 960x540).
+const VOXEL_ART_DIR := "res://game/ui/menus/zone_cards_voxel/"
 const ROMANTIC_ZONE := &"heartbloom_gardens"
 const TAGLINES := {
 	&"stormfall_city": "Neon rooftops under an endless storm",
@@ -34,8 +36,11 @@ static func tagline(id: StringName) -> String:
 	return TAGLINES.get(id, "")
 
 
-## The preview render for the card, or null.
+## The preview render for the card in the current art style, or null.
 static func art(id: StringName) -> Texture2D:
+	var voxel := VOXEL_ART_DIR + String(id) + ".jpg"
+	if ArtStyle.is_voxel() and ResourceLoader.exists(voxel):
+		return load(voxel) as Texture2D
 	var path := ART_DIR + String(id) + ".png"
 	return load(path) as Texture2D if ResourceLoader.exists(path) else null
 
