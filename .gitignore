@@ -15,3 +15,4 @@ Thumbs.db
 
 # Zone bakes are generated locally (tools/voxel_zone_bake.gd, VOXEL-BAKES)
 game/world/voxel_zone_kit/baked/*.scn
+.claude/worktrees/
