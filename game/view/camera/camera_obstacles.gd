@@ -27,9 +27,14 @@ const ISLANDS_META := &"islands"
 var ground_height: Callable
 ## Floating island bodies (tops and undersides); null when the zone has none.
 var islands: IslandField
+## The visible voxel floor where it stands above ground_height; null without voxel art.
+var voxel_floor: CameraFloor
 var boxes: Array[AABB] = []
 ## Other fighters' bodies this frame (set_bodies); the camera pulls in front of them too.
 var bodies: Array[AABB] = []
+## The locked target's body: never on the boom (pulling in front of it loses
+## them beside the lens); the camera only keeps out of it. Empty when unset.
+var target_body := AABB()
 var _grid: Dictionary = {}
 
 
@@ -47,6 +52,7 @@ static func from_zone_match(zone_match: Node) -> CameraObstacles:
 	var voxel: VoxelZoneView = zone_match.get("voxel_zone")
 	if voxel != null and voxel.zone != null:
 		obstacles.add_voxel_props(voxel.zone, centre, reach)
+		obstacles.voxel_floor = CameraFloor.from_zone(voxel.zone, centre, reach)
 	return obstacles
 
 
@@ -124,9 +130,22 @@ func _add_box(box: AABB, centre: Vector2, reach: float) -> void:
 
 ## Ground height under point (terrain or an island top below it).
 func ground_at(point: Vector3) -> float:
-	if not ground_height.is_valid():
-		return -INF
-	return ground_height.call(point.x, point.z, point.y)
+	var ground: float = ground_height.call(point.x, point.z, point.y) if ground_height.is_valid() else -INF
+	if voxel_floor != null:
+		ground = maxf(ground, voxel_floor.height_at(point.x, point.z, point.y))
+	return ground
+
+
+## Highest ground within radius of point (centre and 8 around it): on a steep
+## bank the floor beside the lens is nearer than the floor straight below.
+func ground_near(point: Vector3, radius: float = CLEARANCE) -> float:
+	var top := ground_at(point)
+	if top == -INF:
+		return top
+	for k in 8:
+		var d := Vector3.FORWARD.rotated(Vector3.UP, TAU * k / 8.0) * radius
+		top = maxf(top, ground_at(point + d))
+	return top
 
 
 ## True when point is below the ground or inside a prop box.
@@ -181,6 +200,30 @@ func set_bodies(centres: PackedVector3Array, size: Vector3) -> void:
 	bodies.clear()
 	for centre in centres:
 		bodies.append(AABB(centre - size * 0.5, size))
+
+
+## Sets the locked target's body (an upright box of size centred on centre).
+func set_target_body(centre: Vector3, size: Vector3) -> void:
+	target_body = AABB(centre - size * 0.5, size)
+
+
+## The point moved out of the target's body (grown by clearance) the shortest
+## way: up over its head or out through a side; unchanged when outside.
+func out_of_target(point: Vector3, clearance: float = CLEARANCE) -> Vector3:
+	if not target_body.has_volume():
+		return point
+	var box := target_body.grow(clearance)
+	if not box.has_point(point):
+		return point
+	var exits: Array[Vector3] = [
+		Vector3(point.x, box.end.y + 0.01, point.z),
+		Vector3(box.position.x - 0.01, point.y, point.z), Vector3(box.end.x + 0.01, point.y, point.z),
+		Vector3(point.x, point.y, box.position.z - 0.01), Vector3(point.x, point.y, box.end.z + 0.01)]
+	var best := exits[0]
+	for e in exits:
+		if point.distance_to(e) < point.distance_to(best) and not is_inside(e):
+			best = e
+	return best
 
 
 ## Like clear_fraction, for the fighter bodies only; a body around the pivot is ignored.

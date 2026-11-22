@@ -304,12 +304,18 @@ func _update_camera_bodies() -> void:
 	if camera.obstacles == null:
 		return
 	var centres := PackedVector3Array()
-	for i in fighter_views.size():
-		if i != player and fighter_views[i].visible and sim.fighters[i].state != FighterState.State.VANISHING:
-			centres.append(fighter_views[i].position)
 	var stats := CombatSim.DEFAULT_FIGHTER_STATS as FighterStats
 	var width := stats.pushbox_radius * 2.0
-	camera.obstacles.set_bodies(centres, Vector3(width, stats.pushbox_height, width))
+	var size := Vector3(width, stats.pushbox_height, width)
+	var target := sim.fighters[player].lock_on_target
+	camera.obstacles.target_body = AABB()
+	for i in fighter_views.size():
+		if i != player and fighter_views[i].visible and sim.fighters[i].state != FighterState.State.VANISHING:
+			if i == target:
+				camera.obstacles.set_target_body(fighter_views[i].position, size)
+			else:
+				centres.append(fighter_views[i].position)
+	camera.obstacles.set_bodies(centres, size)
 
 
 ## Draws one frame: fighters between the last two ticks, then the camera.

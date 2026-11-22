@@ -127,6 +127,10 @@ const WALL_RADIUS := 4.0
 const WALL_MAX_PUSH := 4.0
 var _last_player := Vector3.ZERO
 const LAG_EXTRA_FOV := 10.0
+## Locked, the FOV widens at once to keep both fighters inside this fraction of
+## the frame (a fast dash, a swing to the exchange angle), up to FIT_MAX_FOV.
+const FIT_MARGIN := 0.95
+const FIT_MAX_FOV := 95.0
 const LAG_EXTRA_BOOM := 0.25
 const LAG_SHARPNESS := 3.0
 var _lag := 0.0
@@ -283,6 +287,7 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		_clip_length = INF
 		_turn_speed = 0.0
 	_last_player = player
+	var real_target := target
 	target = _follow_target(target, delta)
 	var goal: Transform3D
 	var fov_goal := base_fov
@@ -385,7 +390,26 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	# angle_to reads ~0.0007 rad for identical float32 rotations; below this
 	# floor the view is still, so the ease-in allowance starts from zero.
 	_turn_speed = (turned if turned > TURN_NOISE_FLOOR else 0.0) / maxf(delta, 0.0001)
+	# Not past the pitch limits: there the design widens by locked_fov only and
+	# the opponent marker points at an opponent out of frame.
+	if locked and LockOnFraming.locked_fov(base_fov, player, real_target) <= base_fov:
+		fov = maxf(fov, fit_fov(global_transform, [player, real_target], _aspect()))
 	_apply_shake(delta)
+
+
+## Narrowest vertical FOV (degrees) that keeps every point inside FIT_MARGIN of
+## the frame from view, at most FIT_MAX_FOV; 0 when none needs widening.
+## Points beside or behind the lens are skipped: no FOV brings them in.
+static func fit_fov(view: Transform3D, points: Array, aspect: float) -> float:
+	var need := 0.0
+	var inverse := view.affine_inverse()
+	for p: Vector3 in points:
+		var local := inverse * p
+		if local.z > -0.3:
+			continue
+		var tan_v := maxf(absf(local.x / -local.z) / aspect, absf(local.y / -local.z)) / FIT_MARGIN
+		need = maxf(need, rad_to_deg(2.0 * atan(tan_v)))
+	return minf(need, FIT_MAX_FOV)
 
 
 ## The framing target: follows the real one rigidly, but glides over ~0.3 s
@@ -412,6 +436,8 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	if obstacles == null:
 		return wanted
 	var look_from := pivot + Vector3.UP * 0.5
+	if obstacles.voxel_floor != null:
+		obstacles.voxel_floor.warm(wanted)
 	# Rather than pull right up to the player (a body filling the lens, media-2),
 	# shift the boom up over or out from under what's in the way: try a few
 	# shifted spots, keep the clearest, and ease toward it.
@@ -433,8 +459,8 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	else:
 		_clip_length = minf(move_toward(_clip_length, safe, obstacle_release_speed * delta), safe)
 	var position := look_from + (wanted - look_from) / length * minf(length, _clip_length)
-	position.y = maxf(position.y, obstacles.ground_at(position) + CameraObstacles.CLEARANCE)
-	return position
+	position.y = maxf(position.y, obstacles.ground_near(position) + CameraObstacles.CLEARANCE)
+	return obstacles.out_of_target(position)
 
 
 ## Horizontal push away from terrain rising above the camera within
