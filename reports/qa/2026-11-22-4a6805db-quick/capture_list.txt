@@ -1,0 +1,6 @@
+117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343 268 117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t268 2
+100:shattered_mesa:1v1:kael,vexa:54 1477 100_shattered_mesa_1v1_kael-vexa_54_t1477 1
+120:heartbloom_gardens:2v2:brann,lyra,kael,vexa:5245 2400 120_heartbloom_gardens_2v2_brann-lyra-kael-vexa_5245_t2400 0
+119:ember_rift:ffa4:brann,lyra,kael,vexa:4433 1666 119_ember_rift_ffa4_brann-lyra-kael-vexa_4433_t1666 0
+112:ember_rift:1v1:kael,vexa:45 1690 112_ember_rift_1v1_kael-vexa_45_t1690 1
+107:shattered_mesa:ffa4:brann,lyra,kael,vexa:2445 1217 107_shattered_mesa_ffa4_brann-lyra-kael-vexa_2445_t1217 3
