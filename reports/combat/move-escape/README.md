@@ -189,6 +189,32 @@ cap changes nothing; switching `PressureAI` off clears one of four. So they are 
 more lateral movement in general is the likely cause, and it lands on the open developer camera item
 (T-135-c, hybrid camera). Filed on the board; not hidden, no threshold changed.
 
+## Merge evidence (branch merged with main `02530c3d`, merge commit `026b97f7`)
+
+- **det_check**: `det_check total b8bab850a4256dc7` on two runs (main: `65ec2f54272115fd`); the
+  change is the combat timing above, and issue-sweep did not touch the sim.
+- **Full GUT**: first pass, run alongside QA quick (3 jobs): 1967 tests, 1955 passing, 1 failing,
+  the wall-clock `test_an_ai_costs_at_most_0_05_ms_per_tick` (0.056 ms under load). On an idle box
+  it passes twice on the merge (0.0388 / 0.0377 ms per AI per tick; main 0.0418 / 0.0452). Second full
+  pass, idle box, nothing else running: **1967 tests, 1956 passing, 0 failing, 15 pending**.
+- **QA quick** on the merge (`reports/qa/2026-11-22-026b97f7-quick.md`, 3 jobs) against new main's own
+  run (`reports/qa/2026-11-22-3fb4bc4e-quick.md`, issue-sweep merge, 4 jobs):
+
+| | main (3fb4bc4e) | merge 026b97f7 |
+|---|---|---|
+| Sim soak / scenarios / golden replays | PASS / PASS / PASS | PASS / PASS / PASS |
+| foot_ground | 3/21, 4 frames | 4/21, 5 frames |
+| camera_on_screen | 1/21 | 1/21 |
+| pop | 2/21 | 1/21 |
+| locked_on_screen_share | 0.9841 | 0.9827 |
+| foot_slide cm/frame | 0.0267 | 0.0295 |
+| sim / view ms | 1.290 / 1.453 | 1.327 / 1.477 |
+
+  The run's own "Feel metrics trend: FAIL" is view ms +20 % against the newest committed metrics, my
+  earlier 2-job branch run (`b1f01aca`, before issue-sweep's BodySeparation); against main's
+  same-content run it is +1.7 %.
+- **Repro**: `tests/combat/test_move_escape.gd` passes (112/112 required, both attackers, 4 legends).
+
 ## How it feels now (honest critique)
 
 I could not play it: this is headless sim evidence plus frame logs, not hands-on feel. What the
@@ -235,11 +261,12 @@ numbers say a player will notice:
   `_move_blocking(vertical)`, `_jumps_out_of_guard`, `_start_pushback` (slide fits in the stun), plus
   `HitTuning.string_block_gap_ticks`, `HitTuning.follow_up_turn_degrees` and
   `MovementTuning.guard_drift_speed` 4.0. If Pure Fight ever calls these helpers, it inherits them.
-- **Issue sweep** (`fix/issue-sweep`, not on main): fetched before the AI and pushbox parts. Its
-  #73 fix is view-only (`BodySeparation`), no clash with the sim. Its #106 AI string variety was
-  reverted on that branch (`859c6bad`, kept on `fix/issue-106-ai-variety`); `PressureAI` keeps its
+- **Issue sweep** (`fix/issue-sweep`): fetched before the AI and pushbox parts, then merged into
+  main (`677ce5c8`) while this lane ran; this branch merged that main (`026b97f7`) with no
+  conflicts. Its #73 fix is view-only (`BodySeparation`), no clash with the sim; its #106 AI string
+  variety was reverted there (`859c6bad`, kept on `fix/issue-106-ai-variety`). `PressureAI` keeps its
   own snapshot key (`"pressure"`), not new indices in `FighterAI.snapshot().values`, so #106's
-  `v[33]`/`v[34]` merge cleanly later.
+  `v[33]`/`v[34]` will still merge cleanly.
 
 ## Tests and evidence
 
