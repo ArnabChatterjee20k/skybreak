@@ -277,7 +277,7 @@ func _build() -> void:
 	_gather.position = CHEST
 	var streak := QuadMesh.new()
 	streak.size = Vector2(0.07, 0.42)
-	streak.material = _own(SPARK_SHADER, {&"spark_shape": 1, &"intensity": 0.9, &"core_whiteness": 0.7})
+	streak.material = _own(SPARK_SHADER, {&"spark_shape": 1, &"intensity": 1.4, &"core_whiteness": 0.7})
 	_gather.draw_pass_1 = streak
 	_dust = _particles("Dust", DUST_BUDGET, 0.9, _dust_process())
 	_dust.position = Vector3(0.0, -FEET + 0.08, 0.0)
@@ -294,9 +294,9 @@ func _build() -> void:
 	_orb.name = "Orb"
 	_orb.position = CHEST
 	var orb_quad := QuadMesh.new()
-	orb_quad.size = Vector2.ONE * 0.5
+	orb_quad.size = Vector2.ONE * 0.62
 	_orb.mesh = orb_quad
-	_orb.material_override = _own(SPARK_SHADER, {&"spark_shape": 2, &"intensity": 0.9, &"core_whiteness": 0.8, &"pulse_rate": 2.2, &"depth_offset": 0.45})
+	_orb.material_override = _own(SPARK_SHADER, {&"spark_shape": 2, &"intensity": 1.7, &"core_whiteness": 0.8, &"pulse_rate": 2.2, &"depth_offset": 0.45})
 	_add_layer(_orb)
 	_floor = MeshInstance3D.new()
 	_floor.name = "FloorRing"
