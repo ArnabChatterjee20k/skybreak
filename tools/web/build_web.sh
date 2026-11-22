@@ -46,9 +46,10 @@ if [[ ! -f "${TEMPLATES}/web_nothreads_release.zip" ]]; then
 	unzip -oqj "${CACHE}/${TPZ}" 'templates/web_nothreads_*' 'templates/version.txt' -d "${TEMPLATES}"
 fi
 
-# Export.
+# Export. build/.gdignore keeps Godot from importing the build's own files (index.png.import ...).
 rm -rf "${OUT}"
 mkdir -p "${OUT}"
+touch "${ROOT}/build/.gdignore"
 if [[ ! -d "${ROOT}/.godot/imported" ]]; then
 	"${GODOT}" --headless --path "${ROOT}" --import
 fi

@@ -145,7 +145,7 @@ async function playMatch(run, shotName) {
 	await page.waitForSelector('#cover', { state: 'detached', timeout: 180000 });
 	const engineMs = Date.now() - tClick;
 	await page.waitForTimeout(8000);
-	await page.click('canvas', { position: { x: 5, y: 5 } });
+	await page.mouse.click(5, 5);
 	// Splash, main menu (VS AI), character select (confirm), zone select (fight), as descend_smoke_test.js.
 	for (const step of ['Enter', 'Enter', 'click:1090:686', 'click:1105:657']) {
 		if (step.startsWith('click:')) {
@@ -209,6 +209,7 @@ async function scenario(id, title, fn) {
 		console.log(`FAIL ${id}: ${e.stack || e}`);
 	}
 	await close();
+	if (!server) await startServer();
 	results.push({ id, title, pass, seconds: Math.round((Date.now() - t0) / 100) / 10, ...notes });
 	console.log(`${pass ? 'PASS' : 'FAIL'} ${id}) ${title}`);
 }
