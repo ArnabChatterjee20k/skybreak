@@ -305,6 +305,19 @@ func start_round(round_spawn_points: Array[Vector3] = []) -> void:
 	_canonicalize_zeros()
 
 
+## Brings one knocked-out fighter back mid-round (team stocks, Duo): round-start
+## health and meters at start, facing its nearest opponent. Burst and Last Stand carry over.
+func respawn_fighter(index: int, start: Vector3) -> void:
+	var fighter := fighters[index]
+	_reset_fighter(fighter, start)
+	fighter.lock_on_target = _nearest_opponent(index)
+	if fighter.lock_on_target >= 0:
+		var look := fighters[fighter.lock_on_target].position - fighter.position
+		if Vector2(look.x, look.z).length_squared() > 0.0001:
+			fighter.facing_yaw = DetMath.atan2(-look.x, -look.z)
+	_canonicalize_zeros()
+
+
 ## Turns -0.0 into +0.0 in every stored float, so equal states hash and serialise equally on every platform.
 func _canonicalize_zeros() -> void:
 	for fighter in fighters:

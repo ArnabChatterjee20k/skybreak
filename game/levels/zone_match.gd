@@ -49,6 +49,17 @@ var drivers: Array = []
 var player := 0
 ## Optional scripted control, as in the test arena: func(fighter_index, tick) -> FighterInput.
 var input_override: Callable
+## Duo online (mode duo with an open DuoLink): the sim advances through net_session.
+var online := false
+var duo_link: DuoLink
+var net_session: RollbackSession
+var duo_hud: DuoHud
+## Input is neutral while true (the online pause menu: the match keeps running).
+var input_blocked := false
+var _net_started := false
+var _net_wait_ticks := 0
+var _partner_gone := false
+var _duo_test: DuoTestPilot
 
 var vfx_prewarm := VfxPrewarm.new()
 var combat_feedback := CombatFeedback.new()
@@ -87,11 +98,16 @@ func _apply_config(match_config: Dictionary) -> void:
 	config = DEFAULT_CONFIG.duplicate(true)
 	config.merge(match_config, true)
 	zone_id = StringName(config.zone)
+	if config.has("seed"):
+		sim = CombatSim.new(int(config.seed))
 
 
 func _ready() -> void:
 	if config.is_empty():
 		_apply_config({})
+	if is_duo():
+		duo_link = DuoLink.find(get_tree())
+		online = duo_link != null and duo_link.is_connected_to_partner()
 	_build_world()
 	_build_fighters()
 	add_child(contact_shadows)
@@ -111,7 +127,7 @@ func _ready() -> void:
 	$Hud.add_child(impact_frame)
 	combat_feedback.impact_frame = impact_frame
 	$Hud.add_child(combo_counter)
-	match_flow = MatchFlow.new(fighter_views.size())
+	match_flow = DuoMatch.new_flow(config) if is_duo() else MatchFlow.new(fighter_views.size())
 	match_flow.spawn_points = spawn_positions()
 	match_hud.sim = sim
 	match_hud.flow = match_flow
@@ -136,6 +152,8 @@ func _ready() -> void:
 	match_cues.zone = zone_id
 	match_cues.player_index = player
 	add_child(match_cues)
+	if is_duo():
+		_setup_duo()
 	_start_prewarm.call_deferred()
 
 
@@ -185,6 +203,8 @@ func _build_fighters() -> void:
 		view.display_name = roster.display_name.to_upper() if roster else String(character_id).to_upper()
 		add_child(view)
 		view.fighter = sim.add_fighter(starts[i], view.fighter_stats())
+		if is_duo():
+			view.fighter.team = team
 		view.remember_previous_tick()
 		fighter_views.append(view)
 		teams.append(team)
@@ -193,6 +213,8 @@ func _build_fighters() -> void:
 		if not is_ai and player < 0:
 			player = i
 	player = maxi(player, 0)
+	if online:
+		player = duo_link.local_peer
 	_lock_onto_nearest_rival()
 
 
@@ -279,11 +301,135 @@ func _start_prewarm() -> void:
 
 func _physics_process(_delta: float) -> void:
 	step_tick()
-	Engine.time_scale = match_flow.time_scale() * combat_feedback.time_scale()
+	# Online both peers keep the same fixed tick rate: no slow motion.
+	Engine.time_scale = 1.0 if is_duo() else match_flow.time_scale() * combat_feedback.time_scale()
 
 
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
+	if net_session and net_session.transport and net_session.transport.received.is_connected(net_session.on_receive):
+		net_session.transport.received.disconnect(net_session.on_receive)
+
+
+## A Duo match (two humans vs AI), online or carried on alone.
+func is_duo() -> bool:
+	return StringName(config.get("mode", &"")) == MatchRules.MODE_DUO
+
+
+## Online wiring: the rollback session over the open link, the Duo overlay, then
+## the loaded barrier. Without a link (tests, a dropped partner) the other human
+## slot gets an AI driver and the match runs locally.
+func _setup_duo() -> void:
+	duo_hud = DuoHud.new()
+	duo_hud.flow = match_flow as DuoFlow
+	duo_hud.sim = sim
+	$Hud.add_child(duo_hud)
+	duo_hud.continue_alone_requested.connect(continue_alone)
+	duo_hud.leave_requested.connect(leave_online)
+	if not online:
+		_give_partner_to_ai()
+		return
+	duo_hud.partner_name = duo_link.partner_name if duo_link.partner_name else "your partner"
+	net_session = RollbackSession.new(sim, duo_link.transport, duo_link.local_peer, DuoMatch.HUMAN_PEERS,
+		DuoMatch.fighter_peers(sim.fighters.size()), drivers, DuoMatch.INPUT_DELAY)
+	net_session.rules = match_flow
+	net_session.desynced.connect(_on_desync)
+	duo_hud.session = net_session
+	duo_link.partner_left.connect(_on_partner_left)
+	if DuoTestPilot.enabled():
+		_duo_test = DuoTestPilot.new(self)
+	duo_link.report_loaded()
+
+
+func _give_partner_to_ai() -> void:
+	for i in mini(DuoMatch.HUMAN_PEERS, drivers.size()):
+		if i != player and drivers[i] == null:
+			drivers[i] = _make_driver(i, DuoMatch.DEFAULT_AI_LEVEL)
+			match_hud.is_ai[i] = true
+
+
+## After a disconnect: the partner's fighter goes to the AI and the match runs here.
+func continue_alone() -> void:
+	if net_session == null and not online:
+		duo_hud.hide_panel()
+		return
+	if duo_link:
+		duo_link.leave()
+	net_session = null
+	online = false
+	duo_hud.session = null
+	duo_hud.hide_panel()
+	_give_partner_to_ai()
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+## Back to the Duo lobby (or the main menu when the link is gone).
+func leave_online() -> void:
+	var config_node := get_node_or_null(^"/root/MatchConfig")
+	var connected := duo_link != null and duo_link.is_connected_to_partner() and not _partner_gone
+	if config_node:
+		config_node.call(&"return_to_menu", &"duo_lobby" if connected else &"main")
+
+
+func _on_partner_left() -> void:
+	if online and not _partner_gone:
+		_partner_gone = true
+		duo_hud.show_disconnected("%s left the match." % duo_hud.partner_name.capitalize())
+
+
+func _on_desync(frame: int, local_hash: int, remote_hash: int) -> void:
+	printerr("Duo desync at tick %d: %x vs %x" % [frame, local_hash, remote_hash])
+	duo_hud.show_desync(frame)
+
+
+## One online tick: waits for the partner to load, then advances the session.
+func _step_online() -> void:
+	if not _net_started:
+		if not duo_link.partner_loaded():
+			_net_wait_ticks += 1
+			duo_hud.show_loading()
+			if _net_wait_ticks > 60 * CombatSim.TICKS_PER_SECOND and not _partner_gone:
+				_partner_gone = true
+				duo_hud.show_disconnected("%s did not finish loading." % duo_hud.partner_name.capitalize())
+			return
+		_net_started = true
+		duo_hud.hide_panel()
+	for view in fighter_views:
+		view.remember_previous_tick()
+	weapon_layer.remember_previous_tick()
+	var input := _local_input()
+	if net_session.advance(input):
+		combat_feedback.react(sim.events)
+		match_cues.after_tick(match_flow, sim)
+		match_audio.after_tick()
+	if _duo_test:
+		_duo_test.after_tick()
+	_watch_partner()
+
+
+func _local_input() -> FighterInput:
+	if _duo_test:
+		return _duo_test.local_input()
+	var input := _player_input.read_tick(camera.view_yaw(), camera.orbit, sim.fighters[player].is_grounded())
+	return FighterInput.new() if input_blocked else input
+
+
+## Stalled for over two seconds: say so; DISCONNECT_SECONDS without a packet: offer to carry on.
+const STALL_NOTICE_MS := 2000
+const DISCONNECT_SECONDS := 30
+
+
+func _watch_partner() -> void:
+	if _partner_gone or net_session == null or net_session.desync_frame >= 0:
+		return
+	var quiet := net_session.ms_since_remote()
+	if quiet > DISCONNECT_SECONDS * 1000:
+		_partner_gone = true
+		duo_hud.show_disconnected("No packets from %s for %d s." % [duo_hud.partner_name, DISCONNECT_SECONDS])
+	elif quiet > STALL_NOTICE_MS:
+		duo_hud.show_waiting(DISCONNECT_SECONDS - quiet / 1000)
+	elif duo_hud.panel_visible():
+		duo_hud.hide_panel()
 
 
 func _process(delta: float) -> void:
@@ -302,6 +448,9 @@ func _hud_portrait(id: StringName) -> Texture2D:
 
 ## Advances the sim one tick: keyboard for the player, drivers for AI slots.
 func step_tick() -> void:
+	if online and net_session:
+		_step_online()
+		return
 	for view in fighter_views:
 		view.remember_previous_tick()
 	weapon_layer.remember_previous_tick()
@@ -314,8 +463,9 @@ func step_tick() -> void:
 		elif drivers[i] != null:
 			inputs.append(drivers[i].next_input(sim))
 		elif i == player:
-			inputs.append(_player_input.read_tick(camera.view_yaw(), camera.orbit,
-				sim.fighters[i].is_grounded()))
+			var keyboard := _player_input.read_tick(camera.view_yaw(), camera.orbit,
+				sim.fighters[i].is_grounded())
+			inputs.append(FighterInput.new() if input_blocked else keyboard)
 		else:
 			inputs.append(FighterInput.new())
 	sim.tick(inputs)

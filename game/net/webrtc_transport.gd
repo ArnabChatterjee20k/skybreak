@@ -27,6 +27,7 @@ var _connection: WebRTCPeerConnection
 var _inputs: WebRTCDataChannel
 var _control: WebRTCDataChannel
 var _was_open := false
+var _lost := false
 
 
 ## True when this build can open WebRTC connections (web export, or the GDExtension loaded).
@@ -84,7 +85,9 @@ func poll() -> void:
 	if open and not _was_open:
 		connected.emit()
 	var state := _connection.get_connection_state()
-	if _was_open and not open or state == WebRTCPeerConnection.STATE_FAILED:
+	var failed := state == WebRTCPeerConnection.STATE_FAILED or state == WebRTCPeerConnection.STATE_CLOSED
+	if not _lost and (_was_open and not open or failed):
+		_lost = true
 		disconnected.emit()
 	_was_open = open
 	if _inputs and _inputs.get_ready_state() == WebRTCDataChannel.STATE_OPEN:
@@ -93,6 +96,21 @@ func poll() -> void:
 	if _control and _control.get_ready_state() == WebRTCDataChannel.STATE_OPEN:
 		while _control.get_available_packet_count() > 0:
 			control_received.emit(_control.get_packet())
+
+
+## The peer connection state name, for the status line ("connected", "disconnected", ...).
+func state_name() -> String:
+	if _connection == null:
+		return "none"
+	return ["new", "connecting", "connected", "disconnected", "failed", "closed"][_connection.get_connection_state()]
+
+
+## "connection/inputs/control" states, for debugging a stuck connection.
+func debug_state() -> String:
+	var channels := ["connecting", "open", "closing", "closed"]
+	return "%s/%s/%s" % [state_name(),
+		channels[_inputs.get_ready_state()] if _inputs else "-",
+		channels[_control.get_ready_state()] if _control else "-"]
 
 
 func is_open() -> bool:

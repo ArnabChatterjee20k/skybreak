@@ -33,6 +33,7 @@ func _ready() -> void:
 	_add_screen(&"character_select", CharacterSelect.new())
 	_add_screen(&"zone_select", ZoneSelect.new())
 	_add_screen(&"settings", SettingsScreen.new())
+	_add_screen(&"duo_lobby", DuoScreen.new())
 	(screens[&"main"] as MainMenu).mode_chosen.connect(_on_mode_chosen)
 	(screens[&"main"] as MainMenu).quit_requested.connect(quit)
 	(screens[&"zone_select"] as ZoneSelect).fight_requested.connect(start_match)
@@ -47,6 +48,10 @@ func _ready() -> void:
 		go(&"main", false)
 		_restore_seats(config)
 		go(&"character_select")
+	elif opening == &"duo_lobby":
+		mode = MatchRules.MODE_DUO
+		go(&"main", false)
+		go(&"duo_lobby")
 	elif opening == &"main" or skip_splash:
 		go(&"main", false)
 	else:

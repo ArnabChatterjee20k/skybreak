@@ -29,7 +29,7 @@ func calls_to(method: HTTPClient.Method, path_prefix: String) -> Array[Dictionar
 
 func _send(method: HTTPClient.Method, url: String, headers: PackedStringArray,
 		payload: String) -> Dictionary:
-	var path := url.trim_prefix(ENDPOINT)
+	var path := url.trim_prefix(endpoint)
 	calls.append({"method": method, "path": path, "headers": headers,
 		"body": JSON.parse_string(payload) if payload else null})
 	var reply: Dictionary = {"code": 200, "body": {}}
