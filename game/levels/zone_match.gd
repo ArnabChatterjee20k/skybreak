@@ -67,6 +67,8 @@ var weapon_layer := WeaponLayer.new()
 var fighter_views: Array[FighterView] = []
 ## The ground marker under each fighter: contact shadow plus airborne team ring.
 var contact_shadows := ContactShadows.new()
+## Eases drawn bodies apart where attack clips lunge them into each other (#73).
+var body_separation := BodySeparation.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -94,6 +96,7 @@ func _ready() -> void:
 	_build_fighters()
 	add_child(contact_shadows)
 	contact_shadows.setup(fighter_views.size())
+	body_separation.setup(fighter_views)
 	for i in fighter_views.size():
 		contact_shadows.set_ring_color(i, fighter_views[i]._height_marker.color)
 	sim.pickups_enabled = true
@@ -343,6 +346,7 @@ func _update_camera_bodies() -> void:
 
 ## Draws one frame: fighters between the last two ticks, then the camera.
 func present_frame(blend: float, delta: float) -> void:
+	body_separation.update(sim, delta)
 	for view in fighter_views:
 		view.present(blend, delta)
 		# The ground marker sits on the zone's floor under the fighter, not y = 0.
