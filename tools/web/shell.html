@@ -36,14 +36,46 @@ $GODOT_HEAD_INCLUDE
 	<h1 id="title">SKYBREAK</h1>
 	<div id="bar"><div id="fill"></div></div>
 	<div id="label">Loading…</div>
-	<button id="start" type="button">CLICK TO START</button>
+	<button id="start" type="button" hidden>CLICK TO START</button>
 </div>
-<script src="$GODOT_URL"></script>
+<script src="boot_cache.js"></script>
 <script>
 const GODOT_CONFIG = $GODOT_CONFIG;
 const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
 
-(function () {
+// Brings the cached build up to date (sw.js, boot_cache.js), then loads the engine script.
+function skybreakBoot() {
+	const fill = document.getElementById('fill');
+	const label = document.getElementById('label');
+	const ui = {
+		status: (text) => { label.textContent = text; },
+		progress: (done, total) => {
+			fill.style.width = total > 0 ? (100 * done / total).toFixed(1) + '%' : '0%';
+			label.textContent = 'Updating ' + (done / 1048576).toFixed(1) + ' / ' + (total / 1048576).toFixed(1) + ' MB';
+		},
+	};
+	const cached = typeof SkybreakCache === 'undefined' ? Promise.resolve({ mode: 'network', why: 'no boot_cache.js' })
+		: SkybreakCache.boot(ui).catch((e) => ({ mode: 'network', why: String(e) }));
+	return cached.then((r) => {
+		window.skybreakBootResult = r;
+		console.log('Skybreak boot: ' + JSON.stringify(r));
+		if (r.mode === 'reload') {
+			location.reload();
+			return new Promise(() => {});
+		}
+		fill.style.width = '0%';
+		label.textContent = 'Loading…';
+		return new Promise((resolve, reject) => {
+			const s = document.createElement('script');
+			s.src = '$GODOT_URL';
+			s.onload = resolve;
+			s.onerror = () => reject(new Error('could not load $GODOT_URL'));
+			document.body.appendChild(s);
+		});
+	});
+}
+
+skybreakBoot().then(function () {
 	const cover = document.getElementById('cover');
 	const fill = document.getElementById('fill');
 	const label = document.getElementById('label');
@@ -92,6 +124,7 @@ const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
 		return;
 	}
 
+	startButton.hidden = false;
 	startButton.addEventListener('click', () => {
 		clicked = true;
 		startButton.hidden = true;
@@ -126,7 +159,11 @@ const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
 		}
 		maybeStart();
 	}, fail);
-}());
+}, function (err) {
+	console.error(err);
+	document.getElementById('start').hidden = true;
+	document.getElementById('label').textContent = 'Could not start Skybreak:\n' + err.message;
+});
 </script>
 </body>
 </html>

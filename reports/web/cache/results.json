@@ -1,0 +1,130 @@
+[
+	{
+		"id": "a",
+		"title": "first load caches everything",
+		"pass": true,
+		"seconds": 107.1,
+		"boot": {
+			"mode": "updated",
+			"fetched": [
+				"boot_cache.js",
+				"index.apple-touch-icon.png",
+				"index.audio.position.worklet.js",
+				"index.audio.worklet.js",
+				"index.html",
+				"index.icon.png",
+				"index.js",
+				"index.pck",
+				"index.png",
+				"index.wasm",
+				"zones/manifest.json"
+			],
+			"copied": 0,
+			"total": 96450197,
+			"build": "a3991ba58a8848fe0a6701298cee68d386e231cd",
+			"ms": 616
+		},
+		"startMs": 1074,
+		"engineMs": 19773,
+		"matchMs": 33992,
+		"downloaded": "120.4 MB",
+		"zones": [
+			"zones/shattered_mesa_web.52357664e6b5.pck"
+		]
+	},
+	{
+		"id": "b",
+		"title": "offline (server stopped) boots from cache and reaches a match",
+		"pass": true,
+		"seconds": 93,
+		"boot": {
+			"mode": "cached",
+			"build": "a3991ba58a8848fe0a6701298cee68d386e231cd",
+			"why": "no version.json in 3 s",
+			"ms": 11
+		},
+		"startMs": 371,
+		"engineMs": 19656,
+		"matchMs": 32054
+	},
+	{
+		"id": "c",
+		"title": "version.json delayed 6 s boots the cached build at ~3 s",
+		"pass": true,
+		"seconds": 98.7,
+		"boot": {
+			"mode": "cached",
+			"build": "a3991ba58a8848fe0a6701298cee68d386e231cd",
+			"why": "no version.json in 3 s",
+			"ms": 3014
+		},
+		"startMs": 3482,
+		"engineMs": 19693,
+		"matchMs": 31409
+	},
+	{
+		"id": "d",
+		"title": "new build with one changed file: only that file is downloaded",
+		"pass": true,
+		"seconds": 96,
+		"boots": [
+			{
+				"mode": "reload",
+				"fetched": [
+					"index.html"
+				],
+				"copied": 10,
+				"total": 6864,
+				"build": "B",
+				"ms": 143
+			},
+			{
+				"mode": "cached",
+				"build": "B",
+				"ms": 9
+			}
+		],
+		"startMs": 734,
+		"engineMs": 21167,
+		"matchMs": 32496,
+		"downloaded": [
+			"index.html 6864 B"
+		]
+	},
+	{
+		"id": "e",
+		"title": "update interrupted halfway: the old build still boots",
+		"pass": true,
+		"seconds": 139.2,
+		"boot1": {
+			"mode": "cached",
+			"build": "B",
+			"why": "update failed: network error",
+			"ms": 168
+		},
+		"boot2": {
+			"mode": "cached",
+			"build": "B",
+			"why": "no version.json in 3 s",
+			"ms": 31
+		},
+		"engineMs": 20232,
+		"matchMs": 31440
+	},
+	{
+		"id": "f",
+		"title": "storage quota too small: plain network load",
+		"pass": true,
+		"seconds": 45.2,
+		"boot": {
+			"mode": "network",
+			"why": "not enough storage for 96450197 bytes",
+			"estimate": {
+				"usage": 3030,
+				"quota": 10737421270
+			},
+			"ms": 470
+		},
+		"startMs": 926
+	}
+]

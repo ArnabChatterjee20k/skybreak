@@ -19,7 +19,14 @@ prints raw/gzip sizes. Deploy only if the smoke test prints `PASS`.
 Upload these files (skip the `.gz`/`.br` copies; Appwrite compresses itself):
 `index.html`, `index.js`, `index.wasm`, `index.pck`, `index.audio.worklet.js`,
 `index.audio.position.worklet.js`, `index.png`, `index.icon.png`,
-`index.apple-touch-icon.png`.
+`index.apple-touch-icon.png`, `sw.js`, `boot_cache.js`, `version.json` and the
+`zones/` folder.
+
+The browser keeps the build in Cache Storage (`sw.js`, `boot_cache.js`; see
+`reports/web/cache/README.md`) and on each launch compares it with `version.json`
+(3 s timeout), downloading only files whose SHA-256 changed. `version.json` must
+be part of the same deployment as the files it lists; never upload it alone.
+`node tools/web/cache_test.js build/web reports/web/cache` checks the cache.
 
 ## 2. One-time: create the site (Console)
 

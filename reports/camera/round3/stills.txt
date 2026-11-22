@@ -1,0 +1,14 @@
+heartbloom_gardens 800 true true 45.6
+heartbloom_gardens 1040 true true 40.5
+shattered_mesa 800 true true 40.2
+shattered_mesa 1040 true true 64.2
+skyhold_ruins 800 true true 46.1
+skyhold_ruins 1040 true true 40.0
+stormfall_city 800 true true 46.2
+stormfall_city 1040 true true 56.5
+frozen_peaks 800 true true 69.5
+frozen_peaks 1040 true true 41.3
+verdant_falls 800 true true 51.0
+verdant_falls 1040 true true 48.8
+ember_rift 800 true true 74.2
+ember_rift 1040 true true 42.8

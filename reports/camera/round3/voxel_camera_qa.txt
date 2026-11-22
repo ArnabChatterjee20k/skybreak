@@ -1,0 +1,79 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+heartbloom_gardens bake=true locked 974 both 100.0% | near 697 100.0% | far 65 100.0% (worst gap 40 m) | clip frames 0 min inf m first {  } | 4615+72 ms
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-13.6, 289.1, 23.2) them (-12.2, 289.2, 21.8) gap 2 side 0: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-13.5, 288.8, 28.3) them (-11.5, 288.9, 28.3) gap 2 side 1: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-24.2, 288.5, 28.3) them (-26.2, 288.5, 28.3) gap 2 side 2: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-18.8, 288.3, 33.8) them (-18.8, 288.2, 35.8) gap 2 side 3: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-18.8, 289.0, 22.7) them (-18.8, 289.1, 20.7) gap 2 side 4: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-13.6, 289.1, 23.2) them (-3.5, 289.6, 13.4) gap 14 side 0: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-13.5, 288.8, 28.3) them (0.5, 289.0, 28.3) gap 14 side 1: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-24.2, 288.5, 28.3) them (-38.2, 288.0, 28.3) gap 14 side 2: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-18.8, 288.3, 33.8) them (-18.8, 287.1, 47.8) gap 14 side 3: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-23.1587, 287.225, 23.71652), S: (8.686415, 7.758148, 9.101715)] me (-18.8, 289.0, 22.7) them (-18.8, 289.5, 8.7) gap 14 side 4: frames 211 both 100.0% | clip frames 0 min inf first {  }
+shattered_mesa   bake=true locked 990 both 99.4% | near 710 100.0% | far 60 100.0% (worst gap 40 m) | clip frames 0 min inf m first {  } | 2839+1867 ms
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }
+skyhold_ruins    bake=true locked 1051 both 100.0% | near 846 100.0% | far 36 100.0% (worst gap 40 m) | clip frames 0 min inf m first {  } | 2515+44 ms
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }
+stormfall_city   bake=true locked 972 both 100.0% | near 700 100.0% | far 64 100.0% (worst gap 40 m) | clip frames 0 min inf m first {  } | 3482+1577 ms
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }
+frozen_peaks     bake=true locked 1012 both 97.5% | near 506 100.0% | far 50 100.0% (worst gap 40 m) | clip frames 0 min inf m first {  } | 2878+171 ms
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }
+verdant_falls    bake=true locked 1046 both 98.8% | near 729 100.0% | far 50 100.0% (worst gap 40 m) | clip frames 0 min 0.59 m first {  } | 2898+145 ms
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (-745.4916, 5.284057, 574.5148), S: (10.14142, 31.39742, 10.14142)] me (-746.5, 7.1, 579.6) them (-748.5, 7.1, 579.6) gap 2 side 2: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-745.4916, 5.284057, 574.5148), S: (10.14142, 31.39742, 10.14142)] me (-740.4, 6.4, 585.7) them (-740.4, 6.1, 587.7) gap 2 side 3: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (-745.4916, 5.284057, 574.5148), S: (10.14142, 31.39742, 10.14142)] me (-740.4, 7.1, 573.5) them (-740.4, 7.0, 571.5) gap 2 side 4: frames 211 both 100.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (-745.4916, 5.284057, 574.5148), S: (10.14142, 31.39742, 10.14142)] me (-746.5, 7.1, 579.6) them (-760.5, 7.8, 579.6) gap 14 side 2: frames 211 both 100.0% | clip frames 0 min inf first {  
+  wall [P: (-745.4916, 5.284057, 574.5148), S: (10.14142, 31.39742, 10.14142)] me (-740.4, 6.4, 585.7) them (-740.4, 5.8, 599.7) gap 14 side 3: frames 211 both 100.0% | clip frames 0 min inf first {  
+  wall [P: (-745.4916, 5.284057, 574.5148), S: (10.14142, 31.39742, 10.14142)] me (-740.4, 7.1, 573.5) them (-740.4, 7.2, 559.5) gap 14 side 4: frames 211 both 100.0% | clip frames 0 min inf first {  
+ember_rift       bake=true locked 974 both 100.0% | near 709 100.0% | far 63 100.0% (worst gap 40 m) | clip frames 0 min inf m first {  } | 2664+29 ms
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 2 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 0: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 1: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 2: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 3: frames 0 both 0.0% | clip frames 0 min inf first {  }
+  wall [P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)] me (0.0, 0.0, 0.0) them (0.0, 0.0, 0.0) gap 14 side 4: frames 0 both 0.0% | clip frames 0 min inf first {  }

@@ -4,7 +4,7 @@ extends Camera3D
 ## framing of both fighters when locked on. Click captures the mouse, Esc frees it.
 
 ## Vertical FOV in degrees; the locked camera widens it for big height gaps.
-@export var base_fov := 75.0
+@export var base_fov := 68.0
 ## How fast the FOV eases to its goal, per second.
 @export var fov_sharpness := 6.0
 ## Radians of camera turn per pixel of mouse movement.
@@ -23,6 +23,21 @@ extends Camera3D
 @export var near_catch_up_turn_speed := 300.0
 ## How fast the cap itself changes, in deg/s per second (180 -> 300 in 0.5 s).
 @export var turn_cap_ramp := 240.0
+## Exchange cam (hybrid camera): side-on angle for melee exchanges and beam
+## clashes. Off in settings for players who prefer a steady camera.
+@export var exchange_cam_enabled := true
+@export var exchange_fov := 40.0
+## Seconds to swing in (and out); held this long after the exchange ends.
+@export var exchange_blend_seconds := 0.3
+@export var exchange_hold_seconds := 0.5
+## Turn cap while swinging between the base and exchange angles (deg/s).
+@export var exchange_turn_speed := 320.0
+## Closer than this to the pair (m), the exchange angle is skipped.
+const EXCHANGE_MIN_DISTANCE := 3.0
+## Rotation below this per frame (rad) is float noise, not a turn.
+const TURN_NOISE_FLOOR := 0.001
+## After an exchange, fighters this far apart (m) end the hold at once.
+const EXCHANGE_BREAK_DISTANCE := 5.0
 ## A player jump longer than this in one frame (m) cuts to the new framing.
 @export var cut_distance := 20.0
 ## Most the view's turn speed may grow per second (deg/s^2), so turns ease in
@@ -97,8 +112,25 @@ var _target := Vector3.ZERO
 var _target_gliding := false
 var _clip_length := INF
 var _clip_shift := Vector3.ZERO
+## Exchange cam state: the two fighters (followed first), how far the view has
+## swung (0 base .. 1 exchange), seconds since the exchange ended, and the side
+## the camera holds for the whole exchange.
+var _exchange_points := PackedVector3Array()
+var _exchange_last := PackedVector3Array()
+var _exchange_weight := 0.0
+var _exchange_idle := INF
+var _exchange_axis := Vector3.ZERO
+var _wall_push := Vector3.ZERO
+## Terrain-wall probe around the lens (#134).
+const WALL_SAMPLES := 8
+const WALL_RADIUS := 4.0
+const WALL_MAX_PUSH := 4.0
 var _last_player := Vector3.ZERO
 const LAG_EXTRA_FOV := 10.0
+## Locked, the FOV widens at once to keep both fighters inside this fraction of
+## the frame (a fast dash, a swing to the exchange angle), up to FIT_MAX_FOV.
+const FIT_MARGIN := 0.95
+const FIT_MAX_FOV := 95.0
 const LAG_EXTRA_BOOM := 0.25
 const LAG_SHARPNESS := 3.0
 var _lag := 0.0
@@ -130,6 +162,89 @@ func _remember_facing(player: Vector3, target: Vector3) -> void:
 	var flat := Vector3(target.x - player.x, 0.0, target.z - player.z)
 	if flat.length() > 0.01 and (LockOnFraming.stack_weight(player, target) < 0.01 or _held_facing == Vector3.ZERO):
 		_held_facing = flat.normalized()
+
+
+## Sets this frame's exchange (followed fighter first, then the other), or
+## clears it with an empty array. Call before follow().
+func set_exchange(points: PackedVector3Array) -> void:
+	_exchange_points = points
+
+
+## How far the view is swung toward the exchange angle (0 base, 1 exchange).
+func exchange_weight() -> float:
+	return _exchange_weight
+
+
+## Blends the base goal toward the side-on exchange pose; returns {goal, fov}.
+func _blend_exchange(goal: Transform3D, fov_goal: float, player: Vector3, target: Vector3,
+		delta: float) -> Dictionary:
+	var active := exchange_cam_enabled and _exchange_points.size() == 2
+	if active:
+		_exchange_last = _exchange_points
+		_exchange_idle = 0.0
+	else:
+		_exchange_idle += delta
+		# Holding after the exchange: frame where they are now, not where they
+		# were; once they have broken apart the hold ends early.
+		_exchange_last = PackedVector3Array([player, target])
+		if player.distance_to(target) > EXCHANGE_BREAK_DISTANCE:
+			_exchange_idle = exchange_hold_seconds
+	var wanted := 1.0 if exchange_cam_enabled and _exchange_idle < exchange_hold_seconds else 0.0
+	_exchange_weight = move_toward(_exchange_weight, wanted, delta / maxf(exchange_blend_seconds, 0.01))
+	if _exchange_weight <= 0.0 or _exchange_last.size() != 2:
+		_exchange_axis = Vector3.ZERO
+		return {"goal": goal, "fov": fov_goal}
+	var a := _exchange_last[0]
+	var b := _exchange_last[1]
+	var axis := LockOnFraming.exchange_axis(a, b)
+	var wanted_distance := LockOnFraming.exchange_distance(a, b, exchange_fov)
+	if _exchange_axis == Vector3.ZERO:
+		# Pick the side once: player on the left, unless the other side is
+		# clearly more open (a wall or building on the left side).
+		if _exchange_room(a, b, -axis) > _exchange_room(a, b, axis) + 2.0:
+			axis = -axis
+	elif axis.dot(_exchange_axis) < 0.0:
+		# Kept for the whole exchange: if they cross over, the camera stays on
+		# its side of the line rather than flipping 180 degrees.
+		axis = -axis
+	_exchange_axis = axis
+	# Obstacles in the way: come closer and widen the lens to keep the framing;
+	# with too little room, stay on the base camera.
+	var distance := _exchange_room(a, b, axis)
+	var side_fov := exchange_fov
+	if distance < wanted_distance:
+		side_fov = LockOnFraming.exchange_fov_at(a, b, distance)
+	if distance < EXCHANGE_MIN_DISTANCE or side_fov > base_fov:
+		_exchange_weight = move_toward(_exchange_weight, 0.0, delta / maxf(exchange_blend_seconds, 0.01))
+		side_fov = minf(side_fov, base_fov)
+		distance = maxf(distance, EXCHANGE_MIN_DISTANCE)
+	var side_on := LockOnFraming.exchange_pose_at(a, b, axis, distance)
+	# The camera eases toward the side-on spot; until it gets there (or when
+	# a knockback flings them apart), widen to fit both from where it is now.
+	var actual := Vector2(global_position.x, global_position.z).distance_to(
+		Vector2((a.x + b.x) * 0.5, (a.z + b.z) * 0.5))
+	if actual > 0.5 and actual < distance:
+		side_fov = maxf(side_fov, minf(LockOnFraming.exchange_fov_at(a, b, actual), base_fov + LockOnFraming.MAX_FOV_BOOST))
+	var w := smoothstep(0.0, 1.0, _exchange_weight)
+	var blended := Transform3D(
+		Basis(goal.basis.get_rotation_quaternion().slerp(side_on.basis.get_rotation_quaternion(), w)),
+		goal.origin.lerp(side_on.origin, w))
+	return {"goal": blended, "fov": lerpf(fov_goal, side_fov, w)}
+
+
+## The furthest side-on distance (of a few steps down from the wanted one)
+## whose spot the player can see clearly, as the obstacle clip measures it
+## (from the player's chest); 0 when none is clear.
+func _exchange_room(a: Vector3, b: Vector3, axis: Vector3) -> float:
+	var wanted := LockOnFraming.exchange_distance(a, b, exchange_fov)
+	if obstacles == null:
+		return wanted
+	var chest := a + Vector3.UP * 0.5
+	for f: float in [1.0, 0.8, 0.6, 0.45]:
+		var spot := LockOnFraming.exchange_pose_at(a, b, axis, wanted * f).origin
+		if obstacles.clear_fraction(chest, spot) >= 0.999 and obstacles.body_clear_fraction(chest, spot) >= 0.999:
+			return wanted * f
+	return 0.0
 
 
 ## Turn speed cap in force now (deg/s).
@@ -172,6 +287,7 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		_clip_length = INF
 		_turn_speed = 0.0
 	_last_player = player
+	var real_target := target
 	target = _follow_target(target, delta)
 	var goal: Transform3D
 	var fov_goal := base_fov
@@ -221,7 +337,11 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 			# Re-frame for the wider view, so the near-band spacing still holds.
 			goal = LockOnFraming.locked_pose(player, target, _shoulder, orbit, _far_blend, fov_goal, _held_facing)
 			goal.origin = player + (goal.origin - player) * (1.0 + _lag * LAG_EXTRA_BOOM)
+		var blended := _blend_exchange(goal, fov_goal, player, target, delta)
+		goal = blended.goal
+		fov_goal = blended.fov
 	else:
+		_exchange_weight = 0.0
 		if _was_locked and _has_pose:
 			_continue_free_orbit_from_here(player)
 		free_pitch = clampf(free_pitch, LockOnFraming.MIN_FREE_PITCH, LockOnFraming.MAX_FREE_PITCH)
@@ -238,7 +358,11 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		return
 	fov = lerpf(fov, fov_goal, _blend(fov_sharpness, delta))
 	var catch_up := locked and _band == LockOnFraming.Band.NEAR and not _relock_turning 		and not LockOnFraming.is_in_view(global_transform, fov, target)
-	_turn_cap = move_toward(_turn_cap, near_catch_up_turn_speed if catch_up else max_turn_speed,
+	var cap_goal := near_catch_up_turn_speed if catch_up else max_turn_speed
+	# Swinging into or out of the exchange angle may turn faster, still capped.
+	if _exchange_weight > 0.0 and _exchange_weight < 1.0:
+		cap_goal = maxf(cap_goal, exchange_turn_speed)
+	_turn_cap = move_toward(_turn_cap, cap_goal,
 		turn_cap_ramp * delta)
 	# Turn speed may only grow by max_turn_acceleration per second: turns ease
 	# in. Slowing down is free (the smoothing already decelerates).
@@ -262,8 +386,30 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	var total := rotation_from.angle_to(kept)
 	if total > max_turn:
 		global_basis = Basis(rotation_from.slerp(kept, max_turn / total))
-	_turn_speed = rotation_from.angle_to(global_basis.get_rotation_quaternion()) / maxf(delta, 0.0001)
+	var turned := rotation_from.angle_to(global_basis.get_rotation_quaternion())
+	# angle_to reads ~0.0007 rad for identical float32 rotations; below this
+	# floor the view is still, so the ease-in allowance starts from zero.
+	_turn_speed = (turned if turned > TURN_NOISE_FLOOR else 0.0) / maxf(delta, 0.0001)
+	# Not past the pitch limits: there the design widens by locked_fov only and
+	# the opponent marker points at an opponent out of frame.
+	if locked and LockOnFraming.locked_fov(base_fov, player, real_target) <= base_fov:
+		fov = maxf(fov, fit_fov(global_transform, [player, real_target], _aspect()))
 	_apply_shake(delta)
+
+
+## Narrowest vertical FOV (degrees) that keeps every point inside FIT_MARGIN of
+## the frame from view, at most FIT_MAX_FOV; 0 when none needs widening.
+## Points beside or behind the lens are skipped: no FOV brings them in.
+static func fit_fov(view: Transform3D, points: Array, aspect: float) -> float:
+	var need := 0.0
+	var inverse := view.affine_inverse()
+	for p: Vector3 in points:
+		var local := inverse * p
+		if local.z > -0.3:
+			continue
+		var tan_v := maxf(absf(local.x / -local.z) / aspect, absf(local.y / -local.z)) / FIT_MARGIN
+		need = maxf(need, rad_to_deg(2.0 * atan(tan_v)))
+	return minf(need, FIT_MAX_FOV)
 
 
 ## The framing target: follows the real one rigidly, but glides over ~0.3 s
@@ -290,6 +436,8 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	if obstacles == null:
 		return wanted
 	var look_from := pivot + Vector3.UP * 0.5
+	if obstacles.voxel_floor != null:
+		obstacles.voxel_floor.warm(wanted)
 	# Rather than pull right up to the player (a body filling the lens, media-2),
 	# shift the boom up over or out from under what's in the way: try a few
 	# shifted spots, keep the clearest, and ease toward it.
@@ -297,7 +445,11 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	if _clear_distance(look_from, wanted) < obstacle_comfort_distance:
 		shift_goal = _best_shift(look_from, wanted)
 	_clip_shift = _clip_shift.move_toward(shift_goal, obstacle_shift_speed * delta)
-	wanted += _clip_shift
+	# Step away from a terrain wall right beside the lens (a canyon wall filling
+	# a third of the frame, #134): it is beside the boom, not on it, so the clip
+	# never sees it.
+	_wall_push = _wall_push.move_toward(_wall_push_goal(wanted), obstacle_shift_speed * delta)
+	wanted += _clip_shift + _wall_push
 	var length := look_from.distance_to(wanted)
 	if length < 0.001:
 		return wanted
@@ -307,8 +459,24 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	else:
 		_clip_length = minf(move_toward(_clip_length, safe, obstacle_release_speed * delta), safe)
 	var position := look_from + (wanted - look_from) / length * minf(length, _clip_length)
-	position.y = maxf(position.y, obstacles.ground_at(position) + CameraObstacles.CLEARANCE)
-	return position
+	position.y = maxf(position.y, obstacles.floor_near(position) + CameraObstacles.CLEARANCE)
+	return obstacles.out_of_target(position)
+
+
+## Horizontal push away from terrain rising above the camera within
+## WALL_RADIUS around it (0 when the ground nearby stays below the lens).
+func _wall_push_goal(camera: Vector3) -> Vector3:
+	var away := Vector3.ZERO
+	for k in WALL_SAMPLES:
+		var dir := Vector3.FORWARD.rotated(Vector3.UP, TAU * k / WALL_SAMPLES)
+		var at := camera + dir * WALL_RADIUS
+		# Ground at the probe higher than the lens means a wall on that side.
+		var rise := obstacles.ground_at(Vector3(at.x, camera.y + 50.0, at.z)) - (camera.y - 0.3)
+		if rise > 0.0:
+			away -= dir * minf(rise, 2.0)
+	if away.length() < 0.01:
+		return Vector3.ZERO
+	return away.normalized() * minf(away.length(), WALL_MAX_PUSH)
 
 
 ## Clear distance from look_from toward camera (terrain, props, bodies).
