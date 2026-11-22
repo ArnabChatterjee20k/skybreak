@@ -21,7 +21,7 @@ const NEAR_LENS := 3.5
 ## A sonic ring is 2.8 m wide, so it keeps further from the lens.
 const NEAR_LENS_RING := 5.0
 ## Pose ghosts kept per fighter; the oldest is reused when all are fading.
-const GHOSTS_PER_FIGHTER := 3
+const GHOSTS_PER_FIGHTER := 4
 ## Flying at this share of fly_speed or faster counts as top speed (speed lines).
 const TOP_SPEED_SHARE := 0.95
 ## Falling faster than this (m/s) onto the ground kicks up dust.
@@ -127,7 +127,8 @@ func _play_perfect_dodge(event: Dictionary) -> void:
 		return
 	var dodger := sim.fighters[event.target as int]
 	var ghost := Color(0.75, 0.9, 1.0)
-	spawn(&"afterimage", dodger.position, ghost, 1.2)
+	if not pose_ghost(event.target as int, ghost):
+		spawn(&"afterimage", dodger.position, ghost, 1.2)
 	var center := _screen_point(dodger.position)
 	_screen.burst_lines(center, ghost, 0.22)
 	_screen.color_pop(ghost, 0.3, 0.12)
@@ -320,7 +321,9 @@ func _play_event(event: Dictionary, zone: StringName) -> void:
 				spawn(&"breaker_ring", where, color.lerp(Color.WHITE, 0.5), EscapeVfx.BREAKER_RING_SCALE,
 					_facing_camera(where))
 			&"tech_ghost":
-				spawn(&"afterimage", where, color.lerp(Color.WHITE, 0.5), 1.1)
+				var teched: int = event.get("fighter", -1)
+				if teched < 0 or not pose_ghost(teched, color.lerp(Color.WHITE, 0.5), where):
+					spawn(&"afterimage", where, color.lerp(Color.WHITE, 0.5), 1.1)
 			&"ko_dome":
 				spawn(kind, where, color.lerp(Color.WHITE, 0.5))
 			&"ko_burst":
@@ -509,7 +512,7 @@ static func facing_along(direction: Vector3) -> Basis:
 
 ## Leaves a PoseGhost of fighter i's current pose; false (play the capsule) when its view has
 ## no skinned body to copy, e.g. outside a level.
-func pose_ghost(i: int, color: Color) -> bool:
+func pose_ghost(i: int, color: Color, at: Variant = null) -> bool:
 	var source := _ghost_source(i)
 	if source.is_empty():
 		return false
@@ -536,7 +539,13 @@ func pose_ghost(i: int, color: Color) -> bool:
 	poses.resize(skeleton.get_bone_count())
 	for bone in poses.size():
 		poses[bone] = skeleton.get_bone_global_pose(bone)
-	ghost.play(skeleton.global_transform, poses, color)
+	var space := skeleton.global_transform
+	if at is Vector3:
+		# Somewhere else than the body (a decoy): the same pose, moved there.
+		var body := sim.fighters[i].position if sim != null and i < sim.fighters.size() \
+			else (source.view as Node3D).global_position
+		space.origin += (at as Vector3) - body
+	ghost.play(space, poses, color)
 	return true
 
 
@@ -559,7 +568,7 @@ static func _skinned_body(view: Node) -> Dictionary:
 	for node in view.find_children("*", "MeshInstance3D", true, false):
 		var mesh := node as MeshInstance3D
 		if mesh.mesh != null and mesh.skin != null and mesh.get_node_or_null(mesh.skeleton) is Skeleton3D:
-			return {"skeleton": mesh.get_node(mesh.skeleton), "mesh": mesh}
+			return {"skeleton": mesh.get_node(mesh.skeleton), "mesh": mesh, "view": view}
 	return {}
 
 

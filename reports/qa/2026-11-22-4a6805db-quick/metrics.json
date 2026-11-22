@@ -1,0 +1,49 @@
+{
+  "hitstop_consistency": 0.7305009511731135,
+  "pops_per_fighter_minute": 0.07145834573929609,
+  "finger_pops_per_fighter_minute": 0.07145834573929609,
+  "foot_slide_cm_per_frame": 0.026707142881118057,
+  "foot_error_p95_cm": 0.8961599663814103,
+  "camera_jerk_p95": 0.009391668341344308,
+  "locked_on_screen_share": 0.9841009008537748,
+  "sim_ms_per_tick": 1.4232727976190478,
+  "view_ms_per_frame": 1.5866909523809514,
+  "metric_versions": {
+    "foot_slide_cm_per_frame": 2
+  },
+  "latency_ticks": {
+    "brann": {
+      "grab@air": 10,
+      "grab@ground": 10,
+      "heavy@air": 19,
+      "heavy@ground": 19,
+      "light@air": 9,
+      "light@ground": 9
+    },
+    "kael": {
+      "grab@air": 8,
+      "grab@ground": 8,
+      "heavy@air": 15,
+      "heavy@ground": 15,
+      "light@air": 7,
+      "light@ground": 7
+    },
+    "lyra": {
+      "grab@air": 9,
+      "grab@ground": 9,
+      "heavy@air": 16,
+      "heavy@ground": 16,
+      "light@air": 7,
+      "light@ground": 7
+    },
+    "vexa": {
+      "grab@air": 7,
+      "grab@ground": 7,
+      "heavy@air": 12,
+      "heavy@ground": 12,
+      "light@air": 5,
+      "light@ground": 5
+    }
+  },
+  "generated_at": 1795364010.7790627
+}

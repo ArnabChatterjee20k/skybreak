@@ -1,0 +1,123 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 4,
+			"8": 4
+		},
+		"chakram/breaker": {
+			"8": 2
+		},
+		"chakram/light_1": {
+			"4": 7
+		},
+		"chakram/light_1+counter": {
+			"8": 4
+		},
+		"chakram/light_2": {
+			"4": 8
+		},
+		"chakram/light_3": {
+			"6": 8
+		},
+		"kael_comet_drive": {
+			"9": 1
+		},
+		"launcher": {
+			"7": 1
+		},
+		"light_1": {
+			"3": 6,
+			"4": 2,
+			"5": 1,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 5,
+			"8": 6,
+			"9": 5
+		},
+		"light_2": {
+			"3": 7,
+			"4": 6,
+			"5": 6
+		},
+		"light_3": {
+			"3": 5,
+			"4": 4,
+			"5": 1,
+			"8": 4
+		},
+		"smash": {
+			"20": 1
+		},
+		"vexa_razor_waltz": {
+			"5": 12
+		},
+		"vexa_shade_flicker": {
+			"7": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "119:ember_rift:ffa4:brann,lyra,kael,vexa:4433",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 2,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		4,
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 119,
+	"sim_ms_per_tick": 1.36937291666667,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00951633974909782,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.69510928662595,
+		"foot_slide_cm_per_frame": 0.00150129229587037,
+		"foot_slide_frames": 550,
+		"foot_slide_skipped_frames": 1,
+		"locked_on_screen_share": 0.986712598425197,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.61558125,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +10.7 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 1666,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1666,
+			"worst_value": 0.107365022820474
+		}
+	],
+	"wall_seconds": 21.305,
+	"zone": "ember_rift"
+}

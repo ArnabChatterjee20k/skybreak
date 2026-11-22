@@ -45,13 +45,16 @@ func react(vfx: MatchVfx, sim: CombatSim, events: Array[Dictionary]) -> void:
 		var plan := plan_for(event, SpecialRules.kit_of(sim.fighters[who]))
 		for entry: Array in plan.effects:
 			vfx.spawn(entry[0], event.get("position", sim.fighters[who].position), plan.color, entry[1])
-	for fighter in sim.fighters:
+	for index in sim.fighters.size():
+		var fighter := sim.fighters[index]
 		var kit := SpecialRules.kit_of(fighter)
 		if kit == null:
 			continue
-		if fighter.specials.has_decoy() and _tick % DECOY_EVERY == 0:
+		# The fighter's own silhouette where it can (#127); the shell outside a level.
+		if fighter.specials.has_decoy() and _tick % DECOY_EVERY == 0 \
+				and not vfx.pose_ghost(index, kit.color, fighter.specials.decoy_position):
 			vfx.spawn(&"afterimage", fighter.specials.decoy_position, kit.color, 1.0)
-		if wants_trail(fighter) and _tick % TRAIL_EVERY == 0:
+		if wants_trail(fighter) and _tick % TRAIL_EVERY == 0 and not vfx.pose_ghost(index, kit.color):
 			vfx.spawn(&"afterimage", fighter.position, kit.color, 0.9)
 
 
