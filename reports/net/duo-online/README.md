@@ -114,7 +114,19 @@ Browser audit (item 5 of the task):
   QA known issues). `tests/net`: 82 tests, 81 passing, 1 skipped (the optional live Appwrite test needs credentials).
 - det_check on the merge: `det_check total 65ec2f54272115fd` on two runs, equal to main. The sim gained
   `CombatSim.respawn_fighter()` (used only by Duo rules), which no existing path calls.
-- QA quick: see below.
+- QA quick on the merge (`tools/qa/run_qa.sh --quick`, 21 matches; report
+  `qa_quick_1cb662f.md`): Invariant soak (sim) **PASS**, Scenario library **PASS**, Golden replays
+  **PASS** (no sim drift), Invariant soak (view) FAIL with exactly main's counts (foot_ground 3/21
+  matches 4 frames, camera_on_screen 2/21, pop 1/21: the same as main's `e6bf7d31` report),
+  every gameplay feel metric **identical to main (+0%)**. Two flags are not from this branch:
+  - Feel trend FAIL only on timing (sim 1.544 vs 1.085 ms/tick, view 1.674 vs 1.193 ms/frame): the
+    baseline was recorded on a faster machine (main's run took 427 s wall, this one 1920 s). A
+    same-machine A/B run at the same time (`--zone heartbloom_gardens --skip-visual --jobs 2`):
+    **main 0.954 ms/tick sim, 1.209 ms/frame view; this branch 0.950 / 1.183**: within budget, no
+    cost outside Duo. The report folder is kept out of `reports/qa/` so this slower container's
+    timings never become the trend baseline.
+  - Visual goldens NOT RUN: the QA script's python here lacked numpy/Pillow (main's own last run
+    reports visual FAIL as well).
 
 ## Open, ranked
 
