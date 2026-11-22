@@ -99,12 +99,13 @@ static func _fill(effect: VfxEffect, kind: StringName) -> void:
 			effect.add_particles(&"streak", &"rise", 22, 0.5, Vector2(0.1, 0.9))
 			effect.add_particles(&"mote", &"rise", 16, 0.55, Vector2(0.18, 0.18))
 		&"sonic_ring":
-			effect.lifetime = 0.45
+			# Thin and short, about body height: a ring that crossed the frame read as a glitch (#127).
+			effect.lifetime = 0.3
 			effect.default_color = Color(0.9, 0.95, 1.0)
-			effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(5.5, 5.5)))
-			var inner := effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(3.2, 3.2)))
-			inner.position = Vector3(0.0, 0.0, -1.2)
-			effect.add_sprite(&"flash", 1.6)
+			effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(2.8, 2.8)))
+			var inner := effect.add_mesh(&"flat_ring", VfxKit.quad(Vector2(1.6, 1.6)))
+			inner.position = Vector3(0.0, 0.0, -0.8)
+			effect.add_sprite(&"flash", 1.0)
 		&"breaker_ring":
 			# Combo breaker: one clean camera-facing shockwave ring, gone in under 0.25 s.
 			effect.lifetime = 0.22
