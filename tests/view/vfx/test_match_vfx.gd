@@ -235,6 +235,75 @@ func test_powering_up_flares_the_aura() -> void:
 	assert_eq(vfx.pool(&"aura_flare").playing_count(), 1, "once per power-up")
 
 
+func test_every_fighter_gets_one_aura_that_is_off_until_they_charge() -> void:
+	var vfx := _vfx_with_sim()
+	assert_eq(vfx.auras().size(), 2)
+	for aura in vfx.auras():
+		assert_eq(aura.power_level, 0.0)
+		assert_false(aura.charging)
+
+
+func test_charging_longer_climbs_the_aura_through_levels_one_to_three() -> void:
+	var fighter := FighterState.new()
+	fighter.state = S.CHARGING
+	fighter.state_ticks = 0
+	assert_eq(MatchVfx.aura_level(fighter), 1)
+	fighter.state_ticks = MatchVfx.AURA_LEVEL_TICKS[0]
+	assert_eq(MatchVfx.aura_level(fighter), 2)
+	fighter.state_ticks = MatchVfx.AURA_LEVEL_TICKS[1]
+	assert_eq(MatchVfx.aura_level(fighter), 3)
+	fighter.state = S.IDLE
+	assert_eq(MatchVfx.aura_level(fighter), 0)
+
+
+func test_the_aura_follows_the_charging_fighter_in_their_ki_colour() -> void:
+	var vfx := _vfx_with_sim()
+	var fighter := vfx.sim.fighters[1]
+	fighter.state = S.CHARGING
+	fighter.state_ticks = MatchVfx.AURA_LEVEL_TICKS[0]
+	_react(vfx)
+	var aura := vfx.auras()[1]
+	assert_eq(aura.power_level, 2.0)
+	assert_true(aura.charging, "the ki gather runs while charging")
+	assert_eq(aura.color, vfx.ki_layer.color_of(1))
+	vfx.follow_fighters()
+	assert_almost_eq(aura.global_position.distance_to(fighter.position), 0.0, 0.01)
+	fighter.state = S.IDLE
+	_react(vfx)
+	assert_eq(aura.power_level, 0.0, "fades out when charging ends")
+
+
+func test_climbing_a_level_flares_again() -> void:
+	var vfx := _vfx_with_sim()
+	var fighter := vfx.sim.fighters[0]
+	fighter.state = S.CHARGING
+	_react(vfx)
+	assert_eq(vfx.pool(&"aura_flare").playing_count(), 1)
+	fighter.state_ticks = MatchVfx.AURA_LEVEL_TICKS[0]
+	_react(vfx)
+	assert_eq(vfx.pool(&"aura_flare").playing_count(), 2, "level 2 flares")
+
+
+func test_a_knocked_out_fighter_shows_no_aura() -> void:
+	var vfx := _vfx_with_sim()
+	vfx.sim.round_over = true
+	vfx.sim.fighters[0].state = S.CHARGING
+	_react(vfx)
+	assert_eq(vfx.auras()[0].power_level, 0.0)
+
+
+func test_the_auras_use_the_graphics_tier_particle_share() -> void:
+	var sim := CombatSim.new(7)
+	sim.add_fighter(Vector3(0, 1, 6))
+	var vfx := MatchVfx.new()
+	vfx.sim = sim
+	add_child_autofree(vfx)
+	vfx.particle_quality = 0.4
+	var none: Array[Dictionary] = []
+	vfx.react(none)
+	assert_eq(vfx.auras()[0].particle_quality, 0.4)
+
+
 func test_breaking_the_speed_line_fires_one_sonic_ring() -> void:
 	var vfx := _vfx_with_sim()
 	var fighter := vfx.sim.fighters[0]

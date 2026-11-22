@@ -53,6 +53,7 @@ func start(camera: Camera3D) -> void:
 	add_child(aura)
 	aura.global_position = origin
 	aura.power_level = 3.0
+	aura.charging = true
 	aura.snap()
 	_spawned.append(aura)
 	var screen := CanvasLayer.new()
