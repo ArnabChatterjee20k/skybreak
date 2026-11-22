@@ -121,6 +121,33 @@ func test_a_zone_without_spawn_points_still_places_every_fighter() -> void:
 	assert_true(zone_match.world.spawn_points(&"ember_rift").size() == 2, "the world map falls back too")
 
 
+func test_free_for_all_fighters_spawn_apart_in_every_zone() -> void:
+	# #128: every zone has two spawn points, so FFA-4 put two legends on each, touching.
+	var four := [&"lyra", &"vexa", &"kael", &"brann"].map(func(c: StringName) -> Dictionary:
+		return {"character": c, "is_ai": true})
+	for i in four.size():
+		four[i]["team"] = i
+	for zone_id: StringName in ZoneLayout.ZONE_IDS:
+		var zone_match := _match({"zone": zone_id, "fighters": four, "mode": &"ffa"})
+		zone_match.step_tick()
+		var fighters := zone_match.sim.fighters
+		for a in fighters.size():
+			for b in range(a + 1, fighters.size()):
+				var gap := Pushboxes.gap(fighters[a], fighters[a].position, fighters[b], fighters[b].position)
+				assert_gt(gap, 8.0, "%s: fighters %d and %d start %.2f m apart" % [zone_id, a, b, gap])
+		zone_match.free()
+
+
+func test_two_sides_keep_the_zone_spawn_points() -> void:
+	var points := PackedVector3Array([Vector3(640, 0, -430), Vector3(680, 0, -430)])
+	assert_eq(ZoneMatch.side_points(points, 2), points)
+	var ring := ZoneMatch.side_points(points, 4)
+	assert_eq(ring.size(), 4)
+	assert_almost_eq(ring[0].distance_to(Vector3(660 - ZoneMatch.FFA_SPAWN_RADIUS, 0, -430)), 0.0, 0.001,
+		"the first side keeps the first point's bearing")
+	assert_almost_eq(ring[0].distance_to(ring[2]), ZoneMatch.FFA_SPAWN_RADIUS * 2.0, 0.001)
+
+
 func test_the_camera_knows_the_zone_obstacles() -> void:
 	var zone_match := _match({"zone": &"stormfall_city"})
 	assert_not_null(zone_match.camera.obstacles)
