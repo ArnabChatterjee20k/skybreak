@@ -1,0 +1,17 @@
+Totals
+------
+Warnings              4
+Deprecated            2
+
+Scripts             200
+Tests              1957
+Passing Tests      1950
+Failing Tests         1
+Risky/Pending        10
+Asserts           294511/294512
+Orphans              15
+Time              870.54s
+
+res://tests/ai/test_fighter_ai.gd
+- test_an_ai_costs_at_most_0_05_ms_per_tick
+    [Failed]:  [0.052231] expected to be <= than [0.05]:  

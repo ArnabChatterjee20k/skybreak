@@ -1,0 +1,19 @@
+Totals
+------
+Warnings              4
+Deprecated            2
+
+Scripts             201
+Tests              1968
+Passing Tests      1961
+Failing Tests         1
+Risky/Pending        10
+Asserts           294826/294827
+Orphans              15
+Time              884.354s
+gut exit 1   (1 failing)
+
+res://tests/playtest/test_voxel_zone_camera.gd
+* test_every_voxel_zone_fight_frames_both_fighters_near_and_far_without_clipping
+    [Failed]:  [0.94877049180328] expected to be >= than [0.95]:  verdant_falls: both on screen 926/976
+--

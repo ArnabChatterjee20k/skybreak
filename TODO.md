@@ -15,6 +15,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   after the change: camera_on_screen 1 -> 4 of 21 long matches at 92-95 % (T-135-c, hybrid camera)
   [developer] and cliff-ledge landings the voxel art does not show (+2.6-3.1 m, Shattered Mesa seed
   107) [desktop, terrain].
+- MOVE-ESCAPE-CAM [desktop, blocks the next build] Main is red since the #150 merge 61b47407:
+  `tests/playtest/test_voxel_zone_camera.gd` fails with `verdant_falls: both on screen 926/976`
+  (0.949, needs 0.95). It's deterministic and passes on 6b618350. The test only runs with zone bakes
+  present (otherwise pending), so run the bake before the full GUT. Evidence:
+  `reports/builds/2026-11-22-61b47407.md`. Fix the cause, or re-pick the fight with a written reason;
+  don't loosen 0.95.
 
 - VOXEL-SHIP open items [desktop unless tagged] (voxel art shipped on `main`, see
   `reports/ship/voxel-ship.md`), ranked:
