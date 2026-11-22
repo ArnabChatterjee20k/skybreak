@@ -1,6 +1,7 @@
 extends GutTest
 ## Two Duo peers over a lossy loopback: same seed, own scripted inputs, AI on both.
 
+const BotMatch := preload("res://tests/net/bot_match.gd")
 const NetScript := preload("res://tests/net/net_script.gd")
 const SEED := 21
 const TICKS := 3600
@@ -21,10 +22,10 @@ func _make_peers(rtt_ms: float, jitter_ms: float, loss: float, delay: int = 2) -
 	var ends := LoopbackTransport.pair(_clock, rtt_ms, jitter_ms, loss, SEED)
 	var peers: Array[RollbackSession] = []
 	for peer in 2:
-		var sim := DuoMatch.new_sim(SEED, 2)
-		peers.append(RollbackSession.new(sim, ends[peer], peer, 2, DuoMatch.fighter_peers(sim),
-			DuoMatch.new_bots(sim, SEED), delay, _clock))
-		peers[peer].rules = DuoMatch.new()
+		var sim := BotMatch.new_sim(SEED, 2)
+		peers.append(RollbackSession.new(sim, ends[peer], peer, 2, BotMatch.fighter_peers(sim),
+			BotMatch.new_bots(sim, SEED), delay, _clock))
+		peers[peer].rules = BotMatch.new()
 	return peers
 
 
@@ -130,9 +131,9 @@ func test_a_peer_that_hears_nothing_stalls_within_the_rollback_window() -> void:
 
 
 func test_re_simulating_8_frames_for_4_fighters_costs_at_most_20_plain_ticks() -> void:
-	var sim := DuoMatch.new_sim(SEED, 2)
-	var bots := DuoMatch.new_bots(sim, SEED)
-	var session := RollbackSession.new(sim, null, 0, 1, DuoMatch.fighter_peers(sim), bots, 0, _clock)
+	var sim := BotMatch.new_sim(SEED, 2)
+	var bots := BotMatch.new_bots(sim, SEED)
+	var session := RollbackSession.new(sim, null, 0, 1, BotMatch.fighter_peers(sim), bots, 0, _clock)
 	session.fighter_peers = [0, 0, -1, -1]
 	var script := NetScript.new(9)
 	var next_inputs := func() -> Array[FighterInput]:

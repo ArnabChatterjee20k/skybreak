@@ -14,6 +14,8 @@ var zone: StringName = &"stormfall_city"
 var fighters: Array[Dictionary] = []
 var rounds: int = MatchRules.DEFAULT_ROUNDS
 var mode: StringName = MatchRules.MODE_VS_AI
+## Any other config keys (Duo: seed, lives, minutes), passed through to the level.
+var extras: Dictionary = {}
 ## Screen the front end opens on next: &"" (splash), &"main", &"character_select".
 var return_screen: StringName = &""
 ## Scene path of the last launch.
@@ -34,10 +36,16 @@ func set_config(config: Dictionary) -> void:
 	fighters.assign(config.fighters)
 	rounds = config.rounds
 	mode = config.mode
+	extras = {}
+	for key: String in config:
+		if not key in ["zone", "fighters", "rounds", "mode"]:
+			extras[key] = config[key]
 
 
 func to_dictionary() -> Dictionary:
-	return {"zone": zone, "fighters": fighters.duplicate(true), "rounds": rounds, "mode": mode}
+	var out := {"zone": zone, "fighters": fighters.duplicate(true), "rounds": rounds, "mode": mode}
+	out.merge(extras.duplicate(true))
+	return out
 
 
 ## zone_match.tscn when another lane has added it, else the test arena.

@@ -287,6 +287,18 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+- DUO-1 [desktop owner action] Appwrite Web platform for `skybreak-web-6a113777000db893b12e.appwrite.network`
+  if sign-in from the web build says "Invalid Origin" (unverified: the cloud agent cannot reach
+  Appwrite). See `reports/net/duo-online/README.md`.
+- DUO-2 [desktop] TURN relay for networks where STUN-only P2P fails (the lobby says so after 30 s).
+- DUO-3 [desktop] Rejoin after a real drop: re-signal and resync the sim (today: short drops recover,
+  long ones offer "continue vs AI" or leave).
+- DUO-4 [desktop] Respawn invincibility (2 s, GAME_DESIGN §8.1) and shared combo across partners
+  (§8.2 team assists): both need sim fields, so they change det_check; not in T-D15b.
+- DUO-5 [developer] ZoneMatch ignores the configured `team` for non-Duo modes (2v2/FFA teams hit each
+  other and AIDriver sees everyone as an enemy); Duo sets it. Fixing it for all modes shifts QA 2v2.
+- DUO-6 [desktop] Cross-platform determinism Windows <-> web is covered by det_check, not by a live
+  Windows-vs-browser Duo session: run one owner PC + partner browser match and compare hashes.
 - ZONE-POLISH [desktop] open after `fix/zone-polish` (report `reports/perf/zone-polish/`): run the
   zone bench on the GTX 1650 for Frozen Peaks HIGH and MEDIUM (target HIGH p95 under ~14 ms; HIGH
   now drops foothill shadows past 120 m, -39% shadow triangles in the opening). If HIGH still
@@ -407,6 +419,14 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+- T-D15b [desktop] Duo online end to end (`net/duo-online`, report `reports/net/duo-online/`):
+  Main menu -> Duo -> sign in (remembered) -> Host (5-letter code) / Join -> legends, host's
+  zone/AI/lives/minutes -> Ready -> Start; `DuoLink` keeps the WebRTC link across menu and match;
+  TablesDB rows; `ZoneMatch` runs `RollbackSession` (2 delay, 8 rollback, hash desync check) with
+  `DuoFlow` (shared team lives, respawns, friendly fire off, time limit); ping/lives HUD, waiting,
+  disconnected (continue vs AI / leave) and out-of-sync panels. Tests: GUT loopback 150 ms RTT /
+  20 ms jitter / 2% loss + rollback burst; `tools/net/duo_browser_test.js` (two Chromium pages,
+  real WebRTC, Appwrite mock). Open (ranked) in the report README.
 - T-VFX-AURA2 [desktop] Aura v2 (owner: "looking like rectangles"), merged into `main` `--no-ff` from
   `vfx/aura-v2`; evidence and ranked critique in `reports/vfx/aura-v2/README.md`. `FighterAura` rebuilt
   and now in every match (`MatchVfx`, one per fighter): three noise-scrolled flame layers hugging the body,
