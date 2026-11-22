@@ -1,0 +1,76 @@
+ERROR: No GDExtension library found for current OS and architecture (linux.x86_64) in configuration file: res://addons/webrtc_native/webrtc_native.gdextension
+   at: parse_gdextension_file (core/extension/gdextension_library_loader.cpp:369)
+ERROR: GDExtension dynamic library not found: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: open_library (core/extension/gdextension.cpp:810)
+ERROR: Error loading extension: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: load_extensions (core/extension/gdextension_manager.cpp:333)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: VoxelZoneView: building stormfall_city live (no bake at res://game/world/voxel_zone_kit/baked/stormfall_city_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:163)
+         [2] _build_world (res://game/levels/zone_match.gd:154)
+         [3] _ready (res://game/levels/zone_match.gd:91)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+         [6] _run (res://game/debug/qa/qa_soak.gd:34)
+[qa] match 2 102:stormfall_city:2v2:kael,vexa,brann,lyra:4455: 2400 ticks, 0 violation kinds, 28.2 s
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:163)
+         [2] _build_world (res://game/levels/zone_match.gd:154)
+         [3] _ready (res://game/levels/zone_match.gd:91)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 6 106:heartbloom_gardens:1v1:brann,lyra:33: 2400 ticks, 0 violation kinds, 74.2 s
+WARNING: VoxelZoneView: building frozen_peaks live (no bake at res://game/world/voxel_zone_kit/baked/frozen_peaks_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:163)
+         [2] _build_world (res://game/levels/zone_match.gd:154)
+         [3] _ready (res://game/levels/zone_match.gd:91)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 10 110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523: 2400 ticks, 1 violation kinds, 72.1 s
+WARNING: VoxelZoneView: building shattered_mesa live (no bake at res://game/world/voxel_zone_kit/baked/shattered_mesa_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:163)
+         [2] _build_world (res://game/levels/zone_match.gd:154)
+         [3] _ready (res://game/levels/zone_match.gd:91)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 14 114:shattered_mesa:2v2:kael,vexa,brann,lyra:3355: 2400 ticks, 1 violation kinds, 19.0 s
+WARNING: VoxelZoneView: building verdant_falls live (no bake at res://game/world/voxel_zone_kit/baked/verdant_falls_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:163)
+         [2] _build_world (res://game/levels/zone_match.gd:154)
+         [3] _ready (res://game/levels/zone_match.gd:91)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+  _floor: 59212 ms
+  _cliff: 3921 ms
+  _backdrop: 552 ms
+  _water: 2 ms
+  _falls: 3 ms
+  _trees: 17 ms
+  _canopies: 9 ms
+  _scatter: 1301 ms
+  _shore: 51 ms
+  _story_props: 12 ms
+  _mist: 3 ms
+  _shafts: 0 ms
+  _particles: 1 ms
+[qa] match 18 118:verdant_falls:1v1:brann,lyra:24: 2400 ticks, 0 violation kinds, 82.7 s
+WARNING: 34 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 16 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
