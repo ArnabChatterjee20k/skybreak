@@ -201,4 +201,36 @@ VK_ICD_FILENAMES=/opt/lavapipe/lvp_icd.json xvfb-run -a godot --path . --disable
 
 ## Verification
 
-Filled in at merge time below.
+- **Godot**: official 4.7.2 linux x86_64 (`4.7.2.stable.official.ed1daf0bf`), zip SHA-512 checked
+  against `SHA512-SUMS.txt` ("OK").
+- **Full GUT** with `rm -rf .godot` and `--headless --import` on a clean worktree:
+  - `b8e7faf` (the branch with main 17b9609, camera round 3, merged in): **1899 tests, 1888 passing,
+    0 failing, 15 risky/pending, exit 0** (14 min).
+  - Before that merge: `21bcc4e` and `84a4b94` were both 1875 / 1866 / 0 failing / 13 pending.
+  - Baseline main 7cad385: 1826 / 1817 / 0 failing / 13 pending.
+  - The pending/risky tests are main's (renderer-only, VOXEL-BAKES, live Appwrite, QA-11/12).
+- **New tests (65):**
+  - `tests/combat/pure_fight/`: rules, frames (measured), combos, rollback, goldens.
+  - `tests/modes/pure_fight/`: the 7-zone 3-round bot match with framing, plus the menu tests.
+  - `tests/characters/test_fight_styles.gd`: foot slides, limbs through the opponent, T-poses, IK
+    reach.
+  - `tests/net/test_pure_fight_online.gd`.
+- **det_check, default scenario**: `det_check total 65ec2f54272115fd` on main and on every branch
+  commit checked (84a4b94, 21bcc4e, b8e7faf). Bit-identical.
+- **Pure Fight det_check** (`tools/diag/pure_fight_det_check.gd`): `pure_fight total
+  2c13bfd4e600adde`, identical on two runs.
+- **Golden replays**: 4 Pure Fight goldens, 3000 ticks each, a hash every 10 ticks, in
+  `tests/combat/pure_fight/goldens/`. They caught both intended sim changes on this branch (hitbox
+  reach, body widths), which were re-blessed with `tools/diag/pure_fight_record_goldens.gd`.
+- **QA quick** (`QA_JOBS=4`): see `reports/qa/2026-11-22-84a4b94-quick.md` and the b8e7faf run below.
+  - 84a4b94: sim soak, scenarios, golden replays, visual goldens and feel trend all **PASS**. The
+    view soak **FAIL** is the same pre-existing set as main's 6ea2e918 run (foot_ground 3/21,
+    camera_on_screen 2/21, pop 1/21; same seeds and ticks).
+  - Pure Fight doesn't touch ZoneMatch.
+  - b8e7faf (with camera round 3): sim soak, scenarios and golden replays **PASS**; the view soak
+    **FAIL** is the same pre-existing set.
+  - Visual goldens **FAIL** on `zone_frozen_peaks` (0.453) and `zone_verdant_falls` (0.842), exactly
+    as on T-135's own run (e6bf7d31: 0.436 / 0.698, filed there as T-135-b, not re-blessed).
+  - Feel trend **FAIL** on `view_ms_per_frame` +18%, but that compares against my pre-camera-round3
+    run. Against T-135's run it is 1.153 vs 1.193 ms, so the cost is camera round 3's, not Pure
+    Fight's (Pure Fight adds no ZoneMatch code).
