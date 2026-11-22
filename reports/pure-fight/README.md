@@ -209,20 +209,24 @@ VK_ICD_FILENAMES=/opt/lavapipe/lvp_icd.json xvfb-run -a godot --path . --disable
 
 - **Godot**: official 4.7.2 linux x86_64 (`4.7.2.stable.official.ed1daf0bf`), zip SHA-512 checked
   against `SHA512-SUMS.txt` ("OK").
-- **Full GUT** with `rm -rf .godot` and `--headless --import` on a clean worktree:
-  - `b8e7faf` (the branch with main 17b9609, camera round 3, merged in): **1899 tests, 1888 passing,
-    0 failing, 15 risky/pending, exit 0** (14 min).
-  - Before that merge: `21bcc4e` and `84a4b94` were both 1875 / 1866 / 0 failing / 13 pending.
+- **Full GUT** with `rm -rf .godot` and `--headless --import` on a clean worktree, at every main
+  merge:
+  - `1fc992f` (online Pure Fight, with main fe71e7c, Duo online, merged in): **1946 tests, 1935
+    passing, 0 failing, 15 risky/pending, 15 orphans (the same as main), exit 0** (15 min).
+  - `95e2fe9` (with aura v2): 1917 / 1906 / 0 failing.
+  - `b8e7faf` (with camera round 3): 1899 / 1888 / 0 failing.
+  - `84a4b94`: 1875 / 1866 / 0 failing.
   - Baseline main 7cad385: 1826 / 1817 / 0 failing / 13 pending.
   - The pending/risky tests are main's (renderer-only, VOXEL-BAKES, live Appwrite, QA-11/12).
-- **New tests (65):**
+  - The final merge of main fbfe18e (CI workflow and reports only) is re-run below.
+- **New tests (68):**
   - `tests/combat/pure_fight/`: rules, frames (measured), combos, rollback, goldens.
   - `tests/modes/pure_fight/`: the 7-zone 3-round bot match with framing, plus the menu tests.
   - `tests/characters/test_fight_styles.gd`: foot slides, limbs through the opponent, T-poses, IK
     reach.
-  - `tests/net/test_pure_fight_online.gd`.
+  - `tests/net/test_pure_fight_online.gd` and `tests/net/test_pure_fight_lobby.gd`.
 - **det_check, default scenario**: `det_check total 65ec2f54272115fd` on main and on every branch
-  commit checked (84a4b94, 21bcc4e, b8e7faf). Bit-identical.
+  commit checked (84a4b94, 21bcc4e, b8e7faf, 9674213, 95e2fe9, 1fc992f). Bit-identical.
 - **Pure Fight det_check** (`tools/diag/pure_fight_det_check.gd`): `pure_fight total
   2c13bfd4e600adde`, identical on two runs.
 - **Golden replays**: 4 Pure Fight goldens, 3000 ticks each, a hash every 10 ticks, in
@@ -240,3 +244,7 @@ VK_ICD_FILENAMES=/opt/lavapipe/lvp_icd.json xvfb-run -a godot --path . --disable
   - Feel trend **FAIL** on `view_ms_per_frame` +18%, but that compares against my pre-camera-round3
     run. Against T-135's run it is 1.153 vs 1.193 ms, so the cost is camera round 3's, not Pure
     Fight's (Pure Fight adds no ZoneMatch code).
+  - 1fc992f (with Duo online and Pure Fight online): sim soak, scenarios, golden replays and feel
+    trend **PASS** (view_ms +1%).
+  - The view soak FAIL is the same pre-existing set, and the visual goldens FAIL is the same two
+    T-135-b shots (frozen 0.453, verdant 0.842).
