@@ -1,0 +1,76 @@
+ERROR: No GDExtension library found for current OS and architecture (linux.x86_64) in configuration file: res://addons/webrtc_native/webrtc_native.gdextension
+   at: parse_gdextension_file (core/extension/gdextension_library_loader.cpp:369)
+ERROR: GDExtension dynamic library not found: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: open_library (core/extension/gdextension.cpp:810)
+ERROR: Error loading extension: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: load_extensions (core/extension/gdextension_manager.cpp:333)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: VoxelZoneView: building frozen_peaks live (no bake at res://game/world/voxel_zone_kit/baked/frozen_peaks_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+         [6] _run (res://game/debug/qa/qa_soak.gd:34)
+[qa] match 3 103:frozen_peaks:1v1:vexa,brann:44: 2400 ticks, 0 violation kinds, 82.1 s
+WARNING: VoxelZoneView: building shattered_mesa live (no bake at res://game/world/voxel_zone_kit/baked/shattered_mesa_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 7 107:shattered_mesa:ffa4:brann,lyra,kael,vexa:2445: 2400 ticks, 0 violation kinds, 19.4 s
+WARNING: VoxelZoneView: building verdant_falls live (no bake at res://game/world/voxel_zone_kit/baked/verdant_falls_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+  _floor: 59797 ms
+  _cliff: 4364 ms
+  _backdrop: 582 ms
+  _water: 2 ms
+  _falls: 2 ms
+  _trees: 12 ms
+  _canopies: 9 ms
+  _scatter: 1229 ms
+  _shore: 33 ms
+  _story_props: 8 ms
+  _mist: 3 ms
+  _shafts: 1 ms
+  _particles: 0 ms
+[qa] match 11 111:verdant_falls:2v2:lyra,kael,vexa,brann:4432: 2400 ticks, 0 violation kinds, 85.3 s
+WARNING: VoxelZoneView: building skyhold_ruins live (no bake at res://game/world/voxel_zone_kit/baked/skyhold_ruins_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 15 115:skyhold_ruins:1v1:vexa,brann:45: 2400 ticks, 0 violation kinds, 47.2 s
+WARNING: VoxelZoneView: building ember_rift live (no bake at res://game/world/voxel_zone_kit/baked/ember_rift_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 19 119:ember_rift:ffa4:brann,lyra,kael,vexa:4433: 2400 ticks, 0 violation kinds, 61.6 s
+WARNING: 48 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 22 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

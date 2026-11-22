@@ -13,6 +13,8 @@ var buttons: Dictionary = {}
 var _main: Control
 
 var _root: Control
+## Move list panel, shown when the level offers move_list_text() (Pure Fight).
+var move_list: Control
 
 
 func _init() -> void:
@@ -49,8 +51,12 @@ func _ready() -> void:
 	column.position = Vector2(150, 400)
 	column.add_theme_constant_override("separation", 16)
 	_main.add_child(column)
-	for entry: Array in [["resume", "Resume", resume], ["restart", "Restart", _restart],
-			["settings", "Settings", open_settings], ["quit", "Quit to menu", _quit]]:
+	var entries: Array = [["resume", "Resume", resume], ["restart", "Restart", _restart],
+			["settings", "Settings", open_settings], ["quit", "Quit to menu", _quit]]
+	var level := get_parent().get_parent() if get_parent() != null else null
+	if level != null and level.has_method(&"move_list_text"):
+		entries.insert(1, ["moves", "Move list", open_move_list.bind(String(level.call(&"move_list_text")))])
+	for entry: Array in entries:
 		var b := MenuTheme.button(entry[1], 48)
 		b.custom_minimum_size = Vector2(560, 84)
 		var action: Callable = entry[2]
@@ -70,8 +76,30 @@ func _ready() -> void:
 	root.add_child(settings)
 
 
+## A scrolling panel with the level's move list; Esc or Resume closes it.
+func open_move_list(text: String) -> void:
+	if move_list == null:
+		var panel := PanelContainer.new()
+		panel.add_theme_stylebox_override("panel", MenuTheme.box(MenuTheme.PANEL, MenuTheme.INK, 6, false, 0.0))
+		panel.position = Vector2(760, 90)
+		panel.size = Vector2(1100, 900)
+		var scroll := ScrollContainer.new()
+		scroll.custom_minimum_size = Vector2(1080, 880)
+		panel.add_child(scroll)
+		var label := Label.new()
+		label.name = "Text"
+		label.add_theme_font_size_override("font_size", 22)
+		scroll.add_child(label)
+		_root.add_child(panel)
+		move_list = panel
+	(move_list.find_child("Text", true, false) as Label).text = text
+	move_list.visible = true
+
+
 func open() -> void:
 	visible = true
+	if move_list != null:
+		move_list.visible = false
 	close_settings()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	(buttons[&"resume"] as Button).grab_focus()
@@ -98,7 +126,9 @@ func close_settings() -> void:
 
 ## Esc: leaves settings first, then resumes.
 func back_or_resume() -> void:
-	if settings.visible:
+	if move_list != null and move_list.visible:
+		move_list.visible = false
+	elif settings.visible:
 		close_settings()
 	else:
 		resume()

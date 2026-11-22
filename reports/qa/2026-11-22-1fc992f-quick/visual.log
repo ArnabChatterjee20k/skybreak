@@ -1,0 +1,177 @@
+ERROR: No GDExtension library found for current OS and architecture (linux.x86_64) in configuration file: res://addons/webrtc_native/webrtc_native.gdextension
+   at: parse_gdextension_file (core/extension/gdextension_library_loader.cpp:369)
+ERROR: GDExtension dynamic library not found: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: open_library (core/extension/gdextension.cpp:810)
+ERROR: Error loading extension: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: load_extensions (core/extension/gdextension_manager.cpp:333)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.4 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+ALSA lib confmisc.c:855:(parse_card) cannot find card '0'
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_card_inum returned error: No such file or directory
+ALSA lib confmisc.c:422:(snd_func_concat) error evaluating strings
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_concat returned error: No such file or directory
+ALSA lib confmisc.c:1342:(snd_func_refer) error evaluating name
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_refer returned error: No such file or directory
+ALSA lib conf.c:5731:(snd_config_expand) Evaluate error: No such file or directory
+ALSA lib pcm.c:2721:(snd_pcm_open_noupdate) Unknown PCM default
+ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
+   at: init_output_device (drivers/alsa/audio_driver_alsa.cpp:97)
+WARNING: All audio drivers failed, falling back to the dummy driver.
+     at: initialize (servers/audio/audio_server.cpp:258)
+
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+         [6] _run (res://game/debug/qa/qa_soak.gd:39)
+[qa] shot heartbloom_kael_idle
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot heartbloom_kael_light
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot heartbloom_vexa_idle
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot heartbloom_vexa_light
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot heartbloom_brann_idle
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot heartbloom_brann_light
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot heartbloom_lyra_idle
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot heartbloom_lyra_light
+WARNING: VoxelZoneView: building shattered_mesa live (no bake at res://game/world/voxel_zone_kit/baked/shattered_mesa_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot zone_shattered_mesa
+WARNING: VoxelZoneView: building skyhold_ruins live (no bake at res://game/world/voxel_zone_kit/baked/skyhold_ruins_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot zone_skyhold_ruins
+WARNING: VoxelZoneView: building stormfall_city live (no bake at res://game/world/voxel_zone_kit/baked/stormfall_city_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot zone_stormfall_city
+WARNING: VoxelZoneView: building frozen_peaks live (no bake at res://game/world/voxel_zone_kit/baked/frozen_peaks_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot zone_frozen_peaks
+WARNING: VoxelZoneView: building verdant_falls live (no bake at res://game/world/voxel_zone_kit/baked/verdant_falls_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+  _floor: 57730 ms
+  _cliff: 3521 ms
+  _backdrop: 506 ms
+  _water: 2 ms
+  _falls: 3 ms
+  _trees: 21 ms
+  _canopies: 27 ms
+  _scatter: 1230 ms
+  _shore: 33 ms
+  _story_props: 14 ms
+  _mist: 20 ms
+  _shafts: 0 ms
+  _particles: 1 ms
+[qa] shot zone_verdant_falls
+WARNING: VoxelZoneView: building ember_rift live (no bake at res://game/world/voxel_zone_kit/baked/ember_rift_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:181)
+         [2] _build_world (res://game/levels/zone_match.gd:172)
+         [3] _ready (res://game/levels/zone_match.gd:107)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _shots (res://game/debug/qa/qa_soak.gd:115)
+[qa] shot zone_ember_rift
