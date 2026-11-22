@@ -59,9 +59,20 @@ Everything is built once in `_ready`; per frame the aura only sets a few uniform
 - `compat_kael_*.png`: the same scene under `--rendering-method gl_compatibility` at WEB quality (0.4).
 - `fix_kael_level*.png`: after the flame-base fix (see critique 1).
 
-## Verification
-See the commit message and `TODO.md` (T-VFX-AURA2) for the totals: full GUT, det_check, QA quick
-on main vs the branch.
+## Verification (official Godot 4.7.2 linux x86_64, SHA-512 checked against SHA512-SUMS.txt)
+- Fresh clone of the merged branch (b432603, main 17b9609 merged in), `rm -rf .godot`, `--headless --import`,
+  full GUT: **1868 tests, 1857 passing, 15 pending, 0 failing** (824 s).
+- `det_check total 65ec2f54272115fd`, the same as main (the sim is untouched).
+- QA quick, main 7cad385 and the branch 4bc95d3 run side by side on the same 4-core box (QA_JOBS=2 each):
+  view_ms/frame **1.773 (main) vs 1.755 (branch)**, sim_ms/tick 1.84 vs 1.98 (noise; no sim change).
+  Both runs: the same FAIL sections (view soak: foot_ground 3/21, camera_on_screen 2/21, pop 1/21; the
+  feel trend against the committed 8-job baseline), identical top violations, visual goldens PASS
+  (no shot shows a charging fighter, so no golden refresh). Report: `reports/qa/2026-11-22-4bc95d3-quick.md`.
+- New tests: `tests/shaders/test_fighter_aura.gd` (21: soft round halos, no hard-edged quad shaders,
+  particle counts per tier, arcs and flame layers per tier, Compatibility-safe shaders and nodes, colour
+  per aura, HDR clamps, no per-frame material allocation), 6 in `test_match_vfx.gd` (aura per fighter,
+  levels by charge time, follows the fighter, flares per level, off after KO, tier share), 1 in
+  `test_ki_view.gd` (streaks gather at the hands while a beam charges).
 
 ## Ranked critique (worst first, honest)
 1. **The level-3 renders in the hero set show a hard horizontal cut at the flame's base.** The
@@ -69,19 +80,22 @@ on main vs the branch.
    the floor and the floor cut it in a straight line. Fixed in the shader (the flame now grows
    from the feet); `fix_kael_level*.png` shows the fix. The 4-hero stills and the mp4 were rendered
    before it, and there wasn't time to re-render them.
-2. **On the light grey look-dev stage the aura reads pale, peach rather than saturated orange.**
+2. **The aura is one size for every legend.** Brann's oversized shoulders and fists stick out of
+   the flame silhouette, so it reads as a flame behind him rather than around him. It needs a
+   per-legend width/height (from the character's measured silhouette) before it's final.
+3. **On the light grey look-dev stage the aura reads pale, peach rather than saturated orange.**
    Additive light on a bright background washes out. In darker zones it will read stronger. This
    needs a GTX 1650 look on real arenas before calling it final.
-3. **The chest orb is small and faint on Kael** (his scarf and the gold trim compete with it);
+4. **The chest orb is small and faint on Kael** (his scarf and the gold trim compete with it);
    it reads clearly on Vexa. It may want to be bigger, or an energy-coloured flash on each pulse.
-4. **The fresnel shell still shows a faint curved bubble edge around the boots** at levels 2 and 3.
+5. **The fresnel shell still shows a faint curved bubble edge around the boots** at levels 2 and 3.
    It's much weaker than the old glass capsule, but it's still there.
-5. **Flame layers are camera-facing sheets.** From directly above (a flight camera looking down)
+6. **Flame layers are camera-facing sheets.** From directly above (a flight camera looking down)
    the silhouette flattens. In side and 3/4 views, which is how the game usually frames charging,
    it reads correctly.
-6. **At level 3 the stills' framing crops the flame tips** (the camera, not the effect).
-7. **No GPU measurement.** QA view_ms (headless, CPU side) is unchanged, but the fill cost of three
+7. **At level 3 the stills' framing crops the flame tips** (the camera, not the effect).
+8. **No GPU measurement.** QA view_ms (headless, CPU side) is unchanged, but the fill cost of three
    flame sheets per charging fighter in a 4-player FFA was not measured on the GTX 1650. Run the
    render benchmark with four fighters charging.
-8. Dust puffs were tried and dropped: on bright floors they read as soft grey squares, the exact
+9. Dust puffs were tried and dropped: on bright floors they read as soft grey squares, the exact
    complaint. The floor shock rings and the light pulse carry the ground beat now.

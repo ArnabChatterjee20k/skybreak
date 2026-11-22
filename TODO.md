@@ -410,7 +410,8 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   65ec2f54272115fd); QA quick view_ms 1.755 vs main 1.773 (same box, same load). Follow-ups:
   - AURA2-1 [developer, GPU] Look on the GTX 1650 in real zones (it reads pale on the grey look-dev stage)
     and render-benchmark four fighters charging at once (three flame sheets each).
-  - AURA2-2 [desktop] The chest orb is faint on Kael; the shell keeps a faint bubble edge at the boots;
+  - AURA2-2 [desktop] One aura size for every legend: Brann's shoulders and fists stick out of the
+    flame (needs a per-legend size from the measured silhouette). The chest orb is faint on Kael; the shell keeps a faint bubble edge at the boots;
     the flame sheets flatten from directly above. The 4-hero stills and mp4 predate the flame-base fix
     (re-render them).
 - T-135 [developer/desktop] MERGED into `main` at 61925008 (PR #149, `--no-ff`; web-build 66250942, play-windows 05e02e73; evidence in
