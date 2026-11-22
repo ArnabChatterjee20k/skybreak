@@ -61,13 +61,15 @@ static func total(data: Dictionary) -> int:
 	return int(data.startup) - 1 + int(data.active) + int(data.recovery)
 
 
-## [on block, on hit] when the first active frame connects; null-like 999 for knockdowns.
+## [on block, on hit] when the first active frame connects (999 on hit: knockdown or launch).
+## The sim counts stun from the tick after hitstop, so this is stun - (active + recovery).
 static func advantage(data: Dictionary) -> Vector2i:
-	var after := int(data.active) - 1 + int(data.recovery)
+	var after := int(data.active) + int(data.recovery)
 	if data.stance == &"air":
 		after = int(data.landing)
 	var on_hit := int(data.hitstun) - after
-	if data.knockdown or not (data.launch as Array).is_empty() or data.wall_bounce:
+	if data.knockdown or not (data.launch as Array).is_empty() or data.wall_bounce \
+			or data.ground_bounce or int(data.cinematic) > 0:
 		on_hit = 999
 	return Vector2i(int(data.blockstun) - after, on_hit)
 
@@ -101,7 +103,7 @@ static func _kael() -> Dictionary:
 		&"5L": _light("Snap Jab", "5L", &"L", &"stand", [180, 820, 1180, 1460], &"lhand"),
 		&"5M": _m("Reverse Punch", &"normal", "5M", [6, 3, 12], 55, [17, 12], &"mid",
 			[180, 950, 1100, 1450], {"button": &"M", "cancel": 2, "strength": 1, "push": 450}),
-		&"5H": _m("Front Snap Kick", &"normal", "5H", [9, 3, 20], 85, [22, 18], &"mid",
+		&"5H": _m("Front Snap Kick", &"normal", "5H", [9, 3, 20], 85, [26, 18], &"mid",
 			[200, 1060, 820, 1300], {"button": &"H", "cancel": 1, "strength": 2, "push": 700,
 			"limb": &"rfoot", "vel": [[1, 8, 18, 0]]}),
 		&"2L": _light("Shin Kick", "2L", &"L", &"crouch", [160, 820, 0, 420], &"lfoot",
@@ -134,18 +136,18 @@ static func _kael() -> Dictionary:
 		&"iron_lunge": _m("Iron Lunge", &"technique", "236 + attack", [12, 4, 18], 100, [24, 16],
 			&"mid", [150, 900, 1000, 1450], {"motion": &"236", "strength": 3, "super_cancel": true,
 			"vel": [[4, 15, 110, 0]], "push": 800}),
-		&"skyward_fist": _m("Skyward Fist", &"technique", "623 + attack", [3, 10, 28], 120, [24, 15],
+		&"skyward_fist": _m("Skyward Fist", &"technique", "623 + attack", [3, 10, 29], 120, [24, 15],
 			&"mid", [0, 700, 800, 2100], {"motion": &"623", "strength": 3, "invuln": [1, 8],
-			"throw_invuln": [1, 8], "airborne": [4, 38], "vel": [[3, 12, 25, 130]], "rehit": 5,
+			"throw_invuln": [1, 8], "airborne": [4, 38], "vel": [[3, 10, 25, 95]], "rehit": 5,
 			"hits": 2, "launch": [30, 125], "super_cancel": true, "landing": 0}),
 		&"ridgeback_kick": _m("Ridgeback Kick", &"technique", "214 + attack", [20, 3, 16], 90,
 			[20, 14], &"overhead", [150, 900, 700, 1800], {"motion": &"214", "strength": 3,
 			"airborne": [4, 19], "vel": [[3, 19, 50, 0]], "ground_bounce": true, "limb": &"rfoot"}),
-		&"thousand_petal": _m("Thousand Petal Breaker", &"finisher", "236236 + attack or O",
+		&"thousand_petal": _m("Thousand Petal Breaker", &"finisher", "236236 + attack / finisher key",
 			[6, 6, 40], 320, [40, 20], &"mid", [100, 900, 700, 1600], {"motion": &"236236",
 			"strength": 3, "invuln": [1, 12], "throw_invuln": [1, 12], "vel": [[4, 11, 150, 0]],
 			"cinematic": 96}),
-		&"throw": _m("Shoulder Throw", &"throw", "F (close)", [5, 2, 23], 110, [0, 0], &"throw",
+		&"throw": _m("Shoulder Throw", &"throw", "throw (close)", [5, 2, 23], 110, [0, 0], &"throw",
 			[0, THROW_RANGE, 0, 1800], {"grab": true, "range": THROW_RANGE, "strength": 2,
 			"limb": &"lhand"}),
 	}
@@ -157,7 +159,7 @@ static func _vexa() -> Dictionary:
 		&"5M": _m("Chapa Push Kick", &"normal", "5M", [7, 3, 12], 55, [17, 12], &"mid",
 			[200, 1050, 700, 1250], {"button": &"M", "cancel": 2, "strength": 1, "limb": &"rfoot",
 			"push": 550}),
-		&"5H": _m("Armada Spin Kick", &"normal", "5H", [10, 4, 19], 85, [22, 18], &"mid",
+		&"5H": _m("Armada Spin Kick", &"normal", "5H", [10, 4, 19], 85, [26, 18], &"mid",
 			[150, 1100, 1050, 1650], {"button": &"H", "cancel": 1, "strength": 2, "limb": &"rfoot",
 			"push": 750}),
 		&"2L": _light("Rasteira Tap", "2L", &"L", &"crouch", [150, 860, 0, 380], &"rfoot",
@@ -194,7 +196,7 @@ static func _vexa() -> Dictionary:
 			"vel": [[3, 18, 75, 0]], "rehit": 5, "hits": 2, "limb": &"rfoot", "super_cancel": true}),
 		&"flip_kick": _m("Flip Kick", &"technique", "623 + attack", [4, 8, 30], 115, [24, 15],
 			&"mid", [-100, 750, 700, 2100], {"motion": &"623", "strength": 3, "invuln": [1, 8],
-			"throw_invuln": [1, 8], "airborne": [3, 41], "vel": [[3, 14, -10, 135]],
+			"throw_invuln": [1, 8], "airborne": [3, 41], "vel": [[3, 10, -10, 95]],
 			"launch": [20, 120], "limb": &"rfoot", "super_cancel": true, "landing": 0}),
 		&"cartwheel": _m("Cartwheel Evade", &"technique", "214 + attack", [0, 0, 26], 0, [0, 0],
 			&"none", [], {"motion": &"214", "evade": true, "invuln": [3, 18], "vel": [[2, 20, 95, 0]],
@@ -203,11 +205,11 @@ static func _vexa() -> Dictionary:
 			[16, 9], &"high", [0, 650, -100, 500], {"stance": &"air", "button": &"H", "dir": 2,
 			"strength": 2, "vel": [[6, 60, 95, -130]], "landing": 10, "limb": &"rfoot",
 			"tracks_land": true}),
-		&"hurricane_ginga": _m("Hurricane Ginga", &"finisher", "236236 + attack or O", [5, 6, 42],
+		&"hurricane_ginga": _m("Hurricane Ginga", &"finisher", "236236 + attack / finisher key", [5, 6, 42],
 			310, [40, 20], &"mid", [100, 1000, 500, 1700], {"motion": &"236236", "strength": 3,
 			"invuln": [1, 11], "throw_invuln": [1, 11], "vel": [[3, 10, 160, 0]], "cinematic": 100,
 			"limb": &"rfoot"}),
-		&"throw": _m("Scissor Takedown", &"throw", "F (close)", [5, 2, 23], 110, [0, 0], &"throw",
+		&"throw": _m("Scissor Takedown", &"throw", "throw (close)", [5, 2, 23], 110, [0, 0], &"throw",
 			[0, THROW_RANGE, 0, 1800], {"grab": true, "range": THROW_RANGE, "strength": 2,
 			"limb": &"lhand"}),
 	}
@@ -218,7 +220,7 @@ static func _lyra() -> Dictionary:
 		&"5L": _light("Lead Jab", "5L", &"L", &"stand", [180, 800, 1200, 1480], &"lhand"),
 		&"5M": _m("Fouetté", &"normal", "5M", [7, 3, 12], 55, [17, 12], &"mid",
 			[220, 1180, 900, 1450], {"button": &"M", "cancel": 2, "strength": 1, "limb": &"rfoot"}),
-		&"5H": _m("Chassé", &"normal", "5H", [10, 3, 20], 85, [22, 18], &"mid",
+		&"5H": _m("Chassé", &"normal", "5H", [10, 3, 20], 85, [26, 18], &"mid",
 			[220, 1280, 850, 1300], {"button": &"H", "cancel": 1, "strength": 2, "limb": &"rfoot",
 			"push": 850}),
 		&"2L": _light("Low Coup de Pied", "2L", &"L", &"crouch", [160, 950, 0, 360], &"lfoot",
@@ -253,18 +255,18 @@ static func _lyra() -> Dictionary:
 		&"vaulting_axe": _m("Vaulting Axe", &"technique", "236 + attack", [21, 3, 16], 95, [22, 14],
 			&"overhead", [100, 950, 600, 2000], {"motion": &"236", "strength": 3, "airborne": [4, 20],
 			"vel": [[3, 20, 85, 0]], "limb": &"rfoot", "ground_bounce": true}),
-		&"rising_crescent": _m("Rising Crescent", &"technique", "623 + attack", [4, 8, 29], 115,
+		&"rising_crescent": _m("Rising Crescent", &"technique", "623 + attack", [4, 8, 30], 115,
 			[24, 15], &"mid", [0, 800, 800, 2150], {"motion": &"623", "strength": 3, "invuln": [1, 8],
-			"throw_invuln": [1, 8], "airborne": [3, 39], "vel": [[3, 13, 20, 130]],
+			"throw_invuln": [1, 8], "airborne": [3, 39], "vel": [[3, 10, 20, 95]],
 			"launch": [25, 122], "limb": &"rfoot", "super_cancel": true, "landing": 0}),
 		&"starguard": _m("Starguard Counter", &"technique", "214 + attack", [3, 0, 24], 110, [30, 0],
 			&"none", [], {"motion": &"214", "strength": 3, "counter": [3, 22], "limb": &"rfoot",
 			"startup": 1, "active": 0}),
-		&"constellation": _m("Constellation Rush", &"finisher", "236236 + attack or O", [6, 6, 40],
+		&"constellation": _m("Constellation Rush", &"finisher", "236236 + attack / finisher key", [6, 6, 40],
 			315, [40, 20], &"mid", [100, 1150, 700, 1700], {"motion": &"236236", "strength": 3,
 			"invuln": [1, 12], "throw_invuln": [1, 12], "vel": [[3, 10, 155, 0]], "cinematic": 96,
 			"limb": &"rfoot"}),
-		&"throw": _m("Savate Hip Toss", &"throw", "F (close)", [5, 2, 23], 110, [0, 0], &"throw",
+		&"throw": _m("Savate Hip Toss", &"throw", "throw (close)", [5, 2, 23], 110, [0, 0], &"throw",
 			[0, THROW_RANGE, 0, 1800], {"grab": true, "range": THROW_RANGE, "strength": 2,
 			"limb": &"lhand"}),
 	}
@@ -276,7 +278,7 @@ static func _brann() -> Dictionary:
 			{"startup": 5, "recovery": 8, "damage": 35, "hitstun": 13, "blockstun": 9}),
 		&"5M": _m("Body Hook", &"normal", "5M", [8, 3, 13], 65, [18, 12], &"mid",
 			[150, 900, 900, 1350], {"button": &"M", "cancel": 2, "strength": 1, "push": 500}),
-		&"5H": _m("Haymaker", &"normal", "5H", [13, 4, 21], 100, [24, 18], &"mid",
+		&"5H": _m("Haymaker", &"normal", "5H", [13, 4, 21], 100, [28, 18], &"mid",
 			[200, 1080, 1100, 1650], {"button": &"H", "cancel": 1, "strength": 2, "push": 800,
 			"vel": [[2, 12, 20, 0]]}),
 		&"2L": _light("Toe Stomp", "2L", &"L", &"crouch", [150, 760, 0, 380], &"rfoot",
@@ -311,16 +313,16 @@ static func _brann() -> Dictionary:
 			"vel": [[4, 19, 120, 0]], "push": 900, "limb": &"rshoulder", "super_cancel": true}),
 		&"gauntlet_uppercut": _m("Gauntlet Uppercut", &"technique", "623 + attack", [5, 7, 31], 125,
 			[24, 15], &"mid", [0, 750, 800, 2050], {"motion": &"623", "strength": 3, "invuln": [1, 8],
-			"throw_invuln": [1, 8], "airborne": [5, 30], "vel": [[4, 11, 20, 105]],
+			"throw_invuln": [1, 8], "airborne": [5, 30], "vel": [[4, 10, 20, 90]],
 			"launch": [25, 118], "super_cancel": true, "landing": 0}),
 		&"iron_suplex": _m("Iron Suplex", &"technique", "214 + attack", [6, 3, 32], 160, [0, 0],
 			&"throw", [0, 1050, 0, 1800], {"motion": &"214", "strength": 3, "grab": true,
 			"range": 1050, "limb": &"lhand", "unbreakable": true}),
-		&"mountain_drop": _m("Mountain Drop", &"finisher", "236236 + attack or O", [5, 3, 42], 330,
+		&"mountain_drop": _m("Mountain Drop", &"finisher", "236236 + attack / finisher key", [5, 3, 42], 330,
 			[0, 0], &"throw", [0, 1150, 0, 1800], {"motion": &"236236", "strength": 3,
 			"invuln": [1, 8], "throw_invuln": [1, 8], "grab": true, "range": 1150,
 			"unbreakable": true, "cinematic": 104, "limb": &"lhand"}),
-		&"throw": _m("Bear Hug Toss", &"throw", "F (close)", [5, 2, 23], 130, [0, 0], &"throw",
+		&"throw": _m("Bear Hug Toss", &"throw", "throw (close)", [5, 2, 23], 130, [0, 0], &"throw",
 			[0, THROW_RANGE, 0, 1800], {"grab": true, "range": THROW_RANGE, "strength": 2,
 			"limb": &"lhand"}),
 	}

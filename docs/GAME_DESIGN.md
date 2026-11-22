@@ -606,3 +606,254 @@ Tuning targets: an average round lasts 45–75 s; an average combo deals 12–20
 2. Do you want **Arcade story mode** in the first full version (milestone 7), or later?
 3. Voice lines: free voice packs, text-to-speech, or no voices (just grunts)?
 4. Are the fighter names and concepts (Kael, Vexa, Brann, Lyra) OK, or do you want different characters?
+
+## 16. Pure Fight (2.5D 1v1, T-PF1)
+
+Owner request: "a certain angle mode as zone ... pure fight mode. no special powers, ki, etc.
+pure hand to hand combat. the camera angle would be like street fighter. 3d but on a platform
+kind on any zone. would be available on the online as well", then "combat styling actually".
+Defaults chosen by the desktop controller; the owner can redirect any of them.
+
+### 16.1 Rules
+
+- 1v1 on one **fight line** laid across a flat platform inside any of the seven zones. The zone
+  stays fully 3D as the backdrop; fighters only move along the line and up (jumps).
+- No flight, ki, beams, energy specials, auras, weapons, pickups or vanish. Everything is physical.
+- Fighters auto-face each other on the ground (not in the air, so jump-ins can cross up).
+- Platform ends are **walls** (no ring-outs). The two fighters can be at most 6.6 m apart, so the
+  camera always frames both.
+- **Best of 3 rounds**, a **99 s** timer (it stops during a finisher cinematic). Time up: the higher
+  health share wins the round; equal is a draw (no round win; at most 5 rounds).
+- Health bars and a **finisher meter** (0-1000, carried across rounds). Chip damage is off.
+- Sim: `PureFightSim` (`game/combat/pure_fight/`), a `CombatSim` subclass whose own tick replaces
+  the flight game's, so every other mode stays bit-identical. Integer state (mm, mm/tick), 60 Hz,
+  snapshot/restore by reflection, so rollback (`RollbackSession`) takes it unchanged.
+
+### 16.2 Controls (keyboard; two players can share one)
+
+| Action | P1 | P2 |
+|---|---|---|
+| Walk / jump / crouch | A D / W (or Space) / S | Arrows |
+| Light / medium / heavy | J / K / L | Num1 / Num2 / Num3 (or , . /) |
+| Throw | U | Num4 (or ;) |
+| Technique key | I | Num5 (or ') |
+| Finisher key | O | Num6 (or ]) |
+| Dash | Shift + direction, or tap forward/back twice | Num0 |
+| Block | hold back (down-back for lows); E blocks from the front | hold back |
+
+- Normals: button alone (standing), with down (crouching), in the air (jump attacks). Command
+  normals: forward + M (overhead), forward + H or back + H (legend), down-forward + H (sweep).
+- **Target combos**: press the listed second button while the first hits or is blocked.
+- **Techniques**: a motion + any attack (236 quarter-circle forward, 623 forward-down-downforward,
+  214 quarter-circle back), read leniently (the diagonal can be skipped, 16-tick window, the last
+  direction at most 8 ticks old), or the **technique key + a direction** (forward/neutral = 236,
+  down = 623, back = 214) for keyboard players.
+- **Finisher**: 236236 + attack or the finisher key with a full meter; normals marked "cancels into
+  techniques" cancel into techniques on contact, techniques marked "finisher cancel" cancel into it
+  on hit.
+- Buffer: presses stay 6 ticks (frozen during hitstop, so a combo input made during a heavy hit's
+  freeze still comes out).
+
+### 16.3 Universal system
+
+| System | Rule |
+|---|---|
+| Walk | Per legend (Kael 2.5 m/s forward, Vexa 2.8, Lyra 2.6, Brann 2.0); back is slower |
+| Dash / backdash | 14-22 ticks; backdash is strike- and throw-invulnerable for 8 ticks |
+| Jump | 4-tick prejump, neutral/forward/back, about 37 ticks in the air, one air attack per jump |
+| Block | Hold away from the attacker. Standing blocks mids, overheads and air attacks; crouching blocks mids and lows; air block blocks everything but lows can't reach you |
+| Just defend | Guard raised at most 4 ticks before the hit: 4 ticks less blockstun, +60 meter, blue flash |
+| Throw | 5f startup, 950 mm range, beats blocking; no throws on airborne, stunned, waking or just-released fighters (3-4 ticks) |
+| Throw break | Press throw within 10 ticks of being grabbed: both push apart, no damage. Throw on the same tick as the opponent: auto tech |
+| Back throw | Hold back while throwing: the opponent lands behind you |
+| Knockdown | 38 ticks down (invulnerable), then a get-up (22 ticks) or a **wake-up roll** (hold forward/back: 26 ticks, 1.5 m, invulnerable) |
+| Counter hit | Hitting a move in startup: 120% damage, +4 hitstop and hitstun, red sparks |
+| Punish counter | Hitting a move in recovery (or a heavy landing): 110% damage |
+| Damage scaling | 100%, 100%, then -15% a hit, at least 30% (finishers at least 50%) |
+| Hitstun decay | -1 tick per combo hit, at most -6 (never under 8 ticks) |
+| Juggles | Launchers pop the target up; each air hit adds juggle points and gravity; at 4 points the target falls out invulnerable. Air hits on a jumping opponent are an air reset (lands on its feet) |
+| Wall bounce | Moves marked wall bounce, once per combo |
+| Ground bounce | Moves marked ground bounce, once per combo |
+| Hitstop | Light 7, medium 10, heavy 13, techniques/finishers 16 ticks (on block 5/7/9/11); screen shake scales the same way |
+| Meter | +40/60/80/110 per hit by strength (half on block); +15 when hit, +20 when blocking (+60 just defend); the finisher spends 1000 |
+| Armour | Brann's armoured moves absorb one strike (half damage, no stun) |
+
+### 16.4 Camera and stage
+
+- `SideCamera` (`game/view/camera/side_camera.gd`): perpendicular to the fight line, looking toward
+  the zone centre so landmarks fill the background; screen right is +x. It frames both fighters
+  inside 72% of the width (distance 5.2-9 m, zooms out with their gap), eye 1.6 m over the floor,
+  looking 1.05 m up. A short punch-in on finishers, a decaying shake on heavy hits.
+- `PureFightStage`: the flattest 17 x 5 m spot within 70 m of the zone's spawns (12 headings), read
+  from the zone's ground data. A voxel-style stone slab (tile seams, stepped ledge, a foot into the
+  ground, gold-capped corner posts at the walls, a painted line) sits 5 cm over the highest ground.
+
+### 16.5 Presentation
+
+- Hit sparks are small emissive cubes (clamped colour: gold hit, red counter, cyan block, blue just
+  defend), count and speed by strength; an impact frame (1-4 frames) on heavy hits, counters, the
+  finisher and KO; dust on landings, knockdowns and dashes; speed lines on dashes and finishers; a
+  motion trail ribbon on the striking limb during active frames.
+- HUD: health bars with a white damage trail, round pips, 99 s timer, finisher meters ("FINISHER
+  READY"), combo counters (hits and damage), banners (ROUND n / FINAL ROUND, FIGHT!, K.O., TIME,
+  WINS / DRAW) and callouts (COUNTER, PUNISH, JUST DEFEND, ARMOR, TECH, WALL BOUNCE, the finisher's
+  name). Training shows the last move's frame data and the measured advantage.
+- Sounds come from the combat bank (light/medium/heavy hits, block, perfect block, armour, grab,
+  tech, wall splat, KO, whooshes).
+
+### 16.6 Legends: style sheets
+
+Every pose is keyframed in code (`game/characters/fight_styles/`) and put on the voxel rig by
+two-bone IK (`FightRig`), so a fist or foot reaches the move's hitbox on its first active frame and
+planted feet stay planted. Strikes have anticipation (a windup key at half the startup), a held
+active pose (a kiai freeze), follow-through and a settle back; hits snap in 1.5 frames.
+
+- **Kael, karate shoto.** Low, wide front stance (hips down 17 cm, feet 80 cm apart), bladed 38
+  degrees, lead hand forward, rear fist chambered. Linear punches with the off hand pulled to the hip
+  (hikite); snap front kicks; a hammer-fist overhead; a driving side kick. Bows in, ends on a raised
+  fist or a horse-stance punch. Personality: precise, still between strikes, explosive.
+- **Vexa, capoeira/taekwondo acrobat.** Never still: a ginga where the feet trade back steps every
+  0.75 s and the same-side arm sweeps across the face. Spinning outside kicks, a handstand upkick
+  launcher, a flip kick reversal, a cartwheel that passes through, a tumbling dive kick. Cartwheels
+  in; wins with a flourish or a low ginga crouch.
+- **Lyra, savate/taekwondo kicker.** Tall and narrow on the balls of her feet with a light bounce,
+  hands loose and low. Long precise kicks from a high chamber (fouetté, chassé, a spinning back kick),
+  a hopping axe overhead, a vaulting axe kick, and the Starguard counter stance answered by a spinning
+  back kick. Salutes with a held head-high kick.
+- **Brann, wrestler-boxer heavyweight.** Hunched behind the gauntlets (spine forward 20 degrees),
+  wide, a slow heavy side-to-side weight shift. Looping hooks that turn the whole body, a big
+  haymaker, a two-handed hammer drop, an armoured shoulder advance, a suplex command grab and the
+  Mountain Drop slam. Smashes the gauntlets together to start.
+
+Each legend has: stance/idle, walk forward/back, dash/backdash, crouch, jump, high/low block, high
+and low hit reactions, juggle, knockdown and get-up, wake-up roll, intro, two victory poses and a
+defeat pose, a throw and a throw reaction.
+
+### 16.7 Move lists and frame data
+
+Startup counts the first active frame (startup 5 = the 5th frame hits). On block / on hit assume the
+first active frame connects; KD = knockdown or launch. Air attacks show a deep jump-in (hit just
+before landing). The sim measures these numbers in `tests/combat/pure_fight/test_pure_fight_frames.gd`,
+and the tables below are printed from `PureMoves` by `tools/diag/pure_fight_tables.gd`.
+
+
+#### Kael
+
+| Move | Input | Startup | Active | Recovery | On block | On hit | Damage | Guard | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| Snap Jab | `5L` | 4 | 2 | 7 | +0 | +3 | 30 | mid | chains |
+| Reverse Punch | `5M` | 6 | 3 | 12 | -3 | +2 | 55 | mid | chains |
+| Front Snap Kick | `5H` | 9 | 3 | 20 | -5 | +3 | 85 | mid | cancels into techniques |
+| Shin Kick | `2L` | 5 | 2 | 8 | -2 | +1 | 25 | low | chains |
+| Low Straight | `2M` | 6 | 3 | 11 | -3 | +2 | 50 | mid | chains |
+| Crane Uppercut | `2H` | 7 | 4 | 24 | -16 | KD | 70 | mid | launcher, cancels into techniques |
+| Leg Sweep | `3H` | 8 | 3 | 23 | -12 | KD | 75 | low | knockdown |
+| Hammer Fist | `6M` | 17 | 2 | 14 | -4 | +2 | 55 | overhead |  |
+| Driving Side Kick | `6H` | 14 | 3 | 18 | -4 | KD | 80 | mid | wall bounce |
+| Air Knee | `j.L` | 4 | 8 | 0 | +6 (deep) | +9 (deep) | 30 | high |  |
+| Air Chop | `j.M` | 6 | 6 | 0 | +9 (deep) | +13 (deep) | 50 | high |  |
+| Flying Side Kick | `j.H` | 8 | 6 | 0 | +12 (deep) | +17 (deep) | 80 | high |  |
+| Kiai Elbow | `5L > M` | 5 | 2 | 14 | -4 | +2 | 45 | mid | cancels into techniques |
+| Kiai Front Kick | `5M > H` | 7 | 3 | 20 | -7 | KD | 80 | mid | launcher |
+| Iron Lunge | `236 + attack` | 12 | 4 | 18 | -6 | +2 | 100 | mid | finisher cancel on hit |
+| Skyward Fist | `623 + attack` | 3 | 10 | 29 | -24 | KD | 120 | mid | strike invuln 1-8, launcher, 2 hits, finisher cancel on hit |
+| Ridgeback Kick | `214 + attack` | 20 | 3 | 16 | -5 | KD | 90 | overhead | ground bounce |
+| Thousand Petal Breaker | `236236 + attack / finisher key` | 6 | 6 | 40 | -26 | KD | 320 | mid | strike invuln 1-12, cinematic, needs full meter |
+| Shoulder Throw | `throw (close)` | 5 | 2 | 23 | - | KD | 110 | throw |  |
+
+#### Vexa
+
+| Move | Input | Startup | Active | Recovery | On block | On hit | Damage | Guard | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| Backfist Flick | `5L` | 4 | 2 | 7 | +0 | +3 | 30 | mid | chains |
+| Chapa Push Kick | `5M` | 7 | 3 | 12 | -3 | +2 | 55 | mid | chains |
+| Armada Spin Kick | `5H` | 10 | 4 | 19 | -5 | +3 | 85 | mid | cancels into techniques |
+| Rasteira Tap | `2L` | 5 | 2 | 8 | -2 | +1 | 25 | low | chains |
+| Low Ponteira | `2M` | 6 | 3 | 12 | -4 | +1 | 50 | mid | chains |
+| Bananeira Upkick | `2H` | 8 | 4 | 24 | -16 | KD | 70 | mid | launcher, cancels into techniques |
+| Half-Moon Sweep | `3H` | 9 | 4 | 22 | -12 | KD | 75 | low | knockdown |
+| Flip Heel | `6M` | 18 | 2 | 13 | -3 | +3 | 55 | overhead |  |
+| Hooking Heel | `6H` | 13 | 3 | 19 | -6 | KD | 80 | mid | wall bounce |
+| Air Toe Flick | `j.L` | 4 | 8 | 0 | +6 (deep) | +9 (deep) | 30 | high |  |
+| Air Scissor | `j.M` | 6 | 6 | 0 | +9 (deep) | +13 (deep) | 50 | high |  |
+| Air Spin Kick | `j.H` | 8 | 6 | 0 | +12 (deep) | +17 (deep) | 80 | high |  |
+| Tornado Step | `5L > M` | 6 | 3 | 13 | -4 | +1 | 45 | mid | cancels into techniques |
+| Spin to Sweep | `2M > H` | 9 | 3 | 22 | -12 | KD | 75 | low | knockdown |
+| Crescent Wheel | `236 + attack` | 11 | 8 | 18 | -11 | -4 | 105 | mid | 2 hits, finisher cancel on hit |
+| Flip Kick | `623 + attack` | 4 | 8 | 30 | -23 | KD | 115 | mid | strike invuln 1-8, launcher, finisher cancel on hit |
+| Cartwheel Evade | `214 + attack` | 1 | 0 | 26 | - | - | 0 | none | strike invuln 3-18, passes through |
+| Tumbling Dive Kick | `j.2 + H (air)` | 6 | 30 | 0 | -1 (deep) | +6 (deep) | 70 | high |  |
+| Hurricane Ginga | `236236 + attack / finisher key` | 5 | 6 | 42 | -28 | KD | 310 | mid | strike invuln 1-11, cinematic, needs full meter |
+| Scissor Takedown | `throw (close)` | 5 | 2 | 23 | - | KD | 110 | throw |  |
+
+#### Lyra
+
+| Move | Input | Startup | Active | Recovery | On block | On hit | Damage | Guard | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| Lead Jab | `5L` | 4 | 2 | 7 | +0 | +3 | 30 | mid | chains |
+| Fouetté | `5M` | 7 | 3 | 12 | -3 | +2 | 55 | mid | chains |
+| Chassé | `5H` | 10 | 3 | 20 | -5 | +3 | 85 | mid | cancels into techniques |
+| Low Coup de Pied | `2L` | 5 | 2 | 9 | -2 | +1 | 25 | low | chains |
+| Low Fouetté | `2M` | 7 | 3 | 12 | -4 | +1 | 50 | mid | chains |
+| Fan Kick Launcher | `2H` | 8 | 4 | 24 | -16 | KD | 70 | mid | launcher, cancels into techniques |
+| Revers Sweep | `3H` | 9 | 3 | 23 | -12 | KD | 75 | low | knockdown |
+| Hopping Axe | `6M` | 18 | 2 | 14 | -4 | +2 | 55 | overhead |  |
+| Spinning Back Kick | `4H` | 13 | 3 | 19 | -6 | KD | 85 | mid | wall bounce |
+| Air Snap Kick | `j.L` | 4 | 8 | 0 | +6 (deep) | +9 (deep) | 30 | high |  |
+| Air Crescent | `j.M` | 6 | 6 | 0 | +9 (deep) | +13 (deep) | 50 | high |  |
+| Air Thrust Kick | `j.H` | 8 | 6 | 0 | +12 (deep) | +17 (deep) | 80 | high |  |
+| Double Fouetté | `5M > M` | 6 | 3 | 15 | -7 | -1 | 50 | mid | cancels into techniques |
+| Jab-Chassé | `5L > H` | 8 | 3 | 20 | -7 | KD | 80 | mid | launcher |
+| Vaulting Axe | `236 + attack` | 21 | 3 | 16 | -5 | KD | 95 | overhead | ground bounce |
+| Rising Crescent | `623 + attack` | 4 | 8 | 30 | -23 | KD | 115 | mid | strike invuln 1-8, launcher, finisher cancel on hit |
+| Starguard Counter | `214 + attack` | 1 | 0 | 24 | - | - | 110 | none | counters strikes 3-22 |
+| Constellation Rush | `236236 + attack / finisher key` | 6 | 6 | 40 | -26 | KD | 315 | mid | strike invuln 1-12, cinematic, needs full meter |
+| Savate Hip Toss | `throw (close)` | 5 | 2 | 23 | - | KD | 110 | throw |  |
+
+#### Brann
+
+| Move | Input | Startup | Active | Recovery | On block | On hit | Damage | Guard | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| Gauntlet Jab | `5L` | 5 | 2 | 8 | -1 | +3 | 35 | mid | chains |
+| Body Hook | `5M` | 8 | 3 | 13 | -4 | +2 | 65 | mid | chains |
+| Haymaker | `5H` | 13 | 4 | 21 | -7 | +3 | 100 | mid | cancels into techniques |
+| Toe Stomp | `2L` | 6 | 2 | 9 | -3 | +1 | 30 | low | chains |
+| Gut Uppercut | `2M` | 7 | 3 | 13 | -5 | +1 | 60 | mid | chains |
+| Lifting Uppercut | `2H` | 9 | 4 | 25 | -17 | KD | 80 | mid | launcher, cancels into techniques |
+| Trip Hook | `3H` | 10 | 3 | 24 | -13 | KD | 85 | low | knockdown |
+| Hammer Drop | `6M` | 20 | 3 | 15 | -6 | +1 | 70 | overhead |  |
+| Armoured Shoulder | `6H` | 16 | 4 | 18 | -6 | KD | 90 | mid | 1-hit armour 5-16, wall bounce |
+| Air Elbow | `j.L` | 5 | 7 | 0 | +6 (deep) | +9 (deep) | 35 | high |  |
+| Air Hammer | `j.M` | 7 | 6 | 0 | +9 (deep) | +13 (deep) | 60 | high |  |
+| Body Splash | `j.H` | 9 | 8 | 0 | +12 (deep) | +17 (deep) | 90 | high |  |
+| One-Two Hook | `5L > M` | 7 | 3 | 14 | -5 | +1 | 55 | mid | cancels into techniques |
+| Hook-Haymaker | `5M > H` | 11 | 4 | 22 | -11 | KD | 95 | mid | launcher |
+| Bull Charge | `236 + attack` | 14 | 6 | 18 | -8 | +0 | 105 | mid | 1-hit armour 4-19, finisher cancel on hit |
+| Gauntlet Uppercut | `623 + attack` | 5 | 7 | 31 | -23 | KD | 125 | mid | strike invuln 1-8, launcher, finisher cancel on hit |
+| Iron Suplex | `214 + attack` | 6 | 3 | 32 | - | KD | 160 | throw | unbreakable |
+| Mountain Drop | `236236 + attack / finisher key` | 5 | 3 | 42 | - | KD | 330 | throw | strike invuln 1-8, unbreakable, cinematic, needs full meter |
+| Bear Hug Toss | `throw (close)` | 5 | 2 | 23 | - | KD | 130 | throw |  |
+
+Fairness rules (tested): every legend has a reversal (strike-invulnerable from frame 1), an
+anti-air, a low, an overhead and a throw; nothing is plus on block; only lights are safe on block;
+reversals are at least -15 on block.
+
+### 16.8 AI
+
+`PureFightAI` (`game/ai/pure_fight_ai.gd`), levels 1-5: reads the opponent's move after a reaction
+delay (24 down to 6 ticks) and blocks high or low with a level-scaled chance; anti-airs with its 623
+technique or crouching heavy; punishes whiffed recovery; spaces with walks, dashes and jump-ins; runs
+its target combos and cancels confirmed hits into techniques or the finisher. Deterministic from its
+seed and never touches the sim's rng.
+
+### 16.9 Modes
+
+Play > Pure Fight (vs AI or a second local player on the same keyboard), Training > Pure Fight
+Training (a dummy that stands, blocks all, crouch-blocks or jumps: F4; health refills, meter full,
+frame data on screen), and online 1v1 over the Duo lobby when the DUO-ONLINE lane lands (16.10).
+
+### 16.10 Online (planned)
+
+The Duo rollback core (`RollbackSession`) takes `PureFightSim` as is (it only calls tick, snapshot,
+restore and state_hash). Pure Fight online needs the lobby to offer a 1v1 Pure Fight room: both
+peers build `PureFightSim.new(seed, legends)` and feed `PureFightKeys` input through the session.
