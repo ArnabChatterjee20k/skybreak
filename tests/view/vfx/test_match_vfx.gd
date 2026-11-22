@@ -213,6 +213,37 @@ func test_dashing_leaves_stretched_afterimages() -> void:
 	assert_gt(ghost.global_basis.z.length(), 1.1, "stretched along the dash")
 
 
+func test_no_afterimage_or_sonic_ring_starts_in_front_of_the_lens() -> void:
+	# #127: a dash toward the camera left a body-sized shell over the whole fight.
+	var vfx := _vfx_with_sim()
+	var camera := Camera3D.new()
+	vfx.add_child(camera)
+	camera.make_current()
+	var fighter := vfx.sim.fighters[0]
+	camera.global_position = fighter.position + Vector3(0, 0, 1.0)
+	fighter.state = S.DASHING
+	fighter.velocity = Vector3(0, 0, -60)
+	_react(vfx)
+	assert_eq(vfx.pool(&"afterimage").playing_count(), 0, "no ghost at the lens")
+	assert_eq(vfx.pool(&"sonic_ring").playing_count(), 0, "no ring at the lens")
+	camera.global_position = fighter.position + Vector3(0, 2, 8)
+	fighter.state = S.IDLE
+	fighter.velocity = Vector3.ZERO
+	_react(vfx)
+	fighter.state = S.DASHING
+	fighter.velocity = Vector3(0, 0, -60)
+	vfx.sim.current_tick += MatchVfx.SONIC_COOLDOWN
+	_react(vfx)
+	assert_eq(vfx.pool(&"afterimage").playing_count(), 1, "a ghost at fight distance")
+	assert_eq(vfx.pool(&"sonic_ring").playing_count(), 1, "a ring at fight distance")
+
+
+func test_energy_vfx_fade_out_at_the_lens() -> void:
+	var source := (load("res://game/view/vfx/shaders/vfx_energy.gdshaderinc") as ShaderInclude).code
+	assert_string_contains(source, "uniform vec2 near_fade")
+	assert_string_contains(source, "smoothstep(near_fade.x, near_fade.y, -VERTEX.z)")
+
+
 func test_vanish_leaves_a_ghost_and_bursts_at_both_ends() -> void:
 	var vfx := _vfx_with_sim()
 	var fighter := vfx.sim.fighters[0]

@@ -100,6 +100,21 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
     them (up to ~10 ms once per chunk, not seen in view_ms). Could move into the zone bake.
 
 ## In review
+- ISSUE-SWEEP [desktop] Open GitHub issues triaged against main (`reports/issues/triage.md`); fixes on
+  `fix/issue-sweep`: #128 FFA-4 spawns on a 12 m ring (were 0.92 m apart), #127 dash afterimage is the
+  fighter's silhouette (`PoseGhost`) and the sonic ring is half the size, #73 `BodySeparation` eases drawn
+  bodies apart (Frozen Peaks VisualQa overlap 410/1679 -> 34/1628 close frames) and stacked fliers out
+  sideways. Open:
+  - ISSUE-SWEEP-c [desktop] #106 AI string variety is on `fix/issue-106-ai-variety` (3+ hit back-to-back
+    repeats 22.5% -> 7.5% over 5 seeds x 4 matchups). Not merged: any AI change reshuffles the seeded AI
+    fights; it failed the seed-2026 ki duel (7 blasts vs > 10; main clears 10 only on that seed of
+    2026-2035) and needs the golden replays re-recorded.
+  - ISSUE-SWEEP-a [developer] Locked camera with a vertical gap over `STACK_MAX_HEIGHT` (12 m): the
+    target leaves the frame for ~1 s while a flier dives onto it (Heartbloom seed 7 with an AI variant:
+    far band 65/108 frames). Raising the limit to 24 m broke 10 flight-camera asserts, so it was not
+    changed; `camera_offscreen_diag.gd` shows the frames.
+  - ISSUE-SWEEP-b [desktop] QA-11 drawn overlap left after `BodySeparation`: ~2% of close frames, mostly
+    the first frame of a lunge (poses are a frame old). #109 needs the GTX 1650 PC.
 - T-PF1 [desktop] Pure Fight, 2.5D 1v1 martial-arts mode (`feature/pure-fight`, report
   `reports/pure-fight/README.md`, GAME_DESIGN §16): `PureFightSim` (a `CombatSim` subclass, integer
   fight-line sim: walls, rounds, 99 s timer, crouch/low/air block, just defend, throws and techs,
@@ -494,6 +509,9 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
     hit_light with the repeater, ember_rift seed 112 t1690; feel trend flags finger pops 1 -> 2 events
     in 46.7 fighter-minutes. Not a special clip. Repro:
     `tools/qa/run_qa.sh --repro '112:ember_rift:1v1:kael,vexa:45' --tick 1690 --fighter 1`.
+    ISSUE-SWEEP merge 3fb4bc4e: a second instance, Vexa LeftHand 1.24 rad in HITSTUN hit_light (repeater),
+    `100:shattered_mesa:1v1:kael,vexa:54` t1477; BodySeparation's offsets there are 2-3 cm and smooth, so
+    it is this borderline flip tipped over 1.2, not a jump.
   - SP1-8 [developer] `ZoneMatch` ignores the config's `rounds` (versus_soak chains matches instead).
   - SP1-1 [desktop] Brann and Lyra kits (they keep the T-KI1 beam on `1` until then).
   - SP1-2 [desktop] Ultimates (`SpecialKit.ultimate`, 2 burst) and transformations (`T`, 1 burst,

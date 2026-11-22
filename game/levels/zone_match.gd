@@ -29,6 +29,8 @@ const TEAM_COLORS: Array[Color] = [
 ]
 ## Teammates stand this far apart, side by side.
 const TEAMMATE_SPACING := 6.0
+## Ring radius (m) for sides beyond the zone's spawn points: 4 sides sit 17 m apart.
+const FFA_SPAWN_RADIUS := 12.0
 const AI_DRIVER_PATH := "res://game/ai/ai_driver.gd"
 const WORLD_SCENE := preload("res://game/world/world_map.tscn")
 
@@ -76,6 +78,8 @@ var weapon_layer := WeaponLayer.new()
 var fighter_views: Array[FighterView] = []
 ## The ground marker under each fighter: contact shadow plus airborne team ring.
 var contact_shadows := ContactShadows.new()
+## Eases drawn bodies apart where attack clips lunge them into each other (#73).
+var body_separation := BodySeparation.new()
 
 @onready var camera: FighterCamera = $FighterCamera
 @onready var opponent_marker: OpponentMarker = $Hud/OpponentMarker
@@ -108,6 +112,7 @@ func _ready() -> void:
 	_build_fighters()
 	add_child(contact_shadows)
 	contact_shadows.setup(fighter_views.size())
+	body_separation.setup(fighter_views)
 	for i in fighter_views.size():
 		contact_shadows.set_ring_color(i, fighter_views[i]._height_marker.color)
 	sim.pickups_enabled = true
@@ -224,13 +229,14 @@ func spawn_positions() -> Array[Vector3]:
 		var team := int((entries[i] as Dictionary).get("team", i))
 		if not team_ids.has(team):
 			team_ids.append(team)
+	var sides := side_points(points, team_ids.size())
 	var placed := {}
 	var out: Array[Vector3] = []
 	for i in entries.size():
 		var team := int((entries[i] as Dictionary).get("team", i))
 		var side := team_ids.find(team)
-		var point := points[side % points.size()]
-		var other := points[(side + 1) % points.size()]
+		var point := sides[side]
+		var other := sides[(side + 1) % sides.size()]
 		var across := Vector3(other.z - point.z, 0.0, point.x - other.x).normalized()
 		if across == Vector3.ZERO:
 			across = Vector3.RIGHT
@@ -241,6 +247,26 @@ func spawn_positions() -> Array[Vector3]:
 		var stand := ground.height_at(at.x, at.z, INF) + sim.tuning.ground_height
 		at.y = maxf(point.y, stand)
 		out.append(at)
+	return out
+
+
+## One spawn point per side. With no more sides than the zone's points they are the
+## points; more sides (FFA-4) spread evenly on a ring around the points' middle,
+## the first at the first point's bearing, so no two sides share a point (#128).
+static func side_points(points: PackedVector3Array, side_count: int) -> PackedVector3Array:
+	if side_count <= points.size():
+		return points
+	var middle := Vector3.ZERO
+	for p in points:
+		middle += p
+	middle /= points.size()
+	var bearing := Vector3(points[0].x - middle.x, 0.0, points[0].z - middle.z)
+	bearing = bearing.normalized() * FFA_SPAWN_RADIUS if bearing.length_squared() > 0.0001 \
+		else Vector3(FFA_SPAWN_RADIUS, 0.0, 0.0)
+	var out := PackedVector3Array()
+	for side in side_count:
+		var at := middle + DetMath.rotate_y(bearing, TAU * side / side_count)
+		out.append(DetMath.canon(Vector3(at.x, middle.y, at.z)))
 	return out
 
 
@@ -470,6 +496,7 @@ func _update_camera_bodies() -> void:
 
 ## Draws one frame: fighters between the last two ticks, then the camera.
 func present_frame(blend: float, delta: float) -> void:
+	body_separation.update(sim, delta)
 	for view in fighter_views:
 		view.present(blend, delta)
 		# The ground marker sits on the zone's floor under the fighter, not y = 0.

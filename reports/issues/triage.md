@@ -32,13 +32,13 @@ Fixes live on `fix/issue-sweep`. Verdicts are against main 1b790d0 unless a row 
 | 134 | Camera behind the Mesa cliff | **FIXED** (9cf82cc terrain-wall push, PR #149) | `camera_repro.gd -- all` on main: mesa close shots (kael, vexa, lyra) terrain cover **0%** (was 35-40%), player 31.7% of screen height, cam-player 5.2 m. |
 | 136 | Duel fighters at ~8% height | **FIXED** (PR #126 T-132 range bands, PR #149 base framing) | `camera_repro.gd` clip: player height median **32.3%** (was 7-8%; bible 15-35%), terrain cover median 0% (p90 8%). `camera_qa.gd`: median 27-30% in every config. |
 | 114 | Camera inside tree canopies | **OBSOLETE** | The classic MultiMesh canopy boxes are gone; zones are voxel (PR #148). `CameraClearance` (camera inside a closed voxel prop, under the ground) reports **0** clip frames on all 7 voxel zones in `test_voxel_zone_camera` (Heartbloom included), and `camera_qa.gd` reports inside **0**. Tall voxel props as camera obstacles are filed as T-135-a. |
-| 73 | Fighters interpenetrate, stand on heads | **STILL OPEN** (fix on `fix/issue-sweep`) | Sim: pushboxes (T-D29, PR #104 QA-11) keep roots apart, probe found **0** ticks with pushboxes overlapping > 10 cm in 4 matches x 3600 ticks. Drawn bodies: VisualQa `fighter_vs_fighter` on main **473/2719** (heartbloom), **661/3429** (frozen), **451/3816** (mesa) close frames overlapping, worst **0.76-0.83 m**. `tools/diag/body_overlap.gd`: almost all are striker vs victim in hitstun (attack clips lunge the chest and head past the pushbox; Brann's core reaches 0.91 m median vs his 0.62 m pushbox). Hovering 1.4 m above a fighter 0.9 m to the side also passes the pushboxes (rounded ends) and reads as standing on the head. |
-| 128 | FFA-4 spawns touching; hat close-up intro | **STILL OPEN** (fix on `fix/issue-sweep`) | Every zone has exactly 2 `spawn_points` and `ZoneMatch.spawn_positions` used `side % points.size()`, so FFA-4 put two legends on each point. Probe `spawns` on main: closest fighter centres **0.92 m** apart in all 7 zones. |
+| 73 | Fighters interpenetrate, stand on heads | **FIXED** in 677ce5c8 (merge of 52a2a0c0, 3fee3b0e, ef7e728b; residue filed as ISSUE-SWEEP-b) | Sim: pushboxes (T-D29, PR #104 QA-11) keep roots apart, probe found **0** ticks with pushboxes overlapping > 10 cm in 4 matches x 3600 ticks. Drawn bodies: VisualQa `fighter_vs_fighter` on main **473/2719** (heartbloom), **661/3429** (frozen), **451/3816** (mesa) close frames overlapping, worst **0.76-0.83 m**. `tools/diag/body_overlap.gd`: almost all are striker vs victim in hitstun (attack clips lunge the chest and head past the pushbox; Brann's core reaches 0.91 m median vs his 0.62 m pushbox). Hovering 1.4 m above a fighter 0.9 m to the side also passes the pushboxes (rounded ends) and reads as standing on the head. |
+| 128 | FFA-4 spawns touching; hat close-up intro | **FIXED** in 677ce5c8 (merge of 230129d7) | Every zone has exactly 2 `spawn_points` and `ZoneMatch.spawn_positions` used `side % points.size()`, so FFA-4 put two legends on each point. Probe `spawns` on main: closest fighter centres **0.92 m** apart in all 7 zones. |
 | 101 | Bow string through the face | **FIXED** (PR #102/#110 T-D30e: 881e4c7, 5f296d5) | GUT `test_visual_qa` on main: `bow_vs_head` **0** violations in 398 (heartbloom), 543 (frozen), 474 (mesa) samples, worst -0.03 m (3 cm clear). The last QA quick (`reports/qa/2026-11-22-e6bf7d31-quick.md`) has no bow-string violations in its view soak. Brann's flying Ki Bow draw is filed as QA-19. |
 | 93 | QA feel metrics worse (pops, foot slide) | **FIXED** (PR #95 T-D22e, PR #96, QA-21/QA-23 fixes) | Last committed QA quick (`reports/qa/2026-11-22-e6bf7d31-quick.md`, camera round 3, main minus aura v2): pops **0.036**/fighter-min (was 73.23), finger pops 0.036 (was 46.0), foot slide **0.032** cm/frame (was 1.257). |
 | 92 | test_ai_spacing FFA-4 7.05 > 7.0 | **FIXED** (PR #94 T-D33, QA-15) | GUT on main: `test_ai_spacing` 7/7 passed, FFA-4 stacked **2.27%** against a tightened 3.0% limit (1v1 1.37% < 2.0%). |
 | 109 | Weapon-hold CPU cost, 1-frame VisualQa diff | **STILL OPEN** | GUT on main (cloud CPU): MotionLayers 4 fighters unarmed **0.640 ms**, armed **2.642 ms**, ratio 4.13 (target armed <= 1.5 ms on the GTX 1650, can't be measured here). `tests/qa/test_visual_qa.gd` still carries `PLATFORM_TOLERANCE` 1 frame for weapon_vs_holder / bow_vs_head. Needs the Windows PC. |
-| 127 | Dash afterimage = giant orange capsule | **STILL OPEN** (fix on `fix/issue-sweep`) | The afterimage is still a body-sized capsule shell (`VfxCatalog` `&"afterimage"`: `VfxKit.capsule()`, additive fresnel), spawned at the previous position with no near-camera guard, so a dash toward the lens fills the frame. |
+| 127 | Dash afterimage = giant orange capsule | **FIXED** in 677ce5c8 (merge of b70445e0, ee4b47db) | The afterimage is still a body-sized capsule shell (`VfxCatalog` `&"afterimage"`: `VfxKit.capsule()`, additive fresnel), spawned at the previous position with no near-camera guard, so a dash toward the lens fills the frame. |
 | 78 | HUD weapon slot always UNARMED | **FIXED** (PR #88 T-127: cf7b72b, then b8336ad) | `MatchHud.weapon_label()` reads `fighter.held_weapon()` (`game/ui/match_hud.gd:541`); `tests/ui/test_match_hud.gd:177-191` asserts UNARMED / STORM BLADE / ARC REVOLVER 12 / RELOAD. Lyra's "UNARMED" after 12 arrows is the design's auto-throw (polish batch 3). |
 | 80 | Combo counter lingers | **FIXED** (cc54e86 in PR #88; restyle PR #143) | `game/ui/combo_counter.gd`: shows on a landed 2nd hit, holds 0.5 s after the last landed hit, fades 0.25 s, never counts down (a lower count only shows once the old one has gone). |
 | 77 | Hit sparks hide the contact | **FIXED** (PR #83 bece700, PR #105 ede948d) | `tests/view/vfx/test_vfx_occlusion.gd` under xvfb + gl_compatibility on main: 3/3 passed (ordinary beats wash out <= 15% of a head/torso; the K.O. <= 30% and keeps the loser visible). `test_match_vfx.gd`: a heavy counter leaves the screen untouched (only K.O.s and guard breaks get screen effects). |
@@ -46,7 +46,7 @@ Fixes live on `fix/issue-sweep`. Verdicts are against main 1b790d0 unless a row 
 | 119 | Frozen Peaks blown to white | **OBSOLETE** | Voxel Frozen Peaks (c3086fd, PR #148) replaced the classic snow. `stills/frozen_peaks_duel_t420.jpg`: blue-grey snow with dark ice and rock, fighters read clearly. |
 | 120 | Stormfall not a neon night city | **OBSOLETE** | Voxel Stormfall City (124e5ae) is a night city with lit windows, neon signs and rain: `stills/stormfall_city_t700.jpg`. |
 | 100 | Verdant ground a flat neon plane | **OBSOLETE** | Voxel Verdant Falls (4142741) has a stepped voxel lawn with value variation, cliffs and trees: `stills/verdant_falls_t700.jpg`. |
-| 106 | AI loops the same 5-hit string | **STILL OPEN** (fix on `fix/issue-sweep`) | `FighterAI._start_string` picks one route per level (`_ender_route()`) and goal 3 every time. Probe on main, 5 seeds x 4 matchups, 2400 ticks: **60 of 267** strings of 3+ hits repeat the previous one exactly (22.5%); e.g. heartbloom FFA-4 lv4 seed 7: `light_1-light_2-light_3-launcher` three times in a row. |
+| 106 | AI loops the same 5-hit string | **STILL OPEN** (fix ready on `fix/issue-106-ai-variety` 7ca0dd67, not merged) | `FighterAI._start_string` picks one route per level (`_ender_route()`) and goal 3 every time. Probe on main, 5 seeds x 4 matchups, 2400 ticks: **60 of 267** strings of 3+ hits repeat the previous one exactly (22.5%); e.g. heartbloom FFA-4 lv4 seed 7: `light_1-light_2-light_3-launcher` three times in a row. |
 
 Stills note: the first zone stills were taken without drawing a frame per tick, so VFX lifetimes never advanced
 and dash shells piled up; the stills committed here are from frames where that does not show. The script now
@@ -96,4 +96,58 @@ draws every tick.
 - **#100**: Closing as obsolete: voxel Verdant Falls has a detailed stepped voxel lawn (see
   `reports/issues/stills/verdant_falls_t700.jpg`).
 
-Still open, being fixed on `fix/issue-sweep`: #73, #128, #127, #106. Still open, not fixable here: #109.
+## Fixes (branch `fix/issue-sweep`, merged to main in 677ce5c8)
+
+| # | Commits | What changed | Evidence after |
+|---|---|---|---|
+| 128 | 230129d7 | `ZoneMatch.side_points`: sides beyond the zone's spawn points sit evenly on a 12 m ring around the points' middle (1v1/2v2 keep the zone points). | Probe `spawns`: closest centres **16.97 m** in all 7 zones (were 0.92 m). `test_free_for_all_fighters_spawn_apart_in_every_zone`: every pair > 8 m apart, surface to surface. |
+| 127 | b70445e0, ee4b47db | Dash/dodge/vanish afterimage is a `PoseGhost`: the fighter's skinned body redrawn from a frozen copy of its bone poses (GPU skinned, shared mesh), faint additive fresnel rim, gone in 0.16 s, max 3 per fighter. Sonic ring 5.5 m -> 2.8 m, 0.3 s. Trails don't start within 3.5 m (rings 5 m) of the lens; every additive energy layer fades out over 2.5-0.6 m of view depth. | Forward+ stills (Ember Rift seed 7, the issue's opening dash): a translucent silhouette instead of a capsule, ring inside the lower-left quarter: `stills/127_after_ember_t196.jpg`. Tests `test_pose_ghost.gd`, `test_no_afterimage_or_sonic_ring_starts_in_front_of_the_lens`. A CPU bake of the pose was measured at 26-51 ms per ghost and not used. |
+| 73 | 52a2a0c0, 3fee3b0e, ef7e728b | `BodySeparation` (view only): each frame measures the core capsules as last drawn and eases overlapping views apart (the striker 75%); a flier stacked 0.6-2.4 m over another and closer than their pushbox radii + 0.35 m eases out across the view. The sim is untouched. | VisualQa `fighter_vs_fighter`, `tools/diag/body_overlap.gd`: Frozen Peaks seed 2 **410/1679 -> 53/1745** close frames, worst **0.76 -> 0.26 m**; Heartbloom seed 1 **70/870 -> 17/1280**, worst **0.73 -> 0.21 m**. Verdant seed 7 (Brann hovering over Lyra's head): eased to her side, `stills/73_after_verdant_t420.jpg`. Test `test_body_separation.gd` (< 5% of close frames, < 0.30 m). |
+| 106 | 7ca0dd67 on `fix/issue-106-ai-variety` (reverted from this batch in 859c6bad) | Level 3+ AI never opens the same string (route + length) twice in a row. | Probe, 5 seeds x 4 matchups: back-to-back repeats of 3+ hit strings **60/267 (22.5%) -> 17/226 (7.5%)**. Not merged: it reshuffles the seeded AI fights and fails `test_a_ki_heavy_ai_duel_is_deterministic_and_uses_blasts_and_beams` on the merge (7 blasts vs > 10; main clears 10 only on seed 2026 of 2026-2035), and the golden replays would need re-recording. Board: ISSUE-SWEEP-c. |
+
+det_check on the merge with main 599ab6aa: `det_check total 65ec2f54272115fd`, identical line for line to main
+(the merged fixes don't touch the sim). With the #106 AI change it was `cdb4c7ed36eeb25b`: only the AI-driven
+`ki` and `specials` duel lines differ, from t1200.
+
+## Merge 677ce5c8 (`git merge --no-ff fix/issue-sweep` on main 3a4e21cd)
+
+Verified on 3fb4bc4e, the branch merged with main 599ab6aa (main then only added `reports/status/latest.md`):
+
+- Full GUT, nothing else running: **1956 tests, 1948 passing, 0 failing, 12 pending**
+  (`merge1/gut_totals.txt`). An earlier pass with det_check running alongside failed only the wall-clock
+  `test_an_ai_costs_at_most_0_05_ms_per_tick` (0.0518 ms, the known flaky T-LD-Wa).
+- det_check: `det_check total 65ec2f54272115fd`, identical line for line to main 599ab6aa
+  (`merge1/det_check_merge.txt`, `merge1/det_check_main.txt`).
+- QA quick, same container, `QA_JOBS=4`: main `reports/qa/2026-11-22-599ab6aa-quick.md`, merge
+  `reports/qa/2026-11-22-3fb4bc4e-quick.md`.
+
+| | main 599ab6aa | merge 3fb4bc4e |
+|---|---|---|
+| Sim soak / scenarios (strict) / golden replays | PASS / PASS 38/38 / PASS | PASS / PASS / PASS |
+| foot_ground (QA-12) | 3/21, 4 frames | 3/21, 4 frames |
+| camera_on_screen | 2/21 | **1/21** |
+| pops (events) | 1 (Vexa RightHand 1.21, QA-23) | 2 (+ Vexa LeftHand 1.24, same hit_light flip) |
+| foot_slide_cm_per_frame | 0.0317 | **0.0267** |
+| locked_on_screen_share | 0.9816 | 0.9841 |
+| sim / view ms | 1.377 / 1.408 | 1.290 / 1.453 |
+| Visual goldens | 12 FAIL as on every container run (T-135-b) | the same 12, scores equal except heartbloom_lyra_idle 0.875 -> 0.866 |
+
+The extra pop: BodySeparation's offsets in that match (`100:shattered_mesa:1v1:kael,vexa:54`, t1467-1480)
+are 2-3 cm and decay smoothly, so it is QA-23's borderline flip tipped over the 1.2 rad line, not a jump
+(noted under QA-23 on the board). A per-frame cap on the offset did not remove it and made overlap worse, so it
+was not kept.
+
+## Closing comments for the fixed issues
+
+- **#128**: Fixed in 677ce5c8 (230129d7): FFA-4 sides beyond a zone's two spawn points now sit on a 12 m ring,
+  so the closest fighters start 17 m apart in every zone (were 0.92 m, touching), and the round intro frames a
+  real approach. `test_free_for_all_fighters_spawn_apart_in_every_zone` covers all 7 zones.
+- **#127**: Fixed in 677ce5c8 (b70445e0, ee4b47db): the dash afterimage is now the fighter's own silhouette, a
+  faint energy-coloured copy of the pose that is gone in 0.16 s. The sonic ring is half the size and short, and
+  no trail starts within 3.5 m of the camera. Before/after: `reports/issues/stills/127_after_ember_t196.jpg`.
+- **#73**: Fixed in 677ce5c8 (52a2a0c0, 3fee3b0e, ef7e728b). Pushboxes already kept the sim bodies apart, but
+  attack clips lunged the drawn bodies into each other. `BodySeparation` eases them apart, and moves a flier off
+  another's head. VisualQa on Frozen Peaks: 410 -> 53 overlapping close frames, worst 0.76 m -> 0.26 m.
+  The remaining first-frame-of-a-lunge touches are ISSUE-SWEEP-b on the board.
+
+Still open: #106 (fix ready on `fix/issue-106-ai-variety`, not merged, see above), #109 (needs the GTX 1650 PC).

@@ -51,6 +51,8 @@ var _previous_position := Vector3.ZERO
 var _previous_yaw := 0.0
 var _lean := Vector2.ZERO
 var _body: Node3D
+## Drawn body shift off the sim position (m), set by BodySeparation so bodies don't overlap (#73).
+var body_offset := Vector3.ZERO
 var _character: CharacterView
 var _height_marker := HeightMarker.new()
 var _camera_fade := 0.0
@@ -122,7 +124,7 @@ func react_to_tick(sim: CombatSim, index: int) -> void:
 
 ## Call every rendered frame. blend: 0 = previous tick, 1 = latest tick.
 func present(blend: float, delta: float) -> void:
-	position = _previous_position.lerp(fighter.position, blend)
+	position = _previous_position.lerp(fighter.position, blend) + body_offset
 	var yaw := lerp_angle(_previous_yaw, fighter.facing_yaw, blend)
 	var dashing := fighter.state == FighterState.State.DASHING
 	var goal := Vector2.ZERO if leans_itself() else lean_for(fighter.velocity, fighter.facing_yaw,
