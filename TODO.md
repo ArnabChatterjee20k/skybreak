@@ -6,6 +6,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In progress
 
+- MOVE-ESCAPE [desktop] #150 "can't move away or get behind while the opponent attacks": fixed on
+  `fix/move-escape` (see `reports/combat/move-escape/README.md`). Dash presses wait out stun, 4-tick
+  gaps in continued blocked strings, 15 deg follow-up turn cap, a dodged light ends the string, side
+  vanish really goes round (was 3 deg), guard drift 4 m/s with climb and jump-out, AI dodges out and
+  punishes dodges. Open: rush tailgating a retreating target for 90 ticks; owner play of the
+  held-Shift air tech; strafe still capped at the camera's 180 deg/s [developer].
+
 - VOXEL-SHIP open items [desktop unless tagged] (voxel art shipped on `main`, see
   `reports/ship/voxel-ship.md`), ranked:
   1. VOXEL-BAKES [owner decision]: the 28 zone bakes (844 MB) are still not in git; a fresh clone

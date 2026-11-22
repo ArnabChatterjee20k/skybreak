@@ -1,0 +1,161 @@
+t | def state(ticks/stun) | def in held/press | def step m | dist m | round deg | ki | atk state move tick phase | events | note
+6 | BLOCKSTUN(0/9) | BLO/- | 0.00 | 1.50 | 0 | 50 | ATTACKING light_1 6 ACTIVE | BLOCK | 
+7 | BLOCKSTUN(0/9) | BLO/- | 0.00 | 1.50 | 0 | 50 | ATTACKING light_1 6 ACTIVE |  | 
+8 | BLOCKSTUN(0/9) | BLO/- | 0.00 | 1.50 | 0 | 50 | ATTACKING light_1 6 ACTIVE |  | 
+9 | BLOCKSTUN(1/9) | BLO/- | 0.08 | 1.58 | 0 | 50 | ATTACKING light_1 7 ACTIVE |  | 
+10 | BLOCKSTUN(2/9) | BLO/- | 0.08 | 1.61 | 0 | 50 | ATTACKING light_2 0 STARTUP |  | 
+11 | BLOCKSTUN(3/9) | BLO/- | 0.08 | 1.64 | 0 | 50 | ATTACKING light_2 1 STARTUP |  | 
+12 | BLOCKSTUN(4/9) | BLO/- | 0.08 | 1.67 | 0 | 50 | ATTACKING light_2 2 STARTUP |  | 
+13 | BLOCKSTUN(5/9) | BLO/- | 0.07 | 1.70 | 0 | 50 | ATTACKING light_2 3 STARTUP |  | 
+14 | BLOCKSTUN(6/9) | BLO/- | 0.07 | 1.74 | 0 | 50 | ATTACKING light_2 4 STARTUP |  | 
+15 | BLOCKSTUN(7/9) | BLO/- | 0.07 | 1.77 | 0 | 50 | ATTACKING light_2 5 STARTUP |  | 
+16 | BLOCKSTUN(8/9) | BLO/- | 0.07 | 1.80 | 0 | 50 | ATTACKING light_2 6 STARTUP |  | 
+17 | BLOCKSTUN(0/10) | BLO/- | 0.00 | 1.80 | 0 | 50 | ATTACKING light_2 7 ACTIVE | BLOCK | 
+18 | BLOCKSTUN(0/10) | BLO/- | 0.00 | 1.80 | 0 | 50 | ATTACKING light_2 7 ACTIVE |  | 
+19 | BLOCKSTUN(0/10) | BLO/- | 0.00 | 1.80 | 0 | 50 | ATTACKING light_2 7 ACTIVE |  | 
+20 | BLOCKSTUN(1/10) | BLO/- | 0.07 | 1.88 | 0 | 50 | ATTACKING light_2 8 ACTIVE |  | 
+21 | BLOCKSTUN(2/10) | BLO/- | 0.07 | 1.90 | 0 | 50 | ATTACKING light_3 0 STARTUP |  | 
+22 | BLOCKSTUN(3/10) | BLO/- | 0.07 | 1.93 | 0 | 50 | ATTACKING light_3 1 STARTUP |  | 
+23 | BLOCKSTUN(4/10) | BLO/- | 0.07 | 1.95 | 0 | 50 | ATTACKING light_3 2 STARTUP |  | 
+24 | BLOCKSTUN(5/10) | BLO/- | 0.07 | 1.98 | 0 | 50 | ATTACKING light_3 3 STARTUP |  | 
+25 | BLOCKSTUN(6/10) | BLO/- | 0.08 | 2.00 | 0 | 50 | ATTACKING light_3 4 STARTUP |  | 
+26 | BLOCKSTUN(7/10) | BLO/- | 0.08 | 2.03 | 0 | 50 | ATTACKING light_3 5 STARTUP |  | 
+27 | BLOCKSTUN(8/10) | BLO/- | 0.08 | 2.05 | 0 | 50 | ATTACKING light_3 6 STARTUP |  | 
+28 | BLOCKSTUN(9/10) | BLO/- | 0.00 | 2.00 | 0 | 50 | ATTACKING light_3 7 STARTUP |  | 
+29 | BLOCKSTUN(0/12) | BLO/- | 0.00 | 2.00 | 0 | 50 | ATTACKING light_3 8 ACTIVE | BLOCK | 
+30 | BLOCKSTUN(0/12) | BLO/- | 0.00 | 2.00 | 0 | 50 | ATTACKING light_3 8 ACTIVE |  | 
+31 | BLOCKSTUN(0/12) | BLO/- | 0.00 | 2.00 | 0 | 50 | ATTACKING light_3 8 ACTIVE |  | 
+32 | BLOCKSTUN(1/12) | BLO/- | 0.08 | 2.08 | 0 | 50 | ATTACKING light_3 9 ACTIVE |  | 
+33 | BLOCKSTUN(2/12) | BLO/- | 0.08 | 2.15 | 0 | 50 | ATTACKING light_3 10 ACTIVE |  | 
+34 | BLOCKSTUN(3/12) | BLO/- | 0.08 | 2.23 | 0 | 50 | ATTACKING light_3 11 RECOVERY |  | 
+35 | BLOCKSTUN(4/12) | BLO/- | 0.08 | 2.30 | 0 | 51 | ATTACKING light_3 12 RECOVERY |  | 
+36 | BLOCKSTUN(5/12) | BLO/- | 0.08 | 2.32 | 0 | 51 | ATTACKING light_4 0 STARTUP |  | 
+37 | BLOCKSTUN(6/12) | BLO/- | 0.08 | 2.33 | 0 | 51 | ATTACKING light_4 1 STARTUP |  | 
+38 | BLOCKSTUN(7/12) | BLO/- | 0.08 | 2.35 | 0 | 51 | ATTACKING light_4 2 STARTUP |  | 
+39 | BLOCKSTUN(8/12) | BLO/- | 0.08 | 2.36 | 0 | 51 | ATTACKING light_4 3 STARTUP |  | 
+40 | BLOCKSTUN(9/12) | BLO/- | 0.00 | 2.30 | 0 | 51 | ATTACKING light_4 4 STARTUP |  | 
+41 | BLOCKSTUN(10/12) | BLO/- | 0.00 | 2.24 | 0 | 51 | ATTACKING light_4 5 STARTUP |  | 
+42 | BLOCKSTUN(11/12) | BLO/- | 0.00 | 2.18 | 0 | 51 | ATTACKING light_4 6 STARTUP |  | 
+43 | BLOCKSTUN(12/12) | BLO/- | 0.00 | 2.12 | 0 | 51 | ATTACKING light_4 7 STARTUP |  | 
+44 | BLOCKING(1/0) | BLO/- | 0.00 | 2.06 | 0 | 51 | ATTACKING light_4 8 STARTUP |  | 
+45 | BLOCKING(2/0) | BLO/- | 0.03 | 2.03 | 0 | 51 | ATTACKING light_4 9 STARTUP |  | 
+46 | BLOCKSTUN(0/14) | BLO/- | 0.04 | 2.08 | 0 | 51 | ATTACKING light_4 10 ACTIVE | BLOCK | 
+47 | BLOCKSTUN(0/14) | BLO/- | 0.00 | 2.08 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | 
+48 | BLOCKSTUN(0/14) | BLO/- | 0.00 | 2.08 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | 
+49 | BLOCKSTUN(0/14) | BLO/- | 0.00 | 2.08 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | 
+50 | BLOCKSTUN(1/14) | BLO/- | 0.08 | 2.15 | 0 | 51 | ATTACKING light_4 11 ACTIVE |  | 
+51 | BLOCKSTUN(2/14) | BLO/- | 0.07 | 2.23 | 0 | 51 | ATTACKING light_4 12 ACTIVE |  | 
+52 | BLOCKSTUN(3/14) | BLO/- | 0.08 | 2.30 | 0 | 51 | ATTACKING light_4 13 RECOVERY |  | 
+53 | BLOCKSTUN(4/14) | BLO/- | 0.08 | 2.38 | 0 | 51 | ATTACKING light_4 14 RECOVERY |  | 
+54 | BLOCKSTUN(5/14) | BLO/- | 0.08 | 2.45 | 0 | 51 | ATTACKING light_4 15 RECOVERY |  | 
+55 | BLOCKSTUN(6/14) | BLO/- | 0.08 | 2.53 | 0 | 51 | ATTACKING light_4 16 RECOVERY |  | 
+56 | BLOCKSTUN(7/14) | BLO/- | 0.08 | 2.60 | 0 | 51 | ATTACKING light_4 17 RECOVERY |  | 
+57 | BLOCKSTUN(8/14) | BLO/- | 0.08 | 2.68 | 0 | 51 | ATTACKING light_4 18 RECOVERY |  | 
+58 | BLOCKSTUN(9/14) | BLO/- | 0.00 | 2.68 | 0 | 51 | ATTACKING light_4 19 RECOVERY |  | 
+59 | BLOCKSTUN(10/14) | BLO/- | 0.00 | 2.68 | 0 | 51 | ATTACKING light_4 20 RECOVERY |  | 
+60 | BLOCKSTUN(11/14) | BLO/- | 0.00 | 2.68 | 0 | 51 | ATTACKING light_4 21 RECOVERY |  | 
+61 | BLOCKSTUN(12/14) | BLO/- | 0.00 | 2.68 | 0 | 51 | ATTACKING light_4 22 RECOVERY |  | 
+62 | BLOCKSTUN(13/14) | BLO/- | 0.00 | 2.68 | 0 | 51 | ATTACKING light_4 23 RECOVERY |  | 
+63 | BLOCKSTUN(14/14) | BLO/- | 0.00 | 2.68 | 0 | 51 | ATTACKING light_4 24 RECOVERY |  | 
+64 | BLOCKING(1/0) | BLO/- | 0.03 | 2.71 | 0 | 51 | ATTACKING light_4 25 RECOVERY |  | 
+65 | BLOCKING(2/0) | BLO/- | 0.04 | 2.75 | 0 | 51 | ATTACKING light_4 26 RECOVERY |  | 
+66 | BLOCKING(3/0) | BLO/- | 0.04 | 2.79 | 0 | 51 | ATTACKING light_4 27 RECOVERY |  | 
+67 | BLOCKING(4/0) | BLO/- | 0.04 | 2.83 | 0 | 51 | ATTACKING light_4 28 RECOVERY |  | 
+68 | BLOCKING(5/0) | BLO/- | 0.04 | 2.88 | 0 | 52 | ATTACKING light_4 29 RECOVERY |  | 
+69 | BLOCKING(6/0) | BLO/- | 0.04 | 2.92 | 0 | 52 | ATTACKING light_4 30 RECOVERY |  | 
+70 | BLOCKING(7/0) | BLO/- | 0.04 | 2.96 | 0 | 52 | IDLE  0 NONE |  | 
+71 | BLOCKING(8/0) | BLO/- | 0.04 | 2.70 | 0 | 52 | DASHING  0 NONE |  | 
+72 | BLOCKING(9/0) | BLO/- | 0.04 | 2.56 | 0 | 52 | DASHING  0 NONE |  | 
+73 | BLOCKING(10/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+74 | BLOCKING(11/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+75 | BLOCKING(12/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+76 | BLOCKING(13/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+77 | BLOCKING(14/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+78 | BLOCKING(15/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+79 | BLOCKING(16/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+80 | BLOCKING(17/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+81 | BLOCKING(18/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+82 | BLOCKING(19/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+83 | BLOCKING(20/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+84 | BLOCKING(21/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+85 | BLOCKING(22/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+86 | BLOCKING(23/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+87 | BLOCKING(24/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+88 | BLOCKING(25/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+89 | BLOCKING(26/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+90 | BLOCKING(27/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+91 | BLOCKING(28/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+92 | BLOCKING(29/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+93 | BLOCKING(30/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+94 | BLOCKING(31/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+95 | BLOCKING(32/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+96 | BLOCKING(33/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+97 | BLOCKING(34/0) | BLO/- | 0.04 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+98 | BLOCKING(35/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+99 | BLOCKING(36/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+100 | BLOCKING(37/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+101 | BLOCKING(38/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+102 | BLOCKING(39/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+103 | BLOCKING(40/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+104 | BLOCKING(41/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+105 | BLOCKING(42/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+106 | BLOCKING(43/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+107 | BLOCKING(44/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+108 | BLOCKING(45/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+109 | BLOCKING(46/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+110 | BLOCKING(47/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+111 | BLOCKING(48/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+112 | BLOCKING(49/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+113 | BLOCKING(50/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+114 | BLOCKING(51/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+115 | BLOCKING(52/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+116 | BLOCKING(53/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+117 | BLOCKING(54/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+118 | BLOCKING(55/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+119 | BLOCKING(56/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+120 | BLOCKING(57/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+121 | BLOCKING(58/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+122 | BLOCKING(59/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+123 | BLOCKING(60/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+124 | BLOCKING(61/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+125 | BLOCKING(62/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+126 | BLOCKING(63/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+127 | BLOCKING(64/0) | BLO/- | 0.04 | 2.54 | 0 | 53 | DASHING  0 NONE |  | 
+128 | BLOCKING(65/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+129 | BLOCKING(66/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+130 | BLOCKING(67/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+131 | BLOCKING(68/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+132 | BLOCKING(69/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+133 | BLOCKING(70/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+134 | BLOCKING(71/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+135 | BLOCKING(72/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+136 | BLOCKING(73/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+137 | BLOCKING(74/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+138 | BLOCKING(75/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+139 | BLOCKING(76/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+140 | BLOCKING(77/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+141 | BLOCKING(78/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+142 | BLOCKING(79/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+143 | BLOCKING(80/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+144 | BLOCKING(81/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+145 | BLOCKING(82/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+146 | BLOCKING(83/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+147 | BLOCKING(84/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+148 | BLOCKING(85/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+149 | BLOCKING(86/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+150 | BLOCKING(87/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+151 | BLOCKING(88/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+152 | BLOCKING(89/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+153 | BLOCKING(90/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+154 | BLOCKING(91/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+155 | BLOCKING(92/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+156 | BLOCKING(93/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+157 | BLOCKING(94/0) | BLO/- | 0.04 | 2.54 | 0 | 54 | DASHING  0 NONE |  | 
+158 | BLOCKING(95/0) | BLO/- | 0.04 | 2.54 | 0 | 55 | DASHING  0 NONE |  | 
+159 | BLOCKING(96/0) | BLO/- | 0.04 | 2.54 | 0 | 55 | DASHING  0 NONE |  | 
+160 | BLOCKING(97/0) | BLO/- | 0.04 | 2.54 | 0 | 55 | DASHING  0 NONE |  | 
+161 | BLOCKING(98/0) | BLO/- | 0.04 | 2.58 | 0 | 55 | IDLE  0 NONE |  | 
+162 | BLOCKING(99/0) | BLO/- | 0.04 | 2.58 | 0 | 55 | ATTACKING light_1 0 STARTUP |  | 
+163 | BLOCKING(100/0) | BLO/- | 0.04 | 2.57 | 0 | 55 | ATTACKING light_1 1 STARTUP |  | 
+164 | BLOCKING(101/0) | BLO/- | 0.04 | 2.56 | 0 | 55 | ATTACKING light_1 2 STARTUP |  | 
+165 | BLOCKING(102/0) | BLO/- | 0.04 | 2.55 | 0 | 55 | ATTACKING light_1 3 STARTUP |  | 

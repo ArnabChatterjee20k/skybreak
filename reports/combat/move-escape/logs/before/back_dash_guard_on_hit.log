@@ -1,0 +1,123 @@
+t | def state(ticks/stun) | def in held/press | def step m | dist m | round deg | ki | atk state move tick phase | events | note
+6 | BLOCKSTUN(0/9) | BLO/- | 0.00 | 1.50 | 0 | 50 | ATTACKING light_1 6 ACTIVE | BLOCK | 
+7 | BLOCKSTUN(0/9) | DAS/DAS | 0.00 | 1.50 | 0 | 50 | ATTACKING light_1 6 ACTIVE |  | dash held in buffer: BLOCKSTUN
+8 | BLOCKSTUN(0/9) | -/- | 0.00 | 1.50 | 0 | 50 | ATTACKING light_1 6 ACTIVE |  | dash held in buffer: BLOCKSTUN
+9 | BLOCKSTUN(1/9) | -/- | 0.08 | 1.58 | 0 | 50 | ATTACKING light_1 7 ACTIVE |  | dash held in buffer: BLOCKSTUN
+10 | BLOCKSTUN(2/9) | -/- | 0.08 | 1.61 | 0 | 50 | ATTACKING light_2 0 STARTUP |  | dash held in buffer: BLOCKSTUN
+11 | BLOCKSTUN(3/9) | -/- | 0.08 | 1.64 | 0 | 50 | ATTACKING light_2 1 STARTUP |  | dash held in buffer: BLOCKSTUN
+12 | BLOCKSTUN(4/9) | -/- | 0.08 | 1.67 | 0 | 50 | ATTACKING light_2 2 STARTUP |  | dash held in buffer: BLOCKSTUN
+13 | BLOCKSTUN(5/9) | -/- | 0.07 | 1.70 | 0 | 50 | ATTACKING light_2 3 STARTUP |  | dash held in buffer: BLOCKSTUN
+14 | BLOCKSTUN(6/9) | -/- | 0.07 | 1.74 | 0 | 50 | ATTACKING light_2 4 STARTUP |  | dash buffer expired in BLOCKSTUN
+15 | BLOCKSTUN(7/9) | -/- | 0.07 | 1.77 | 0 | 50 | ATTACKING light_2 5 STARTUP |  | 
+16 | BLOCKSTUN(8/9) | -/- | 0.07 | 1.80 | 0 | 50 | ATTACKING light_2 6 STARTUP |  | 
+17 | BLOCKSTUN(0/10) | -/- | 0.00 | 1.80 | 0 | 50 | ATTACKING light_2 7 ACTIVE | BLOCK | 
+18 | BLOCKSTUN(0/10) | DAS/DAS | 0.00 | 1.80 | 0 | 50 | ATTACKING light_2 7 ACTIVE |  | dash held in buffer: BLOCKSTUN
+19 | BLOCKSTUN(0/10) | -/- | 0.00 | 1.80 | 0 | 50 | ATTACKING light_2 7 ACTIVE |  | dash held in buffer: BLOCKSTUN
+20 | BLOCKSTUN(1/10) | -/- | 0.07 | 1.88 | 0 | 50 | ATTACKING light_2 8 ACTIVE |  | dash held in buffer: BLOCKSTUN
+21 | BLOCKSTUN(2/10) | -/- | 0.07 | 1.90 | 0 | 50 | ATTACKING light_3 0 STARTUP |  | dash held in buffer: BLOCKSTUN
+22 | BLOCKSTUN(3/10) | -/- | 0.07 | 1.93 | 0 | 50 | ATTACKING light_3 1 STARTUP |  | dash held in buffer: BLOCKSTUN
+23 | BLOCKSTUN(4/10) | -/- | 0.07 | 1.95 | 0 | 50 | ATTACKING light_3 2 STARTUP |  | dash held in buffer: BLOCKSTUN
+24 | BLOCKSTUN(5/10) | -/- | 0.07 | 1.98 | 0 | 50 | ATTACKING light_3 3 STARTUP |  | dash held in buffer: BLOCKSTUN
+25 | BLOCKSTUN(6/10) | -/- | 0.08 | 2.00 | 0 | 50 | ATTACKING light_3 4 STARTUP |  | dash buffer expired in BLOCKSTUN
+26 | BLOCKSTUN(7/10) | -/- | 0.08 | 2.03 | 0 | 50 | ATTACKING light_3 5 STARTUP |  | 
+27 | BLOCKSTUN(8/10) | -/- | 0.08 | 2.05 | 0 | 50 | ATTACKING light_3 6 STARTUP |  | 
+28 | BLOCKSTUN(9/10) | -/- | 0.00 | 2.00 | 0 | 50 | ATTACKING light_3 7 STARTUP |  | 
+29 | BLOCKSTUN(0/12) | -/- | 0.00 | 2.00 | 0 | 50 | ATTACKING light_3 8 ACTIVE | BLOCK | 
+30 | BLOCKSTUN(0/12) | DAS/DAS | 0.00 | 2.00 | 0 | 50 | ATTACKING light_3 8 ACTIVE |  | dash held in buffer: BLOCKSTUN
+31 | BLOCKSTUN(0/12) | -/- | 0.00 | 2.00 | 0 | 50 | ATTACKING light_3 8 ACTIVE |  | dash held in buffer: BLOCKSTUN
+32 | BLOCKSTUN(1/12) | -/- | 0.08 | 2.08 | 0 | 50 | ATTACKING light_3 9 ACTIVE |  | dash held in buffer: BLOCKSTUN
+33 | BLOCKSTUN(2/12) | -/- | 0.08 | 2.15 | 0 | 50 | ATTACKING light_3 10 ACTIVE |  | dash held in buffer: BLOCKSTUN
+34 | BLOCKSTUN(3/12) | -/- | 0.08 | 2.23 | 0 | 50 | ATTACKING light_3 11 RECOVERY |  | dash held in buffer: BLOCKSTUN
+35 | BLOCKSTUN(4/12) | -/- | 0.08 | 2.30 | 0 | 51 | ATTACKING light_3 12 RECOVERY |  | dash held in buffer: BLOCKSTUN
+36 | BLOCKSTUN(5/12) | -/- | 0.08 | 2.32 | 0 | 51 | ATTACKING light_4 0 STARTUP |  | dash held in buffer: BLOCKSTUN
+37 | BLOCKSTUN(6/12) | -/- | 0.08 | 2.33 | 0 | 51 | ATTACKING light_4 1 STARTUP |  | dash buffer expired in BLOCKSTUN
+38 | BLOCKSTUN(7/12) | -/- | 0.08 | 2.35 | 0 | 51 | ATTACKING light_4 2 STARTUP |  | 
+39 | BLOCKSTUN(8/12) | -/- | 0.08 | 2.36 | 0 | 51 | ATTACKING light_4 3 STARTUP |  | 
+40 | BLOCKSTUN(9/12) | -/- | 0.00 | 2.30 | 0 | 51 | ATTACKING light_4 4 STARTUP |  | 
+41 | BLOCKSTUN(10/12) | -/- | 0.00 | 2.24 | 0 | 51 | ATTACKING light_4 5 STARTUP |  | 
+42 | BLOCKSTUN(11/12) | -/- | 0.00 | 2.18 | 0 | 51 | ATTACKING light_4 6 STARTUP |  | 
+43 | BLOCKSTUN(12/12) | -/- | 0.00 | 2.12 | 0 | 51 | ATTACKING light_4 7 STARTUP |  | 
+44 | MOVING(1/0) | -/- | 0.03 | 2.09 | 0 | 51 | ATTACKING light_4 8 STARTUP |  | 
+45 | MOVING(2/0) | -/- | 0.05 | 2.08 | 0 | 51 | ATTACKING light_4 9 STARTUP |  | 
+46 | HITSTUN(0/30) | -/- | 0.08 | 2.15 | 0 | 51 | ATTACKING light_4 10 ACTIVE | HIT | 
+47 | HITSTUN(0/30) | DAS/DAS | 0.00 | 2.15 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | dash held in buffer: HITSTUN
+48 | HITSTUN(0/30) | -/- | 0.00 | 2.15 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | dash held in buffer: HITSTUN
+49 | HITSTUN(0/30) | -/- | 0.00 | 2.15 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | dash held in buffer: HITSTUN
+50 | HITSTUN(0/30) | -/- | 0.00 | 2.15 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | dash held in buffer: HITSTUN
+51 | HITSTUN(0/30) | -/- | 0.00 | 2.15 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | dash held in buffer: HITSTUN
+52 | HITSTUN(0/30) | -/- | 0.00 | 2.15 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | dash held in buffer: HITSTUN
+53 | HITSTUN(1/30) | -/- | 0.26 | 2.41 | 0 | 51 | ATTACKING light_4 11 ACTIVE |  | dash held in buffer: HITSTUN
+54 | HITSTUN(2/30) | -/- | 0.26 | 2.66 | 0 | 51 | ATTACKING light_4 12 ACTIVE |  | dash held in buffer: HITSTUN
+55 | HITSTUN(3/30) | -/- | 0.25 | 2.90 | 0 | 51 | ATTACKING light_4 13 RECOVERY |  | dash held in buffer: HITSTUN
+56 | HITSTUN(4/30) | -/- | 0.24 | 3.14 | 0 | 51 | ATTACKING light_4 14 RECOVERY |  | dash held in buffer: HITSTUN
+57 | HITSTUN(5/30) | -/- | 0.23 | 3.37 | 0 | 51 | ATTACKING light_4 15 RECOVERY |  | dash held in buffer: HITSTUN
+58 | HITSTUN(6/30) | -/- | 0.22 | 3.59 | 0 | 51 | ATTACKING light_4 16 RECOVERY |  | dash buffer expired in HITSTUN
+59 | HITSTUN(7/30) | -/- | 0.21 | 3.80 | 0 | 51 | ATTACKING light_4 17 RECOVERY |  | 
+60 | HITSTUN(8/30) | -/- | 0.21 | 4.00 | 0 | 51 | ATTACKING light_4 18 RECOVERY |  | 
+61 | HITSTUN(9/30) | -/- | 0.17 | 4.17 | 0 | 51 | ATTACKING light_4 19 RECOVERY |  | 
+62 | HITSTUN(10/30) | -/- | 0.16 | 4.33 | 0 | 51 | ATTACKING light_4 20 RECOVERY |  | 
+63 | HITSTUN(11/30) | -/- | 0.15 | 4.48 | 0 | 51 | ATTACKING light_4 21 RECOVERY |  | 
+64 | HITSTUN(12/30) | -/- | 0.14 | 4.62 | 0 | 51 | ATTACKING light_4 22 RECOVERY |  | 
+65 | HITSTUN(13/30) | -/- | 0.13 | 4.75 | 0 | 51 | ATTACKING light_4 23 RECOVERY |  | 
+66 | HITSTUN(14/30) | -/- | 0.13 | 4.87 | 0 | 51 | ATTACKING light_4 24 RECOVERY |  | 
+67 | HITSTUN(15/30) | -/- | 0.12 | 4.99 | 0 | 51 | ATTACKING light_4 25 RECOVERY |  | 
+68 | HITSTUN(16/30) | -/- | 0.11 | 5.10 | 0 | 51 | ATTACKING light_4 26 RECOVERY |  | 
+69 | HITSTUN(17/30) | -/- | 0.10 | 5.20 | 0 | 51 | ATTACKING light_4 27 RECOVERY |  | 
+70 | HITSTUN(18/30) | -/- | 0.09 | 5.29 | 0 | 51 | ATTACKING light_4 28 RECOVERY |  | 
+71 | HITSTUN(19/30) | -/- | 0.08 | 5.38 | 0 | 52 | ATTACKING light_4 29 RECOVERY |  | 
+72 | HITSTUN(20/30) | -/- | 0.08 | 5.45 | 0 | 52 | ATTACKING light_4 30 RECOVERY |  | 
+73 | HITSTUN(21/30) | -/- | 0.07 | 5.49 | 0 | 52 | FLYING  0 NONE |  | 
+74 | HITSTUN(22/30) | -/- | 0.06 | 4.68 | 0 | 52 | DASHING  0 NONE |  | 
+75 | HITSTUN(23/30) | -/- | 0.05 | 3.99 | 0 | 52 | DASHING  0 NONE |  | 
+76 | HITSTUN(24/30) | -/- | 0.04 | 3.44 | 0 | 52 | DASHING  0 NONE |  | 
+77 | HITSTUN(25/30) | -/- | 0.03 | 3.02 | 0 | 52 | DASHING  0 NONE |  | 
+78 | HITSTUN(26/30) | -/- | 0.03 | 2.72 | 0 | 52 | DASHING  0 NONE |  | 
+79 | HITSTUN(27/30) | -/- | 0.02 | 2.54 | 0 | 52 | DASHING  0 NONE |  | 
+80 | HITSTUN(28/30) | -/- | 0.01 | 2.51 | 0 | 52 | DASHING  0 NONE |  | 
+81 | HITSTUN(29/30) | -/- | 0.00 | 2.51 | 0 | 52 | FLYING  0 NONE |  | 
+82 | HITSTUN(30/30) | -/- | 0.00 | 2.46 | 0 | 52 | ATTACKING light_1 0 STARTUP |  | 
+83 | FLYING(1/0) | -/- | 0.02 | 2.43 | 0 | 52 | ATTACKING light_1 1 STARTUP |  | 
+84 | FLYING(2/0) | -/- | 0.04 | 2.42 | 0 | 52 | ATTACKING light_1 2 STARTUP |  | 
+85 | FLYING(3/0) | -/- | 0.06 | 2.43 | 0 | 52 | ATTACKING light_1 3 STARTUP |  | 
+86 | FLYING(4/0) | -/- | 0.08 | 2.46 | 0 | 52 | ATTACKING light_1 4 STARTUP |  | 
+87 | FLYING(5/0) | -/- | 0.10 | 2.50 | 0 | 52 | ATTACKING light_1 5 STARTUP |  | 
+88 | FLYING(6/0) | -/- | 0.12 | 2.62 | 0 | 52 | ATTACKING light_1 6 ACTIVE |  | 
+89 | FLYING(7/0) | -/- | 0.14 | 2.75 | 0 | 52 | ATTACKING light_1 7 ACTIVE |  | 
+90 | FLYING(8/0) | -/- | 0.16 | 2.86 | 0 | 52 | ATTACKING light_2 0 STARTUP |  | 
+91 | FLYING(9/0) | -/- | 0.18 | 3.00 | 0 | 52 | ATTACKING light_2 1 STARTUP |  | 
+92 | FLYING(10/0) | -/- | 0.19 | 3.15 | 0 | 52 | ATTACKING light_2 2 STARTUP |  | 
+93 | FLYING(11/0) | -/- | 0.21 | 3.32 | 0 | 52 | ATTACKING light_2 3 STARTUP |  | escaped (out)
+94 | FLYING(12/0) | -/- | 0.23 | 3.51 | 0 | 52 | ATTACKING light_2 4 STARTUP |  | 
+95 | FLYING(13/0) | -/- | 0.25 | 3.72 | 0 | 52 | ATTACKING light_2 5 STARTUP |  | 
+96 | FLYING(14/0) | -/- | 0.27 | 3.94 | 0 | 52 | ATTACKING light_2 6 STARTUP |  | 
+97 | FLYING(15/0) | -/- | 0.29 | 4.24 | 0 | 52 | ATTACKING light_2 7 ACTIVE |  | 
+98 | FLYING(16/0) | -/- | 0.31 | 4.55 | 0 | 52 | ATTACKING light_2 8 ACTIVE |  | 
+99 | FLYING(17/0) | -/- | 0.33 | 4.83 | 0 | 52 | ATTACKING light_3 0 STARTUP |  | 
+100 | FLYING(18/0) | -/- | 0.35 | 5.12 | 0 | 52 | ATTACKING light_3 1 STARTUP |  | 
+101 | FLYING(19/0) | -/- | 0.37 | 5.44 | 0 | 53 | ATTACKING light_3 2 STARTUP |  | 
+102 | FLYING(20/0) | -/- | 0.39 | 5.78 | 0 | 53 | ATTACKING light_3 3 STARTUP |  | 
+103 | FLYING(21/0) | -/- | 0.41 | 6.14 | 0 | 53 | ATTACKING light_3 4 STARTUP |  | 
+104 | FLYING(22/0) | -/- | 0.43 | 6.52 | 0 | 53 | ATTACKING light_3 5 STARTUP |  | 
+105 | FLYING(23/0) | -/- | 0.45 | 6.91 | 0 | 53 | ATTACKING light_3 6 STARTUP |  | 
+106 | FLYING(24/0) | -/- | 0.47 | 7.33 | 0 | 53 | ATTACKING light_3 7 STARTUP |  | 
+107 | FLYING(25/0) | -/- | 0.49 | 7.82 | 0 | 53 | ATTACKING light_3 8 ACTIVE |  | 
+108 | FLYING(26/0) | -/- | 0.50 | 8.32 | 0 | 53 | ATTACKING light_3 9 ACTIVE |  | 
+109 | FLYING(27/0) | -/- | 0.50 | 8.82 | 0 | 53 | ATTACKING light_3 10 ACTIVE |  | 
+110 | FLYING(28/0) | -/- | 0.50 | 9.31 | 0 | 53 | ATTACKING light_3 11 RECOVERY |  | 
+111 | FLYING(29/0) | -/- | 0.50 | 9.81 | 0 | 53 | ATTACKING light_3 12 RECOVERY |  | 
+112 | FLYING(30/0) | -/- | 0.50 | 10.25 | 0 | 53 | ATTACKING light_4 0 STARTUP |  | 
+113 | FLYING(31/0) | -/- | 0.50 | 10.69 | 0 | 53 | ATTACKING light_4 1 STARTUP |  | 
+114 | FLYING(32/0) | -/- | 0.50 | 11.13 | 0 | 53 | ATTACKING light_4 2 STARTUP |  | 
+115 | FLYING(33/0) | -/- | 0.50 | 11.57 | 0 | 53 | ATTACKING light_4 3 STARTUP |  | 
+116 | FLYING(34/0) | -/- | 0.50 | 12.01 | 0 | 53 | ATTACKING light_4 4 STARTUP |  | 
+117 | FLYING(35/0) | -/- | 0.50 | 12.45 | 0 | 53 | ATTACKING light_4 5 STARTUP |  | 
+118 | FLYING(36/0) | -/- | 0.50 | 12.89 | 0 | 53 | ATTACKING light_4 6 STARTUP |  | 
+119 | FLYING(37/0) | -/- | 0.50 | 13.33 | 0 | 53 | ATTACKING light_4 7 STARTUP |  | 
+120 | FLYING(38/0) | -/- | 0.50 | 13.77 | 0 | 53 | ATTACKING light_4 8 STARTUP |  | 
+121 | FLYING(39/0) | -/- | 0.50 | 14.21 | 0 | 53 | ATTACKING light_4 9 STARTUP |  | 
+122 | FLYING(40/0) | -/- | 0.50 | 14.71 | 0 | 53 | ATTACKING light_4 10 ACTIVE |  | 
+123 | FLYING(41/0) | -/- | 0.50 | 15.21 | 0 | 53 | ATTACKING light_4 11 ACTIVE |  | 
+124 | FLYING(42/0) | -/- | 0.50 | 15.71 | 0 | 53 | ATTACKING light_4 12 ACTIVE |  | 
+125 | FLYING(43/0) | -/- | 0.50 | 16.21 | 0 | 53 | ATTACKING light_4 13 RECOVERY |  | 
+126 | FLYING(44/0) | -/- | 0.50 | 16.71 | 0 | 53 | ATTACKING light_4 14 RECOVERY |  | 
+127 | FLYING(45/0) | -/- | 0.50 | 17.21 | 0 | 53 | ATTACKING light_4 15 RECOVERY |  | 

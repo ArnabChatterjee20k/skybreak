@@ -1,0 +1,123 @@
+t | def state(ticks/stun) | def in held/press | def step m | dist m | round deg | ki | atk state move tick phase | events | note
+6 | BLOCKSTUN(0/9) | BLO/- | 0.00 | 1.50 | 0 | 50 | ATTACKING light_1 6 ACTIVE | BLOCK | 
+7 | BLOCKSTUN(0/9) | DAS/DAS | 0.00 | 1.50 | 0 | 50 | ATTACKING light_1 6 ACTIVE |  | dash held in buffer: BLOCKSTUN
+8 | BLOCKSTUN(0/9) | -/- | 0.00 | 1.50 | 0 | 50 | ATTACKING light_1 6 ACTIVE |  | dash held in buffer: BLOCKSTUN
+9 | BLOCKSTUN(1/9) | -/- | 0.08 | 1.58 | 0 | 50 | ATTACKING light_1 7 ACTIVE |  | dash held in buffer: BLOCKSTUN
+10 | BLOCKSTUN(2/4) | -/- | 0.08 | 1.61 | 0 | 50 | ATTACKING light_2 0 STARTUP |  | dash held in buffer: BLOCKSTUN
+11 | BLOCKSTUN(3/4) | -/- | 0.08 | 1.64 | 0 | 50 | ATTACKING light_2 1 STARTUP |  | dash held in buffer: BLOCKSTUN
+12 | BLOCKSTUN(4/4) | -/- | 0.08 | 1.67 | 0 | 50 | ATTACKING light_2 2 STARTUP |  | dash held in buffer: BLOCKSTUN
+13 | DASHING(1/0) | -/- | 0.62 | 2.25 | 0 | 50 | ATTACKING light_2 3 STARTUP |  | 
+14 | DASHING(2/0) | -/- | 0.57 | 2.78 | 0 | 50 | ATTACKING light_2 4 STARTUP |  | 
+15 | DASHING(3/0) | -/- | 0.53 | 3.26 | 0 | 50 | ATTACKING light_2 5 STARTUP |  | escaped (out)
+16 | DASHING(4/0) | -/- | 0.48 | 3.70 | 0 | 50 | ATTACKING light_2 6 STARTUP |  | 
+17 | DASHING(5/0) | -/- | 0.44 | 4.14 | 0 | 50 | ATTACKING light_2 7 ACTIVE |  | 
+18 | DASHING(6/0) | -/- | 0.39 | 4.53 | 0 | 50 | ATTACKING light_2 8 ACTIVE |  | 
+19 | DASHING(7/0) | -/- | 0.34 | 4.83 | 0 | 50 | ATTACKING light_3 0 STARTUP |  | 
+20 | DASHING(8/0) | -/- | 0.30 | 5.07 | 0 | 50 | ATTACKING light_3 1 STARTUP |  | 
+21 | DASHING(9/0) | -/- | 0.25 | 5.28 | 0 | 50 | ATTACKING light_3 2 STARTUP |  | 
+22 | DASHING(10/0) | -/- | 0.21 | 5.43 | 0 | 50 | ATTACKING light_3 3 STARTUP |  | 
+23 | DASHING(11/0) | -/- | 0.16 | 5.54 | 0 | 50 | ATTACKING light_3 4 STARTUP |  | 
+24 | DASHING(12/0) | -/- | 0.11 | 5.61 | 0 | 50 | ATTACKING light_3 5 STARTUP |  | 
+25 | DASHING(13/0) | -/- | 0.07 | 5.63 | 0 | 50 | ATTACKING light_3 6 STARTUP |  | 
+26 | DASHING(14/0) | -/- | 0.02 | 5.60 | 0 | 50 | ATTACKING light_3 7 STARTUP |  | 
+27 | DASHING(15/0) | -/- | 0.00 | 5.60 | 0 | 50 | ATTACKING light_3 8 ACTIVE |  | 
+28 | DASHING(16/0) | -/- | 0.00 | 5.60 | 0 | 50 | ATTACKING light_3 9 ACTIVE |  | 
+29 | DASHING(17/0) | -/- | 0.00 | 5.60 | 0 | 50 | ATTACKING light_3 10 ACTIVE |  | 
+30 | DASHING(18/0) | -/- | 0.00 | 5.60 | 0 | 50 | ATTACKING light_3 11 RECOVERY |  | 
+31 | DASHING(19/0) | -/- | 0.00 | 5.60 | 0 | 51 | ATTACKING light_3 12 RECOVERY |  | 
+32 | DASHING(20/0) | -/- | 0.00 | 5.54 | 0 | 51 | ATTACKING light_4 0 STARTUP |  | 
+33 | DASHING(21/0) | -/- | 0.00 | 5.48 | 0 | 51 | ATTACKING light_4 1 STARTUP |  | 
+34 | DASHING(22/0) | -/- | 0.00 | 5.42 | 0 | 51 | ATTACKING light_4 2 STARTUP |  | 
+35 | DASHING(23/0) | -/- | 0.00 | 5.36 | 0 | 51 | ATTACKING light_4 3 STARTUP |  | 
+36 | DASHING(24/0) | -/- | 0.00 | 5.30 | 0 | 51 | ATTACKING light_4 4 STARTUP |  | 
+37 | DASHING(25/0) | -/- | 0.00 | 5.24 | 0 | 51 | ATTACKING light_4 5 STARTUP |  | 
+38 | DASHING(26/0) | -/- | 0.00 | 5.18 | 0 | 51 | ATTACKING light_4 6 STARTUP |  | 
+39 | MOVING(1/0) | -/- | 0.03 | 5.15 | 0 | 51 | ATTACKING light_4 7 STARTUP |  | 
+40 | MOVING(2/0) | -/- | 0.05 | 5.14 | 0 | 51 | ATTACKING light_4 8 STARTUP |  | 
+41 | MOVING(3/0) | -/- | 0.07 | 5.15 | 0 | 51 | ATTACKING light_4 9 STARTUP |  | 
+42 | MOVING(4/0) | -/- | 0.10 | 5.25 | 0 | 51 | ATTACKING light_4 10 ACTIVE |  | 
+43 | MOVING(5/0) | -/- | 0.12 | 5.38 | 0 | 51 | ATTACKING light_4 11 ACTIVE |  | 
+44 | MOVING(6/0) | -/- | 0.15 | 5.53 | 0 | 51 | ATTACKING light_4 12 ACTIVE |  | 
+45 | MOVING(7/0) | -/- | 0.18 | 5.70 | 0 | 51 | ATTACKING light_4 13 RECOVERY |  | 
+46 | MOVING(8/0) | -/- | 0.20 | 5.90 | 0 | 51 | ATTACKING light_4 14 RECOVERY |  | 
+47 | MOVING(9/0) | -/- | 0.20 | 6.10 | 0 | 51 | ATTACKING light_4 15 RECOVERY |  | 
+48 | MOVING(10/0) | -/- | 0.20 | 6.30 | 0 | 51 | ATTACKING light_4 16 RECOVERY |  | 
+49 | MOVING(11/0) | -/- | 0.20 | 6.50 | 0 | 51 | ATTACKING light_4 17 RECOVERY |  | 
+50 | MOVING(12/0) | -/- | 0.20 | 6.70 | 0 | 51 | ATTACKING light_4 18 RECOVERY |  | 
+51 | MOVING(13/0) | -/- | 0.20 | 6.90 | 0 | 51 | ATTACKING light_4 19 RECOVERY |  | 
+52 | MOVING(14/0) | -/- | 0.20 | 7.10 | 0 | 51 | ATTACKING light_4 20 RECOVERY |  | 
+53 | MOVING(15/0) | -/- | 0.20 | 7.30 | 0 | 51 | ATTACKING light_4 21 RECOVERY |  | 
+54 | MOVING(16/0) | -/- | 0.20 | 7.50 | 0 | 51 | ATTACKING light_4 22 RECOVERY |  | 
+55 | MOVING(17/0) | -/- | 0.20 | 7.70 | 0 | 51 | ATTACKING light_4 23 RECOVERY |  | 
+56 | MOVING(18/0) | -/- | 0.20 | 7.90 | 0 | 51 | ATTACKING light_4 24 RECOVERY |  | 
+57 | MOVING(19/0) | -/- | 0.20 | 8.10 | 0 | 51 | ATTACKING light_4 25 RECOVERY |  | 
+58 | MOVING(20/0) | -/- | 0.20 | 8.30 | 0 | 51 | ATTACKING light_4 26 RECOVERY |  | 
+59 | MOVING(21/0) | -/- | 0.20 | 8.50 | 0 | 51 | ATTACKING light_4 27 RECOVERY |  | 
+60 | MOVING(22/0) | -/- | 0.20 | 8.70 | 0 | 51 | ATTACKING light_4 28 RECOVERY |  | 
+61 | MOVING(23/0) | -/- | 0.20 | 8.90 | 0 | 52 | ATTACKING light_4 29 RECOVERY |  | 
+62 | MOVING(24/0) | -/- | 0.20 | 9.10 | 0 | 52 | ATTACKING light_4 30 RECOVERY |  | 
+63 | MOVING(25/0) | -/- | 0.20 | 9.30 | 0 | 52 | IDLE  0 NONE |  | 
+64 | MOVING(26/0) | -/- | 0.20 | 8.17 | 0 | 52 | DASHING  0 NONE |  | 
+65 | MOVING(27/0) | -/- | 0.20 | 7.14 | 0 | 52 | DASHING  0 NONE |  | 
+66 | MOVING(28/0) | -/- | 0.20 | 6.24 | 0 | 52 | DASHING  0 NONE |  | 
+67 | MOVING(29/0) | -/- | 0.20 | 5.46 | 0 | 52 | DASHING  0 NONE |  | 
+68 | MOVING(30/0) | -/- | 0.20 | 4.79 | 0 | 52 | DASHING  0 NONE |  | 
+69 | MOVING(31/0) | -/- | 0.20 | 4.24 | 0 | 52 | DASHING  0 NONE |  | 
+70 | MOVING(32/0) | -/- | 0.20 | 3.79 | 0 | 52 | DASHING  0 NONE |  | 
+71 | MOVING(33/0) | -/- | 0.20 | 3.44 | 0 | 52 | DASHING  0 NONE |  | 
+72 | MOVING(34/0) | -/- | 0.20 | 3.18 | 0 | 52 | DASHING  0 NONE |  | 
+73 | MOVING(35/0) | -/- | 0.20 | 3.00 | 0 | 52 | DASHING  0 NONE |  | 
+74 | MOVING(36/0) | -/- | 0.20 | 2.88 | 0 | 52 | DASHING  0 NONE |  | 
+75 | MOVING(37/0) | -/- | 0.20 | 2.81 | 0 | 52 | DASHING  0 NONE |  | 
+76 | MOVING(38/0) | -/- | 0.20 | 2.77 | 0 | 52 | DASHING  0 NONE |  | 
+77 | MOVING(39/0) | -/- | 0.20 | 2.75 | 0 | 52 | DASHING  0 NONE |  | 
+78 | MOVING(40/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+79 | MOVING(41/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+80 | MOVING(42/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+81 | MOVING(43/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+82 | MOVING(44/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+83 | MOVING(45/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+84 | MOVING(46/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+85 | MOVING(47/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+86 | MOVING(48/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+87 | MOVING(49/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+88 | MOVING(50/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+89 | MOVING(51/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+90 | MOVING(52/0) | -/- | 0.20 | 2.74 | 0 | 52 | DASHING  0 NONE |  | 
+91 | MOVING(53/0) | -/- | 0.20 | 2.73 | 0 | 53 | DASHING  0 NONE |  | 
+92 | MOVING(54/0) | -/- | 0.20 | 2.73 | 0 | 53 | DASHING  0 NONE |  | 
+93 | MOVING(55/0) | -/- | 0.20 | 2.73 | 0 | 53 | DASHING  0 NONE |  | 
+94 | MOVING(56/0) | -/- | 0.20 | 2.73 | 0 | 53 | DASHING  0 NONE |  | 
+95 | MOVING(57/0) | -/- | 0.20 | 2.73 | 0 | 53 | DASHING  0 NONE |  | 
+96 | MOVING(58/0) | -/- | 0.20 | 2.73 | 0 | 53 | DASHING  0 NONE |  | 
+97 | MOVING(59/0) | -/- | 0.20 | 2.73 | 0 | 53 | DASHING  0 NONE |  | 
+98 | MOVING(60/0) | -/- | 0.20 | 2.73 | 0 | 53 | DASHING  0 NONE |  | 
+99 | MOVING(61/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+100 | MOVING(62/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+101 | MOVING(63/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+102 | MOVING(64/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+103 | MOVING(65/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+104 | MOVING(66/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+105 | MOVING(67/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+106 | MOVING(68/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+107 | MOVING(69/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+108 | MOVING(70/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+109 | MOVING(71/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+110 | MOVING(72/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+111 | MOVING(73/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+112 | MOVING(74/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+113 | MOVING(75/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+114 | MOVING(76/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+115 | MOVING(77/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+116 | MOVING(78/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+117 | MOVING(79/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+118 | MOVING(80/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+119 | MOVING(81/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+120 | MOVING(82/0) | -/- | 0.20 | 2.74 | 0 | 53 | DASHING  0 NONE |  | 
+121 | MOVING(83/0) | -/- | 0.20 | 2.74 | 0 | 54 | DASHING  0 NONE |  | 
+122 | MOVING(84/0) | -/- | 0.20 | 2.74 | 0 | 54 | DASHING  0 NONE |  | 
+123 | MOVING(85/0) | -/- | 0.20 | 2.74 | 0 | 54 | DASHING  0 NONE |  | 
+124 | MOVING(86/0) | -/- | 0.20 | 2.74 | 0 | 54 | DASHING  0 NONE |  | 
+125 | MOVING(87/0) | -/- | 0.20 | 2.74 | 0 | 54 | DASHING  0 NONE |  | 
+126 | MOVING(88/0) | -/- | 0.20 | 2.74 | 0 | 54 | DASHING  0 NONE |  | 
+127 | MOVING(89/0) | -/- | 0.20 | 2.74 | 0 | 54 | DASHING  0 NONE |  | 
