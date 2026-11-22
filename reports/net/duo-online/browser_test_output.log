@@ -1,121 +1,98 @@
-site http://127.0.0.1:34697, Appwrite mock http://127.0.0.1:44639/v1 (120 ms per request)
-host: {"event":"lobby","ms":33087,"role":"host"}
-host: {"attempt":0,"event":"sign_in_attempt","ms":33541,"status":"Signed in as skybreak-player-1"}
-host: {"event":"signed_in","ms":33542,"user":"skybreak-player-1"}
-host: {"event":"status","ms":33757,"rtc":"","status":"Lobby 22LAS: waiting for your partner"}
-host: {"code":"22LAS","event":"code","ms":33762}
-screenshot ../../../tmp/claude-0/duo_run2/host_1_room_code.png
-guest: {"event":"lobby","ms":40407,"role":"join"}
-guest: {"attempt":0,"event":"sign_in_attempt","ms":40861,"status":"Signed in as skybreak-player-2"}
-guest: {"event":"signed_in","ms":40862,"user":"skybreak-player-2"}
-guest: {"event":"status","ms":41292,"rtc":"","status":"Joined 22LAS: connecting to your partner"}
-host: {"event":"status","ms":76988,"rtc":"","status":"Partner joined: connecting"}
-host: {"event":"status","ms":80270,"rtc":"connected","status":"Connected"}
-host: {"event":"status","ms":80335,"rtc":"","status":"Connected to your partner"}
-host: {"event":"connected","ms":80363,"peer":0}
-host: {"event":"picked","ms":80529,"setup":{"ai_count":1,"ai_level":2,"guest_legend":"vexa","host_legend":"kael","lives":6,"minutes":3,"zone":"heartbloom_gardens"}}
-guest: {"event":"status","ms":46378,"rtc":"connecting","status":"Connected"}
-guest: {"event":"status","ms":46423,"rtc":"","status":"Connected to your partner"}
-guest: {"event":"connected","ms":46568,"peer":1}
-guest: {"event":"picked","ms":46592,"setup":{"ai_count":1,"ai_level":2,"guest_legend":"vexa","host_legend":"kael","lives":6,"minutes":3,"zone":"heartbloom_gardens"}}
-screenshot ../../../tmp/claude-0/duo_run2/host_2_lobby_setup.png
-screenshot ../../../tmp/claude-0/duo_run2/guest_2_lobby_setup.png
-host: {"event":"start_pressed","ms":103715}
-guest: {"event":"match_loaded","fighters":3,"ms":351586,"player":1,"seed":2002794511,"zone":"heartbloom_gardens"}
-host: {"event":"match_loaded","fighters":3,"ms":392729,"player":0,"seed":2002794511,"zone":"heartbloom_gardens"}
-screenshot ../../../tmp/claude-0/duo_run2/host_3_match_30s.png
-screenshot ../../../tmp/claude-0/duo_run2/guest_3_match_30s.png
-host: frame 300 rtt 136 ms rollbacks 79 (max 8) stalls 395 compared 9 lives 6,3 fps 47
-guest: frame 300 rtt 173 ms rollbacks 59 (max 8) stalls 447 compared 9 lives 6,3 fps 31
-host: frame 600 rtt 122 ms rollbacks 217 (max 8) stalls 441 compared 19 lives 6,3 fps 60
-guest: frame 600 rtt 124 ms rollbacks 177 (max 8) stalls 476 compared 19 lives 6,3 fps 59
-guest: frame 900 rtt 148 ms rollbacks 257 (max 8) stalls 569 compared 29 lives 6,3 fps 10
-host: frame 900 rtt 124 ms rollbacks 345 (max 8) stalls 516 compared 29 lives 6,3 fps 58
-guest: frame 1200 rtt 123 ms rollbacks 417 (max 8) stalls 593 compared 39 lives 6,3 fps 59
-host: frame 1200 rtt 123 ms rollbacks 466 (max 8) stalls 550 compared 39 lives 6,3 fps 60
-host: frame 1500 rtt 649 ms rollbacks 602 (max 8) stalls 577 compared 49 lives 6,3 fps 8
-guest: frame 1500 rtt 163 ms rollbacks 566 (max 8) stalls 679 compared 49 lives 6,3 fps 56
-screenshot ../../../tmp/claude-0/duo_run2/host_3_match_90s.png
-screenshot ../../../tmp/claude-0/duo_run2/guest_3_match_90s.png
-host: frame 1800 rtt 131 ms rollbacks 721 (max 8) stalls 616 compared 59 lives 6,3 fps 59
-guest: frame 1800 rtt 138 ms rollbacks 650 (max 8) stalls 680 compared 59 lives 6,3 fps 60
-guest: frame 2100 rtt 122 ms rollbacks 764 (max 8) stalls 689 compared 69 lives 6,3 fps 60
-host: frame 2100 rtt 126 ms rollbacks 839 (max 8) stalls 641 compared 69 lives 6,3 fps 60
-guest: frame 2400 rtt 132 ms rollbacks 852 (max 8) stalls 754 compared 79 lives 6,3 fps 26
-host: frame 2400 rtt 127 ms rollbacks 976 (max 8) stalls 744 compared 79 lives 6,3 fps 60
-host: frame 2700 rtt 126 ms rollbacks 1126 (max 8) stalls 744 compared 89 lives 6,3 fps 59
-guest: frame 2700 rtt 126 ms rollbacks 982 (max 8) stalls 841 compared 89 lives 6,3 fps 59
-host: frame 3000 rtt 134 ms rollbacks 1139 (max 8) stalls 789 compared 99 lives 6,2 fps 60
-guest: frame 3000 rtt 132 ms rollbacks 1001 (max 8) stalls 917 compared 99 lives 6,2 fps 60
-guest: frame 3300 rtt 120 ms rollbacks 1137 (max 8) stalls 957 compared 109 lives 6,2 fps 59
-host: frame 3300 rtt 120 ms rollbacks 1257 (max 8) stalls 831 compared 109 lives 6,2 fps 58
-host: frame 3600 rtt 129 ms rollbacks 1398 (max 8) stalls 900 compared 119 lives 6,2 fps 39
-guest: frame 3600 rtt 125 ms rollbacks 1275 (max 8) stalls 1050 compared 119 lives 6,2 fps 60
-guest: frame 3900 rtt 486 ms rollbacks 1427 (max 8) stalls 1091 compared 129 lives 6,2 fps 32
-host: frame 3900 rtt 314 ms rollbacks 1574 (max 8) stalls 991 compared 129 lives 6,2 fps 60
-screenshot ../../../tmp/claude-0/duo_run2/host_3_match_150s.png
-screenshot ../../../tmp/claude-0/duo_run2/guest_3_match_150s.png
-host: {"event":"burst","frame":4200,"ms":546323}
-host: frame 4200 rtt 133 ms rollbacks 1706 (max 8) stalls 1031 compared 139 lives 6,2 fps 59
-guest: frame 4200 rtt 128 ms rollbacks 1525 (max 8) stalls 1205 compared 139 lives 6,2 fps 60
-host: frame 4500 rtt 127 ms rollbacks 1812 (max 8) stalls 1159 compared 149 lives 6,2 fps 41
-guest: frame 4500 rtt 130 ms rollbacks 1605 (max 8) stalls 1310 compared 149 lives 6,2 fps 57
-host: frame 4800 rtt 133 ms rollbacks 1967 (max 8) stalls 1206 compared 159 lives 6,2 fps 60
-guest: frame 4800 rtt 133 ms rollbacks 1769 (max 8) stalls 1329 compared 159 lives 6,2 fps 60
-host: frame 5100 rtt 178 ms rollbacks 2015 (max 8) stalls 1250 compared 169 lives 6,2 fps 47
-guest: frame 5100 rtt 133 ms rollbacks 1865 (max 8) stalls 1426 compared 169 lives 6,2 fps 55
-host: frame 5400 rtt 136 ms rollbacks 2081 (max 8) stalls 1277 compared 179 lives 6,2 fps 60
-guest: frame 5400 rtt 138 ms rollbacks 1999 (max 8) stalls 1445 compared 179 lives 6,2 fps 60
-host: frame 5700 rtt 159 ms rollbacks 2185 (max 8) stalls 1358 compared 189 lives 6,2 fps 17
-guest: frame 5700 rtt 141 ms rollbacks 2142 (max 8) stalls 1515 compared 189 lives 6,2 fps 25
-host: frame 6000 rtt 128 ms rollbacks 2244 (max 8) stalls 1392 compared 199 lives 6,1 fps 60
-guest: frame 6000 rtt 135 ms rollbacks 2218 (max 8) stalls 1543 compared 199 lives 6,1 fps 60
-host: frame 6300 rtt 174 ms rollbacks 2411 (max 8) stalls 1467 compared 209 lives 6,1 fps 54
-guest: frame 6300 rtt 162 ms rollbacks 2381 (max 8) stalls 1587 compared 209 lives 6,1 fps 1
-guest: frame 6600 rtt 126 ms rollbacks 2556 (max 8) stalls 1587 compared 219 lives 6,1 fps 60
-host: frame 6600 rtt 127 ms rollbacks 2558 (max 8) stalls 1514 compared 219 lives 6,1 fps 60
-guest: frame 6900 rtt 130 ms rollbacks 2742 (max 8) stalls 1621 compared 229 lives 6,1 fps 60
-host: frame 6900 rtt 136 ms rollbacks 2717 (max 8) stalls 1536 compared 229 lives 6,1 fps 59
-guest: frame 7200 rtt 133 ms rollbacks 2910 (max 8) stalls 1660 compared 239 lives 6,1 fps 1
-host: frame 7200 rtt 135 ms rollbacks 2862 (max 8) stalls 1587 compared 239 lives 6,1 fps 60
-guest: frame 7500 rtt 120 ms rollbacks 3083 (max 8) stalls 1689 compared 249 lives 6,1 fps 60
-host: frame 7500 rtt 137 ms rollbacks 3045 (max 8) stalls 1615 compared 249 lives 6,1 fps 60
-guest: frame 7800 rtt 220 ms rollbacks 3245 (max 8) stalls 1739 compared 259 lives 6,1 fps 18
-host: frame 7800 rtt 170 ms rollbacks 3197 (max 8) stalls 1667 compared 259 lives 6,1 fps 44
-guest: frame 8100 rtt 138 ms rollbacks 3429 (max 8) stalls 1764 compared 269 lives 6,1 fps 59
-host: frame 8100 rtt 136 ms rollbacks 3320 (max 8) stalls 1702 compared 269 lives 6,1 fps 59
-guest: frame 8400 rtt 131 ms rollbacks 3611 (max 8) stalls 1795 compared 279 lives 6,1 fps 60
-host: frame 8400 rtt 129 ms rollbacks 3484 (max 8) stalls 1704 compared 279 lives 6,1 fps 59
-host: frame 8700 rtt 139 ms rollbacks 3660 (max 8) stalls 1717 compared 289 lives 6,1 fps 21
-guest: frame 8700 rtt 135 ms rollbacks 3738 (max 8) stalls 1852 compared 289 lives 6,1 fps 60
-host: frame 9000 rtt 131 ms rollbacks 3834 (max 8) stalls 1743 compared 299 lives 6,1 fps 60
-guest: frame 9000 rtt 128 ms rollbacks 3909 (max 8) stalls 1876 compared 299 lives 6,1 fps 60
-host: frame 9300 rtt 390 ms rollbacks 4000 (max 8) stalls 1779 compared 309 lives 6,1 fps 60
-guest: frame 9300 rtt 192 ms rollbacks 4076 (max 8) stalls 1913 compared 309 lives 6,1 fps 39
-host: frame 9600 rtt 123 ms rollbacks 4184 (max 8) stalls 1795 compared 319 lives 6,1 fps 33
-guest: frame 9600 rtt 135 ms rollbacks 4220 (max 8) stalls 1959 compared 319 lives 6,1 fps 59
-host: frame 9900 rtt 122 ms rollbacks 4357 (max 8) stalls 1842 compared 329 lives 6,1 fps 60
-guest: frame 9900 rtt 709 ms rollbacks 4391 (max 8) stalls 1988 compared 329 lives 6,1 fps 60
-guest: frame 10200 rtt 134 ms rollbacks 4539 (max 8) stalls 1988 compared 339 lives 6,1 fps 14
-host: frame 10200 rtt 132 ms rollbacks 4518 (max 8) stalls 1882 compared 339 lives 6,1 fps 5
-guest: frame 10500 rtt 119 ms rollbacks 4723 (max 8) stalls 1988 compared 349 lives 6,1 fps 59
-host: frame 10500 rtt 124 ms rollbacks 4663 (max 8) stalls 1898 compared 349 lives 6,1 fps 60
-host: frame 10800 rtt 129 ms rollbacks 4818 (max 8) stalls 1916 compared 359 lives 6,1 fps 60
-guest: frame 10800 rtt 130 ms rollbacks 4786 (max 8) stalls 2000 compared 359 lives 6,1 fps 60
-host: frame 11100 rtt 137 ms rollbacks 4910 (max 8) stalls 1924 compared 369 lives 6,1 fps 17
-guest: frame 11100 rtt 135 ms rollbacks 4915 (max 8) stalls 2037 compared 369 lives 6,1 fps 49
-guest: frame 11130 rtt 131 ms rollbacks 4931 (max 8) stalls 2037 compared 370 lives 6,1 fps 49
-host: frame 11130 rtt 130 ms rollbacks 4910 (max 8) stalls 1924 compared 370 lives 6,1 fps 60
-host: {"compared":370,"desync":-1,"event":"over","frame":11130,"max_depth":8,"ms":701154,"rollbacks":4910,"timed_out":true,"winning_team":0}
-guest: {"compared":370,"desync":-1,"event":"over","frame":11130,"max_depth":8,"ms":665741,"rollbacks":4931,"timed_out":true,"winning_team":0}
-screenshot ../../../tmp/claude-0/duo_run2/host_4_match_over.png
-screenshot ../../../tmp/claude-0/duo_run2/guest_4_match_over.png
+site http://127.0.0.1:33109, Appwrite mock http://127.0.0.1:38399/v1 (120 ms per request)
+host: {"event":"lobby","ms":33809,"role":"host"}
+host: {"attempt":0,"event":"sign_in_attempt","ms":34380,"status":"Signed in as skybreak-player-1"}
+host: {"event":"signed_in","ms":34381,"user":"skybreak-player-1"}
+host: {"event":"status","ms":34597,"rtc":"","status":"Lobby BWFGS: waiting for your partner"}
+host: {"code":"BWFGS","event":"code","ms":34614}
+screenshot ../../../tmp/claude-0/duo_run3/host_1_room_code.png
+guest: {"event":"lobby","ms":37458,"role":"join"}
+guest: {"attempt":0,"event":"sign_in_attempt","ms":37912,"status":"Signed in as skybreak-player-2"}
+guest: {"event":"signed_in","ms":37913,"user":"skybreak-player-2"}
+guest: {"event":"status","ms":38354,"rtc":"","status":"Joined BWFGS: connecting to your partner"}
+host: {"event":"status","ms":74780,"rtc":"","status":"Partner joined: connecting"}
+host: {"event":"rtc","ms":75078,"state":"connecting/connecting/connecting"}
+host: {"event":"status","ms":75795,"rtc":"connected","status":"Connected"}
+guest: {"event":"status","ms":39518,"rtc":"connected","status":"Connected"}
+host: {"event":"status","ms":75858,"rtc":"","status":"Connected to your partner"}
+guest: {"event":"status","ms":39585,"rtc":"","status":"Connected to your partner"}
+guest: {"event":"connected","ms":39595,"peer":1}
+guest: {"event":"picked","ms":39644,"setup":{"ai_count":1,"ai_level":3,"guest_legend":"vexa","host_legend":"kael","lives":6,"minutes":5,"zone":"heartbloom_gardens"}}
+host: {"event":"connected","ms":75932,"peer":0}
+host: {"event":"picked","ms":76089,"setup":{"ai_count":1,"ai_level":2,"guest_legend":"vexa","host_legend":"kael","lives":6,"minutes":3,"zone":"heartbloom_gardens"}}
+screenshot ../../../tmp/claude-0/duo_run3/host_2_lobby_setup.png
+screenshot ../../../tmp/claude-0/duo_run3/guest_2_lobby_setup.png
+host: {"event":"start_pressed","ms":98499}
+host: {"event":"match_loaded","fighters":3,"ms":406537,"player":0,"seed":1265530174,"zone":"heartbloom_gardens"}
+guest: {"event":"match_loaded","fighters":3,"ms":386141,"player":1,"seed":1265530174,"zone":"heartbloom_gardens"}
+screenshot ../../../tmp/claude-0/duo_run3/host_3_match_30s.png
+screenshot ../../../tmp/claude-0/duo_run3/guest_3_match_30s.png
+guest: frame 300 rtt 640 ms rollbacks 65 (max 8) stalls 504 compared 9 lives 6,3 fps 30
+host: frame 300 rtt 246 ms rollbacks 43 (max 8) stalls 838 compared 9 lives 6,3 fps 59
+guest: frame 600 rtt 130 ms rollbacks 195 (max 8) stalls 752 compared 19 lives 6,3 fps 34
+host: frame 600 rtt 126 ms rollbacks 82 (max 8) stalls 1028 compared 19 lives 6,3 fps 59
+guest: frame 900 rtt 467 ms rollbacks 319 (max 8) stalls 992 compared 29 lives 6,3 fps 59
+host: frame 900 rtt 683 ms rollbacks 173 (max 8) stalls 1242 compared 29 lives 6,3 fps 51
+screenshot ../../../tmp/claude-0/duo_run3/host_3_match_90s.png
+screenshot ../../../tmp/claude-0/duo_run3/guest_3_match_90s.png
+host: frame 1200 rtt 131 ms rollbacks 283 (max 8) stalls 1474 compared 39 lives 6,3 fps 51
+guest: frame 1200 rtt 127 ms rollbacks 423 (max 8) stalls 1220 compared 39 lives 6,3 fps 59
+host: frame 1500 rtt 149 ms rollbacks 331 (max 8) stalls 1629 compared 49 lives 6,2 fps 25
+guest: frame 1500 rtt 134 ms rollbacks 500 (max 8) stalls 1376 compared 49 lives 6,2 fps 60
+host: frame 1800 rtt 133 ms rollbacks 407 (max 8) stalls 1846 compared 59 lives 6,2 fps 57
+guest: frame 1800 rtt 134 ms rollbacks 541 (max 8) stalls 1505 compared 59 lives 6,2 fps 60
+host: frame 2100 rtt 129 ms rollbacks 488 (max 8) stalls 1994 compared 69 lives 6,2 fps 28
+guest: frame 2100 rtt 807 ms rollbacks 619 (max 8) stalls 1768 compared 69 lives 6,2 fps 56
+guest: frame 2400 rtt 596 ms rollbacks 697 (max 8) stalls 1950 compared 79 lives 6,2 fps 1
+host: frame 2400 rtt 187 ms rollbacks 519 (max 8) stalls 2228 compared 79 lives 6,2 fps 57
+screenshot ../../../tmp/claude-0/duo_run3/host_3_match_150s.png
+screenshot ../../../tmp/claude-0/duo_run3/guest_3_match_150s.png
+host: frame 2700 rtt 317 ms rollbacks 560 (max 8) stalls 2288 compared 89 lives 6,2 fps 16
+guest: frame 2700 rtt 146 ms rollbacks 823 (max 8) stalls 2092 compared 89 lives 6,2 fps 53
+host: frame 3000 rtt 239 ms rollbacks 622 (max 8) stalls 2467 compared 99 lives 6,2 fps 20
+guest: frame 3000 rtt 136 ms rollbacks 943 (max 8) stalls 2216 compared 99 lives 6,2 fps 60
+host: frame 3300 rtt 1188 ms rollbacks 670 (max 8) stalls 2617 compared 109 lives 6,1 fps 5
+guest: frame 3300 rtt 338 ms rollbacks 1005 (max 8) stalls 2383 compared 109 lives 6,1 fps 60
+host: frame 3600 rtt 248 ms rollbacks 777 (max 8) stalls 2806 compared 119 lives 6,1 fps 38
+guest: frame 3600 rtt 153 ms rollbacks 1084 (max 8) stalls 2551 compared 119 lives 6,1 fps 60
+host: frame 3900 rtt 151 ms rollbacks 883 (max 8) stalls 2989 compared 129 lives 6,1 fps 14
+guest: frame 3900 rtt 130 ms rollbacks 1175 (max 8) stalls 2728 compared 129 lives 6,1 fps 60
+host: {"event":"burst","frame":4200,"ms":629085}
+host: frame 4200 rtt 129 ms rollbacks 973 (max 8) stalls 3187 compared 139 lives 6,1 fps 58
+guest: frame 4200 rtt 134 ms rollbacks 1277 (max 8) stalls 2926 compared 139 lives 6,1 fps 60
+host: frame 4500 rtt 177 ms rollbacks 1053 (max 8) stalls 3324 compared 149 lives 6,1 fps 29
+guest: frame 4500 rtt 131 ms rollbacks 1349 (max 8) stalls 3086 compared 149 lives 6,1 fps 61
+guest: frame 4800 rtt 124 ms rollbacks 1394 (max 8) stalls 3151 compared 159 lives 6,1 fps 19
+host: frame 4800 rtt 127 ms rollbacks 1137 (max 8) stalls 3436 compared 159 lives 6,1 fps 60
+guest: frame 5100 rtt 172 ms rollbacks 1467 (max 8) stalls 3283 compared 169 lives 6,1 fps 23
+host: frame 5100 rtt 131 ms rollbacks 1232 (max 8) stalls 3560 compared 169 lives 6,1 fps 59
+guest: frame 5400 rtt 184 ms rollbacks 1591 (max 8) stalls 3453 compared 179 lives 6,1 fps 27
+host: frame 5400 rtt 133 ms rollbacks 1330 (max 8) stalls 3713 compared 179 lives 6,1 fps 60
+guest: frame 5700 rtt 220 ms rollbacks 1614 (max 8) stalls 3615 compared 189 lives 6,0 fps 14
+host: frame 5700 rtt 138 ms rollbacks 1404 (max 8) stalls 3863 compared 189 lives 6,0 fps 60
+guest: frame 6000 rtt 822 ms rollbacks 1660 (max 8) stalls 3769 compared 199 lives 6,0 fps 4
+host: frame 6000 rtt 262 ms rollbacks 1485 (max 8) stalls 4049 compared 199 lives 6,0 fps 59
+host: frame 6300 rtt 137 ms rollbacks 1576 (max 8) stalls 4156 compared 209 lives 6,0 fps 50
+guest: frame 6300 rtt 779 ms rollbacks 1728 (max 8) stalls 3930 compared 209 lives 6,0 fps 60
+guest: frame 6600 rtt 194 ms rollbacks 1749 (max 8) stalls 4126 compared 219 lives 6,0 fps 10
+host: frame 6600 rtt 168 ms rollbacks 1660 (max 8) stalls 4360 compared 219 lives 6,0 fps 57
+guest: frame 6900 rtt 128 ms rollbacks 1883 (max 8) stalls 4189 compared 229 lives 6,0 fps 57
+host: frame 6900 rtt 116 ms rollbacks 1784 (max 8) stalls 4398 compared 229 lives 6,0 fps 57
+host: frame 7200 rtt 206 ms rollbacks 1871 (max 8) stalls 4408 compared 239 lives 6,0 fps 1
+guest: frame 7200 rtt 157 ms rollbacks 2004 (max 8) stalls 4262 compared 239 lives 6,0 fps 12
+host: frame 7500 rtt 126 ms rollbacks 1962 (max 8) stalls 4418 compared 249 lives 6,0 fps 52
+guest: frame 7500 rtt 120 ms rollbacks 2108 (max 8) stalls 4318 compared 249 lives 6,0 fps 60
+host: frame 7689 rtt 129 ms rollbacks 1969 (max 8) stalls 4470 compared 256 lives 6,0 fps 60
+host: {"compared":256,"desync":-1,"event":"over","frame":7689,"max_depth":8,"ms":737711,"rollbacks":1969,"timed_out":false,"winning_team":0}
+guest: frame 7689 rtt 121 ms rollbacks 2109 (max 8) stalls 4399 compared 256 lives 6,0 fps 60
+guest: {"compared":256,"desync":-1,"event":"over","frame":7689,"max_depth":8,"ms":701440,"rollbacks":2109,"timed_out":false,"winning_team":0}
+screenshot ../../../tmp/claude-0/duo_run3/host_4_match_over.png
+screenshot ../../../tmp/claude-0/duo_run3/guest_4_match_over.png
 {
   "verdict": "PASS",
   "problems": [],
-  "wall_seconds": 707,
-  "match_sim_seconds": 186,
-  "common_state_hashes": 370,
+  "wall_seconds": 743,
+  "match_sim_seconds": 128,
+  "common_state_hashes": 256,
   "mismatched_hashes": 0,
   "net": {
     "net_lag": 45,
@@ -128,15 +105,15 @@ screenshot ../../../tmp/claude-0/duo_run2/guest_4_match_over.png
   },
   "appwrite_mock": {
     "latency_ms": 120,
-    "requests": 90,
+    "requests": 81,
     "byRoute": {
       "POST /v1/account/sessions/email": 2,
       "GET /v1/account": 2,
       "POST /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows": 1,
-      "GET /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows/:id": 46,
+      "GET /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows/:id": 40,
       "PATCH /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows/:id": 2,
       "POST /v1/tablesdb/skybreak/tables/skybreak_signals/rows": 4,
-      "GET /v1/tablesdb/skybreak/tables/skybreak_signals/rows": 7,
+      "GET /v1/tablesdb/skybreak/tables/skybreak_signals/rows": 4,
       "DELETE /v1/tablesdb/skybreak/tables/skybreak_signals/rows/:id": 4
     },
     "errors": {},
@@ -144,16 +121,16 @@ screenshot ../../../tmp/claude-0/duo_run2/guest_4_match_over.png
     "permissionRefusals": 0
   },
   "host": {
-    "frames": 11130,
+    "frames": 7689,
     "winning_team": 0,
-    "timed_out": true,
-    "rollbacks": 4910,
+    "timed_out": false,
+    "rollbacks": 1969,
     "max_rollback_depth": 8,
-    "hashes_compared_in_band": 370,
-    "stalls": 1924,
-    "sync_skips": 145,
-    "rtt_ms_median": 132,
-    "fps_median": 59,
+    "hashes_compared_in_band": 256,
+    "stalls": 4470,
+    "sync_skips": 197,
+    "rtt_ms_median": 149,
+    "fps_median": 57,
     "console_errors": 0,
     "godot_warnings": [
       "WARNING: ZoneBakeDownload: no zone manifest (result 0, HTTP 404); the zone builds live",
@@ -161,15 +138,15 @@ screenshot ../../../tmp/claude-0/duo_run2/guest_4_match_over.png
     ]
   },
   "guest": {
-    "frames": 11130,
+    "frames": 7689,
     "winning_team": 0,
-    "timed_out": true,
-    "rollbacks": 4931,
+    "timed_out": false,
+    "rollbacks": 2109,
     "max_rollback_depth": 8,
-    "hashes_compared_in_band": 370,
-    "stalls": 2037,
-    "sync_skips": 126,
-    "rtt_ms_median": 133,
+    "hashes_compared_in_band": 256,
+    "stalls": 4399,
+    "sync_skips": 188,
+    "rtt_ms_median": 153,
     "fps_median": 59,
     "console_errors": 0,
     "godot_warnings": [

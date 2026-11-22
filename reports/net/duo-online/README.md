@@ -26,19 +26,20 @@ GODOT=/path/to/godot-4.7.2 tools/net/build_web_debug.sh /tmp/duo-web
 node tools/net/duo_browser_test.js /tmp/duo-web reports/net/duo-online 3
 ```
 
-Result of the run on the merge with main (`1cb662f`) in `browser_test.json`, output in
-`browser_test_output.log`, screenshots here:
+Three passing runs, all with the same forced network: 45 ms +- 20 ms one-way delay and 2% loss
+on every packet each way (`LaggyTransport`), plus one forced rollback burst (all host packets held
+140 ms at tick 4200):
 
-- **PASS**. Host -> code -> guest joins -> picks -> start -> match -> both finish.
-- 186 s of match on both pages (11130 ticks, the 3-minute limit plus the intro; the duo won on
-  lives); wall time 707 s including two ~6 min live zone builds.
-- **370 state hashes confirmed by both pages, 0 mismatches**, no desync (each page also compared
-  370 hashes with the other in-band).
-- Forced network: 45 ms +- 20 ms one-way delay and 2% loss on every packet each way
-  (`LaggyTransport`), plus one forced rollback burst (all host packets held 140 ms at tick 4200).
-  Max rollback depth 8 on both, 4910 / 4931 rollbacks, median measured RTT 132 / 133 ms.
-- An earlier run on the branch before the merge also passed (148 s, ended on a KO, 299 common
-  hashes, 0 mismatches).
+| Tree | Match | Common state hashes | Mismatches | Rollbacks (max depth) | Median RTT | Console errors |
+|---|---|---|---|---|---|---|
+| final merge `07eb371` (files here) | 128 s, KO, duo won | 256 | **0** | 1969 / 2109 (8) | 149 / 153 ms | **0** |
+| merge `1cb662f` | 186 s, time limit, duo won on lives | 370 | **0** | 4910 / 4931 (8) | 132 / 133 ms | **0** |
+| branch before the merges | 148 s, KO, duo won | 299 | **0** | 3068 / 3105 (8) | 132 / 135 ms | **0** |
+
+For the final run: `browser_test.json`, `browser_test_output.log` (every pilot event, net stats every
+300 ticks), `appwrite_mock.log` (every request the two pages made, 81 in total, 0 errors), and
+the screenshots. Host -> code -> guest joins -> picks -> start -> match -> both finish; no desync,
+and each page also compared 256 hashes with the other in-band.
 - **0 console errors** on both pages. The only Godot warnings are the known missing zone bakes (VOXEL-BAKES): "no zone manifest ... the zone builds live".
 - Screenshots: `host_1_room_code.png`, `host_2_lobby_setup.png` / `guest_2_lobby_setup.png`, `*_3_match_{30,90,150}s.png`, `*_4_match_over.png`.
 
@@ -104,17 +105,18 @@ Browser audit (item 5 of the task):
   A hidden tab stops the game loop; the other side then shows "Waiting", and the session sends
   only ~10 packets/s to a silent partner so the browser's data-channel buffer doesn't overflow.
 
-## Verification on this branch
+## Verification on this branch (final merge with main: `07eb371`)
 
 - Godot 4.7.2 official linux x86_64, SHA-512 checked
   (`9aa00f7a…ed54c65`, matches `SHA512-SUMS.txt`); web templates SHA-512 checked
   (`ca4d71c4…ccb84079`). `rm -rf .godot`, `--headless --import`.
-- Full GUT on the merge with main (`1cb662f`): **Tests 1876, Passing 1865, Failing 0,
-  Risky/Pending 15**, Asserts 261280, 906 s (main's pending: missing bakes, renderer-only tests,
-  QA known issues). `tests/net`: 82 tests, 81 passing, 1 skipped (the optional live Appwrite test needs credentials).
-- det_check on the merge: `det_check total 65ec2f54272115fd` on two runs, equal to main. The sim gained
+- Full GUT on the final merge `07eb371`: **Tests 1894, Passing 1883, Failing 0,
+  Risky/Pending 15**, Asserts 261618, 951 s. (On the first merge `1cb662f`: 1876 / 1865 / 0 / 15.)
+  Pending are main's own (missing bakes, renderer-only tests, QA known issues). `tests/net`: 82 tests, 81 passing, 1 skipped (the optional live Appwrite test needs credentials).
+- det_check: `det_check total 65ec2f54272115fd` on two runs each on the branch, on `1cb662f` and on
+  `07eb371`, equal to main. The sim gained
   `CombatSim.respawn_fighter()` (used only by Duo rules), which no existing path calls.
-- QA quick on the merge (`tools/qa/run_qa.sh --quick`, 21 matches; report
+- QA quick on the first merge `1cb662f` (`tools/qa/run_qa.sh --quick`, 21 matches; report
   `qa_quick_1cb662f.md`): Invariant soak (sim) **PASS**, Scenario library **PASS**, Golden replays
   **PASS** (no sim drift), Invariant soak (view) FAIL with exactly main's counts (foot_ground 3/21
   matches 4 frames, camera_on_screen 2/21, pop 1/21: the same as main's `e6bf7d31` report),
@@ -127,6 +129,9 @@ Browser audit (item 5 of the task):
     timings never become the trend baseline.
   - Visual goldens NOT RUN: the QA script's python here lacked numpy/Pillow (main's own last run
     reports visual FAIL as well).
+  - Not re-run on `07eb371`: what main added since `1cb662f` is aura VFX only (`game/view/**`, its
+    own QA quick in `reports/vfx/aura-v2/`), nothing in combat, net, levels, app or menus; GUT,
+    det_check and the browser test were re-run on `07eb371`.
 
 ## Open, ranked
 
