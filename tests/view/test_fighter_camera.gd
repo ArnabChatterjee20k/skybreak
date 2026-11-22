@@ -187,7 +187,11 @@ func test_pulled_in_camera_eases_back_out() -> void:
 func test_turns_ease_in_instead_of_snapping() -> void:
 	var camera := _locked_camera()
 	var player := Vector3(0, 10, 0)
-	_settle(camera, player, Vector3(0, 10, -12), 120)
+	_settle(camera, player, Vector3(0, 10, -12), 300)
+	var settled := camera.global_basis.get_rotation_quaternion()
+	camera.follow(player, Vector3(0, 10, -12), true, 1.0 / 60.0)
+	assert_lt(settled.angle_to(camera.global_basis.get_rotation_quaternion()), FighterCamera.TURN_NOISE_FLOOR,
+		"still before the turn (angle_to's float floor is ~0.0007)")
 	var before := camera.global_basis.get_rotation_quaternion()
 	camera.follow(player, Vector3(12, 10, 0), true, 1.0 / 60.0)  # target swings 90 deg
 	var first_turn := before.angle_to(camera.global_basis.get_rotation_quaternion())
