@@ -75,6 +75,7 @@ func enter() -> void:
 		link.changed.connect(refresh)
 		link.start_requested.connect(_launch)
 		link.failed.connect(_on_link_failed)
+		link.partner_left.connect(_on_partner_left)
 	if not WebRtcTransport.is_available():
 		_set_status("WebRTC is missing in this build (desktop needs the webrtc-native GDExtension: see game/net/README.md).")
 	if link.is_connected_to_partner():
@@ -272,6 +273,14 @@ func _launch(config: Dictionary) -> void:
 		return
 	match_config.call(&"set_config", config)
 	match_config.call(&"launch")
+
+
+func _on_partner_left() -> void:
+	if not is_visible_in_tree() or _launched:
+		return
+	link.leave()
+	_show_page(Page.CHOOSE if link.client.is_signed_in() else Page.SIGN_IN)
+	_set_status("Your partner left the room. Host a new one or join theirs.")
 
 
 func _on_link_failed(message: String) -> void:

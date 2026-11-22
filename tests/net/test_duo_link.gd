@@ -134,3 +134,19 @@ func test_leaving_tells_the_partner() -> void:
 	guest.webrtc.poll()
 	assert_signal_emitted(guest, "partner_left")
 	assert_eq(host.stage, DuoLink.Stage.IDLE)
+
+
+func test_the_duo_screen_goes_back_to_host_or_join_when_the_partner_leaves() -> void:
+	var screen := DuoScreen.new()
+	screen.link = guest
+	screen.session_store = SessionStore.new("user://test_duo_link_none.cfg", "user://test_duo_link_none.key")
+	add_child_autofree(screen)
+	guest.client.user_id = "skybreak-player-2"
+	screen.enter()
+	screen.refresh()
+	assert_eq(screen.page, DuoScreen.Page.SETUP)
+	host.leave()
+	guest.webrtc.poll()
+	assert_eq(screen.page, DuoScreen.Page.CHOOSE)
+	assert_string_contains(screen.status_label.text, "left")
+	assert_eq(guest.stage, DuoLink.Stage.IDLE)
