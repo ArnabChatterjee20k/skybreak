@@ -38,7 +38,7 @@ Fixes live on `fix/issue-sweep`. Verdicts are against main 1b790d0 unless a row 
 | 93 | QA feel metrics worse (pops, foot slide) | **FIXED** (PR #95 T-D22e, PR #96, QA-21/QA-23 fixes) | Last committed QA quick (`reports/qa/2026-11-22-e6bf7d31-quick.md`, camera round 3, main minus aura v2): pops **0.036**/fighter-min (was 73.23), finger pops 0.036 (was 46.0), foot slide **0.032** cm/frame (was 1.257). |
 | 92 | test_ai_spacing FFA-4 7.05 > 7.0 | **FIXED** (PR #94 T-D33, QA-15) | GUT on main: `test_ai_spacing` 7/7 passed, FFA-4 stacked **2.27%** against a tightened 3.0% limit (1v1 1.37% < 2.0%). |
 | 109 | Weapon-hold CPU cost, 1-frame VisualQa diff | **STILL OPEN** | GUT on main (cloud CPU): MotionLayers 4 fighters unarmed **0.640 ms**, armed **2.642 ms**, ratio 4.13 (target armed <= 1.5 ms on the GTX 1650, can't be measured here). `tests/qa/test_visual_qa.gd` still carries `PLATFORM_TOLERANCE` 1 frame for weapon_vs_holder / bow_vs_head. Needs the Windows PC. |
-| 127 | Dash afterimage = giant orange capsule | **FIXED** in 677ce5c8 (merge of b70445e0, ee4b47db) | The afterimage is still a body-sized capsule shell (`VfxCatalog` `&"afterimage"`: `VfxKit.capsule()`, additive fresnel), spawned at the previous position with no near-camera guard, so a dash toward the lens fills the frame. |
+| 127 | Dash afterimage = giant orange capsule | **FIXED** in 677ce5c8 (merge of b70445e0, ee4b47db) and c8257e91 (merge of 82641645: specials trail, decoy, perfect dodge and tech ghosts) | The afterimage is still a body-sized capsule shell (`VfxCatalog` `&"afterimage"`: `VfxKit.capsule()`, additive fresnel), spawned at the previous position with no near-camera guard, so a dash toward the lens fills the frame. |
 | 78 | HUD weapon slot always UNARMED | **FIXED** (PR #88 T-127: cf7b72b, then b8336ad) | `MatchHud.weapon_label()` reads `fighter.held_weapon()` (`game/ui/match_hud.gd:541`); `tests/ui/test_match_hud.gd:177-191` asserts UNARMED / STORM BLADE / ARC REVOLVER 12 / RELOAD. Lyra's "UNARMED" after 12 arrows is the design's auto-throw (polish batch 3). |
 | 80 | Combo counter lingers | **FIXED** (cc54e86 in PR #88; restyle PR #143) | `game/ui/combo_counter.gd`: shows on a landed 2nd hit, holds 0.5 s after the last landed hit, fades 0.25 s, never counts down (a lower count only shows once the old one has gone). |
 | 77 | Hit sparks hide the contact | **FIXED** (PR #83 bece700, PR #105 ede948d) | `tests/view/vfx/test_vfx_occlusion.gd` under xvfb + gl_compatibility on main: 3/3 passed (ordinary beats wash out <= 15% of a head/torso; the K.O. <= 30% and keeps the loser visible). `test_match_vfx.gd`: a heavy counter leaves the screen untouched (only K.O.s and guard breaks get screen effects). |
@@ -137,12 +137,21 @@ are 2-3 cm and decay smoothly, so it is QA-23's borderline flip tipped over the 
 (noted under QA-23 on the board). A per-frame cap on the offset did not remove it and made overlap worse, so it
 was not kept.
 
+## Merge c8257e91 (#127 follow-up, 82641645)
+
+A per-frame Forward+ capture of Frozen Peaks FFA-4 (seed 7, t250) still showed an orange capsule around Lyra's
+air tech: the special trails, Vexa's decoy, the perfect dodge and the tech ghost spawned the capsule directly.
+They now leave pose ghosts too. Verified on 4a6805db (branch + main 02530c3d; main later added only build
+reports and a `.uid`): full GUT alone **1957 / 1949 passing / 0 failing / 12 pending** (`merge2/gut_totals.txt`),
+det_check `65ec2f54272115fd` identical to main, QA quick `reports/qa/2026-11-22-4a6805db-quick.md` with the same
+sections and counts as merge 677ce5c8 (view 1.587 ms vs main's 1.408, +12.7%).
+
 ## Closing comments for the fixed issues
 
 - **#128**: Fixed in 677ce5c8 (230129d7): FFA-4 sides beyond a zone's two spawn points now sit on a 12 m ring,
   so the closest fighters start 17 m apart in every zone (were 0.92 m, touching), and the round intro frames a
   real approach. `test_free_for_all_fighters_spawn_apart_in_every_zone` covers all 7 zones.
-- **#127**: Fixed in 677ce5c8 (b70445e0, ee4b47db): the dash afterimage is now the fighter's own silhouette, a
+- **#127**: Fixed in 677ce5c8 and c8257e91: every afterimage (dashes, dodges, vanish, techs, special trails, Vexa's decoy) is now the fighter's own silhouette, a
   faint energy-coloured copy of the pose that is gone in 0.16 s. The sonic ring is half the size and short, and
   no trail starts within 3.5 m of the camera. Before/after: `reports/issues/stills/127_after_ember_t196.jpg`.
 - **#73**: Fixed in 677ce5c8 (52a2a0c0, 3fee3b0e, ef7e728b). Pushboxes already kept the sim bodies apart, but

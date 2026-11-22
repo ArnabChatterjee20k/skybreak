@@ -1,0 +1,48 @@
+
+== a) first load caches everything
+ok   a: boot {"mode":"updated","fetched":["boot_cache.js","index.apple-touch-icon.png","index.audio.position.worklet.js","index.audio.worklet.js","index.html","index.icon.png","index.js","index.pck","index.png","index.wasm","zones/manifest.json"],"copied":0,"total":96744045,"build":"9e645967856d252c592e9c5e2b5b1eb626056f4d","ms":756}
+ok   a: pointer 9e645967856d252c592e9c5e2b5b1eb626056f4d
+ok   a: 11/11 build files cached
+ok   a: each build file downloaded once by the updater, none by the engine (yes)
+ok   a: zone pack cached on demand: zones/shattered_mesa_web.4cc3be8e5f7b.pck
+ok   a: 0 console errors 
+PASS a) first load caches everything
+
+== b) offline (server stopped) boots from cache and reaches a match
+ok   b: boot {"mode":"cached","build":"9e645967856d252c592e9c5e2b5b1eb626056f4d","why":"no version.json in 3 s","ms":41}
+ok   b: 0 console errors 
+PASS b) offline (server stopped) boots from cache and reaches a match
+
+== c) version.json delayed 6 s boots the cached build at ~3 s
+ok   c: boot {"mode":"cached","build":"9e645967856d252c592e9c5e2b5b1eb626056f4d","why":"no version.json in 3 s","ms":3016}
+ok   c: decided at 3016 ms, start button at 3569 ms
+ok   c: 0 build downloads
+ok   c: 0 console errors 
+PASS c) version.json delayed 6 s boots the cached build at ~3 s
+
+== d) new build with one changed file: only that file is downloaded
+ok   d: boots [{"mode":"reload","fetched":["index.html"],"copied":10,"total":6864,"build":"B","ms":162},{"mode":"cached","build":"B","ms":14}]
+ok   d: downloaded: index.html (6864 B)
+ok   d: page marker B
+ok   d: pointer B, caches skybreak-B
+ok   d: zone pack carried over
+ok   d: 0 console errors 
+PASS d) new build with one changed file: only that file is downloaded
+
+== e) update interrupted halfway: the old build still boots
+ok   e1: boot {"mode":"cached","build":"B","why":"update failed: network error","ms":206}
+ok   e1: pointer still B
+ok   e1: 0 console errors 
+ok   e2: browser closed after half of index.pck arrived
+ok   e2: boot {"mode":"cached","build":"B","why":"no version.json in 3 s","ms":43}
+ok   e2: pointer B, caches skybreak-B, skybreak-C
+ok   e2: engine started, 0 console errors 
+PASS e) update interrupted halfway: the old build still boots
+
+== f) storage quota too small: plain network load
+ok   f: boot {"mode":"network","why":"not enough storage for 96744045 bytes","estimate":{"usage":3030,"quota":10737421270},"ms":501}
+ok   f: caches {}
+ok   f: 0 console errors 
+PASS f) storage quota too small: plain network load
+
+6/6 cache scenarios passed

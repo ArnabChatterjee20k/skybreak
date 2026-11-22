@@ -52,3 +52,18 @@ func test_a_ghost_freezes_the_pose_it_was_given() -> void:
 	assert_eq(skeleton.get_bone_pose(1).origin, Vector3(0, 1.6, 0))
 	assert_eq(ghost.global_position, Vector3(5, 0, 0))
 	assert_lte(PoseGhost.START_ALPHA, 0.45, "mostly see-through")
+
+
+func test_a_ghost_left_elsewhere_keeps_the_pose_and_moves_there() -> void:
+	# Vexa's afterimage decoy and the special trails also drew capsules (#127).
+	var zone_match := _match()
+	await get_tree().process_frame
+	var vfx := zone_match.combat_feedback.vfx
+	var fighter := zone_match.sim.fighters[1]
+	var decoy := fighter.position + Vector3(3, 0, 0)
+	var none: Array[Dictionary] = []
+	vfx.react(none)
+	assert_true(vfx.pose_ghost(1, Color.VIOLET, decoy))
+	var ghost := vfx.find_children("*", "PoseGhost", true, false)[0] as PoseGhost
+	var skeleton := BodySeparation._skeleton_of(zone_match.fighter_views[1])
+	assert_almost_eq(ghost.global_position.distance_to(skeleton.global_position + Vector3(3, 0, 0)), 0.0, 0.001)

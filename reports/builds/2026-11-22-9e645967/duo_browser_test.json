@@ -1,0 +1,62 @@
+{
+  "verdict": "PASS",
+  "problems": [],
+  "wall_seconds": 496,
+  "match_sim_seconds": 185,
+  "common_state_hashes": 369,
+  "mismatched_hashes": 0,
+  "net": {
+    "net_lag": 45,
+    "net_jitter": 20,
+    "net_loss": 0.02
+  },
+  "burst": {
+    "burst_frame": 4200,
+    "burst_ms": 140
+  },
+  "appwrite_mock": {
+    "latency_ms": 120,
+    "requests": 90,
+    "byRoute": {
+      "POST /v1/account/sessions/email": 2,
+      "GET /v1/account": 2,
+      "POST /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows": 1,
+      "GET /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows/:id": 49,
+      "PATCH /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows/:id": 2,
+      "POST /v1/tablesdb/skybreak/tables/skybreak_signals/rows": 4,
+      "GET /v1/tablesdb/skybreak/tables/skybreak_signals/rows": 4,
+      "DELETE /v1/tablesdb/skybreak/tables/skybreak_signals/rows/:id": 4
+    },
+    "errors": {},
+    "refusedOrigins": 0,
+    "permissionRefusals": 0
+  },
+  "host": {
+    "frames": 11092,
+    "winning_team": 0,
+    "timed_out": false,
+    "rollbacks": 3561,
+    "max_rollback_depth": 8,
+    "hashes_compared_in_band": 369,
+    "stalls": 2844,
+    "sync_skips": 211,
+    "rtt_ms_median": 135,
+    "fps_median": 58,
+    "console_errors": 0,
+    "godot_warnings": []
+  },
+  "guest": {
+    "frames": 11092,
+    "winning_team": 0,
+    "timed_out": false,
+    "rollbacks": 3890,
+    "max_rollback_depth": 8,
+    "hashes_compared_in_band": 369,
+    "stalls": 2362,
+    "sync_skips": 208,
+    "rtt_ms_median": 136,
+    "fps_median": 52,
+    "console_errors": 0,
+    "godot_warnings": []
+  }
+}
