@@ -107,6 +107,12 @@ extends Resource
 ## Push-block can start from blockstun from this blockstun tick on.
 @export var push_block_from_blockstun_tick: int = 4
 
+@export_group("Escapes (#150)")
+## A blocked string light leaves this many free ticks before the next light turns active.
+@export var string_block_gap_ticks: int = 4
+## A light link or heavy cancel turns at most this far toward the target (degrees).
+@export var follow_up_turn_degrees: float = 15.0
+
 @export_group("Pushback")
 ## A landed strike slides its target this far away from the attacker (m).
 @export var hit_pushback_distance: float = 0.25

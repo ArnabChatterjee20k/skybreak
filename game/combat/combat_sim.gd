@@ -575,7 +575,7 @@ func _step_fighter(index: int, input: FighterInput) -> void:
 		FighterState.State.HITSTUN:
 			_move_in_hitstun(fighter)
 		FighterState.State.BLOCKING:
-			_move_blocking(fighter, wish)
+			_move_blocking(fighter, wish, input.vertical)
 		FighterState.State.GRABBED:
 			fighter.velocity = Vector3.ZERO
 			fighter.position = _hold_position(fighters[fighter.grab_partner])
@@ -628,10 +628,17 @@ func _record_presses(fighter: FighterState, input: FighterInput, age: bool = tru
 		if (input.pressed_actions & bit) != 0:
 			fighter.press_ages[index] = 0
 			fighter.consumed_presses &= ~bit
-		elif age and fighter.press_ages[index] < INPUT_BUFFER_TICKS:
+		elif age and fighter.press_ages[index] < INPUT_BUFFER_TICKS \
+				and not (bit == _DASH and _holds_escape_press(fighter)):
 			fighter.press_ages[index] += 1
 			if fighter.press_ages[index] == INPUT_BUFFER_TICKS:
 				fighter.consumed_presses &= ~bit
+
+
+## A dash pressed in blockstun or hitstun waits there: it comes out as the air tech when
+## that opens, else as a dodge on the first free tick (#150).
+func _holds_escape_press(fighter: FighterState) -> bool:
+	return fighter.state == FighterState.State.BLOCKSTUN or fighter.state == FighterState.State.HITSTUN
 
 
 func _update_lock_on(index: int, input: FighterInput) -> void:
@@ -665,7 +672,7 @@ func _finish_timed_action(index: int, input: FighterInput) -> void:
 				_enter_free_state(fighter)
 			return
 		FighterState.State.BLOCKING:
-			if not input.is_held(_BLOCK):
+			if not input.is_held(_BLOCK) or _jumps_out_of_guard(fighter, input):
 				_enter_free_state(fighter)
 			return
 		FighterState.State.GRABBED:
@@ -738,8 +745,13 @@ func _start_buffered_action(index: int, input: FighterInput, wish: Vector3) -> v
 ## Holding block raises the guard; a hit lands on it this same tick.
 func _start_block(index: int, input: FighterInput) -> void:
 	var fighter := fighters[index]
-	if fighter.state in _BLOCK_START_STATES and input.is_held(_BLOCK):
+	if fighter.state in _BLOCK_START_STATES and input.is_held(_BLOCK) and not _jumps_out_of_guard(fighter, input):
 		fighter.enter_state(FighterState.State.BLOCKING)
+
+
+## Ascend on the floor jumps even with block held: the guard drops and comes back up in the air (#150).
+func _jumps_out_of_guard(fighter: FighterState, input: FighterInput) -> bool:
+	return input.vertical > 0 and _is_on_floor(fighter)
 
 
 ## A buffered GRAB press starts the grab from a free state.
@@ -844,7 +856,7 @@ func _begin_light(index: int, number: int) -> bool:
 	if not _spend_ki(fighter, lights[number - 1].ki_cost):
 		return false
 	consume_buffered(index, _LIGHT)
-	_update_facing(index)
+	_face_for_attack(index)
 	_aim_at_target(index)
 	fighter.begin_move(lights[number - 1])
 	fighter.string_index = number
@@ -880,7 +892,7 @@ func _begin_heavy(index: int, input: FighterInput, wish: Vector3) -> void:
 	if move == null or not _spend_ki(fighter, move.ki_cost):
 		return
 	consume_buffered(index, _HEAVY)
-	_update_facing(index)
+	_face_for_attack(index)
 	_aim_at_target(index)
 	var right := _attack_forward(index).cross(Vector3.UP)
 	fighter.aim_side = -1 if wish.dot(right) < 0.0 else 1
@@ -905,6 +917,19 @@ func _heavy_for(index: int, input: FighterInput, wish: Vector3) -> MoveData:
 	if along <= -_HEAVY_CONE:
 		return moves.launcher
 	return moves.sweep
+
+
+## A fresh attack faces the target; a link or cancel out of an attack turns at most
+## hit_tuning.follow_up_turn_degrees toward it, so a sidestep leaves the string behind (#150).
+func _face_for_attack(index: int) -> void:
+	var fighter := fighters[index]
+	var before := fighter.facing_yaw
+	_update_facing(index)
+	if fighter.state != FighterState.State.ATTACKING:
+		return
+	var most := deg_to_rad(hit_tuning.follow_up_turn_degrees)
+	var turn := DetMath.angle_difference(before, fighter.facing_yaw)
+	fighter.facing_yaw = DetMath.wrap_angle(before + clampf(turn, -most, most))
 
 
 ## Planar unit direction toward the lock-on target, or the facing when unlocked.
@@ -1020,7 +1045,8 @@ func _start_vanish(index: int, input: FighterInput, wish: Vector3) -> void:
 	if target < 0 and direction == Vector3.ZERO:
 		direction = -DetMath.forward(fighter.facing_yaw)
 	var step := direction * tuning.vanish_step_distance
-	if not _move_around_target(index, step):
+	# The whole step goes round the target: the strafe's orbit cap is for walking, not teleports (#150).
+	if not _move_around_target(index, step, PI):
 		fighter.position += step
 	_clamp_to_arena(fighter)
 	fighter.velocity = Vector3.ZERO
@@ -1142,10 +1168,10 @@ func _ease_out_vertical(vertical: float) -> float:
 	return move_toward(vertical, 0.0, slowdown)
 
 
-## Guard drift: slow planar movement, no climbing, hovering in the air.
-func _move_blocking(fighter: FighterState, wish: Vector3) -> void:
+## Guard drift: slow movement; in the air it also climbs or sinks at that speed (#150), else hovers.
+func _move_blocking(fighter: FighterState, wish: Vector3, vertical: int) -> void:
 	var rate := tuning.ground_deceleration * TICK_SECONDS
-	var target := Vector3(wish.x, 0.0, wish.z) * tuning.guard_drift_speed
+	var target := (Vector3(wish.x, 0.0, wish.z) + Vector3.UP * vertical).limit_length(1.0) * tuning.guard_drift_speed
 	fighter.velocity = fighter.velocity.move_toward(target, rate)
 	if _is_on_floor(fighter):
 		fighter.velocity.y = 0.0
@@ -1426,6 +1452,9 @@ func _find_contact(attacker_index: int, target_index: int, shapes: Array[Diction
 			continue
 		var centre: Vector3 = (shape.start + shape.end) * 0.5
 		if DodgeRules.evades(self, target, attacker.move):
+			# A dodged light ends the string: the next link would only hit the dodge's recovery (#150).
+			attacker.string_queued = false
+			attacker.string_dropped = true
 			return DodgeRules.evaded_contact(self, attacker_index, target_index, points[1])
 		if target.is_invincible_to(target.is_upper_body(centre)):
 			return {}
@@ -1554,13 +1583,26 @@ func _apply_block(contact: Dictionary, from_projectile: bool = false) -> void:
 	if broken:
 		hitstop = maxi(hitstop, hit_tuning.guard_break_hitstop_ticks)
 	else:
-		_enter_stun(target, FighterState.State.BLOCKSTUN, move.blockstun_ticks)
+		_enter_stun(target, FighterState.State.BLOCKSTUN,
+			move.blockstun_ticks if from_projectile else _blockstun_for(attacker_index, move))
 		if not from_projectile:
 			_start_pushback(target_index, attacker_index, hit_tuning.block_pushback_distance)
 	_freeze(target if from_projectile else fighters[attacker_index], target, hitstop)
 	events.append(_event(EventType.BLOCK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
 	if broken:
 		events.append(_event(EventType.GUARD_BREAK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
+
+
+## A blocked light that the string can follow ends its blockstun string_block_gap_ticks
+## before the next light turns active: a gap to dodge, back off or vanish in (#150).
+func _blockstun_for(attacker_index: int, move: MoveData) -> int:
+	var attacker := fighters[attacker_index]
+	var lights := _move_set(attacker).light_string
+	var number := attacker.string_index
+	if number <= 0 or number >= lights.size() or lights[number - 1] != move:
+		return move.blockstun_ticks
+	var until_next := move.active_ticks + lights[number].startup_ticks
+	return clampi(until_next - hit_tuning.string_block_gap_ticks, 1, move.blockstun_ticks)
 
 
 ## No guard damage or stun; the attacker's move gets extra recovery and its string ends.
@@ -1962,8 +2004,9 @@ func _integrate(index: int) -> void:
 ## planar distance, its sideways part travels along the circle around the
 ## target, and height adds as usual. Velocity and dash direction turn with the
 ## frame, so a strafe stays a strafe. False, moving nothing, when unlocked or
-## the move would come within _MIN_ORBIT_RADIUS of the target.
-func _move_around_target(index: int, step: Vector3) -> bool:
+## the move would come within _MIN_ORBIT_RADIUS of the target. max_turn (radians, 0 = the
+## strafe cap) bounds how far round the target one step can go.
+func _move_around_target(index: int, step: Vector3, max_turn: float = 0.0) -> bool:
 	var fighter := fighters[index]
 	var to_target := _planar_to_target(index)
 	if to_target == Vector3.ZERO:
@@ -1973,7 +2016,8 @@ func _move_around_target(index: int, step: Vector3) -> bool:
 	var new_radius := radius + step.dot(out)
 	if new_radius < _MIN_ORBIT_RADIUS:
 		return false
-	var max_turn := deg_to_rad(tuning.max_orbit_turn_speed) * TICK_SECONDS
+	if max_turn <= 0.0:
+		max_turn = deg_to_rad(tuning.max_orbit_turn_speed) * TICK_SECONDS
 	var turn := DetMath.axis_angle(Vector3.UP, clampf(step.dot(Vector3.UP.cross(out)) / radius, -max_turn, max_turn))
 	var centre := fighters[fighter.lock_on_target].position
 	var planar := turn * out * new_radius
