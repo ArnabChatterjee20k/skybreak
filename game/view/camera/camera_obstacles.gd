@@ -11,6 +11,11 @@ const CELL := 10.0
 ## Props smaller than this are clutter (grass, petals) and don't block.
 const MIN_HEIGHT := 1.0
 const MIN_WIDTH := 0.8
+## Wider voxel meshes (m) are terrain chunks or backdrop, left to ground_height.
+const VOXEL_MAX_WIDTH := 25.0
+## Taller voxel props (m), trees and spires, are mostly air inside their box: as
+## boxes they push the camera off good framing for nothing, so they're left out.
+const VOXEL_MAX_HEIGHT := 6.0
 ## Keep the camera this far from a prop box and above the ground (m).
 const CLEARANCE := 0.4
 ## Terrain samples along a pivot-to-camera segment.
@@ -38,7 +43,39 @@ static func from_zone_match(zone_match: Node) -> CameraObstacles:
 	var reach: float = zone_match.sim.tuning.arena_half_size + 40.0
 	for group in props.get_children():
 		obstacles.add_props(group, centre, reach)
+	# Voxel art: the classic props are hidden, the voxel zone's own props are what's seen.
+	var voxel: VoxelZoneView = zone_match.get("voxel_zone")
+	if voxel != null and voxel.zone != null:
+		obstacles.add_voxel_props(voxel.zone, centre, reach)
 	return obstacles
+
+
+## Adds one box per low solid voxel prop copy (and per small solid mesh) of a
+## voxel zone: ferns, boulders, crates. Terrain chunks and backdrop slabs wider than
+## VOXEL_MAX_WIDTH are the ground's (ground_height); see VOXEL_MAX_HEIGHT.
+func add_voxel_props(zone: Node, centre: Vector2, reach: float) -> void:
+	for node in zone.find_children("*", "GeometryInstance3D", true, false):
+		if node is MultiMeshInstance3D:
+			var mmi := node as MultiMeshInstance3D
+			var mm := mmi.multimesh
+			if mm == null or mm.mesh == null or not FlightClearance._solid(mmi, mm.mesh):
+				continue
+			var mesh_box := mm.mesh.get_aabb()
+			if mmi.has_meta(PropKit.INSTANCE_TRANSFORMS_META):
+				for xform: Transform3D in mmi.get_meta(PropKit.INSTANCE_TRANSFORMS_META):
+					_add_voxel_box(mmi.global_transform * xform * mesh_box, centre, reach)
+			else:
+				for i in mm.instance_count:
+					_add_voxel_box(mmi.global_transform * mm.get_instance_transform(i) * mesh_box, centre, reach)
+		elif node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
+			var mi := node as MeshInstance3D
+			if FlightClearance._solid(mi, mi.mesh):
+				_add_voxel_box(mi.global_transform * mi.mesh.get_aabb(), centre, reach)
+
+
+func _add_voxel_box(box: AABB, centre: Vector2, reach: float) -> void:
+	if maxf(box.size.x, box.size.z) <= VOXEL_MAX_WIDTH and box.size.y <= VOXEL_MAX_HEIGHT:
+		_add_box(box, centre, reach)
 
 
 ## Adds one box per prop instance under root within reach of centre (planar).
