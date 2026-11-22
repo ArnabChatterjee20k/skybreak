@@ -304,12 +304,18 @@ func _update_camera_bodies() -> void:
 	if camera.obstacles == null:
 		return
 	var centres := PackedVector3Array()
-	for i in fighter_views.size():
-		if i != player and fighter_views[i].visible and sim.fighters[i].state != FighterState.State.VANISHING:
-			centres.append(fighter_views[i].position)
 	var stats := CombatSim.DEFAULT_FIGHTER_STATS as FighterStats
 	var width := stats.pushbox_radius * 2.0
-	camera.obstacles.set_bodies(centres, Vector3(width, stats.pushbox_height, width))
+	var size := Vector3(width, stats.pushbox_height, width)
+	var target := sim.fighters[player].lock_on_target
+	camera.obstacles.target_body = AABB()
+	for i in fighter_views.size():
+		if i != player and fighter_views[i].visible and sim.fighters[i].state != FighterState.State.VANISHING:
+			if i == target:
+				camera.obstacles.set_target_body(fighter_views[i].position, size)
+			else:
+				centres.append(fighter_views[i].position)
+	camera.obstacles.set_bodies(centres, size)
 
 
 ## Draws one frame: fighters between the last two ticks, then the camera.
@@ -334,6 +340,9 @@ func present_frame(blend: float, delta: float) -> void:
 	var target := _camera_target if locked else (1 if player == 0 and fighter_views.size() > 1 else 0)
 	var opponent := fighter_views[target].position
 	_update_camera_bodies()
+	# Side-on exchange angle for melee exchanges and beam clashes (hybrid cam).
+	var exchange := ExchangeCam.participants(sim, player)
+	camera.set_exchange(PackedVector3Array([fighter_views[exchange[0]].position, fighter_views[exchange[1]].position]) 		if exchange.size() == 2 else PackedVector3Array())
 	camera.follow(fighter_views[player].position, opponent, locked, delta)
 	for view in fighter_views:
 		view.fade_for_camera(camera.global_position)

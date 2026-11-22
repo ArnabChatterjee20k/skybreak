@@ -23,9 +23,9 @@ const FAR_RANGE := 40.0
 const CLOSE_SIDE_ANGLE := deg_to_rad(25.0)
 ## Boom lengths keep the camera about 6-6.5 m from the player, so the 2 m tall fighter
 ## stays at least ~15% of screen height even with the FOV fully widened.
-const CLOSE_BOOM_LENGTH := 4.5
+const CLOSE_BOOM_LENGTH := 4.0
 const FAR_BOOM_LENGTH := 6.5
-const CLOSE_HEIGHT := 1.8
+const CLOSE_HEIGHT := 1.2
 const FAR_HEIGHT := 0.7
 const SHOULDER_OFFSET := 0.9
 ## Mouse orbit limits while locked on.
@@ -44,7 +44,7 @@ const ELEVATION_FOLLOW := 0.7
 const MAX_VIEW_PITCH_DOWN := deg_to_rad(35.0)
 const MAX_VIEW_PITCH_UP := deg_to_rad(25.0)
 ## Most the FOV widens (degrees) for big height gaps.
-const MAX_FOV_BOOST := 10.0
+const MAX_FOV_BOOST := 17.0
 ## Height of a fighter, for on-screen size targets (m).
 const FIGHTER_HEIGHT := 2.0
 const FIGHTER_RADIUS := 0.5
@@ -306,3 +306,52 @@ static func _looking_at(position: Vector3, look_at_point: Vector3) -> Transform3
 		return Transform3D(Basis.IDENTITY, position)
 	var up := Vector3.UP if absf(direction.normalized().dot(Vector3.UP)) < 0.99 else Vector3.BACK
 	return Transform3D(Basis.looking_at(direction, up), position)
+
+
+
+## Exchange cam (hybrid): side-on to the fighters' line, both bodies about
+## EXCHANGE_HEIGHT of the screen, or the pair fitting EXCHANGE_FILL of the width
+## (beam clashes), centred on their midpoint. axis is the horizontal side the
+## camera sits on (kept by the caller so it never flips across the line).
+const EXCHANGE_HEIGHT := 0.38
+const EXCHANGE_FILL := 0.8
+const EXCHANGE_LIFT := 0.7
+
+
+static func exchange_pose(a: Vector3, b: Vector3, axis: Vector3, vertical_fov: float) -> Transform3D:
+	var distance := exchange_distance(a, b, vertical_fov)
+	return exchange_pose_at(a, b, axis, distance)
+
+
+## Side-on pose at a given distance from the pair's midpoint.
+static func exchange_pose_at(a: Vector3, b: Vector3, axis: Vector3, distance: float) -> Transform3D:
+	var mid := a.lerp(b, 0.5)
+	var position := mid + axis.normalized() * distance + Vector3.UP * EXCHANGE_LIFT
+	return _looking_at(position, mid + Vector3.UP * 0.2)
+
+
+## Distance from the midpoint that frames the pair side-on with vertical_fov.
+static func exchange_distance(a: Vector3, b: Vector3, vertical_fov: float) -> float:
+	var tan_v := tan(deg_to_rad(vertical_fov) / 2.0)
+	var tan_h := tan_v * ASPECT
+	var gap := Vector2(b.x - a.x, b.z - a.z).length()
+	var for_height := (FIGHTER_HEIGHT + absf(b.y - a.y)) / (2.0 * EXCHANGE_HEIGHT * tan_v)
+	var for_width := (gap + FIGHTER_RADIUS * 4.0) / (2.0 * tan_h * EXCHANGE_FILL)
+	return maxf(for_height, for_width)
+
+
+## The vertical FOV that frames the pair side-on from distance (inverse of
+## exchange_distance), for when obstacles keep the camera closer.
+static func exchange_fov_at(a: Vector3, b: Vector3, distance: float) -> float:
+	var gap := Vector2(b.x - a.x, b.z - a.z).length()
+	var tan_for_height := (FIGHTER_HEIGHT + absf(b.y - a.y)) / (2.0 * EXCHANGE_HEIGHT * distance)
+	var tan_for_width := (gap + FIGHTER_RADIUS * 4.0) / (2.0 * ASPECT * EXCHANGE_FILL * distance)
+	return rad_to_deg(2.0 * atan(maxf(tan_for_height, tan_for_width)))
+
+
+## The side axis perpendicular to a->b that keeps a on the screen's left.
+static func exchange_axis(a: Vector3, b: Vector3) -> Vector3:
+	var d := Vector3(b.x - a.x, 0.0, b.z - a.z)
+	if d.length() < 0.01:
+		return Vector3.BACK
+	return d.normalized().cross(Vector3.UP).normalized()
