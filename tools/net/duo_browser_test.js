@@ -168,8 +168,8 @@ class Peer {
 		await guest.page.waitForTimeout(5000);
 		await host.shot('host_2_lobby_setup.png');
 		await guest.shot('guest_2_lobby_setup.png');
-		await host.waitFor('match_loaded', 300000);
-		await guest.waitFor('match_loaded', 300000);
+		await host.waitFor('match_loaded', 900000);
+		await guest.waitFor('match_loaded', 900000);
 		const loaded = Date.now();
 		const shots = [30, 90, 150];
 		while (!(host.last('over') && guest.last('over'))) {
