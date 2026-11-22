@@ -33,6 +33,7 @@ func _run() -> void:
 		var cfg := {"zone": zone, "seed": 3 + i, "fighters": [
 			{"character": pair[0], "is_ai": true, "ai_level": 4},
 			{"character": pair[1], "is_ai": true, "ai_level": 4}]}
+		cfg["quality"] = GraphicsSettings.Quality.LOW
 		if args.has("--classic"):
 			cfg["voxel_zone"] = false
 		level.configure(cfg)
