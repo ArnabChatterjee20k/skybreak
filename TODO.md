@@ -96,7 +96,16 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   (`SpecialKit` .tres per legend, `SpecialRules`, small `combat_sim.gd` hooks), keys 1/2/3 with
   rise/dive variants, ki costs, Special level of the cancel hierarchy, counter/rush/leap/blink/decoy
   effects, AI hooks per level (`game/ai/ai_specials.gd`), Kael Momentum (HUD pips), Vexa Afterimage.
-  Salvaged from #132: controls audit, web keyboard lock, §3 table. Follow-ups:
+  Salvaged from #132: controls audit, web keyboard lock, §3 table. Merged with main 364f4b8 (voxel
+  art): every special plays its take on voxel Kael/Vexa, `SpecialHandGlow` lights both voxel hand
+  bones (lit, black albedo, emission x 0.27) while a special runs. Follow-ups:
+  - SP1-7 [desktop] Hand glow reads only up close (7.5 cm orb; a few px at 15 m in the versus capture):
+    owner look review on a real GPU, maybe a bigger orb or a short trail.
+  - QA-23 [desktop] QA quick 6ea2e918: one pop, Vexa RightHand 1.205 rad (limit 1.2) in HITSTUN on
+    hit_light with the repeater, ember_rift seed 112 t1690; feel trend flags finger pops 1 -> 2 events
+    in 46.7 fighter-minutes. Not a special clip. Repro:
+    `tools/qa/run_qa.sh --repro '112:ember_rift:1v1:kael,vexa:45' --tick 1690 --fighter 1`.
+  - SP1-8 [developer] `ZoneMatch` ignores the config's `rounds` (versus_soak chains matches instead).
   - SP1-1 [desktop] Brann and Lyra kits (they keep the T-KI1 beam on `1` until then).
   - SP1-2 [desktop] Ultimates (`SpecialKit.ultimate`, 2 burst) and transformations (`T`, 1 burst,
     `FighterSpecials.transform_ticks`) on the hooks this lane put in place.
