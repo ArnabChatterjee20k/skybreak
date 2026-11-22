@@ -214,6 +214,11 @@ more lateral movement in general is the likely cause, and it lands on the open d
   earlier 2-job branch run (`b1f01aca`, before issue-sweep's BodySeparation); against main's
   same-content run it is +1.7 %.
 - **Repro**: `tests/combat/test_move_escape.gd` passes (112/112 required, both attackers, 4 legends).
+- **Main moved once more** (`6b618350`: issue-sweep's pose-ghost VFX follow-up, view-only, with its own
+  GUT/QA evidence). Re-merged as `03ccaaf4` and re-checked there: det_check `b8bab850a4256dc7` x2,
+  `tests/view` 190 tests / 188 passing / 0 failing / 2 pending, golden replays 11/11, the repro test
+  11/11. The full suite was not run a third time; the 0-failing full run is on `026b97f7`, which
+  differs from `03ccaaf4` only by that VFX follow-up and reports.
 
 ## How it feels now (honest critique)
 
