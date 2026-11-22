@@ -1,13 +1,15 @@
-// Additive energy aura shell: rising flame tongues at the silhouette, clear where it faces the camera.
+// Inner aura shell hugging the body: hot fresnel tongues at the silhouette, clear where it faces the camera.
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_back, shadows_disabled, fog_disabled;
 
 #include "res://game/view/shaders/vfx_noise.gdshaderinc"
 
-// Per fighter, set on the shell's MeshInstance3D so all fighters share one material.
-instance uniform vec4 color : source_color = vec4(1.0, 0.62, 0.22, 1.0);
+// Per fighter: each FighterAura owns a copy of this material (GLES3 caps instance uniforms).
+uniform vec4 color : source_color = vec4(1.0, 0.62, 0.22, 1.0);
 // 0 off, 1 charging ki, 2 transformed, 3 ultimate; values in between blend.
-instance uniform float power_level : hint_range(0.0, 3.0) = 0.0;
+uniform float power_level : hint_range(0.0, 3.0) = 0.0;
+// HDR ceiling, so bloom never turns the shell into a white blob.
+uniform float max_hdr : hint_range(0.5, 4.0) = 1.2;
 
 uniform float intensity : hint_range(0.0, 8.0) = 1.0;
 uniform float flame_speed : hint_range(0.0, 8.0) = 1.6;
@@ -31,7 +33,7 @@ uniform float root_glow : hint_range(0.0, 4.0) = 0.7;
 // Faces turned toward the camera more than this (0 edge-on, 1 head-on) show no glow.
 uniform float center_clear : hint_range(0.0, 1.0) = 0.55;
 // Thin continuous line along the silhouette under the tongues.
-uniform float rim_base : hint_range(0.0, 1.0) = 0.1;
+uniform float rim_base : hint_range(0.0, 1.0) = 0.0;
 // Shell height in metres, before grow; maps the feet to 0 and the head to 1 for the erosion.
 uniform float body_height : hint_range(0.5, 4.0) = 1.85;
 
@@ -82,5 +84,5 @@ void fragment() {
 	float white = clamp(tongues * side * (0.25 * root + 0.5 * rim) * (0.3 + 0.5 * high), 0.0, 1.0);
 	vec3 hot = mix(color.rgb, vec3(1.0), white);
 	// Never negative: an additive layer must only ever brighten what is behind it.
-	ALBEDO = max(hot * amount * intensity, vec3(0.0));
+	ALBEDO = max(min(hot * amount * intensity, vec3(max_hdr)), vec3(0.0));
 }

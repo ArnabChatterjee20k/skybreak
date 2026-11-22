@@ -22,6 +22,7 @@ var _previous: Dictionary = {} # projectile id -> position last tick
 var _beams: Dictionary = {} # beam id -> Array[KiBeamEffect] (main, side rays)
 var _tells: Dictionary = {} # fighter index -> KiBeamEffect charging before its beam fires
 var _charge_orbs: Dictionary = {} # fighter index -> KiBlastEffect held at the hands
+var _gathers: Array[KiGather] = [] # per fighter: ki streaks pulled into the hands while charging
 var _prompt: BeamClashPrompt
 
 
@@ -42,6 +43,7 @@ func react(events: Array[Dictionary]) -> void:
 	_sync_shots()
 	_sync_charge_orbs()
 	_sync_beams()
+	_sync_gathers()
 	_prompt.show_clash(sim, _local_clash())
 
 
@@ -154,6 +156,32 @@ func _sync_charge_orbs() -> void:
 		var progress := float(fighter.move_tick) / kit.charged.startup_ticks
 		orb.hold_flight(lerpf(CHARGE_START_SCALE, CHARGE_END_SCALE, progress))
 		orb.global_position = sim._muzzle(fighter)
+
+
+## Ki streaks converge into the hands while a charged blast or a beam charges.
+func _sync_gathers() -> void:
+	while _gathers.size() < sim.fighters.size():
+		var made := KiGather.new()
+		add_child(made)
+		_gathers.append(made)
+	var quality := vfx.particle_quality if vfx != null else 1.0
+	for index in sim.fighters.size():
+		var fighter := sim.fighters[index]
+		var share := 0.0
+		if _charge_orbs.has(index):
+			var kit := KiRules.kit_of(fighter)
+			share = 0.5 + 0.5 * float(fighter.move_tick) / maxi(kit.charged.startup_ticks, 1)
+		elif _tells.has(index):
+			share = 1.0
+		if share > 0.0:
+			_gathers[index].gather(sim._muzzle(fighter), color_of(index), share * quality)
+		else:
+			_gathers[index].stop()
+
+
+## Gather streaks per fighter, for tests.
+func gathers() -> Array[KiGather]:
+	return _gathers
 
 
 ## Beam effects follow the sim beams: origin, head, thickness, side rays, clash flare.
