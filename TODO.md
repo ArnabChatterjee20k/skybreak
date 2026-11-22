@@ -408,6 +408,18 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   with the highest floor within the clearance radius. Seed-7 fight both-on: shattered 99.4%,
   stormfall 100%, frozen 97.5%, verdant 98.8%, others 100%; 0 clip frames; every pinned-wall case 100%.
   SP1-5 framing addressed by this (QA on-screen share 0.9816 vs 0.9784).
+- WEB-CACHE [desktop] The browser keeps the web build in Cache Storage (`web/cache-sw`, evidence in
+  `reports/web/cache/README.md`): `tools/web/sw.js` serves the cached build, `boot_cache.js` (loaded
+  by the shell before the engine) checks `version.json` with a 3 s timeout and downloads only files
+  whose SHA-256 changed into a new cache, then swaps with one pointer write; timeout/offline boots
+  the cache, too little storage loads from the network. Zone packs are cached on demand.
+  `build_web.sh` writes `version.json` (`write_version.sh`). Test: `tools/web/cache_test.js`
+  (6 scenarios). Open:
+  - WEB-CACHE-1 [desktop] On-demand zone packs are stored twice (the worker's cache and the game's
+    user:// copy in IndexedDB, ~15-57 MB each); drop one once the cache is on the live site.
+  - WEB-CACHE-2 [owner, Mac] Appwrite's CDN headers for `version.json` are unverified on the live
+    site; the page asks with `cache: no-store` and a `?t=` query, so a CDN that ignores both could
+    delay an update by its cache time.
 - T-SP1 [desktop] MERGED into `main` at 746036c1 (PR #141, `--no-ff`; evidence in
   `reports/gameplay/resume.md`). Specials framework + Kael and Vexa kits (`claude/T-SP1-specials`): `game/combat/specials/`
   (`SpecialKit` .tres per legend, `SpecialRules`, small `combat_sim.gd` hooks), keys 1/2/3 with
