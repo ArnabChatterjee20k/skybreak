@@ -77,7 +77,7 @@ jobs:
           URL=https://skybreak-web-6a113777000db893b12e.appwrite.network
           want=$(cat "$RUNNER_TEMP/pck_size")
           for i in $(seq 1 20); do
-            got=$(curl -sI "$URL/index.pck" | tr -d '\r' | awk 'tolower($1)=="content-length:"{print $2}')
+            got=$(curl -s -H 'Accept-Encoding: identity' -o /dev/null -w '%{size_download}' "$URL/index.pck")
             echo "index.pck live=$got want=$want"
             [ "$got" = "$want" ] && break
             sleep 15
