@@ -66,9 +66,17 @@ Branch `feature/pure-fight`. Evidence: see "Verification" at the end.
     advantage;
   - a pause-menu "Move list" with every legend's moves and frame data;
   - results through the existing MatchSession.
-- **Online** (`game/net/pure_fight_net.gd`): the Duo rollback core runs Pure Fight as is. In a
-  loopback test with 120 ms RTT, ±20 ms jitter and 5% loss over 2400 ticks there were no desyncs,
-  and rollbacks happened. The lobby entry waits for the DUO-ONLINE lane (see Open).
+- **Online 1v1 through the Duo lobby** (merged in once `net/duo-online` reached main):
+  - Multiplayer > Duo, sign in, Host/Join, then the host steps **Game** to Pure Fight 1v1. Both pick
+    legends, the host picks the zone, then Ready and Start.
+  - DuoLink carries the choice and hands both peers one `pure_fight_online` config.
+  - `PureFightMatch` runs `RollbackSession` over the open link, waits for the partner to load, and
+    falls back to the AI if the partner leaves.
+  - Tests: a loopback session with 120 ms RTT, ±20 ms jitter and 5% loss over 2400 ticks (no
+    desyncs, rollbacks forced); the lobby protocol (the choice reaches the guest, identical start
+    configs); a real `PureFightMatch` over a DuoLink in sync with a remote peer for 1200 ticks.
+  - Not tested between two real devices: there's no second machine or browser pair in this run,
+    and the Duo lane's browser test drives the Duo screen only.
 
 ## Controls
 
@@ -178,13 +186,11 @@ VK_ICD_FILENAMES=/opt/lavapipe/lvp_icd.json xvfb-run -a godot --path . --disable
 
 ## Open (ranked)
 
-1. **Online Pure Fight in the lobby.** The DUO-ONLINE lane (`net/duo-online`) is not on
-   `origin/main` and has no branch on origin; I polled through the run. The rollback layer and its
-   test are done (`PureFightNet`).
-   - Left: a "Pure Fight 1v1" room type in the new lobby that builds
-     `PureFightNet.new_sim(seed, legends)` on both peers, and a `PureFightMatch` path that steps a
-     `RollbackSession` instead of `sim.tick`.
-   - The Multiplayer menu entry comes with it.
+1. **Online Pure Fight on two real devices.** It's wired through the Duo lobby and tested in
+   process (loopback, a fake DuoLink pair, a level against a remote session), but nobody has played
+   it between two machines or browsers yet.
+   - The Duo lane's `tools/net/duo_browser_test.js` could learn the Game step.
+   - Online there's no "out of sync" recovery beyond a callout; Duo has a panel.
 2. **Lyra's styling.** The robe hides her kicks (see the critique). This needs owner/look-dev input.
 3. **Per-legend reactions and art passes.** Hit, block and knockdown poses are shared (style-scaled).
    Still wanted: smear frames on the voxel mesh, a moving rather than held intro and victory, and

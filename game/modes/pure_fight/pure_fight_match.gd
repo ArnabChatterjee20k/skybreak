@@ -56,6 +56,18 @@ var dummy_mode := 0
 var skip_world := false
 var _ended_for := -1.0
 var _finished := false
+## Online (mode pure_fight_online with an open DuoLink): the sim advances through net_session.
+var online := false
+var duo_link: DuoLink
+var net_session: RollbackSession
+## Fighter this device plays online (the host is 0).
+var local_peer := 0
+## Set by MatchSession while its menu is open online (the match itself never pauses).
+var input_blocked := false
+var _net_started := false
+var _net_wait_ticks := 0
+## Partner left: the match carries on locally against the AI.
+var _partner_gone := false
 
 
 func configure(match_config: Dictionary) -> void:
@@ -64,6 +76,10 @@ func configure(match_config: Dictionary) -> void:
 	config.merge(match_config, true)
 	zone_id = StringName(config.zone)
 	training = StringName(config.get("mode", MODE)) == MODE_TRAINING
+
+
+func is_online_mode() -> bool:
+	return StringName(config.get("mode", MODE)) == MatchRules.MODE_PURE_FIGHT_ONLINE
 
 
 ## Members built in field initialisers are only parented in _ready; free them if it never ran.
@@ -81,7 +97,12 @@ func _ready() -> void:
 	var legends: Array[StringName] = []
 	for i in 2:
 		legends.append(StringName((entries[i] as Dictionary).get("character", &"kael")))
-	sim = PureFightSim.new(int(config.get("seed", 1)), legends)
+	if is_online_mode() and is_inside_tree():
+		duo_link = DuoLink.find(get_tree())
+		online = duo_link != null and duo_link.is_connected_to_partner()
+		local_peer = duo_link.local_peer if online else 0
+	sim = PureFightNet.new_sim(int(config.get("seed", 1)), legends) if is_online_mode() \
+		else PureFightSim.new(int(config.get("seed", 1)), legends)
 	if not skip_world:
 		_build_world()
 	add_child(stage)
@@ -123,6 +144,68 @@ func _ready() -> void:
 	layer.add_child(hud)
 	effects.callout = hud.show_callout
 	hud.after_tick(sim.events)
+	if online:
+		_setup_online()
+
+
+## Online wiring: a rollback session over the open link; both peers play with P1's keys.
+func _setup_online() -> void:
+	drivers[local_peer] = PureFightKeys.new(0)
+	drivers[1 - local_peer] = null
+	net_session = PureFightNet.new_session(sim, duo_link.transport, local_peer, DuoMatch.INPUT_DELAY)
+	net_session.desynced.connect(func(frame: int, _a: int, _b: int) -> void:
+		printerr("Pure Fight desync at tick %d" % frame)
+		hud.show_callout("OUT OF SYNC"))
+	duo_link.partner_left.connect(_on_partner_left)
+	duo_link.report_loaded()
+	hud.show_callout("WAITING FOR PARTNER")
+
+
+func _on_partner_left() -> void:
+	if _partner_gone:
+		return
+	_partner_gone = true
+	hud.show_callout("PARTNER LEFT: VS AI")
+	_go_offline()
+
+
+## Carries on locally: the partner's fighter goes to the AI.
+func _go_offline() -> void:
+	if net_session and net_session.transport and net_session.transport.received.is_connected(net_session.on_receive):
+		net_session.transport.received.disconnect(net_session.on_receive)
+	net_session = null
+	online = false
+	var ai := PureFightAI.new()
+	ai.setup(1 - local_peer, 3, int(config.get("seed", 1)))
+	drivers[1 - local_peer] = ai
+
+
+func _exit_tree() -> void:
+	if net_session and net_session.transport and net_session.transport.received.is_connected(net_session.on_receive):
+		net_session.transport.received.disconnect(net_session.on_receive)
+
+
+## One online tick: waits for the partner to load, then advances the session.
+func _step_online() -> void:
+	if not _net_started:
+		if not duo_link.partner_loaded():
+			_net_wait_ticks += 1
+			if _net_wait_ticks > 60 * PureFightSim.TICKS_PER_SECOND:
+				_on_partner_left()
+			return
+		_net_started = true
+	for view in views:
+		view.remember_previous_tick(sim)
+	var keys := drivers[local_peer] as PureFightKeys
+	var input := FighterInput.new() if input_blocked or keys == null else keys.read_tick()
+	if net_session.advance(input):
+		effects.react(sim.events)
+		hud.after_tick(sim.events)
+		_play_sounds(sim.events)
+	for view in views:
+		view.remember_current(sim)
+	if net_session.ms_since_remote() > 30000:
+		_on_partner_left()
 
 
 func _build_world() -> void:
@@ -177,6 +260,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 ## Advances the sim one tick.
 func step_tick() -> void:
+	if online and net_session:
+		_step_online()
+		return
 	for view in views:
 		view.remember_previous_tick(sim)
 	var inputs: Array[FighterInput] = []

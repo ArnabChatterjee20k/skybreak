@@ -97,7 +97,9 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   armour, counter stance, finishers and meter), 4 legends x 19-20 moves with frame data, styled
   keyframed poses on the voxel rigs by IK (`game/characters/fight_styles/`), side camera, platform per
   zone, HUD, effects, AI levels 1-5, Play/Training menu entries, local 2P, pause-menu move list,
-  online rollback layer (`PureFightNet`, loopback-tested). Open items are listed in the report.
+  online 1v1 through the Duo lobby (host picks Game: Pure Fight 1v1; `PureFightNet`). Open, ranked in
+  the report: two-device online playtest, Lyra's robe hides her kicks, shared reaction poses,
+  code-keyframed poses (no Animation resources), no gamepad, no Pure Fight QA soak, human balance.
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
   all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
   energy on GLOW, emblems at 5.5 mm), drop-in behind `VoxelArmory` / `WeaponModels.voxel_everywhere`

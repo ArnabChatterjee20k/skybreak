@@ -27,11 +27,12 @@ var local_peer: int = -1
 var lobby_code: String = ""
 var status: String = ""
 var partner_name: String = ""
-## Lobby picks: host_legend, guest_legend, zone, ai_count, ai_level, lives, minutes.
+## Lobby picks: host_legend, guest_legend, zone, ai_count, ai_level, lives, minutes, and the
+## game: &"duo" (two humans vs AI) or &"pure_fight" (a 1v1 Pure Fight, GAME_DESIGN §16).
 var setup := {
 	"host_legend": &"kael", "guest_legend": &"vexa", "zone": &"heartbloom_gardens",
 	"ai_count": 1, "ai_level": DuoMatch.DEFAULT_AI_LEVEL, "lives": DuoFlow.DEFAULT_LIVES,
-	"minutes": DuoFlow.DEFAULT_MINUTES,
+	"minutes": DuoFlow.DEFAULT_MINUTES, "game": &"duo",
 }
 var ready_flags: Array[bool] = [false, false]
 ## Seed of the match the partner reported loaded (-1 none).
@@ -135,12 +136,13 @@ func pick_legend(legend: StringName) -> void:
 func set_setup(values: Dictionary) -> void:
 	if not is_host():
 		return
-	for key: String in ["zone", "ai_count", "ai_level", "lives", "minutes"]:
+	for key: String in ["zone", "ai_count", "ai_level", "lives", "minutes", "game"]:
 		if values.has(key):
 			setup[key] = values[key]
 	ready_flags = [false, false]
 	send_control({"t": "setup", "zone": String(setup.zone), "ai_count": setup.ai_count,
-		"ai_level": setup.ai_level, "lives": setup.lives, "minutes": setup.minutes})
+		"ai_level": setup.ai_level, "lives": setup.lives, "minutes": setup.minutes,
+		"game": String(setup.game)})
 	changed.emit()
 
 
@@ -148,6 +150,10 @@ func set_ready(value: bool) -> void:
 	ready_flags[local_peer] = value
 	send_control({"t": "ready", "ready": value})
 	changed.emit()
+
+
+func is_pure_fight() -> bool:
+	return StringName(setup.get("game", &"duo")) == &"pure_fight"
 
 
 func both_ready() -> bool:
@@ -161,7 +167,10 @@ func start_match() -> bool:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	# Both peers launch the same wire form, so they build identical sims.
-	var config := _unwire_config(_wire_config(DuoMatch.build_config(setup, rng.randi() & 0x7FFFFFFF)))
+	var seed_value := rng.randi() & 0x7FFFFFFF
+	var built := PureFightNet.build_config(setup, seed_value) if is_pure_fight() \
+		else DuoMatch.build_config(setup, seed_value)
+	var config := _unwire_config(_wire_config(built))
 	_begin(config)
 	send_control({"t": "start", "config": _wire_config(config)})
 	start_requested.emit(config)
@@ -253,6 +262,7 @@ func _on_control(bytes: PackedByteArray) -> void:
 				setup.zone = StringName(message.get("zone", setup.zone))
 				for key: String in ["ai_count", "ai_level", "lives", "minutes"]:
 					setup[key] = int(message.get(key, setup[key]))
+				setup.game = StringName(message.get("game", "duo"))
 				ready_flags = [false, false]
 		"ready":
 			ready_flags[partner] = bool(message.get("ready", false))
@@ -297,7 +307,10 @@ static func _unwire_config(wire: Dictionary) -> Dictionary:
 	for entry: Dictionary in wire.get("fighters", []):
 		fighters.append(MatchRules.fighter(StringName(entry.get("character", "kael")),
 			int(entry.get("team", 0)), bool(entry.get("is_ai", false)), int(entry.get("ai_level", 3))))
-	var config := MatchRules.make(MatchRules.MODE_DUO, StringName(wire.get("zone", "heartbloom_gardens")),
+	var mode := StringName(wire.get("mode", "duo"))
+	if mode != MatchRules.MODE_PURE_FIGHT_ONLINE:
+		mode = MatchRules.MODE_DUO
+	var config := MatchRules.make(mode, StringName(wire.get("zone", "heartbloom_gardens")),
 		fighters, int(wire.get("rounds", 1)))
 	config["seed"] = int(wire.get("seed", 0))
 	config["lives"] = int(wire.get("lives", DuoFlow.DEFAULT_LIVES))

@@ -850,10 +850,17 @@ seed and never touches the sim's rng.
 
 Play > Pure Fight (vs AI or a second local player on the same keyboard), Training > Pure Fight
 Training (a dummy that stands, blocks all, crouch-blocks or jumps: F4; health refills, meter full,
-frame data on screen), and online 1v1 over the Duo lobby when the DUO-ONLINE lane lands (16.10).
+frame data on screen), and Multiplayer > Duo with the host's **Game: Pure Fight 1v1** choice (16.10).
 
-### 16.10 Online (planned)
+### 16.10 Online
 
-The Duo rollback core (`RollbackSession`) takes `PureFightSim` as is (it only calls tick, snapshot,
-restore and state_hash). Pure Fight online needs the lobby to offer a 1v1 Pure Fight room: both
-peers build `PureFightSim.new(seed, legends)` and feed `PureFightKeys` input through the session.
+Pure Fight 1v1 runs through the Duo lobby (`DuoScreen` / `DuoLink`, §8.2):
+- The host steps **Game** between Duo vs AI and Pure Fight 1v1. Both players pick legends and the
+  host picks the zone (AI, lives and minutes don't apply).
+- Start sends one config (`mode pure_fight_online`, seed, legends, zone) to both peers.
+- Each peer builds the same `PureFightSim` and steps it through `RollbackSession` (2-tick input
+  delay, up to 8 ticks of rollback, state hashes every 30 ticks). The host plays the left fighter,
+  the guest the right one, both on P1's keys.
+- The match waits for the partner to load.
+- If the partner leaves (or 30 s pass without a packet), the match carries on locally against the
+  AI. Results go back to the Duo lobby.
