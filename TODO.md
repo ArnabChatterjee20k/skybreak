@@ -15,7 +15,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
      HIGH/MEDIUM first); cloud ms are lavapipe only.
   3. QA-12 view soak: foot_ground 4/21 quick matches, 8 frames (worst Lyra +22 cm, frozen_peaks seed
      117 t268), same as main before the merge.
-  4. Windows build (`play-windows`, from 46da3b2) not boot-tested on Windows; the Linux export of
+  4. Windows build (`play-windows`, now from 746036c1) not boot-tested on Windows; the Linux export of
      012ec23 boots the menu and voxel Frozen Peaks / Shattered Mesa matches from their bakes.
   5. Appwrite deploy of the new web build: about 250 MB with the zone packs (`web-build` BUILD.md);
      check the site's upload limit [owner, Mac].
@@ -76,6 +76,27 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - the render benchmark on the GTX 1650 (estimated 4-6 ms against the 3 ms budget)
   - stream, Blossom Falls, petal whirlwinds, fireflies, the nearest-4 lantern OmniLights
 
+- T-135 [developer/desktop] Camera round 3 (`T-135-camera-round3` @ bce74bb8, pushed, NOT merged): hybrid
+  camera (exchange cam), terrain-wall push, merged with main 746036c1; plus (de4b99e1) low voxel props
+  (<= 6 m tall) as camera obstacles, `CameraClearance` no-clip measure (triangles, ground, inside a
+  prop), `VoxelCameraFight` + `game/debug/voxel_camera_qa.gd`, tests `test_voxel_zone_camera`,
+  `test_camera_clearance`, `test_voxel_camera_obstacles`. det_check unchanged by camera code
+  (65ec2f54272115fd x2). Full GUT on bce74bb8: 1839 tests, 1832 passing, **1 failing**
+  (`test_every_voxel_zone_fight_frames_both_fighters_near_and_far_without_clipping`), 10 pending.
+  Left, exactly:
+  1. With specials on (since #141) the all-AI Kael vs Vexa fight (seed 7, 1200 ticks) frames both
+     locked fighters below 95%: shattered_mesa 94.5% (936/990), stormfall_city 94.8% (921/972),
+     frozen_peaks 95.0% (961/1012, just under), verdant_falls 90.2% (944/1046). Before #141 the same
+     fight was 95.8-100% on every zone. Same root as SP1-5 (rush/blink/ranged juggle framing).
+  2. verdant_falls: the camera comes within 8 cm of the visible voxel floor chunk (FloorT2) in 6
+     frames; the camera keeps 0.4 m above the sim ground, the voxel floor stands higher there and
+     `VoxelZone.ground_at` doesn't see the bump (tried max(sim, ground_at): no change).
+  3. Pinned "back to a wall" scenario: heartbloom gap 2 m side 0 is 87.2% both-on (same without the
+     voxel obstacles); only heartbloom and verdant have a tall prop on level ground in reach.
+  4. Tall voxel props (trees, spires) aren't obstacles: as AABBs they pushed the camera off framing
+     (verdant 100% -> 87%) and into a fern patch; needs triangle-level avoidance.
+  5. QA quick on the camera branch not run (blocked on 1); then PR and merge.
+
 ## In review
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
   all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
@@ -92,39 +113,6 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   flash + chip trail, low-HP pulse. `game/debug/hud_capture.gd` renders the review shots. Heartbloom
   visual goldens re-blessed (HUD only). Open: on the web build `SystemFont` falls back to the default
   face for menus and HUD alike; bundling a licensed heavy display font would fix both.
-- T-SP1 specials framework + Kael and Vexa kits [desktop] (`claude/T-SP1-specials`): `game/combat/specials/`
-  (`SpecialKit` .tres per legend, `SpecialRules`, small `combat_sim.gd` hooks), keys 1/2/3 with
-  rise/dive variants, ki costs, Special level of the cancel hierarchy, counter/rush/leap/blink/decoy
-  effects, AI hooks per level (`game/ai/ai_specials.gd`), Kael Momentum (HUD pips), Vexa Afterimage.
-  Salvaged from #132: controls audit, web keyboard lock, §3 table. Merged with main 364f4b8 (voxel
-  art): every special plays its take on voxel Kael/Vexa, `SpecialHandGlow` lights both voxel hand
-  bones (lit, black albedo, emission x 0.27) while a special runs. Follow-ups:
-  - SP1-7 [desktop] Hand glow reads only up close (7.5 cm orb; a few px at 15 m in the versus capture):
-    owner look review on a real GPU, maybe a bigger orb or a short trail.
-  - QA-23 [desktop] QA quick 6ea2e918: one pop, Vexa RightHand 1.205 rad (limit 1.2) in HITSTUN on
-    hit_light with the repeater, ember_rift seed 112 t1690; feel trend flags finger pops 1 -> 2 events
-    in 46.7 fighter-minutes. Not a special clip. Repro:
-    `tools/qa/run_qa.sh --repro '112:ember_rift:1v1:kael,vexa:45' --tick 1690 --fighter 1`.
-  - SP1-8 [developer] `ZoneMatch` ignores the config's `rounds` (versus_soak chains matches instead).
-  - SP1-1 [desktop] Brann and Lyra kits (they keep the T-KI1 beam on `1` until then).
-  - SP1-2 [desktop] Ultimates (`SpecialKit.ultimate`, 2 burst) and transformations (`T`, 1 burst,
-    `FighterSpecials.transform_ticks`) on the hooks this lane put in place.
-  - SP1-3 [desktop] Dedicated special clips (they borrow retimed mocap takes today) and a decoy
-    mesh ghost (today an afterimage refreshed every 6 ticks).
-  - SP1-4 [desktop] Done in this PR: merged with T-KI1; `SpecialRules.start` runs before `KiRules.start`,
-    and `KiRules.beam_special()` gives key 1 to a kit that owns it.
-  - SP1-5 [developer] QA quick view soak `camera_on_screen`: Kael vs Vexa, seed 100, shattered_mesa,
-    both locked fighters on screen in 93.4% of frames (limit 95%). Probe: 79 of the 146 off-screen
-    frames are Kael firing the Storm Repeater at Vexa in hitstun, 15 are Shade Flicker; without those
-    15 it is still 94.1%. Locked-camera framing of a ranged juggle. Repro:
-    `tools/qa/run_qa.sh --repro '100:shattered_mesa:1v1:kael,vexa:54' --tick 2400 --fighter 0`.
-    Accepted for now (owner): developer's hybrid camera (T-135) is the fix; not blocking.
-  - SP1-6 [desktop] Done in the merge with main 7695141 (T-DEF3): no special from hitstun, an
-    escape or a dodge; a special ends wakeup/breaker intangibility; a breaker ends a special; a
-    special that hits chases only inside its Vanish cancel window (GAME_DESIGN §6). Specials fire
-    no beams of their own: key 4 stays the KiRules beam ultimate. Kael/Vexa HUD pips moved into
-    the restyled plate's name row (#143 put the burst stocks on the portrait foot).
-
 - T-ART2 [desktop] Art round 2 (#99, #135, #137, #120, #138, #118, #121, #98, #124): crisp opaque
   Skyhold cloud sea and lighter haze, Heartbloom lawn shader (petals, stepping-stone walk, no fan
   shading), Stormfall neon night city with skyline and wet-street neon, shaded Ember spires, no prop
@@ -419,6 +407,40 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+- T-SP1 [desktop] MERGED into `main` at 746036c1 (PR #141, `--no-ff`; evidence in
+  `reports/gameplay/resume.md`). Specials framework + Kael and Vexa kits (`claude/T-SP1-specials`): `game/combat/specials/`
+  (`SpecialKit` .tres per legend, `SpecialRules`, small `combat_sim.gd` hooks), keys 1/2/3 with
+  rise/dive variants, ki costs, Special level of the cancel hierarchy, counter/rush/leap/blink/decoy
+  effects, AI hooks per level (`game/ai/ai_specials.gd`), Kael Momentum (HUD pips), Vexa Afterimage.
+  Salvaged from #132: controls audit, web keyboard lock, §3 table. Merged with main 364f4b8 (voxel
+  art): every special plays its take on voxel Kael/Vexa, `SpecialHandGlow` lights both voxel hand
+  bones (lit, black albedo, emission x 0.27) while a special runs. Follow-ups:
+  - SP1-7 [desktop] Hand glow reads only up close (7.5 cm orb; a few px at 15 m in the versus capture):
+    owner look review on a real GPU, maybe a bigger orb or a short trail.
+  - QA-23 [desktop] QA quick 6ea2e918: one pop, Vexa RightHand 1.205 rad (limit 1.2) in HITSTUN on
+    hit_light with the repeater, ember_rift seed 112 t1690; feel trend flags finger pops 1 -> 2 events
+    in 46.7 fighter-minutes. Not a special clip. Repro:
+    `tools/qa/run_qa.sh --repro '112:ember_rift:1v1:kael,vexa:45' --tick 1690 --fighter 1`.
+  - SP1-8 [developer] `ZoneMatch` ignores the config's `rounds` (versus_soak chains matches instead).
+  - SP1-1 [desktop] Brann and Lyra kits (they keep the T-KI1 beam on `1` until then).
+  - SP1-2 [desktop] Ultimates (`SpecialKit.ultimate`, 2 burst) and transformations (`T`, 1 burst,
+    `FighterSpecials.transform_ticks`) on the hooks this lane put in place.
+  - SP1-3 [desktop] Dedicated special clips (they borrow retimed mocap takes today) and a decoy
+    mesh ghost (today an afterimage refreshed every 6 ticks).
+  - SP1-4 [desktop] Done in this PR: merged with T-KI1; `SpecialRules.start` runs before `KiRules.start`,
+    and `KiRules.beam_special()` gives key 1 to a kit that owns it.
+  - SP1-5 [developer] QA quick view soak `camera_on_screen`: Kael vs Vexa, seed 100, shattered_mesa,
+    both locked fighters on screen in 93.4% of frames (limit 95%). Probe: 79 of the 146 off-screen
+    frames are Kael firing the Storm Repeater at Vexa in hitstun, 15 are Shade Flicker; without those
+    15 it is still 94.1%. Locked-camera framing of a ranged juggle. Repro:
+    `tools/qa/run_qa.sh --repro '100:shattered_mesa:1v1:kael,vexa:54' --tick 2400 --fighter 0`.
+    Accepted for now (owner): developer's hybrid camera (T-135) is the fix; not blocking.
+  - SP1-6 [desktop] Done in the merge with main 7695141 (T-DEF3): no special from hitstun, an
+    escape or a dodge; a special ends wakeup/breaker intangibility; a breaker ends a special; a
+    special that hits chases only inside its Vanish cancel window (GAME_DESIGN §6). Specials fire
+    no beams of their own: key 4 stays the KiRules beam ultimate. Kael/Vexa HUD pips moved into
+    the restyled plate's name row (#143 put the burst stocks on the portrait foot).
+
 - T-VOX-INT [desktop] SHIPPED: merged into `main` at 62cd986 (PR #148, `--no-ff`), goldens refreshed at
   46da3b2; evidence in `reports/ship/voxel-ship.md`. Voxel art in the game (`integration/voxel-art`): the look-dev branches merged
   (squashed, render media left on them), Art style Voxel (default) / Classic in settings, roster and
