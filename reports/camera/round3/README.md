@@ -101,3 +101,14 @@ and on screen in all 14. Looked at: framing reads well on every zone; tight but 
 Mesa t1040 (Vexa half behind Kael at point-blank) and Ember Rift t800 (close exchange); Frozen Peaks t800
 shows the fit widening (FOV 69.5). The first capture per zone (t560) still showed the loading overlay
 (capture artefact) and was dropped.
+
+## Merge and builds
+
+- `main` = `61925008`: `git merge --no-ff T-135-camera-round3` (PR #149, shown merged on GitHub) on
+  51275e98 (WEB-CACHE, web tooling only after the evidence runs).
+- Web (`web-build` @ `66250942`, from 61925008): `tools/web/build_web.sh`, index.pck 56,638,004 B
+  (< 60 MB, sha256 `b22992e3...0367d967`), first load 92.0 MB, zone packs 191.3 MB;
+  `node tools/web/match_smoke_test.js build/web`: **PASS** (menu -> Vs AI match 30 s, no console errors).
+- Windows (`play-windows` @ `05e02e73`, from 61925008): `Windows Desktop` preset, release; Skybreak.exe
+  848,409,448 B (PE32+ x86-64, pck embedded) + webrtc dll; zip -9 722,251,866 B in 8 parts
+  (`split -b 90m`), rejoined sha256 `ce8f31b3...d08eeffc` = the zip's; `unzip -t` clean. Not run on Windows.
