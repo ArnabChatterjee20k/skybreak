@@ -1,0 +1,64 @@
+{
+  "verdict": "PASS",
+  "problems": [],
+  "wall_seconds": 368,
+  "match_sim_seconds": 123,
+  "common_state_hashes": 249,
+  "mismatched_hashes": 0,
+  "net": {
+    "net_lag": 45,
+    "net_jitter": 20,
+    "net_loss": 0.02
+  },
+  "burst": {
+    "burst_frame": 4200,
+    "burst_ms": 140
+  },
+  "appwrite_mock": {
+    "latency_ms": 120,
+    "requests": 89,
+    "byRoute": {
+      "POST /v1/account/sessions/email": 2,
+      "GET /v1/account": 2,
+      "POST /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows": 1,
+      "GET /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows/:id": 45,
+      "PATCH /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows/:id": 2,
+      "POST /v1/tablesdb/skybreak/tables/skybreak_signals/rows": 4,
+      "GET /v1/tablesdb/skybreak/tables/skybreak_signals/rows": 7,
+      "DELETE /v1/tablesdb/skybreak/tables/skybreak_signals/rows/:id": 4
+    },
+    "errors": {},
+    "refusedOrigins": 0,
+    "permissionRefusals": 0
+  },
+  "host": {
+    "frames": 7378,
+    "winning_team": 0,
+    "timed_out": false,
+    "rollbacks": 2262,
+    "max_rollback_depth": 8,
+    "hashes_compared_in_band": 245,
+    "stalls": 1785,
+    "sync_skips": 107,
+    "rtt_ms_median": 139,
+    "fps_median": 60,
+    "console_errors": 0,
+    "godot_warnings": []
+  },
+  "guest": {
+    "frames": 7378,
+    "winning_team": 0,
+    "timed_out": false,
+    "rollbacks": 2635,
+    "max_rollback_depth": 8,
+    "hashes_compared_in_band": 245,
+    "stalls": 1750,
+    "sync_skips": 137,
+    "rtt_ms_median": 134,
+    "fps_median": 57,
+    "console_errors": 0,
+    "godot_warnings": []
+  }
+}
+PASS: Duo host -> join -> match over WebRTC in two pages
+duo exit 0

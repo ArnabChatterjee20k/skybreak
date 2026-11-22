@@ -1,0 +1,4 @@
+load: start click -> engine running in 21.8 s, 92.1 MB served (uncompressed)
+menu frame time: 3 frames, avg 1971.7 ms (0.5 fps), p95 3049.9 ms, max 3049.9 ms
+match frame time: 270 frames, avg 20.3 ms (49.2 fps), p95 33.3 ms, max 966.7 ms
+PASS: menu -> vs AI match ran 30 s with no console errors
