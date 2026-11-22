@@ -1,0 +1,92 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 9
+		},
+		"breaker": {
+			"7": 3,
+			"8": 3,
+			"10": 1
+		},
+		"launcher": {
+			"7": 3
+		},
+		"light_1": {
+			"3": 6,
+			"4": 4,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 9,
+			"8": 2,
+			"9": 1
+		},
+		"light_2": {
+			"3": 15,
+			"4": 3,
+			"5": 2
+		},
+		"light_3": {
+			"3": 7,
+			"4": 3,
+			"5": 5,
+			"8": 2
+		},
+		"smash+counter": {
+			"11": 1
+		},
+		"spike": {
+			"7": 1
+		},
+		"vexa_shade_flicker": {
+			"20": 1
+		}
+	},
+	"id": "116:stormfall_city:ffa4:vexa,brann,lyra,kael:5333",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		5,
+		3,
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 116,
+	"sim_ms_per_tick": 1.38190625,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00659167813137174,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.03850790013933,
+		"foot_slide_cm_per_frame": 0.00263254584831005,
+		"foot_slide_frames": 563,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.98515931907464,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.505675,
+	"violations": [],
+	"wall_seconds": 21.304,
+	"zone": "stormfall_city"
+}

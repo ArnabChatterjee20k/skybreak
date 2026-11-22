@@ -11,10 +11,17 @@ const S := FighterState.State
 ## Hits with at least this much hitstop (ticks) read as heavy, as in CombatFeedback.
 const HEAVY_HITSTOP := 7
 ## A dash leaves an afterimage every this many ticks.
-const GHOST_EVERY := 3
+const GHOST_EVERY := 4
 ## Speed (m/s) that fires the sonic ring, and ticks before it can fire again.
 const SONIC_SPEED := 50.0
 const SONIC_COOLDOWN := 45
+## Trails (afterimages, sonic rings) that would start this close to the lens (m) are skipped:
+## a body-sized shell right in front of the camera covers the fight (#127).
+const NEAR_LENS := 3.5
+## A sonic ring is 2.8 m wide, so it keeps further from the lens.
+const NEAR_LENS_RING := 5.0
+## Pose ghosts kept per fighter; the oldest is reused when all are fading.
+const GHOSTS_PER_FIGHTER := 3
 ## Flying at this share of fly_speed or faster counts as top speed (speed lines).
 const TOP_SPEED_SHARE := 0.95
 ## Falling faster than this (m/s) onto the ground kicks up dust.
@@ -77,6 +84,10 @@ var _auras: Array[FighterAura] = []
 var _aura_from := PackedVector3Array()
 var _aura_to := PackedVector3Array()
 var _aura_level := PackedInt32Array()
+## Per fighter: PoseGhost silhouettes for dash afterimages (#127), built on first use.
+var _ghosts: Array = []
+var _ghost_sources: Array = []
+var _views_searched := false
 
 
 func _ready() -> void:
@@ -124,6 +135,10 @@ func _play_perfect_dodge(event: Dictionary) -> void:
 
 func _process(delta: float) -> void:
 	follow_fighters(delta)
+	for list: Variant in _ghosts:
+		if list != null:
+			for ghost: PoseGhost in list:
+				ghost.advance(delta)
 
 
 ## Moves the speed-line emitters onto the fighters (each drawn frame).
@@ -351,13 +366,16 @@ func _watch_fighters() -> void:
 		# Dash afterimages, stretched along the dash.
 		if not calm and state == S.DASHING and fighter.dash_kind != FighterState.DashKind.DODGE \
 				and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
-			spawn(&"afterimage", _prev_position[i], color, 1.0, stretch_along(fighter.velocity, speed))
-		elif DodgeTrail.wants_ghost(fighter):
+			if not near_lens(_prev_position[i], NEAR_LENS) and not pose_ghost(i, color):
+				spawn(&"afterimage", _prev_position[i], color, 1.0, stretch_along(fighter.velocity, speed))
+		elif DodgeTrail.wants_ghost(fighter) and not near_lens(_prev_position[i], NEAR_LENS) \
+				and not pose_ghost(i, DodgeTrail.ghost_color(fighter, color)):
 			spawn(&"afterimage", _prev_position[i], DodgeTrail.ghost_color(fighter, color), 1.0,
 				stretch_along(fighter.velocity, speed))
 		# Vanish: a ghost and a burst where they left, a burst where they appear.
 		if state == S.VANISHING and was != S.VANISHING:
-			spawn(&"afterimage", _prev_position[i], color.lerp(Color.WHITE, 0.4), 1.15)
+			if not near_lens(_prev_position[i], NEAR_LENS) and not pose_ghost(i, color.lerp(Color.WHITE, 0.4)):
+				spawn(&"afterimage", _prev_position[i], color.lerp(Color.WHITE, 0.4), 1.15)
 			spawn(&"vanish_burst", _prev_position[i], Color.TRANSPARENT)
 		elif was == S.VANISHING and state != S.VANISHING:
 			spawn(&"vanish_burst", fighter.position, color)
@@ -376,7 +394,8 @@ func _watch_fighters() -> void:
 		_aura_to[i] = fighter.position
 		# Sonic ring the moment they break the speed line.
 		var fast := speed >= SONIC_SPEED
-		if fast and not calm and _was_fast[i] == 0 and sim.current_tick >= _sonic_ready[i]:
+		if fast and not calm and _was_fast[i] == 0 and sim.current_tick >= _sonic_ready[i] \
+				and not near_lens(fighter.position, NEAR_LENS_RING):
 			spawn(&"sonic_ring", fighter.position, color.lerp(Color.WHITE, 0.6), 1.0, facing_along(fighter.velocity))
 			_sonic_ready[i] = sim.current_tick + SONIC_COOLDOWN
 		_was_fast[i] = 1 if fast else 0
@@ -486,6 +505,68 @@ static func facing_along(direction: Vector3) -> Basis:
 	var side := Vector3.UP if absf(z.y) < 0.99 else Vector3.RIGHT
 	var x := side.cross(z).normalized()
 	return Basis(x, z.cross(x), z)
+
+
+## Leaves a PoseGhost of fighter i's current pose; false (play the capsule) when its view has
+## no skinned body to copy, e.g. outside a level.
+func pose_ghost(i: int, color: Color) -> bool:
+	var source := _ghost_source(i)
+	if source.is_empty():
+		return false
+	if _ghosts.size() <= i:
+		_ghosts.resize(i + 1)
+	if _ghosts[i] == null:
+		_ghosts[i] = []
+	var list: Array = _ghosts[i]
+	var ghost: PoseGhost = null
+	for candidate: PoseGhost in list:
+		if not candidate.is_playing():
+			ghost = candidate
+			break
+	if ghost == null and list.size() < GHOSTS_PER_FIGHTER:
+		ghost = PoseGhost.new()
+		add_child(ghost)
+		ghost.setup(source.skeleton, source.mesh)
+		list.append(ghost)
+	if ghost == null:
+		ghost = list[0]
+		list.push_back(list.pop_front())
+	var skeleton: Skeleton3D = source.skeleton
+	var poses: Array[Transform3D] = []
+	poses.resize(skeleton.get_bone_count())
+	for bone in poses.size():
+		poses[bone] = skeleton.get_bone_global_pose(bone)
+	ghost.play(skeleton.global_transform, poses, color)
+	return true
+
+
+## {skeleton, mesh} of fighter i's skinned body, or {} without a level's fighter views.
+func _ghost_source(i: int) -> Dictionary:
+	if not _views_searched:
+		_views_searched = true
+		var node := get_parent()
+		while node != null:
+			var views: Variant = node.get(&"fighter_views")
+			if views is Array:
+				for view: Node in views:
+					_ghost_sources.append(_skinned_body(view))
+				break
+			node = node.get_parent()
+	return _ghost_sources[i] if i < _ghost_sources.size() else {}
+
+
+static func _skinned_body(view: Node) -> Dictionary:
+	for node in view.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if mesh.mesh != null and mesh.skin != null and mesh.get_node_or_null(mesh.skeleton) is Skeleton3D:
+			return {"skeleton": mesh.get_node(mesh.skeleton), "mesh": mesh}
+	return {}
+
+
+## True when the scene camera is within reach (m) of where.
+func near_lens(where: Vector3, reach: float) -> bool:
+	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
+	return camera != null and camera.global_position.distance_to(where) < reach
 
 
 func _facing_camera(where: Vector3) -> Basis:
