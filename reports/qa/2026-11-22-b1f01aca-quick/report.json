@@ -1,0 +1,362 @@
+{
+  "status": {
+    "Invariant soak (sim)": "PASS",
+    "Invariant soak (view)": "FAIL",
+    "Scenario library": "PASS",
+    "Golden replays": "PASS",
+    "Visual goldens": "NOT RUN",
+    "Feel metrics trend": "PASS"
+  },
+  "matches": 21,
+  "top": [
+    {
+      "check": "foot_ground",
+      "count": 4,
+      "detail": "lowest sole +193.9 cm off the visible ground (IDLE, clip land)",
+      "fighter": 3,
+      "first_tick": 2196,
+      "legend": "vexa",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 2196,
+      "worst_value": 1.93896275396983,
+      "match": "107:shattered_mesa:ffa4:brann,lyra,kael,vexa:2445",
+      "seed": 107,
+      "zone": "shattered_mesa",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '107:shattered_mesa:ffa4:brann,lyra,kael,vexa:2445' --tick 2196 --fighter 3",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/107_shattered_mesa_ffa4_brann-lyra-kael-vexa_2445_t2196/frame_02196.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/107_shattered_mesa_ffa4_brann-lyra-kael-vexa_2445_t2196/clip.mp4"
+    },
+    {
+      "check": "camera_on_screen",
+      "count": 1,
+      "detail": "both locked fighters on screen in 92.3% of 2378 locked frames",
+      "fighter": 0,
+      "first_tick": 2400,
+      "legend": "kael",
+      "limit": 0.95,
+      "weapon": "",
+      "worst_tick": 2400,
+      "worst_value": 0.922624053826745,
+      "match": "101:skyhold_ruins:ffa4:kael,vexa,brann,lyra:4235",
+      "seed": 101,
+      "zone": "skyhold_ruins",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '101:skyhold_ruins:ffa4:kael,vexa,brann,lyra:4235' --tick 2400 --fighter 0",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/101_skyhold_ruins_ffa4_kael-vexa-brann-lyra_4235_t2400/frame_02400.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/101_skyhold_ruins_ffa4_kael-vexa-brann-lyra_4235_t2400/clip.mp4"
+    },
+    {
+      "check": "pop",
+      "count": 1,
+      "detail": "RightHand turned 1.21 rad in one frame (HITSTUN, move , clip hit_light)",
+      "fighter": 1,
+      "first_tick": 1690,
+      "legend": "vexa",
+      "limit": 1.2,
+      "weapon": "repeater",
+      "worst_tick": 1690,
+      "worst_value": 1.20532894134521,
+      "match": "112:ember_rift:1v1:kael,vexa:45",
+      "seed": 112,
+      "zone": "ember_rift",
+      "mode": "1v1",
+      "repro": "tools/qa/run_qa.sh --repro '112:ember_rift:1v1:kael,vexa:45' --tick 1690 --fighter 1",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/112_ember_rift_1v1_kael-vexa_45_t1690/frame_01690.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/112_ember_rift_1v1_kael-vexa_45_t1690/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 2,
+      "detail": "lowest sole +187.6 cm off the visible ground (IDLE, clip land)",
+      "fighter": 2,
+      "first_tick": 2171,
+      "legend": "kael",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 2171,
+      "worst_value": 1.87634744948866,
+      "match": "107:shattered_mesa:ffa4:brann,lyra,kael,vexa:2445",
+      "seed": 107,
+      "zone": "shattered_mesa",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '107:shattered_mesa:ffa4:brann,lyra,kael,vexa:2445' --tick 2171 --fighter 2",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/107_shattered_mesa_ffa4_brann-lyra-kael-vexa_2445_t2171/frame_02171.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/107_shattered_mesa_ffa4_brann-lyra-kael-vexa_2445_t2171/clip.mp4"
+    },
+    {
+      "check": "camera_on_screen",
+      "count": 1,
+      "detail": "both locked fighters on screen in 92.4% of 1989 locked frames",
+      "fighter": 0,
+      "first_tick": 2400,
+      "legend": "vexa",
+      "limit": 0.95,
+      "weapon": "",
+      "worst_tick": 2400,
+      "worst_value": 0.923579688285571,
+      "match": "105:ember_rift:2v2:vexa,brann,lyra,kael:3224",
+      "seed": 105,
+      "zone": "ember_rift",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '105:ember_rift:2v2:vexa,brann,lyra,kael:3224' --tick 2400 --fighter 0",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/105_ember_rift_2v2_vexa-brann-lyra-kael_3224_t2400/frame_02400.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/105_ember_rift_2v2_vexa-brann-lyra-kael_3224_t2400/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 9,
+      "detail": "lowest sole -17.9 cm off the visible ground (MOVING, clip walk_back)",
+      "fighter": 3,
+      "first_tick": 920,
+      "legend": "vexa",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 923,
+      "worst_value": -0.179491557289957,
+      "match": "119:ember_rift:ffa4:brann,lyra,kael,vexa:4433",
+      "seed": 119,
+      "zone": "ember_rift",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '119:ember_rift:ffa4:brann,lyra,kael,vexa:4433' --tick 923 --fighter 3",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/119_ember_rift_ffa4_brann-lyra-kael-vexa_4433_t923/frame_00923.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/119_ember_rift_ffa4_brann-lyra-kael-vexa_4433_t923/clip.mp4"
+    },
+    {
+      "check": "camera_on_screen",
+      "count": 1,
+      "detail": "both locked fighters on screen in 94.5% of 2202 locked frames",
+      "fighter": 0,
+      "first_tick": 2400,
+      "legend": "kael",
+      "limit": 0.95,
+      "weapon": "bow",
+      "worst_tick": 2400,
+      "worst_value": 0.945049954586739,
+      "match": "114:shattered_mesa:2v2:kael,vexa,brann,lyra:3355",
+      "seed": 114,
+      "zone": "shattered_mesa",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '114:shattered_mesa:2v2:kael,vexa,brann,lyra:3355' --tick 2400 --fighter 0",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/114_shattered_mesa_2v2_kael-vexa-brann-lyra_3355_t2400/frame_02400.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/114_shattered_mesa_2v2_kael-vexa-brann-lyra_3355_t2400/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 2,
+      "detail": "lowest sole +22.0 cm off the visible ground (IDLE, clip fight_idle)",
+      "fighter": 2,
+      "first_tick": 268,
+      "legend": "lyra",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 268,
+      "worst_value": 0.219896240115531,
+      "match": "117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343",
+      "seed": 117,
+      "zone": "frozen_peaks",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343' --tick 268 --fighter 2",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t268/frame_00268.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/117_frozen_peaks_2v2_vexa-brann-lyra-kael_2343_t268/clip.mp4"
+    },
+    {
+      "check": "camera_on_screen",
+      "count": 1,
+      "detail": "both locked fighters on screen in 94.6% of 1605 locked frames",
+      "fighter": 0,
+      "first_tick": 2400,
+      "legend": "kael",
+      "limit": 0.95,
+      "weapon": "",
+      "worst_tick": 2400,
+      "worst_value": 0.945794392523365,
+      "match": "113:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:2553",
+      "seed": 113,
+      "zone": "heartbloom_gardens",
+      "mode": "ffa4",
+      "repro": "tools/qa/run_qa.sh --repro '113:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:2553' --tick 2400 --fighter 0",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/113_heartbloom_gardens_ffa4_kael-vexa-brann-lyra_2553_t2400/frame_02400.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/113_heartbloom_gardens_ffa4_kael-vexa-brann-lyra_2553_t2400/clip.mp4"
+    },
+    {
+      "check": "foot_ground",
+      "count": 1,
+      "detail": "lowest sole +5.5 cm off the visible ground (BLOCKING, clip guard)",
+      "fighter": 0,
+      "first_tick": 2383,
+      "legend": "kael",
+      "limit": 0.05,
+      "weapon": "",
+      "worst_tick": 2383,
+      "worst_value": 0.0554512227162665,
+      "match": "102:stormfall_city:2v2:kael,vexa,brann,lyra:4455",
+      "seed": 102,
+      "zone": "stormfall_city",
+      "mode": "2v2",
+      "repro": "tools/qa/run_qa.sh --repro '102:stormfall_city:2v2:kael,vexa,brann,lyra:4455' --tick 2383 --fighter 0",
+      "pending": false,
+      "image": "2026-11-22-b1f01aca-quick/captures/102_stormfall_city_2v2_kael-vexa-brann-lyra_4455_t2383/frame_02383.png",
+      "clip": "2026-11-22-b1f01aca-quick/captures/102_stormfall_city_2v2_kael-vexa-brann-lyra_4455_t2383/clip.mp4"
+    }
+  ],
+  "metrics": {
+    "hitstop_consistency": 0.7137931034482758,
+    "pops_per_fighter_minute": 0.035729172869648045,
+    "finger_pops_per_fighter_minute": 0.035729172869648045,
+    "foot_slide_cm_per_frame": 0.031176557548189363,
+    "foot_error_p95_cm": 0.9159560457043675,
+    "camera_jerk_p95": 0.008953474883344907,
+    "locked_on_screen_share": 0.9763071894812244,
+    "sim_ms_per_tick": 1.2006388095238096,
+    "view_ms_per_frame": 1.2313386507936506,
+    "metric_versions": {
+      "foot_slide_cm_per_frame": 2
+    },
+    "latency_ticks": {
+      "brann": {
+        "grab@air": 10,
+        "grab@ground": 10,
+        "heavy@air": 19,
+        "heavy@ground": 19,
+        "light@air": 9,
+        "light@ground": 9
+      },
+      "kael": {
+        "grab@air": 8,
+        "grab@ground": 8,
+        "heavy@air": 15,
+        "heavy@ground": 15,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "lyra": {
+        "grab@air": 9,
+        "grab@ground": 9,
+        "heavy@air": 16,
+        "heavy@ground": 16,
+        "light@air": 7,
+        "light@ground": 7
+      },
+      "vexa": {
+        "grab@air": 7,
+        "grab@ground": 7,
+        "heavy@air": 12,
+        "heavy@ground": 12,
+        "light@air": 5,
+        "light@ground": 5
+      }
+    },
+    "generated_at": 1795360317.2824283
+  },
+  "trend": [
+    [
+      "hitstop_consistency",
+      0.7137931034482758,
+      0.7215836526181354,
+      -0.0107964601769912,
+      false
+    ],
+    [
+      "pops_per_fighter_minute",
+      0.035729172869648045,
+      0.035729172869648045,
+      0.0,
+      false
+    ],
+    [
+      "finger_pops_per_fighter_minute",
+      0.035729172869648045,
+      0.035729172869648045,
+      0.0,
+      false
+    ],
+    [
+      "foot_slide_cm_per_frame",
+      0.031176557548189363,
+      0.0316774053930652,
+      -0.015810885982015434,
+      false
+    ],
+    [
+      "foot_error_p95_cm",
+      0.9159560457043675,
+      0.9283649381025367,
+      -0.013366394926042196,
+      false
+    ],
+    [
+      "camera_jerk_p95",
+      0.008953474883344907,
+      0.008731104899197812,
+      0.025468710628768893,
+      false
+    ],
+    [
+      "locked_on_screen_share",
+      0.9763071894812244,
+      0.9816344424652746,
+      -0.005426921421656093,
+      false
+    ],
+    [
+      "sim_ms_per_tick",
+      1.2006388095238096,
+      1.1329992658730161,
+      0.05969954764152016,
+      false
+    ],
+    [
+      "view_ms_per_frame",
+      1.2313386507936506,
+      1.1680264682539685,
+      0.054204407400394505,
+      false
+    ]
+  ],
+  "visual": null,
+  "scenarios": {
+    "tests": 38,
+    "passing": 38,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "goldens": {
+    "tests": 11,
+    "passing": 11,
+    "failing": 0,
+    "pending": 0,
+    "failures": [],
+    "pendings": []
+  },
+  "sim_summary": {},
+  "view_summary": {
+    "camera_on_screen": {
+      "matches": 5,
+      "frames": 5,
+      "pending": false
+    },
+    "foot_ground": {
+      "matches": 5,
+      "frames": 19,
+      "pending": false
+    },
+    "pop": {
+      "matches": 1,
+      "frames": 1,
+      "pending": false
+    }
+  }
+}
