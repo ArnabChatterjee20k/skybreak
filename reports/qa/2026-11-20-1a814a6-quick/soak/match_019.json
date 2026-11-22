@@ -1,0 +1,106 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 3,
+			"8": 5
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"chakram/light_1": {
+			"4": 4
+		},
+		"chakram/light_1+counter": {
+			"8": 2
+		},
+		"chakram/light_2": {
+			"4": 6
+		},
+		"chakram/light_3": {
+			"6": 6
+		},
+		"kael_comet_drive": {
+			"9": 2
+		},
+		"light_1": {
+			"3": 3,
+			"4": 3,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 8,
+			"8": 4,
+			"9": 1
+		},
+		"light_2": {
+			"3": 11,
+			"4": 5,
+			"5": 1
+		},
+		"light_3": {
+			"3": 4,
+			"4": 5,
+			"5": 2,
+			"8": 1
+		},
+		"vexa_razor_waltz": {
+			"5": 3
+		},
+		"vexa_shade_flicker+counter": {
+			"11": 2
+		},
+		"weapon/thrown": {
+			"6": 1
+		},
+		"weapon/thrown+counter": {
+			"10": 1
+		}
+	},
+	"id": "119:ember_rift:ffa4:brann,lyra,kael,vexa:4433",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		4,
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 119,
+	"sim_ms_per_tick": 1.64223125,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0104555487632751,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.05394316117824,
+		"foot_slide_cm_per_frame": 0.00149218612675044,
+		"foot_slide_frames": 565,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.996381727725011,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.23173083333333,
+	"violations": [],
+	"wall_seconds": 20.632,
+	"zone": "ember_rift"
+}

@@ -1,0 +1,206 @@
+[gd_resource type="Resource" script_class="SpecialKit" format=3]
+
+[ext_resource type="Script" path="res://game/combat/specials/special_kit.gd" id="1_tr8rf"]
+[ext_resource type="Script" path="res://game/combat/specials/special_move.gd" id="2_p6ry0"]
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="3_onmcg"]
+
+[sub_resource type="Resource" id="Resource_bpvvb"]
+script = ExtResource("3_onmcg")
+id = &"kael_comet_drive_dive"
+display_name = "Comet Drive (diving)"
+startup_ticks = 12
+active_ticks = 10
+recovery_ticks = 24
+hitbox_offsets = PackedVector3Array(0, -0.3, -0.9)
+hitbox_radii = PackedFloat32Array(0.75)
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 850
+hitstun_ticks = 30
+blockstun_ticks = 14
+hitstop_ticks = 9
+knockback_type = 3
+knockback = Vector3(0, -18, -4)
+guard_damage = 20
+ki_cost = 25
+cancel_level = 3
+cancel_start_tick = 12
+cancel_end_tick = 34
+cancel_on_block = false
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_k1ibo"]
+script = ExtResource("3_onmcg")
+id = &"kael_comet_drive"
+display_name = "Comet Drive"
+startup_ticks = 12
+active_ticks = 10
+recovery_ticks = 22
+hitbox_offsets = PackedVector3Array(0, 0.1, -0.9)
+hitbox_radii = PackedFloat32Array(0.75)
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 900
+hitstun_ticks = 34
+blockstun_ticks = 14
+hitstop_ticks = 9
+knockback_type = 1
+knockback = Vector3(0, 5, -26)
+guard_damage = 20
+ki_cost = 25
+cancel_level = 3
+cancel_start_tick = 12
+cancel_end_tick = 34
+cancel_on_block = false
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_27oan"]
+script = ExtResource("3_onmcg")
+id = &"kael_comet_drive_rise"
+display_name = "Comet Drive (rising)"
+startup_ticks = 12
+active_ticks = 10
+recovery_ticks = 24
+hitbox_offsets = PackedVector3Array(0, 0.4, -0.9)
+hitbox_radii = PackedFloat32Array(0.75)
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 800
+hitstun_ticks = 36
+blockstun_ticks = 14
+hitstop_ticks = 9
+knockback_type = 2
+knockback = Vector3(0, 14, -5)
+guard_damage = 20
+ki_cost = 25
+cancel_level = 3
+cancel_start_tick = 12
+cancel_end_tick = 34
+cancel_on_block = false
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_sxf4g"]
+script = ExtResource("2_p6ry0")
+display_name = "Comet Drive"
+beats = "Backdashes, whiffed pokes and mid-range ki; ends combos far away"
+move = SubResource("Resource_k1ibo")
+rise_move = SubResource("Resource_27oan")
+dive_move = SubResource("Resource_bpvvb")
+effect = 1
+travel_distance = 6.0
+travel_start_tick = 12
+travel_end_tick = 22
+variant_pitch = 0.7
+rehit_ticks = PackedInt32Array()
+tell_cue = &"rush_whoosh"
+color = Color(1, 0.62, 0.22, 1)
+ai_min_range = 4.5
+ai_max_range = 8.0
+
+[sub_resource type="Resource" id="Resource_lkqel"]
+script = ExtResource("3_onmcg")
+id = &"kael_gale_riposte"
+display_name = "Gale Riposte"
+startup_ticks = 4
+active_ticks = 3
+recovery_ticks = 20
+hitbox_offsets = PackedVector3Array(0, 0.2, -1.1)
+hitbox_radii = PackedFloat32Array(1)
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 1000
+hitstun_ticks = 40
+blockstun_ticks = 16
+hitstop_ticks = 10
+knockback_type = 1
+knockback = Vector3(0, 6, -28)
+guard_damage = 24
+cancel_level = 3
+cancel_start_tick = 4
+cancel_end_tick = 24
+cancel_on_block = false
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_iaa2g"]
+script = ExtResource("3_onmcg")
+id = &"kael_gale_counter"
+display_name = "Gale Counter"
+startup_ticks = 3
+active_ticks = 20
+recovery_ticks = 24
+hitbox_offsets = PackedVector3Array()
+hitbox_radii = PackedFloat32Array()
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+ki_cost = 25
+cancel_level = 3
+cancel_on_block = false
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_hirho"]
+script = ExtResource("2_p6ry0")
+slot = 2
+display_name = "Gale Counter"
+beats = "Strikes, strings and rushes (not grabs or shots)"
+move = SubResource("Resource_iaa2g")
+effect = 2
+rehit_ticks = PackedInt32Array()
+counter_move = SubResource("Resource_lkqel")
+counter_start_tick = 3
+counter_end_tick = 23
+counter_freeze_ticks = 12
+tell_cue = &"perfect_block"
+color = Color(0.85, 0.95, 1, 1)
+ai_role = 2
+ai_max_range = 3.5
+ai_min_level = 3
+
+[sub_resource type="Resource" id="Resource_vjw1v"]
+script = ExtResource("3_onmcg")
+id = &"kael_skyfall"
+display_name = "Skyfall"
+startup_ticks = 22
+active_ticks = 4
+recovery_ticks = 22
+hitbox_offsets = PackedVector3Array(0, -0.4, -0.8)
+hitbox_radii = PackedFloat32Array(1.1)
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 850
+hitstun_ticks = 30
+blockstun_ticks = 16
+hitstop_ticks = 10
+knockback_type = 3
+knockback = Vector3(0, -14, -4)
+guard_damage = 40
+guard_break_below = 40
+ki_cost = 35
+cancel_level = 3
+cancel_start_tick = 22
+cancel_end_tick = 36
+cancel_on_block = false
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_2jc57"]
+script = ExtResource("2_p6ry0")
+slot = 3
+display_name = "Skyfall"
+beats = "Blocking (40 guard, breaks a guard under 40); loses to anti-airs and dodges"
+move = SubResource("Resource_vjw1v")
+effect = 3
+travel_distance = 5.0
+travel_start_tick = 2
+travel_end_tick = 22
+leap_height = 2.2
+rehit_ticks = PackedInt32Array()
+color = Color(1, 0.62, 0.22, 1)
+ai_role = 1
+ai_min_range = 2.0
+ai_max_range = 5.5
+
+[resource]
+script = ExtResource("1_tr8rf")
+legend = &"kael"
+specials = Array[ExtResource("2_p6ry0")]([SubResource("Resource_sxf4g"), SubResource("Resource_hirho"), SubResource("Resource_2jc57")])
+mechanic = 1
+color = Color(1, 0.62, 0.22, 1)

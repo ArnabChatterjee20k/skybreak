@@ -92,6 +92,38 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   flash + chip trail, low-HP pulse. `game/debug/hud_capture.gd` renders the review shots. Heartbloom
   visual goldens re-blessed (HUD only). Open: on the web build `SystemFont` falls back to the default
   face for menus and HUD alike; bundling a licensed heavy display font would fix both.
+- T-SP1 specials framework + Kael and Vexa kits [desktop] (`claude/T-SP1-specials`): `game/combat/specials/`
+  (`SpecialKit` .tres per legend, `SpecialRules`, small `combat_sim.gd` hooks), keys 1/2/3 with
+  rise/dive variants, ki costs, Special level of the cancel hierarchy, counter/rush/leap/blink/decoy
+  effects, AI hooks per level (`game/ai/ai_specials.gd`), Kael Momentum (HUD pips), Vexa Afterimage.
+  Salvaged from #132: controls audit, web keyboard lock, §3 table. Merged with main 364f4b8 (voxel
+  art): every special plays its take on voxel Kael/Vexa, `SpecialHandGlow` lights both voxel hand
+  bones (lit, black albedo, emission x 0.27) while a special runs. Follow-ups:
+  - SP1-7 [desktop] Hand glow reads only up close (7.5 cm orb; a few px at 15 m in the versus capture):
+    owner look review on a real GPU, maybe a bigger orb or a short trail.
+  - QA-23 [desktop] QA quick 6ea2e918: one pop, Vexa RightHand 1.205 rad (limit 1.2) in HITSTUN on
+    hit_light with the repeater, ember_rift seed 112 t1690; feel trend flags finger pops 1 -> 2 events
+    in 46.7 fighter-minutes. Not a special clip. Repro:
+    `tools/qa/run_qa.sh --repro '112:ember_rift:1v1:kael,vexa:45' --tick 1690 --fighter 1`.
+  - SP1-8 [developer] `ZoneMatch` ignores the config's `rounds` (versus_soak chains matches instead).
+  - SP1-1 [desktop] Brann and Lyra kits (they keep the T-KI1 beam on `1` until then).
+  - SP1-2 [desktop] Ultimates (`SpecialKit.ultimate`, 2 burst) and transformations (`T`, 1 burst,
+    `FighterSpecials.transform_ticks`) on the hooks this lane put in place.
+  - SP1-3 [desktop] Dedicated special clips (they borrow retimed mocap takes today) and a decoy
+    mesh ghost (today an afterimage refreshed every 6 ticks).
+  - SP1-4 [desktop] Done in this PR: merged with T-KI1; `SpecialRules.start` runs before `KiRules.start`,
+    and `KiRules.beam_special()` gives key 1 to a kit that owns it.
+  - SP1-5 [developer] QA quick view soak `camera_on_screen`: Kael vs Vexa, seed 100, shattered_mesa,
+    both locked fighters on screen in 93.4% of frames (limit 95%). Probe: 79 of the 146 off-screen
+    frames are Kael firing the Storm Repeater at Vexa in hitstun, 15 are Shade Flicker; without those
+    15 it is still 94.1%. Locked-camera framing of a ranged juggle. Repro:
+    `tools/qa/run_qa.sh --repro '100:shattered_mesa:1v1:kael,vexa:54' --tick 2400 --fighter 0`.
+    Accepted for now (owner): developer's hybrid camera (T-135) is the fix; not blocking.
+  - SP1-6 [desktop] Done in the merge with main 7695141 (T-DEF3): no special from hitstun, an
+    escape or a dodge; a special ends wakeup/breaker intangibility; a breaker ends a special; a
+    special that hits chases only inside its Vanish cancel window (GAME_DESIGN §6). Specials fire
+    no beams of their own: key 4 stays the KiRules beam ultimate. Kael/Vexa HUD pips moved into
+    the restyled plate's name row (#143 put the burst stocks on the portrait foot).
 
 - T-ART2 [desktop] Art round 2 (#99, #135, #137, #120, #138, #118, #121, #98, #124): crisp opaque
   Skyhold cloud sea and lighter haze, Heartbloom lawn shader (petals, stepping-stone walk, no fan
@@ -167,6 +199,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   bow/shot startup ticks 4-7 when he shoots while FLYING at near-zero pitch; the seed-3
   shattered_mesa visual QA run reaches it after the escape merge (4 frames, tolerance 1).
   `test_visual_qa.gd` reports it pending under QA-19 (fails under run_qa.sh strict).
+  Open: QA-20 [desktop, characters] Lyra's Heartstring Bow sinks 2-5 cm into her chest capsule
+  while she is in HITSTUN, then ESCAPING (air tech), then FLYING (seed-3 shattered_mesa visual QA,
+  12-30 frames depending on run order, QA-17). Reached once specials landed on the escape merge;
+  pending under QA-20 in `test_visual_qa.gd` (fails under run_qa.sh strict).
   Open: T-DEF3-pop, Lyra RightUpperArm turns 1.21 rad in one frame entering hitstun hit_light
   (1 frame in QA quick; limit 1.2), characters lane.
 

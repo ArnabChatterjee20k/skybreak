@@ -103,6 +103,8 @@ var _model_rest := Transform3D.IDENTITY
 ## Frames rendered since the last sim tick, as a share of a tick (for the dodge pose).
 var _sub_tick := 0.0
 var _seen_tick := -1
+## Hand glow while a special runs (T-SP1); built for legends with a special kit.
+var special_glow: SpecialHandGlow
 
 
 func _ready() -> void:
@@ -174,6 +176,7 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 	_state = fighter.state
 	_state_ticks = fighter.state_ticks
 	_apply_dodge_pose(fighter, delta)
+	_update_special_glow(fighter)
 	if layers != null:
 		_update_layers(fighter, delta)
 	if fighter.state == FighterState.State.ATTACKING and fighter.move != null:
@@ -187,6 +190,15 @@ func apply_state(fighter: FighterState, delta: float) -> void:
 	if clip != _clip or (restarted and not _loops(clip)):
 		_play(clip, clips.blend_time)
 	_player.advance(delta)
+
+
+func _update_special_glow(fighter: FighterState) -> void:
+	if special_glow == null:
+		var skeleton := model.get_node_or_null("%GeneralSkeleton") as Skeleton3D
+		if skeleton == null or SpecialRules.kit_of(fighter) == null:
+			return
+		special_glow = SpecialHandGlow.new(skeleton)
+	special_glow.update(fighter)
 
 
 ## Leans, banks or twists the model through a dodge (DodgePose); the rest pose otherwise.

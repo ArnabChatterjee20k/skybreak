@@ -88,8 +88,9 @@ func test_combo_counter_keeps_hits_and_damage_after_the_combo() -> void:
 	bench.tick(120)
 	var meter := bench.session.frame_meter
 	assert_eq(meter.combo_hits, 4)
-	# 300 + 320 * 92% + 350 * 84% + 450 * 76%, each rounded down.
-	assert_eq(meter.combo_damage, 300 + 294 + 294 + 342)
+	# 300 + 320 * 92% + 350 * 84% + 450 * 76%, each rounded down, then Kael's Momentum
+	# (+2% per earlier consecutive hit, T-SP1): 294 * 102%, 294 * 104%, 342 * 106%.
+	assert_eq(meter.combo_damage, 300 + 299 + 305 + 362)
 
 
 func test_a_new_move_clears_the_last_hits_damage() -> void:

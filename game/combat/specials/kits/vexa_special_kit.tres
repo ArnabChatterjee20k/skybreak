@@ -1,0 +1,152 @@
+[gd_resource type="Resource" script_class="SpecialKit" format=3]
+
+[ext_resource type="Script" path="res://game/combat/move_data.gd" id="1_2fske"]
+[ext_resource type="Script" path="res://game/combat/specials/special_kit.gd" id="2_3m11x"]
+[ext_resource type="Script" path="res://game/combat/specials/special_move.gd" id="3_5kasw"]
+
+[sub_resource type="Resource" id="Resource_cj5k5"]
+script = ExtResource("1_2fske")
+id = &"vexa_afterimage_burst"
+display_name = "Afterimage Burst"
+hitbox_offsets = PackedVector3Array()
+hitbox_radii = PackedFloat32Array()
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 500
+hitstun_ticks = 30
+blockstun_ticks = 12
+hitstop_ticks = 8
+knockback_type = 1
+knockback = Vector3(0, 6, -14)
+guard_damage = 10
+cancel_level = 3
+cancel_on_block = false
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_5mnf3"]
+script = ExtResource("1_2fske")
+id = &"vexa_shade_flicker"
+display_name = "Shade Flicker"
+startup_ticks = 14
+active_ticks = 3
+recovery_ticks = 18
+ignores_pushbox = true
+hitbox_offsets = PackedVector3Array(0, 0.1, -0.9)
+hitbox_radii = PackedFloat32Array(0.8)
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 600
+hitstun_ticks = 26
+blockstun_ticks = 12
+hitstop_ticks = 7
+knockback = Vector3(0, 0, -3)
+guard_damage = 10
+ki_cost = 30
+cancel_level = 3
+cancel_start_tick = 14
+cancel_end_tick = 30
+cancel_on_block = false
+invincible_start_tick = 6
+invincible_end_tick = 13
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_vovkb"]
+script = ExtResource("3_5kasw")
+display_name = "Shade Flicker"
+beats = "An unlocked or late-turning guard, and zoning; +6 on hit links a light"
+move = SubResource("Resource_5mnf3")
+effect = 4
+rehit_ticks = PackedInt32Array()
+blink_tick = 10
+blink_range = 8.0
+blink_behind = 1.6
+blink_angle = 1.3962634015954636
+tell_cue = &"vanish_out"
+color = Color(0.72, 0.38, 1, 1)
+ai_role = 5
+ai_min_range = 2.5
+ai_max_range = 7.5
+ai_min_level = 3
+
+[sub_resource type="Resource" id="Resource_kwq6s"]
+script = ExtResource("1_2fske")
+id = &"vexa_mirage_step"
+display_name = "Mirage Step"
+startup_ticks = 3
+active_ticks = 10
+recovery_ticks = 12
+hitbox_offsets = PackedVector3Array()
+hitbox_radii = PackedFloat32Array()
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+ki_cost = 25
+cancel_level = 3
+cancel_on_block = false
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_eejp7"]
+script = ExtResource("3_5kasw")
+slot = 2
+display_name = "Mirage Step"
+beats = "Committed attacks, rushes and beams aimed at where she stood"
+move = SubResource("Resource_kwq6s")
+effect = 5
+travel_distance = 4.5
+travel_start_tick = 3
+travel_end_tick = 13
+stop_on_contact = false
+rehit_ticks = PackedInt32Array()
+tell_cue = &"dodge"
+color = Color(0.72, 0.38, 1, 1)
+ai_role = 3
+ai_max_range = 6.0
+
+[sub_resource type="Resource" id="Resource_n0k0k"]
+script = ExtResource("1_2fske")
+id = &"vexa_razor_waltz"
+display_name = "Razor Waltz"
+startup_ticks = 9
+active_ticks = 18
+recovery_ticks = 20
+hitbox_offsets = PackedVector3Array(0, 0.2, -0.9)
+hitbox_radii = PackedFloat32Array(0.85)
+hitbox_lengths = PackedFloat32Array()
+hitbox_axes = PackedVector3Array()
+damage = 260
+hitstun_ticks = 30
+blockstun_ticks = 12
+hitstop_ticks = 5
+knockback = Vector3(0, 1, -4)
+guard_damage = 8
+ki_cost = 35
+cancel_level = 3
+cancel_start_tick = 9
+cancel_end_tick = 32
+cancel_on_block = false
+charge_level_ticks = PackedInt32Array()
+
+[sub_resource type="Resource" id="Resource_02h1p"]
+script = ExtResource("3_5kasw")
+slot = 3
+display_name = "Razor Waltz"
+beats = "Ends confirmed strings for damage and carry; -13 when blocked"
+move = SubResource("Resource_n0k0k")
+effect = 1
+travel_distance = 5.0
+travel_start_tick = 9
+travel_end_tick = 27
+stop_on_contact = false
+rehit_ticks = PackedInt32Array(15, 21)
+tell_cue = &"whoosh_heavy"
+color = Color(0.72, 0.38, 1, 1)
+ai_role = 4
+ai_max_range = 3.0
+ai_min_level = 3
+
+[resource]
+script = ExtResource("2_3m11x")
+legend = &"vexa"
+specials = Array[ExtResource("3_5kasw")]([SubResource("Resource_vovkb"), SubResource("Resource_eejp7"), SubResource("Resource_02h1p")])
+mechanic = 2
+decoy_blast = SubResource("Resource_cj5k5")
+color = Color(0.72, 0.38, 1, 1)
