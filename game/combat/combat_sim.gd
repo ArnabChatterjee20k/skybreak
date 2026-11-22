@@ -858,7 +858,11 @@ func _begin_light(index: int, number: int) -> bool:
 	consume_buffered(index, _LIGHT)
 	_face_for_attack(index)
 	_aim_at_target(index)
+	var blocked_targets := fighter.hit_targets if fighter.state == FighterState.State.ATTACKING \
+		and fighter.contact_blocked else 0
 	fighter.begin_move(lights[number - 1])
+	if blocked_targets != 0:
+		_open_block_gap(index, blocked_targets, lights[number - 1])
 	fighter.string_index = number
 	fighter.draw_ticks = 0
 	return true
@@ -1045,8 +1049,8 @@ func _start_vanish(index: int, input: FighterInput, wish: Vector3) -> void:
 	if target < 0 and direction == Vector3.ZERO:
 		direction = -DetMath.forward(fighter.facing_yaw)
 	var step := direction * tuning.vanish_step_distance
-	# The whole step goes round the target: the strafe's orbit cap is for walking, not teleports (#150).
-	if not _move_around_target(index, step, PI):
+	# The step goes round the target, up to a quarter turn: the strafe's orbit cap is for walking (#150).
+	if not _move_around_target(index, step, PI / 2.0):
 		fighter.position += step
 	_clamp_to_arena(fighter)
 	fighter.velocity = Vector3.ZERO
@@ -1583,8 +1587,7 @@ func _apply_block(contact: Dictionary, from_projectile: bool = false) -> void:
 	if broken:
 		hitstop = maxi(hitstop, hit_tuning.guard_break_hitstop_ticks)
 	else:
-		_enter_stun(target, FighterState.State.BLOCKSTUN,
-			move.blockstun_ticks if from_projectile else _blockstun_for(attacker_index, move))
+		_enter_stun(target, FighterState.State.BLOCKSTUN, move.blockstun_ticks)
 		if not from_projectile:
 			_start_pushback(target_index, attacker_index, hit_tuning.block_pushback_distance)
 	_freeze(target if from_projectile else fighters[attacker_index], target, hitstop)
@@ -1593,16 +1596,16 @@ func _apply_block(contact: Dictionary, from_projectile: bool = false) -> void:
 		events.append(_event(EventType.GUARD_BREAK, contact, 0, hitstop, MoveData.KnockbackType.NONE))
 
 
-## A blocked light that the string can follow ends its blockstun string_block_gap_ticks
-## before the next light turns active: a gap to dodge, back off or vanish in (#150).
-func _blockstun_for(attacker_index: int, move: MoveData) -> int:
-	var attacker := fighters[attacker_index]
-	var lights := _move_set(attacker).light_string
-	var number := attacker.string_index
-	if number <= 0 or number >= lights.size() or lights[number - 1] != move:
-		return move.blockstun_ticks
-	var until_next := move.active_ticks + lights[number].startup_ticks
-	return clampi(until_next - hit_tuning.string_block_gap_ticks, 1, move.blockstun_ticks)
+## The string goes on to its next light: whoever is still in blockstun from the last one
+## gets free string_block_gap_ticks before the new light turns active, a gap to dodge,
+## back off or vanish in (#150). A light that is not followed keeps its own blockstun.
+func _open_block_gap(attacker_index: int, blocked_targets: int, next: MoveData) -> void:
+	for target_index in fighters.size():
+		var target := fighters[target_index]
+		if (blocked_targets & (1 << target_index)) == 0 or target.state != FighterState.State.BLOCKSTUN:
+			continue
+		var ends := target.state_ticks + maxi(next.startup_ticks - hit_tuning.string_block_gap_ticks, 0)
+		target.stun_ticks = mini(target.stun_ticks, ends)
 
 
 ## No guard damage or stun; the attacker's move gets extra recovery and its string ends.

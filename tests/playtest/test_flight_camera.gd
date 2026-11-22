@@ -41,7 +41,8 @@ func test_player_is_always_on_screen() -> void:
 func test_player_is_never_smaller_than_15_percent_of_screen_height() -> void:
 	for scenario_name in _results:
 		var smallest := 1.0
-		for frame in _settled(scenario_name):
+		# Like the on-screen check: a vanished player is not drawn (#150 made side vanishes move).
+		for frame in _settled(scenario_name).filter(func(f): return f.player_visible):
 			smallest = minf(smallest, frame.player_screen_height)
 		assert_gte(smallest, MIN_PLAYER_SCREEN_HEIGHT, "%s: smallest %.3f" % [scenario_name, smallest])
 

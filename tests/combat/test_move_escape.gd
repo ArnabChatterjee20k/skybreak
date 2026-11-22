@@ -38,7 +38,8 @@ func test_every_legend_s_strings_can_be_escaped_by_dodge_vanish_walk_or_flight()
 				var label := "%s %s vs %s, guard %s, %s" % ["AI" if use_ai else "scripted", attacker, case[0],
 					case[1], case[2]]
 				assert_gte(result.escaped_at, 0, "%s: gets out within %d ticks" % [label, WATCH_TICKS])
-				if case[1] and case[0] != "hold_back":
+				# The AI may read and punish an escape (PressureAI), so only the scripted attacker is timed.
+				if case[1] and case[0] != "hold_back" and not use_ai:
 					assert_lte(result.escaped_at, GUARD_ESCAPE_TICKS, "%s: out of the guard quickly" % label)
 
 
@@ -65,22 +66,55 @@ func test_a_dash_pressed_early_in_blockstun_still_comes_out_on_the_first_free_ti
 	assert_eq(blocker.dash_kind, FighterState.DashKind.DODGE)
 
 
-func test_a_blocked_string_light_leaves_a_gap_before_the_next_light() -> void:
+func test_a_blocked_string_leaves_a_gap_before_each_next_light() -> void:
 	for legend in LEGENDS:
 		_start(legend)
 		var lights := _sim.fighters[0].stats.move_set.light_string
-		for number in range(1, lights.size()):
-			var until_next: int = lights[number - 1].active_ticks + lights[number].startup_ticks
-			_sim.fighters[0].begin_move(lights[number - 1])
-			_sim.fighters[0].string_index = number
-			var stun := _sim._blockstun_for(0, lights[number - 1])
-			assert_lte(stun, until_next - _sim.hit_tuning.string_block_gap_ticks,
-				"%s light %d: gap before light %d" % [legend, number, number + 1])
-		# The string's last hit keeps its own blockstun.
-		var last: MoveData = lights[lights.size() - 1]
-		_sim.fighters[0].begin_move(last)
-		_sim.fighters[0].string_index = lights.size()
-		assert_eq(_sim._blockstun_for(0, last), last.blockstun_ticks, "%s ender keeps its blockstun" % legend)
+		var blocker := _sim.fighters[1]
+		for _i in 30:
+			_tick(0, A.BLOCK)
+		var attacker := _sim.fighters[0]
+		_tick(A.LIGHT, A.BLOCK)
+		var free_ticks := 0
+		var gaps: Array[int] = []
+		for _t in 150:
+			var press := 0
+			if attacker.state == S.ATTACKING and attacker.move != null and attacker.string_index > 0 \
+					and attacker.move_tick == attacker.move.string_window_start_tick:
+				press = A.LIGHT
+			var events_before := blocker.state
+			_tick(press, A.BLOCK)
+			if blocker.state == S.BLOCKING and events_before != S.BLOCKSTUN or blocker.state == S.BLOCKING:
+				free_ticks += 1
+			for event: Dictionary in _sim.events:
+				if event.type == E.BLOCK and event.target == 1:
+					gaps.append(free_ticks)
+					free_ticks = 0
+			if attacker.state != S.ATTACKING and gaps.size() >= lights.size():
+				break
+		assert_eq(gaps.size(), lights.size(), "%s: every light blocked" % legend)
+		for number in range(1, gaps.size()):
+			assert_gte(gaps[number], _sim.hit_tuning.string_block_gap_ticks,
+				"%s: free ticks before light %d" % [legend, number + 1])
+
+
+func test_a_blocked_light_that_is_not_followed_keeps_its_blockstun() -> void:
+	_start(&"kael")
+	var blocker := _sim.fighters[1]
+	for _i in 30:
+		_tick(0, A.BLOCK)
+	_tick(A.LIGHT, A.BLOCK)
+	for _i in 30:
+		if blocker.state == S.BLOCKSTUN:
+			break
+		_tick(0, A.BLOCK)
+	var light: MoveData = _sim.fighters[0].stats.move_set.light_string[0]
+	var longest := 0
+	for _i in light.blockstun_ticks + light.hitstop_ticks + 5:
+		if blocker.state == S.BLOCKSTUN:
+			longest = maxi(longest, blocker.state_ticks)
+		_tick(0, A.BLOCK)
+	assert_eq(longest, light.blockstun_ticks, "no link: the move's blockstun stands")
 
 
 func test_a_light_link_turns_only_part_way_toward_a_target_that_moved() -> void:
@@ -113,7 +147,7 @@ func test_a_dodged_light_ends_the_string() -> void:
 	assert_eq(furthest, 1, "no second light after the first was dodged")
 
 
-func test_a_sideways_vanish_goes_the_whole_step_round_the_target() -> void:
+func test_a_sideways_vanish_goes_a_quarter_turn_round_a_close_target() -> void:
 	_start(&"kael")
 	var defender := _sim.fighters[1]
 	defender.ki = 100 * FighterState.METER_UNIT
@@ -123,7 +157,7 @@ func test_a_sideways_vanish_goes_the_whole_step_round_the_target() -> void:
 	assert_eq(defender.state, S.VANISHING)
 	var to := defender.position - centre
 	var degrees := rad_to_deg(Vector2(from.x, from.z).angle_to(Vector2(to.x, to.z)))
-	assert_gt(absf(degrees), 150.0, "a 6 m step at 1.8 m goes round behind, not 3 degrees")
+	assert_almost_eq(absf(degrees), 90.0, 0.5, "a 6 m step at 1.8 m goes a quarter turn round, not 3 degrees")
 
 
 func test_ascend_on_the_floor_jumps_out_of_the_guard_and_the_guard_climbs_in_the_air() -> void:

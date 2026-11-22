@@ -668,6 +668,7 @@ func _neutral(sim: CombatSim, me: FighterState, target: FighterState, distance: 
 			and rng.randf() < profile.guard_habit * 0.06:
 		_defend_left = rng.randi_range(8, 20)
 		plan.held_actions |= _A.BLOCK
+		plan.vertical = 0 # Guard in place: ascend with block held would jump out of it (#150).
 		return
 	match _plan:
 		Plan.WAIT:
