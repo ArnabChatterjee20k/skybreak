@@ -1,40 +1,34 @@
 # Skybreak web build
 
-- Source: `main` at `012ec23d6b1937347fdb3f22e3910651bdb718b4` (voxel art merge PR #148 at 62cd986, golden
-  refresh 46da3b2, zone-bake embed fix 012ec23).
+- Source: `main` at `746036c1` (PR #141 specials merged onto the voxel art main 364f4b8: Kael and Vexa
+  special kits, Momentum, Afterimage, hand glow on the voxel rigs).
 - Godot: 4.7.2.stable.official.ed1daf0bf, official `web_nothreads_release` template (export_templates.tpz
-  SHA-512 checked against SHA512-SUMS.txt), `Web` preset, release, via `tools/web/build_web.sh`, zone bakes
-  rebaked on 012ec23 and `voxel_zone_bake.gd --check` clean.
-- Layout changed: the build is now committed as files in `web/` instead of one `skybreak-web.tar.gz`, because
-  the voxel zone packs push an archive over GitHub's 100 MB file limit. `web/index.html` is the root; host
-  `web/zones/` next to it (the game fetches one zone pack per match, checks its SHA-256 and caches it).
-  No `.gz`/`.br` copies; no COOP/COEP headers needed (single-threaded).
+  SHA-512 `ca4d71c4...ccb84079` checked against SHA512-SUMS.txt), `Web` preset, release, via
+  `tools/web/build_web.sh`; zone bakes `voxel_zone_bake.gd --check` clean on 746036c1.
+- Layout as before: files in `web/`, `web/index.html` is the root; host `web/zones/` next to it (one zone pack
+  fetched per match, SHA-256 checked, cached). No `.gz`/`.br` copies; no COOP/COEP headers needed.
 - Appwrite deploy: `cd web && tar -czf ../skybreak-web.tar.gz .` then the CLI step in `tools/web/DEPLOY.md`
-  (check the site's upload size limit: the tarball is about 250 MB with the zone packs).
+  (the tarball is about 250 MB with the zone packs; check the site's upload limit).
 
 ## Files (bytes raw)
 
 | file | raw |
 |---|---:|
-| index.pck | 56,542,000 (sha256 `9f696d3b4bbf0dfa22ba778491616a387b2e7b5ec3247a8f47b8f09635b8945a`) |
+| index.pck | 56,594,896 (sha256 `9509a72c50851b4c96f686fa41f229ebb4cff3a974c819b5ee7ef02ab682f150`) |
 | index.wasm | 39,514,754 |
 | index.js | 279,815 |
-| index.html + worklets + icons | 48,247 |
-| **first load total** | **91.9 MB** (gzip 53.3 MB) |
-| zones/ember_rift_web.f5587f7e69c6.pck | 21,083,456 |
-| zones/frozen_peaks_web.648f84d41fec.pck | 33,040,224 |
-| zones/heartbloom_gardens_web.9bbe9aebc2e8.pck | 22,960,232 |
-| zones/shattered_mesa_web.a730ace0566a.pck | 29,872,036 |
-| zones/skyhold_ruins_web.402894a24d1d.pck | 18,921,892 |
-| zones/stormfall_city_web.e806a8c1a5ba.pck | 59,937,476 |
-| zones/verdant_falls_web.3198b0aa2543.pck | 15,968,868 |
-| **zone packs total** | **192.4 MB** (one fetched per match) |
+| **first load total** | **92.0 MB** (gzip 53.4 MB) |
+| zones/ember_rift_web.f3be2800599b.pck | 21,083,456 |
+| zones/frozen_peaks_web.cf7ab2f5857c.pck | 33,040,224 |
+| zones/heartbloom_gardens_web.f3d79a902dab.pck | 22,960,328 |
+| zones/shattered_mesa_web.1cda098cf292.pck | 29,872,036 |
+| zones/skyhold_ruins_web.49c6fdae53b2.pck | 18,921,892 |
+| zones/stormfall_city_web.fcacbdee817c.pck | 59,937,476 |
+| zones/verdant_falls_web.42dabaaa7580.pck | 15,968,868 |
+| **zone packs total** | **192.4 MB** |
 
-## Smoke test (headless Chromium, SwiftShader WebGL2, plain static server, no special headers)
+## Smoke test (headless Chromium, SwiftShader WebGL2, plain static server)
 
-- `node tools/web/match_smoke_test.js build/web` -> **PASS**: menu -> Vs AI -> Shattered Mesa (voxel, its zone
-  pack fetched and mounted) -> Kael vs Vexa ran 30 s, no console errors. Load: click-to-start -> engine
-  running in 23.0 s from localhost.
-- The same test on 46da3b2 (before the embed fix) FAILED with 16 console errors: Mesa's WEB bake linked the
-  baking machine's `user://voxel_prop_cache`, so it did not load in a fresh browser.
-- Frame time is not meaningful here (SwiftShader, about 1-2 fps); measure on a real GPU.
+`node tools/web/match_smoke_test.js build/web` -> **PASS**: menu -> Vs AI -> zone -> Fight, 30 s of input,
+no console errors. Load: start click -> engine running in 22.1 s from localhost. Frame time is not
+meaningful here (SwiftShader, 0.5-1.7 fps); measure on a real GPU.
