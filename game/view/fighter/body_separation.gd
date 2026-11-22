@@ -17,6 +17,14 @@ const LEAD := 1.4
 const MAX_OFFSET := 1.2
 ## Offsets ease back to the sim position at this rate (1/s) once nothing overlaps.
 const RETURN_RATE := 4.0
+## A fighter whose centre is this high (m) above another's, closer sideways than their
+## pushbox radii plus STACK_CLEARANCE, reads as standing on its head: eased out sideways.
+const STACK_HEIGHT := Vector2(0.6, 2.4)
+const STACK_CLEARANCE := 0.35
+## Most a stacked pair is eased apart per frame (m), so it glides rather than pops.
+const STACK_STEP := 0.08
+## Pairs this close to touching hold their offsets instead of easing back (m), so they don't buzz.
+const HOLD := 0.08
 ## Share of a push the striker takes when only one of the pair is attacking.
 const STRIKER_SHARE := 0.75
 
@@ -65,26 +73,37 @@ func update(sim: CombatSim, delta: float) -> void:
 			var two := sim.fighters[j]
 			if pair_exempt(one, two, i, j) or one.position.distance_to(two.position) > NEAR:
 				continue
-			var depth := _deepest(cores[i], cores[j]) + MARGIN
-			if depth <= 0.0:
-				continue
 			var away := views[i].position - views[j].position
+			var height := away.y
 			away.y = 0.0
-			if away.length_squared() < 1.0e-6:
+			var planar := away.length()
+			if planar < 1.0e-3:
 				away = DetMath.forward(two.facing_yaw)
 			away = away.normalized()
+			var deepest := _deepest(cores[i], cores[j])
+			var depth := (deepest + MARGIN) * LEAD
 			var share := 0.5
 			if striking(one) and not striking(two):
 				share = STRIKER_SHARE
 			elif striking(two) and not striking(one):
 				share = 1.0 - STRIKER_SHARE
+			var stack := stack_gap(one, two, planar, height)
+			if stack > 0.0 and minf(stack, STACK_STEP) > depth:
+				depth = minf(stack, STACK_STEP)
+				# The one on top moves.
+				share = 1.0 if height > 0.0 else 0.0
+			if deepest > -HOLD or stack_gap(one, two, planar - HOLD, height) > 0.0:
+				pushed[i] = true
+				pushed[j] = true
+			if depth <= 0.0:
+				continue
 			pushes[i] += away * depth * share
 			pushes[j] -= away * depth * (1.0 - share)
 			pushed[i] = true
 			pushed[j] = true
 	for i in views.size():
 		if pushed[i]:
-			offsets[i] = (offsets[i] + pushes[i] * LEAD).limit_length(MAX_OFFSET)
+			offsets[i] = (offsets[i] + pushes[i]).limit_length(MAX_OFFSET)
 		else:
 			offsets[i] = offsets[i].move_toward(Vector3.ZERO, offsets[i].length() * minf(RETURN_RATE * delta, 1.0))
 		if not sim.fighters[i].is_ko_state() and views[i].visible:
@@ -92,6 +111,15 @@ func update(sim: CombatSim, delta: float) -> void:
 		else:
 			offsets[i] = Vector3.ZERO
 			views[i].body_offset = Vector3.ZERO
+
+
+## Sideways shortfall (m) of a pair stacked one over the other, 0 when not stacked.
+## height: first's centre above second's (as drawn).
+static func stack_gap(first: FighterState, second: FighterState, planar: float, height: float) -> float:
+	if absf(height) < STACK_HEIGHT.x or absf(height) > STACK_HEIGHT.y:
+		return 0.0
+	var reach := first.stats.pushbox_radius + second.stats.pushbox_radius + STACK_CLEARANCE
+	return maxf(reach - planar, 0.0)
 
 
 ## Whether a pair is never pushed: vanishing, or a grab pair mid-throw.
