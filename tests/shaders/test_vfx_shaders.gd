@@ -3,6 +3,9 @@ extends GutTest
 const SHADER_DIR := "res://game/view/shaders/"
 const AURA_PATH := SHADER_DIR + "aura.gdshader"
 const SPARK_PATH := SHADER_DIR + "aura_spark.gdshader"
+const FLAME_PATH := SHADER_DIR + "aura_flame.gdshader"
+const VOXEL_PATH := SHADER_DIR + "aura_voxel.gdshader"
+const ARC_PATH := SHADER_DIR + "aura_arc.gdshader"
 const IMPACT_PATH := SHADER_DIR + "impact.gdshader"
 const SHOCKWAVE_PATH := SHADER_DIR + "shockwave.gdshader"
 const NOISE_PATH := SHADER_DIR + "vfx_noise.gdshaderinc"
@@ -22,7 +25,8 @@ const IMPACT_SCENES := {
 	"shockwave": Color(1, 0.85, 0.6, 1),
 }
 
-const SPATIAL_SHADERS := [AURA_PATH, SPARK_PATH, IMPACT_PATH, SHOCKWAVE_PATH]
+const SPATIAL_SHADERS := [AURA_PATH, SPARK_PATH, FLAME_PATH, VOXEL_PATH, ARC_PATH, IMPACT_PATH, SHOCKWAVE_PATH]
+const AURA_SHADERS := [AURA_PATH, SPARK_PATH, FLAME_PATH, VOXEL_PATH, ARC_PATH]
 const SCREEN_SHADERS := [IMPACT_FRAME_SHADER_PATH, SPEED_LINES_SHADER_PATH]
 
 const AURA_DEFAULTS := {
@@ -41,18 +45,20 @@ const AURA_DEFAULTS := {
 	"tongue_softness": "0.07",
 	"root_glow": "0.7",
 	"center_clear": "0.55",
-	"rim_base": "0.1",
+	"rim_base": "0.0",
 	"body_height": "1.85",
 }
-const AURA_INSTANCE_UNIFORMS := ["color", "power_level"]
+## Alpha-blended dust is the one aura layer that isn't additive energy.
+const AURA_MIX_BLEND_NODES := ["Dust"]
 
 const SPARK_DEFAULTS := {
 	"tint": "vec4(1.0, 0.62, 0.22, 1.0)",
-	"intensity": "1.5",
+	"intensity": "1.0",
 	"spark_shape": "0",
 	"core_whiteness": "0.5",
-	"streak_jitter": "0.25",
-	"streak_flash": "0.15",
+	"strength": "1.0",
+	"pulse_rate": "1.6",
+	"depth_offset": "0.0",
 }
 
 const IMPACT_DEFAULTS := {
@@ -115,7 +121,6 @@ const VFX_SCENES := [AURA_SCENE_PATH] + [
 	SHADER_DIR + "vfx/shockwave.tscn",
 ]
 
-const AURA_PARTICLE_BUDGET := 64
 const IMPACT_PARTICLE_BUDGET := 32
 const MAX_NOISE_OCTAVES := 3
 
@@ -226,10 +231,9 @@ func test_aura_uniforms_have_expected_defaults() -> void:
 	_assert_defaults(AURA_PATH, AURA_DEFAULTS)
 
 
-func test_aura_colour_and_power_level_are_per_fighter_instance_uniforms() -> void:
-	var shader: Shader = load(AURA_PATH)
-	for uniform_name: String in AURA_INSTANCE_UNIFORMS:
-		assert_true(_is_instance_uniform(shader, uniform_name), uniform_name)
+func test_aura_shaders_use_no_instance_uniforms_so_they_fit_the_gles3_cap() -> void:
+	for path: String in AURA_SHADERS:
+		assert_false(_source_without_comments(path).contains("instance uniform"), path)
 
 
 func test_aura_power_level_spans_off_to_ultimate() -> void:
@@ -239,7 +243,6 @@ func test_aura_power_level_spans_off_to_ultimate() -> void:
 
 func test_aura_spark_uniforms_have_expected_defaults() -> void:
 	_assert_defaults(SPARK_PATH, SPARK_DEFAULTS)
-	assert_true(_is_instance_uniform(load(SPARK_PATH), "tint"))
 
 
 func test_impact_uniforms_have_expected_defaults() -> void:
@@ -274,6 +277,8 @@ func test_every_aura_and_impact_material_is_additive_and_never_writes_depth() ->
 		var scene := _instantiate(path)
 		var checked := 0
 		for node in scene.find_children("*", "GeometryInstance3D", true, false):
+			if path == AURA_SCENE_PATH and node.name in AURA_MIX_BLEND_NODES:
+				continue
 			var materials := _materials_of(node as GeometryInstance3D)
 			assert_gt(materials.size(), 0, "%s/%s has a material" % [path.get_file(), node.name])
 			for material in materials:
@@ -405,89 +410,6 @@ func test_impact_particles_are_one_shot_and_explosive() -> void:
 		for particles in _particles(_instantiate(_impact_path(effect_name))):
 			assert_true(particles.one_shot, "%s/%s" % [effect_name, particles.name])
 			assert_eq(particles.explosiveness, 1.0, "%s/%s" % [effect_name, particles.name])
-
-
-func test_aura_scene_has_a_shell_motes_and_streaks_using_the_aura_shaders() -> void:
-	var aura := _instantiate(AURA_SCENE_PATH) as FighterAura
-	assert_not_null(aura)
-	var shell: MeshInstance3D = aura.get_node("Shell")
-	assert_eq((shell.mesh.surface_get_material(0) as ShaderMaterial).shader.resource_path, AURA_PATH)
-	for particle_name in ["Motes", "Streaks"]:
-		var particles: GPUParticles3D = aura.get_node(particle_name)
-		var material := (particles.draw_pass_1 as PrimitiveMesh).material as ShaderMaterial
-		assert_eq(material.shader.resource_path, SPARK_PATH, particle_name)
-		assert_true(particles.process_material is ParticleProcessMaterial, particle_name)
-
-
-func test_aura_particles_stay_within_64_at_high_quality() -> void:
-	var aura := _instantiate(AURA_SCENE_PATH)
-	assert_lte(_particle_count(aura), AURA_PARTICLE_BUDGET)
-
-
-func test_aura_is_off_at_power_level_zero() -> void:
-	var aura := _instantiate(AURA_SCENE_PATH) as FighterAura
-	assert_false((aura.get_node("Shell") as MeshInstance3D).visible)
-	assert_false((aura.get_node("Motes") as GPUParticles3D).emitting)
-	assert_false((aura.get_node("Streaks") as GPUParticles3D).emitting)
-
-
-func test_aura_charging_shows_motes_but_no_streaks() -> void:
-	var aura := _instantiate(AURA_SCENE_PATH) as FighterAura
-	aura.power_level = 1.0
-	aura.snap()
-	assert_true((aura.get_node("Shell") as MeshInstance3D).visible)
-	assert_true((aura.get_node("Motes") as GPUParticles3D).emitting)
-	assert_false((aura.get_node("Streaks") as GPUParticles3D).emitting)
-
-
-func test_aura_streaks_appear_from_power_level_two() -> void:
-	var aura := _instantiate(AURA_SCENE_PATH) as FighterAura
-	aura.power_level = 2.0
-	aura.snap()
-	assert_true((aura.get_node("Streaks") as GPUParticles3D).emitting)
-
-
-func test_aura_uses_the_full_particle_budget_only_at_ultimate() -> void:
-	assert_eq(FighterAura.mote_ratio(0.0), 0.0)
-	assert_lt(FighterAura.mote_ratio(1.0), FighterAura.mote_ratio(2.0))
-	assert_lt(FighterAura.mote_ratio(2.0), FighterAura.mote_ratio(3.0))
-	assert_eq(FighterAura.mote_ratio(3.0), 1.0)
-	assert_eq(FighterAura.streak_ratio(1.9), 0.0)
-	assert_eq(FighterAura.streak_ratio(3.0), 1.0)
-
-
-func test_aura_power_level_is_clamped_to_three() -> void:
-	var aura := _instantiate(AURA_SCENE_PATH) as FighterAura
-	aura.power_level = 7.0
-	assert_eq(aura.power_level, FighterAura.MAX_POWER_LEVEL)
-
-
-func test_aura_eases_toward_a_new_power_level_instead_of_jumping() -> void:
-	var aura := _instantiate(AURA_SCENE_PATH) as FighterAura
-	aura.power_level = 3.0
-	simulate(aura, 1, 0.1)
-	assert_between(aura.shown_level, 0.01, 2.99)
-	var shell: MeshInstance3D = aura.get_node("Shell")
-	assert_eq(shell.get_instance_shader_parameter("power_level"), aura.shown_level)
-	simulate(aura, 20, 0.1)
-	assert_eq(aura.shown_level, 3.0)
-
-
-func test_aura_colour_is_set_per_instance_on_shell_and_particles() -> void:
-	var aura := _instantiate(AURA_SCENE_PATH) as FighterAura
-	var cyan := Color(0.35, 0.85, 1.0)
-	aura.color = cyan
-	assert_eq((aura.get_node("Shell") as MeshInstance3D).get_instance_shader_parameter("color"), cyan)
-	for particle_name in ["Motes", "Streaks"]:
-		assert_eq((aura.get_node(particle_name) as GPUParticles3D).get_instance_shader_parameter("tint"), cyan)
-
-
-func test_particle_quality_scales_the_aura_particle_share() -> void:
-	var aura := _instantiate(AURA_SCENE_PATH) as FighterAura
-	aura.power_level = 3.0
-	aura.snap()
-	aura.particle_quality = 0.5
-	assert_almost_eq((aura.get_node("Motes") as GPUParticles3D).amount_ratio, 0.5, 0.001)
 
 
 func test_impact_frame_is_hidden_until_flashed() -> void:
