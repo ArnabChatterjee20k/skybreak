@@ -399,7 +399,7 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
-- T-135 [developer/desktop] MERGED into `main` (camera round 3, `--no-ff`; evidence in
+- T-135 [developer/desktop] MERGED into `main` at 61925008 (PR #149, `--no-ff`; web-build 66250942, play-windows 05e02e73; evidence in
   `reports/camera/round3/README.md`). Hybrid exchange cam, terrain-wall push, closer base framing,
   low voxel props as obstacles, `CameraClearance` no-clip measure, `VoxelCameraFight` tests; plus this
   round: the locked target's body no longer pulls the boom in front of them (the main cause of lost
