@@ -151,6 +151,44 @@ defender at 70-84 deg off the attacker's facing, lights 2 and 3 miss, and the de
 
 Tables: `bouts_before.md`, `bouts_after.md`.
 
+## QA quick (`tools/qa/run_qa.sh --quick --jobs 2`, same box, same settings)
+
+| Section | main `599ab6aa` | branch `b1f01aca` |
+|---|---|---|
+| Invariant soak (sim) | PASS | PASS |
+| Invariant soak (view) | FAIL | FAIL |
+| Scenario library | PASS | PASS |
+| Golden replays | PASS | PASS (re-blessed) |
+| Visual goldens | NOT RUN | NOT RUN |
+| Feel metrics trend | PASS | PASS |
+
+Feel metrics, main -> branch: camera jerk p95 0.00873 -> 0.00895 (+2.5 %), hitstop consistency
+0.722 -> 0.714, foot slide 0.0317 -> 0.0312 cm/frame, foot error p95 0.93 -> 0.92 cm, pops
+0.036 -> 0.036 per fighter-minute, locked on-screen share 0.982 -> 0.976, sim 1.18 -> 1.20 ms/tick,
+view 1.21 -> 1.23 ms/frame. Press-to-active latency unchanged for every legend and attack.
+
+**The view soak has more violations than main** (same FAIL verdict): camera_on_screen 2/21 -> 5/21
+matches (5 frames), foot_ground 3/21 (4 frames) -> 5/21 (19 frames), pop 1 -> 1. Main's numbers are
+identical run to run (the same matches every time), so to check whether this is the matches
+diverging or a real effect, I ran both at 4800 ticks per match (headless, view checks on):
+
+| 4800-tick A/B, 21 matches | main | branch |
+|---|---|---|
+| camera_on_screen | 1 match | 4 matches (92.4-94.9 %, limit 95 %) |
+| foot_ground | 9 matches / 17 frames | 11 matches / 69 frames |
+| fighter_overlap | 6 / 12 | 6 / 12 |
+| pop | 1 / 1 | 1 / 1 |
+
+49 of the branch's 69 foot frames are three clusters on cliffs: two AI fighters flying up a
+Shattered Mesa cliff at 28 m/s and landing on a ledge the voxel art does not show (+2.6 to +3.1 m,
+`IDLE, clip land`), a -77 cm sink on an Ember Rift slope, and a -18 cm `walk_back` sink. That is the
+existing terrain-vs-voxel ledge class (main has the same class at 50-90 cm), reached because the
+matches now go elsewhere. None involve a guard state. The camera misses are borderline shares at
+the end of long matches. Ablations on those four matches: putting the side vanish back on the strafe
+cap changes nothing; switching `PressureAI` off clears one of four. So they are not one new mechanic;
+more lateral movement in general is the likely cause, and it lands on the open developer camera item
+(T-135-c, hybrid camera). Filed on the board; not hidden, no threshold changed.
+
 ## How it feels now (honest critique)
 
 I could not play it: this is headless sim evidence plus frame logs, not hands-on feel. What the

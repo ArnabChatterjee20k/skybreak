@@ -1,0 +1,120 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 10,
+			"8": 1
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"kael_comet_drive": {
+			"9": 2
+		},
+		"launcher": {
+			"8": 6
+		},
+		"light_1": {
+			"3": 4,
+			"4": 5,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 6,
+			"8": 8,
+			"9": 1
+		},
+		"light_2": {
+			"3": 10,
+			"4": 8,
+			"5": 1,
+			"20": 1
+		},
+		"light_3": {
+			"3": 8,
+			"4": 7,
+			"8": 1
+		},
+		"repeater/projectile": {
+			"1": 112
+		},
+		"repeater/projectile+counter": {
+			"5": 2
+		},
+		"smash": {
+			"8": 1
+		},
+		"vexa_razor_waltz": {
+			"5": 11,
+			"20": 1
+		},
+		"vexa_shade_flicker": {
+			"7": 2
+		},
+		"vexa_shade_flicker+counter": {
+			"11": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "111:verdant_falls:2v2:lyra,kael,vexa,brann:4432",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 3,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4,
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "INTRO",
+	"rounds_started": 2,
+	"seed": 111,
+	"sim_ms_per_tick": 1.321383125,
+	"ticks": 4800,
+	"view": {
+		"camera_jerk_p95": 0.00502183195203543,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.99163956332049,
+		"foot_slide_cm_per_frame": 0.0198959453607876,
+		"foot_slide_frames": 642,
+		"foot_slide_skipped_frames": 1,
+		"locked_on_screen_share": 0.99488609948861,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.32142416666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +7.8 cm off the visible ground (IDLE, clip turn_step)",
+			"fighter": 2,
+			"first_tick": 4773,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 4773,
+			"worst_value": 0.0777212908536526
+		}
+	],
+	"wall_seconds": 130.822,
+	"zone": "verdant_falls"
+}

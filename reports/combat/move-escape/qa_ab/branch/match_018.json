@@ -1,0 +1,117 @@
+{
+	"hitstops": {
+		"charged_blast": {
+			"20": 1
+		},
+		"gauntlets/breaker": {
+			"7": 1
+		},
+		"gauntlets/light_1": {
+			"3": 1
+		},
+		"gauntlets/light_1+counter": {
+			"7": 1
+		},
+		"gauntlets/light_2": {
+			"3": 1
+		},
+		"gauntlets/light_3": {
+			"3": 1
+		},
+		"ki_blast": {
+			"4": 1
+		},
+		"lance/breaker": {
+			"9": 3
+		},
+		"lance/light_1": {
+			"4": 8
+		},
+		"lance/light_1+counter": {
+			"8": 1
+		},
+		"lance/light_2": {
+			"4": 9
+		},
+		"lance/light_3": {
+			"7": 12
+		},
+		"launcher": {
+			"7": 2
+		},
+		"light_1+counter": {
+			"7": 6,
+			"9": 1
+		},
+		"light_2": {
+			"3": 6,
+			"5": 1
+		},
+		"light_3": {
+			"5": 5,
+			"8": 1
+		},
+		"repeater/projectile+counter": {
+			"5": 1
+		},
+		"weapon/thrown": {
+			"6": 2
+		}
+	},
+	"id": "118:verdant_falls:1v1:brann,lyra:24",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 5,
+		"charged": 3,
+		"clashes": 0,
+		"ki_hits": 2,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 118,
+	"sim_ms_per_tick": 0.884009375,
+	"ticks": 4800,
+	"view": {
+		"camera_jerk_p95": 0.0120164025574923,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.92435302802869,
+		"foot_slide_cm_per_frame": 0.185470377774826,
+		"foot_slide_frames": 574,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.931383836058024,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.16784625,
+	"violations": [
+		{
+			"check": "camera_on_screen",
+			"count": 1,
+			"detail": "both locked fighters on screen in 93.1% of 4343 locked frames",
+			"fighter": 0,
+			"first_tick": 4800,
+			"legend": "brann",
+			"limit": 0.95,
+			"weapon": "",
+			"worst_tick": 4800,
+			"worst_value": 0.931383836058024
+		}
+	],
+	"wall_seconds": 129.122,
+	"zone": "verdant_falls"
+}

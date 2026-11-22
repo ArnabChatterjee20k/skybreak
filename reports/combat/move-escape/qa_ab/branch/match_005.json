@@ -1,0 +1,167 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 4,
+			"8": 4
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"gauntlets/breaker": {
+			"7": 1
+		},
+		"gauntlets/light_1": {
+			"3": 3
+		},
+		"gauntlets/light_2": {
+			"3": 3
+		},
+		"gauntlets/light_3": {
+			"3": 2
+		},
+		"kael_comet_drive": {
+			"9": 4,
+			"20": 1
+		},
+		"launcher": {
+			"7": 3,
+			"8": 1
+		},
+		"light_1": {
+			"3": 12,
+			"4": 1,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 1,
+			"8": 1,
+			"9": 2
+		},
+		"light_2": {
+			"3": 9,
+			"4": 3,
+			"5": 3,
+			"20": 1
+		},
+		"light_3": {
+			"3": 2,
+			"4": 2,
+			"5": 7,
+			"8": 3
+		},
+		"scythe/light_1": {
+			"5": 5
+		},
+		"scythe/light_1+counter": {
+			"9": 1
+		},
+		"scythe/light_2": {
+			"5": 3
+		},
+		"scythe/light_3": {
+			"7": 2
+		},
+		"vexa_razor_waltz": {
+			"5": 1
+		},
+		"vexa_shade_flicker+counter": {
+			"11": 1
+		}
+	},
+	"id": "105:ember_rift:2v2:vexa,brann,lyra,kael:3224",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 2,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		3,
+		2,
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 105,
+	"sim_ms_per_tick": 1.34364583333333,
+	"ticks": 4800,
+	"view": {
+		"camera_jerk_p95": 0.0100866062566638,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.19519473216769,
+		"foot_slide_cm_per_frame": 0.0519534128488579,
+		"foot_slide_frames": 594,
+		"foot_slide_skipped_frames": 5,
+		"locked_on_screen_share": 0.923579688285571,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.26212395833333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole +44.3 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 2,
+			"first_tick": 2427,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2427,
+			"worst_value": 0.442769052972267
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +8.0 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 3,
+			"first_tick": 3267,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 3267,
+			"worst_value": 0.079586808010351
+		},
+		{
+			"check": "foot_ground",
+			"count": 12,
+			"detail": "lowest sole -76.6 cm off the visible ground (IDLE, clip turn_step)",
+			"fighter": 1,
+			"first_tick": 3760,
+			"legend": "brann",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 4287,
+			"worst_value": -0.765688306490119
+		},
+		{
+			"check": "camera_on_screen",
+			"count": 1,
+			"detail": "both locked fighters on screen in 92.4% of 1989 locked frames",
+			"fighter": 0,
+			"first_tick": 4800,
+			"legend": "vexa",
+			"limit": 0.95,
+			"weapon": "",
+			"worst_tick": 4800,
+			"worst_value": 0.923579688285571
+		}
+	],
+	"wall_seconds": 91.216,
+	"zone": "ember_rift"
+}

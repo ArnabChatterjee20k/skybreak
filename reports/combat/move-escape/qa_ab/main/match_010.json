@@ -1,0 +1,152 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 6
+		},
+		"breaker": {
+			"7": 9,
+			"8": 3,
+			"20": 1
+		},
+		"kael_comet_drive": {
+			"9": 3,
+			"20": 1
+		},
+		"launcher": {
+			"8": 4
+		},
+		"light_1": {
+			"3": 8,
+			"4": 6,
+			"5": 1,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 12,
+			"8": 4,
+			"9": 2
+		},
+		"light_2": {
+			"3": 19,
+			"4": 8,
+			"5": 3
+		},
+		"light_3": {
+			"3": 11,
+			"4": 6,
+			"5": 6,
+			"8": 3
+		},
+		"repeater/projectile": {
+			"1": 14
+		},
+		"repeater/projectile+counter": {
+			"5": 1
+		},
+		"scatter/projectile": {
+			"3": 33
+		},
+		"scatter/projectile+counter": {
+			"7": 1
+		},
+		"weapon/thrown": {
+			"6": 2
+		}
+	},
+	"id": "110:frozen_peaks:ffa4:lyra,kael,vexa,brann:3523",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 3,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		3,
+		5,
+		2,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 110,
+	"sim_ms_per_tick": 1.35157083333333,
+	"ticks": 4800,
+	"view": {
+		"camera_jerk_p95": 0.00356381060555577,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.982851458161349,
+		"foot_slide_cm_per_frame": 0.0951518171084565,
+		"foot_slide_frames": 1077,
+		"foot_slide_skipped_frames": 2,
+		"locked_on_screen_share": 0.995864661654135,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.30909770833333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole +6.4 cm off the visible ground (IDLE, clip fight_idle)",
+			"fighter": 0,
+			"first_tick": 1594,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 4110,
+			"worst_value": 0.0636828757887997
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 1,
+			"detail": "fighters 0 and 2 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 4103,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 4103,
+			"worst_value": 0.88
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 1,
+			"detail": "fighters 1 and 3 overlap 1.12 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 4103,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 4103,
+			"worst_value": 1.12
+		},
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +6.0 cm off the visible ground (IDLE, clip turn_step)",
+			"fighter": 2,
+			"first_tick": 4113,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 4113,
+			"worst_value": 0.0602388081836409
+		}
+	],
+	"wall_seconds": 117.76,
+	"zone": "frozen_peaks"
+}

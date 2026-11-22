@@ -11,7 +11,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   gaps in continued blocked strings, 15 deg follow-up turn cap, a dodged light ends the string, side
   vanish really goes round (was 3 deg), guard drift 4 m/s with climb and jump-out, AI dodges out and
   punishes dodges. Open: rush tailgating a retreating target for 90 ticks; owner play of the
-  held-Shift air tech; strafe still capped at the camera's 180 deg/s [developer].
+  held-Shift air tech; strafe still capped at the camera's 180 deg/s [developer]; QA view soak
+  after the change: camera_on_screen 1 -> 4 of 21 long matches at 92-95 % (T-135-c, hybrid camera)
+  [developer] and cliff-ledge landings the voxel art does not show (+2.6-3.1 m, Shattered Mesa seed
+  107) [desktop, terrain].
 
 - VOXEL-SHIP open items [desktop unless tagged] (voxel art shipped on `main`, see
   `reports/ship/voxel-ship.md`), ranked:
