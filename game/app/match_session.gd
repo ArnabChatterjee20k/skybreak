@@ -26,6 +26,9 @@ func _ready() -> void:
 	results.character_select_requested.connect(_quit_to.bind(&"character_select"))
 	results.main_menu_requested.connect(_quit_to.bind(&"main"))
 	add_child(results)
+	if is_online():
+		# Online the match never pauses; Restart would desync, so it returns to the lobby instead.
+		(pause_menu.buttons[&"restart"] as Button).visible = false
 	var level := get_parent()
 	if level != null and level.has_signal(&"match_finished"):
 		level.connect(&"match_finished", _on_match_finished)
@@ -52,7 +55,16 @@ func _process(delta: float) -> void:
 		match_over = true
 
 
+## True in a Duo match over the network (the level's online flag).
+func is_online() -> bool:
+	return get_parent() != null and get_parent().get(&"online") == true
+
+
 func pause() -> void:
+	if is_online():
+		get_parent().set(&"input_blocked", true)
+		pause_menu.open()
+		return
 	get_tree().paused = true
 	pause_menu.open()
 	_music(&"set_paused", true)
@@ -60,12 +72,17 @@ func pause() -> void:
 
 func resume() -> void:
 	pause_menu.close()
+	if get_parent() != null and get_parent().get(&"input_blocked") != null:
+		get_parent().set(&"input_blocked", false)
 	get_tree().paused = false
 	_music(&"set_paused", false)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func restart() -> void:
+	if is_online():
+		_quit_to(&"duo_lobby")
+		return
 	_music(&"set_paused", false)
 	var config := _config()
 	if config != null:
@@ -82,7 +99,10 @@ func winner_index() -> int:
 
 func show_results(winner: int) -> void:
 	match_over = true
-	get_tree().paused = true
+	if is_online():
+		get_parent().set(&"input_blocked", true)
+	else:
+		get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var config := _config()
 	var fighters: Array = config.fighters if config != null else []
@@ -96,6 +116,14 @@ func _on_match_finished(winner: int) -> void:
 
 func _quit_to(screen: StringName) -> void:
 	_music(&"set_paused", false)
+	var level := get_parent()
+	if level != null and level.get(&"duo_link") is DuoLink:
+		var link := level.get(&"duo_link") as DuoLink
+		# A Duo match goes back to the Duo lobby while the partner is still there.
+		if screen != &"main" and link.is_connected_to_partner():
+			screen = &"duo_lobby"
+		elif screen == &"main":
+			link.leave()
 	var config := _config()
 	if config != null:
 		config.return_to_menu(screen)

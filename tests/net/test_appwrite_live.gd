@@ -22,7 +22,7 @@ func test_a_player_signs_in_creates_reads_and_deletes_a_lobby() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	var code := AppwriteSignalling.new_code(rng)
-	var created: Dictionary = await client.create_document(AppwriteSignalling.LOBBIES, code, {
+	var created: Dictionary = await client.create_row(AppwriteSignalling.LOBBIES, code, {
 		"code": code, "host": client.user_id, "guest": "", "status": "closed",
 		"seed": 1, "ai_count": 1,
 	}, AppwriteSignalling.lobby_permissions(client.user_id))
@@ -30,10 +30,10 @@ func test_a_player_signs_in_creates_reads_and_deletes_a_lobby() -> void:
 	if created.error:
 		await client.sign_out()
 		return
-	var read: Dictionary = await client.get_document(AppwriteSignalling.LOBBIES, code)
+	var read: Dictionary = await client.get_row(AppwriteSignalling.LOBBIES, code)
 	assert_eq(read.error, "", "read lobby")
 	assert_eq(read.body.get("host"), client.user_id)
-	var deleted: Dictionary = await client.delete_document(AppwriteSignalling.LOBBIES, code)
+	var deleted: Dictionary = await client.delete_row(AppwriteSignalling.LOBBIES, code)
 	assert_eq(deleted.error, "", "delete lobby")
 	await client.sign_out()
 	assert_false(client.is_signed_in())
