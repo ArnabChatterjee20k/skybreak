@@ -45,3 +45,15 @@ func test_a_grab_pair_and_a_vanish_are_left_alone() -> void:
 	one.state = FighterState.State.THROWING
 	one.grab_partner = 1
 	assert_true(BodySeparation.pair_exempt(one, two, 0, 1))
+
+
+func test_a_flier_over_a_head_is_stacked_and_one_beside_is_not() -> void:
+	# Verdant seed 7: Brann hovered 1.39 m above and 0.89 m beside Lyra, inside her silhouette.
+	var brann := FighterState.new()
+	brann.stats = Roster.character(&"brann").stats
+	var lyra := FighterState.new()
+	lyra.stats = Roster.character(&"lyra").stats
+	assert_gt(BodySeparation.stack_gap(brann, lyra, 0.89, 1.39), 0.4)
+	assert_eq(BodySeparation.stack_gap(brann, lyra, 2.0, 1.39), 0.0, "beside")
+	assert_eq(BodySeparation.stack_gap(brann, lyra, 0.5, 3.0), 0.0, "well above")
+	assert_eq(BodySeparation.stack_gap(brann, lyra, 0.5, 0.2), 0.0, "level: the core check's job")

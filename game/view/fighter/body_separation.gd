@@ -90,8 +90,9 @@ func update(sim: CombatSim, delta: float) -> void:
 			var stack := stack_gap(one, two, planar, height)
 			if stack > 0.0 and minf(stack, STACK_STEP) > depth:
 				depth = minf(stack, STACK_STEP)
-				# The one on top moves.
+				# The one on top moves, across the view so the gap reads on screen.
 				share = 1.0 if height > 0.0 else 0.0
+				away = _across_view(away, views[i])
 			if deepest > -HOLD or stack_gap(one, two, planar - HOLD, height) > 0.0:
 				pushed[i] = true
 				pushed[j] = true
@@ -111,6 +112,19 @@ func update(sim: CombatSim, delta: float) -> void:
 		else:
 			offsets[i] = Vector3.ZERO
 			views[i].body_offset = Vector3.ZERO
+
+
+## The camera's right axis, signed toward away (flat); away itself without a camera.
+static func _across_view(away: Vector3, view: Node3D) -> Vector3:
+	var camera := view.get_viewport().get_camera_3d() if view.is_inside_tree() else null
+	if camera == null:
+		return away
+	var right := camera.global_basis.x
+	right.y = 0.0
+	if right.length_squared() < 1.0e-6:
+		return away
+	right = right.normalized()
+	return right if right.dot(away) >= 0.0 else -right
 
 
 ## Sideways shortfall (m) of a pair stacked one over the other, 0 when not stacked.
