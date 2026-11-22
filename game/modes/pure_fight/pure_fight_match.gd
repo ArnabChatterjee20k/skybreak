@@ -66,6 +66,14 @@ func configure(match_config: Dictionary) -> void:
 	training = StringName(config.get("mode", MODE)) == MODE_TRAINING
 
 
+## Members built in field initialisers are only parented in _ready; free them if it never ran.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		for node: Node in [stage, camera, hud, effects]:
+			if is_instance_valid(node) and node.get_parent() == null:
+				node.free()
+
+
 func _ready() -> void:
 	if config.is_empty():
 		configure({})
