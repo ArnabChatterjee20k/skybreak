@@ -1,11 +1,11 @@
 # Skybreak for Windows (x86_64)
 
-Built from `main` at `46da3b2062e6fc94c513882c546ba127a20a0c74` (voxel art merge, PR #148, plus the
-visual-golden refresh) with the official Godot 4.7.2 Windows release template (export templates
+Built from `main` at `746036c1` (PR #141 specials: Kael and Vexa special kits on keys 1/2/3,
+Momentum, Afterimage, on top of the voxel art) with the official Godot 4.7.2 Windows release template (export templates
 SHA-512 checked against `SHA512-SUMS.txt`), `Windows Desktop` preset. The game data (including
 the high, medium and low voxel zone bakes) is embedded in `Skybreak.exe`.
 
-The zip is 724,862,052 bytes, more than GitHub's 100 MB file limit, so it is split into 8 parts
+The zip is 727,574,429 bytes, more than GitHub's 100 MB file limit, so it is split into 8 parts
 (`split -b 90m`).
 
 ## Join and play
@@ -18,9 +18,9 @@ The zip is 724,862,052 bytes, more than GitHub's 100 MB file limit, so it is spl
    ```
 
 3. Optional check (PowerShell): `Get-FileHash Skybreak-windows-x86_64.zip` must print
-   `89024AA44340EBE0C52FA274A503A9C874B797A25DE578F2BE191EC986A8EC26`.
+   `08D6095708D98971E241CCDDE9738E65EDB511C48282A3B3A866BA70BC44AB8B`.
 4. Extract the zip and run `Skybreak\Skybreak.exe` (keep the `.dll` next to it).
 
-Not boot-tested on Windows (no Windows machine in the cloud). The Linux export of the same commit
-booted the menu and loaded a Vs AI match in voxel Frozen Peaks from its bake (exit 0, no script
-errors); see `reports/ship/voxel-ship.md` on `main`.
+Not boot-tested on Windows (no Windows machine in the cloud). The same commit's web export ran a
+Vs AI match for 30 s with no console errors, and a headless bot-vs-bot Versus on voxel Shattered
+Mesa ran 150 s of fight with no script errors; see `reports/gameplay/resume.md` on `main`.
