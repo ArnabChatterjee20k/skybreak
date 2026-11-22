@@ -499,6 +499,9 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
     hit_light with the repeater, ember_rift seed 112 t1690; feel trend flags finger pops 1 -> 2 events
     in 46.7 fighter-minutes. Not a special clip. Repro:
     `tools/qa/run_qa.sh --repro '112:ember_rift:1v1:kael,vexa:45' --tick 1690 --fighter 1`.
+    ISSUE-SWEEP merge 3fb4bc4e: a second instance, Vexa LeftHand 1.24 rad in HITSTUN hit_light (repeater),
+    `100:shattered_mesa:1v1:kael,vexa:54` t1477; BodySeparation's offsets there are 2-3 cm and smooth, so
+    it is this borderline flip tipped over 1.2, not a jump.
   - SP1-8 [developer] `ZoneMatch` ignores the config's `rounds` (versus_soak chains matches instead).
   - SP1-1 [desktop] Brann and Lyra kits (they keep the T-KI1 beam on `1` until then).
   - SP1-2 [desktop] Ultimates (`SpecialKit.ultimate`, 2 burst) and transformations (`T`, 1 burst,
