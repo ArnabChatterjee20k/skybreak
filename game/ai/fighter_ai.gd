@@ -76,6 +76,9 @@ var _strafe: float = 1.0
 var _target: int = -1
 var _route: Route = Route.LIGHTS
 var _string_goal: int = 3
+## The last string opened (route * 16 + goal); level 3+ never opens the same one twice in a row (#106).
+var _last_string: int = -1
+var _varied: int = 0
 var _air_combo: bool = false
 ## Move instance (opponent * 2^20 + start tick) the guard/punish rolls were made for.
 var _guard_key: int = -1
@@ -165,7 +168,7 @@ func snapshot() -> Dictionary:
 			_air_combo, _guard_key, _guard_roll, _punish_key, _punish_until, _link_key, _link_ok,
 			_defend_left, _escape_left, _tech_tick, _hold_left, _hold_move, _hold_vertical,
 			_last_state, _grudge, _grudge_tick, _push_rolled, _step_out, _edge_gap, _perfect_streak, _target_air_ticks, legend,
-			profile.spacing, _last_hitter.duplicate(), _ki_game.snapshot_values()],
+			profile.spacing, _last_hitter.duplicate(), _ki_game.snapshot_values(), _last_string, _varied],
 		"escapes": escapes.snapshot(),
 	}
 
@@ -194,6 +197,8 @@ func restore(saved: Dictionary) -> void:
 	_last_hitter = (v[31] as PackedInt32Array).duplicate() if v.size() > 31 else PackedInt32Array()
 	if v.size() > 32:
 		_ki_game.restore_values(v[32])
+	_last_string = v[33] if v.size() > 33 else -1
+	_varied = v[34] if v.size() > 34 else 0
 	if saved.has("escapes"):
 		escapes.restore(saved.escapes)
 
@@ -472,7 +477,26 @@ func _start_string(plan: FighterInput, goal: int) -> void:
 	_route = _ender_route()
 	if _route == Route.LIGHTS:
 		_string_goal = 4
+	if profile.level >= 3:
+		_vary_string()
+	_last_string = _route * 16 + _string_goal
 	_tap(plan, _A.LIGHT)
+
+
+## Another length or ender than the last string, so exchanges don't replay one loop (#106).
+## Alternates without the rng: a shorter or longer string first, then another ender.
+func _vary_string() -> void:
+	if _route * 16 + _string_goal != _last_string:
+		return
+	_varied += 1
+	if _route != Route.LIGHTS and _varied % 2 == 1:
+		_string_goal = 2 if _string_goal >= 3 else 3
+	elif _route == Route.LIGHTS:
+		_route = Route.BREAKER
+		_string_goal = 3
+	else:
+		_route = Route.LIGHTS
+		_string_goal = 4
 
 
 ## The best route the AI knows; a launcher only when it can vanish up after it (a lone
