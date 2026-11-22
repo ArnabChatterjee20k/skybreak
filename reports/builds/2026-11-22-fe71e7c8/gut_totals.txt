@@ -1,0 +1,14 @@
+Totals
+------
+Warnings              3
+Deprecated            2
+
+Scripts             188
+Tests              1894
+Passing Tests      1888
+Risky/Pending        10
+Asserts           261728
+Orphans              15
+Time              816.213s
+
+gut exit 0
