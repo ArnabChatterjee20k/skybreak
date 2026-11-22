@@ -1,0 +1,86 @@
+# Publishes the web build on the `web-build` branch (web/) to the Appwrite Site `skybreak-web`.
+# Runs on every push to web-build and on demand. The key lives only in the SKYBREAK_SITES_KEY secret.
+name: Deploy web build
+
+on:
+  push:
+    branches: [web-build]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: web-build
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pack web/
+        run: |
+          test -f web/index.html
+          find web -name '*.gz' -o -name '*.br' -o -name '*.import' | xargs -r rm -f
+          tar -czf "$RUNNER_TEMP/code.tar.gz" -C web .
+          ls -la "$RUNNER_TEMP/code.tar.gz"
+          stat -c %s web/index.pck > "$RUNNER_TEMP/pck_size"
+          grep -o '"build"[^,]*' web/version.json || true
+
+      - name: Deploy to Appwrite Sites
+        env:
+          SKYBREAK_SITES_KEY: ${{ secrets.SKYBREAK_SITES_KEY }}
+        run: |
+          test -n "$SKYBREAK_SITES_KEY" || { echo "SKYBREAK_SITES_KEY secret is not set"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/dep" && cd "$RUNNER_TEMP/dep"
+          npm init -y > /dev/null
+          npm i node-appwrite@latest > /dev/null
+          cat > deploy.mjs <<'EOF'
+          import * as sdk from 'node-appwrite';
+          let InputFile = sdk.InputFile;
+          if (!InputFile) ({ InputFile } = await import('node-appwrite/file'));
+          const client = new sdk.Client()
+            .setEndpoint('https://sgp.cloud.appwrite.io/v1')
+            .setProject('6a113777000db893b12e')
+            .setKey(process.env.SKYBREAK_SITES_KEY);
+          const sites = new sdk.Sites(client);
+          const siteId = 'skybreak-web';
+          const dep = await sites.createDeployment({
+            siteId,
+            code: InputFile.fromPath(process.argv[2], 'code.tar.gz'),
+            activate: true,
+            outputDirectory: './',
+          });
+          console.log('deployment', dep.$id, dep.status);
+          for (let i = 0; i < 180; i++) {
+            const d = await sites.getDeployment({ siteId, deploymentId: dep.$id });
+            if (['ready', 'failed', 'canceled'].includes(d.status)) {
+              console.log('status', d.status);
+              if (d.status !== 'ready') { console.log((d.buildLogs ?? '').slice(-1500)); process.exit(1); }
+              break;
+            }
+            await new Promise((r) => setTimeout(r, 5000));
+          }
+          const s = await sites.get({ siteId });
+          console.log('live deployment', s.deploymentId);
+          EOF
+          node deploy.mjs "$RUNNER_TEMP/code.tar.gz"
+
+      - name: Check the live site
+        run: |
+          URL=https://skybreak-web-6a113777000db893b12e.appwrite.network
+          want=$(cat "$RUNNER_TEMP/pck_size")
+          for i in $(seq 1 20); do
+            got=$(curl -sI "$URL/index.pck" | tr -d '\r' | awk 'tolower($1)=="content-length:"{print $2}')
+            echo "index.pck live=$got want=$want"
+            [ "$got" = "$want" ] && break
+            sleep 15
+          done
+          [ "$got" = "$want" ] || { echo "live index.pck size does not match"; exit 1; }
+          curl -s "$URL/version.json" | head -c 200; echo
