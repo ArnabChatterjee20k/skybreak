@@ -2,7 +2,7 @@ class_name FighterAura
 extends Node3D
 ## Anime power-up aura around a fighter (view only): layered flame tongues hugging the
 ## body, a fresnel inner glow, rising voxel motes with soft halos, a ki gather into the
-## chest (converging streaks, a pulsing orb, floor shock rings, dust and a light pulse),
+## chest (converging streaks, a pulsing orb, floor shock rings and a light pulse),
 ## and crackling lightning arcs from level 2. Origin at the capsule centre, feet 1 m below.
 ## Everything is built once in _ready; per-frame work only sets a few uniforms.
 
@@ -14,7 +14,6 @@ const CHARGE_FADE := 0.25
 ## Particle budgets at particle_quality 1.0 (HIGH).
 const MOTE_BUDGET := 32
 const GATHER_BUDGET := 28
-const DUST_BUDGET := 12
 const MAX_ARCS := 6
 ## Metres from the capsule centre: the chest the ki gathers into, and the feet.
 const CHEST := Vector3(0.0, 0.22, 0.0)
@@ -36,7 +35,6 @@ const SHELL_SHADER := preload("res://game/view/shaders/aura.gdshader")
 const SPARK_SHADER := preload("res://game/view/shaders/aura_spark.gdshader")
 const VOXEL_SHADER := preload("res://game/view/shaders/aura_voxel.gdshader")
 const ARC_SHADER := preload("res://game/view/shaders/aura_arc.gdshader")
-const DUST_COLOR := Color(0.72, 0.68, 0.62)
 
 ## Flame layers, back to front: depth offset, half-width, height, interior glow, heat, intensity, tongues.
 const FLAME_LAYERS := [
@@ -73,7 +71,6 @@ var _shell: MeshInstance3D
 var _flames: Array[MeshInstance3D] = []
 var _motes: GPUParticles3D
 var _gather: GPUParticles3D
-var _dust: GPUParticles3D
 var _orb: MeshInstance3D
 var _floor: MeshInstance3D
 var _arcs: Array[MeshInstance3D] = []
@@ -147,7 +144,7 @@ static func light_energy(level: float, charge: float, time: float) -> float:
 
 ## Every particle system the aura owns, for budget checks.
 func particle_systems() -> Array[GPUParticles3D]:
-	return [_motes, _gather, _dust]
+	return [_motes, _gather]
 
 
 ## Total particles at full level for the current quality.
@@ -178,8 +175,6 @@ func light() -> OmniLight3D:
 func _apply_color() -> void:
 	var energy := Color(color, 1.0)
 	for made in _materials:
-		if made.has_meta(&"dust"):
-			continue
 		made.set_shader_parameter(&"color" if made.shader == SHELL_SHADER else &"tint", energy)
 	_light.light_color = energy.lerp(Color.WHITE, 0.15)
 
@@ -205,7 +200,6 @@ func _apply_level() -> void:
 	_motes.speed_scale = 1.0 + 0.35 * clampf(level - 1.0, 0.0, 2.0)
 	var charge := shown_charge * on
 	_set_ratio(_gather, charge * q)
-	_set_ratio(_dust, charge * q)
 	_orb.visible = charge > 0.01
 	(_orb.material_override as ShaderMaterial).set_shader_parameter(&"strength", charge)
 	_orb.scale = Vector3.ONE * (0.8 + 0.2 * clampf(level - 1.0, 0.0, 2.0))
@@ -279,17 +273,6 @@ func _build() -> void:
 	streak.size = Vector2(0.07, 0.42)
 	streak.material = _own(SPARK_SHADER, {&"spark_shape": 1, &"intensity": 1.4, &"core_whiteness": 0.7})
 	_gather.draw_pass_1 = streak
-	_dust = _particles("Dust", DUST_BUDGET, 0.9, _dust_process())
-	_dust.position = Vector3(0.0, -FEET + 0.08, 0.0)
-	var puff := QuadMesh.new()
-	puff.size = Vector2.ONE * 0.55
-	var dust_material := VfxKit.layer_material(&"dust")
-	dust_material.set_shader_parameter(&"tint", DUST_COLOR)
-	dust_material.set_shader_parameter(&"opacity", 0.35)
-	dust_material.set_meta(&"dust", true)
-	_materials.append(dust_material)
-	puff.material = dust_material
-	_dust.draw_pass_1 = puff
 	_orb = MeshInstance3D.new()
 	_orb.name = "Orb"
 	_orb.position = CHEST
@@ -399,26 +382,4 @@ static func _gather_process() -> ParticleProcessMaterial:
 	made.scale_min = 0.6
 	made.scale_max = 1.0
 	made.particle_flag_align_y = true
-	return made
-
-
-## Dust pushed out along the floor by the charge.
-static func _dust_process() -> ParticleProcessMaterial:
-	var made := ParticleProcessMaterial.new()
-	made.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_RING
-	made.emission_ring_axis = Vector3.UP
-	made.emission_ring_height = 0.05
-	made.emission_ring_radius = 0.55
-	made.emission_ring_inner_radius = 0.35
-	made.direction = Vector3.UP
-	made.spread = 0.0
-	made.initial_velocity_min = 0.2
-	made.initial_velocity_max = 0.5
-	made.radial_velocity_min = 1.6
-	made.radial_velocity_max = 2.8
-	made.damping_min = 1.5
-	made.damping_max = 2.5
-	made.gravity = Vector3.ZERO
-	made.scale_min = 0.6
-	made.scale_max = 1.2
 	return made

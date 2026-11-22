@@ -48,8 +48,6 @@ const AURA_DEFAULTS := {
 	"rim_base": "0.0",
 	"body_height": "1.85",
 }
-## Alpha-blended dust is the one aura layer that isn't additive energy.
-const AURA_MIX_BLEND_NODES := ["Dust"]
 
 const SPARK_DEFAULTS := {
 	"tint": "vec4(1.0, 0.62, 0.22, 1.0)",
@@ -277,8 +275,6 @@ func test_every_aura_and_impact_material_is_additive_and_never_writes_depth() ->
 		var scene := _instantiate(path)
 		var checked := 0
 		for node in scene.find_children("*", "GeometryInstance3D", true, false):
-			if path == AURA_SCENE_PATH and node.name in AURA_MIX_BLEND_NODES:
-				continue
 			var materials := _materials_of(node as GeometryInstance3D)
 			assert_gt(materials.size(), 0, "%s/%s has a material" % [path.get_file(), node.name])
 			for material in materials:

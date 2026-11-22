@@ -14,7 +14,7 @@ const SOFT_SHADERS := [
 ## Shader features the Compatibility renderer (GLES3, web) lacks or caps.
 const COMPATIBILITY_UNSAFE := ["instance uniform", "hint_screen_texture", "hint_depth_texture",
 	"hint_normal_roughness_texture", "SCREEN_TEXTURE", "DEPTH_TEXTURE", "global uniform"]
-const HIGH_BUDGET := 72
+const HIGH_BUDGET := 64
 
 
 func _aura(level := 0.0, charging := false, quality := 1.0) -> FighterAura:
@@ -84,8 +84,7 @@ func test_every_quad_the_aura_draws_uses_a_soft_aura_shader() -> void:
 				continue
 			quads += 1
 			var shader := (materials[i] as ShaderMaterial).shader
-			var soft := shader.resource_path in SOFT_SHADERS or shader == VfxKit.DEBRIS
-			assert_true(soft, "%s draws its quad with a soft shader, not a flat material" % node.name)
+			assert_true(shader.resource_path in SOFT_SHADERS, "%s draws its quad with a soft shader, not a flat material" % node.name)
 	assert_gt(quads, 4)
 
 
@@ -126,7 +125,6 @@ func test_the_ki_gather_shows_only_while_charging() -> void:
 	assert_false((idle.get_node("Orb") as MeshInstance3D).visible)
 	var charging := _aura(1.0, true)
 	assert_true((charging.get_node("Gather") as GPUParticles3D).emitting, "streaks converge into the chest")
-	assert_true((charging.get_node("Dust") as GPUParticles3D).emitting, "dust pushed along the floor")
 	assert_true((charging.get_node("Orb") as MeshInstance3D).visible, "a pulsing orb")
 	assert_true((charging.get_node("FloorRing") as MeshInstance3D).visible, "shock rings on the floor")
 
@@ -186,8 +184,6 @@ func test_the_energy_colour_reaches_every_layer_and_the_light() -> void:
 	aura.color = violet
 	var tinted := 0
 	for made in aura.materials():
-		if made.has_meta(&"dust"):
-			continue
 		var key := &"color" if made.shader.resource_path.ends_with("/aura.gdshader") else &"tint"
 		assert_eq(made.get_shader_parameter(key), violet, made.shader.resource_path)
 		tinted += 1
@@ -216,8 +212,6 @@ func test_every_layer_clamps_its_hdr_so_bloom_cannot_blow_out() -> void:
 		assert_string_contains(_fragment(path), "min(", path)
 		assert_string_contains(FileAccess.get_file_as_string(path), "uniform float max_hdr", path)
 	for made in _aura(3.0, true).materials():
-		if made.has_meta(&"dust"):
-			continue
 		var ceiling: Variant = made.get_shader_parameter(&"max_hdr")
 		assert_true(ceiling == null or float(ceiling) <= 2.0, made.shader.resource_path)
 
