@@ -1,0 +1,10 @@
+Scripts             200
+Tests              1956
+Passing Tests      1950
+Risky/Pending        10
+Asserts           294510
+Orphans              15
+Time              1019.515s
+
+
+gut exit 0   (0 failing)
