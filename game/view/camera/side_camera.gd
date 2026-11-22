@@ -5,14 +5,16 @@ extends Camera3D
 ## finishers and a decaying shake for heavy hits. Reads positions only.
 
 const MIN_DISTANCE := 5.2
-const MAX_DISTANCE := 9.0
+const MAX_DISTANCE := 10.5
 ## Distance added per metre between the fighters.
 const ZOOM_PER_METRE := 0.62
 const HEIGHT := 1.35
 const LOOK_HEIGHT := 1.05
-const SMOOTH := 6.0
+const SMOOTH := 9.0
+## Zooming out to keep both fighters in frame is faster than settling back in.
+const ZOOM_OUT_SMOOTH := 16.0
 ## Share of the screen width the two fighters may span at most.
-const FRAME_SHARE := 0.72
+const FRAME_SHARE := 0.66
 
 var line_dir := Vector3.RIGHT
 var floor_y := 0.0
@@ -53,7 +55,8 @@ func follow(a: Vector3, b: Vector3, delta: float) -> void:
 		k = 1.0
 		_ready_once = true
 	_centre = _centre.lerp(centre, k)
-	_distance = lerpf(_distance, want, k)
+	var k_out := 1.0 if k >= 1.0 else 1.0 - exp(-ZOOM_OUT_SMOOTH * delta)
+	_distance = lerpf(_distance, want, k_out if want > _distance else k)
 	var forward := view_dir()
 	var look := _centre + Vector3.UP * LOOK_HEIGHT
 	var distance := _distance

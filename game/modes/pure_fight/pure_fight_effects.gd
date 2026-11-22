@@ -150,7 +150,7 @@ func _process(delta: float) -> void:
 		v *= 1.0 - (3.0 if bit.dust else 1.5) * delta
 		bit.v = v
 		node.global_position += v * delta
-		var s := 1.0 - bit.age / bit.life
+		var s: float = 1.0 - bit.age / bit.life
 		node.scale = Vector3.ONE * (s if not bit.dust else 0.6 + bit.age * 2.0)
 		keep.append(bit)
 	_bits = keep

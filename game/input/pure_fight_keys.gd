@@ -14,7 +14,7 @@ const DEFAULTS := [
 	{"left": [KEY_LEFT], "right": [KEY_RIGHT], "up": [KEY_UP], "down": [KEY_DOWN],
 		"light": [KEY_KP_1, KEY_COMMA], "medium": [KEY_KP_2, KEY_PERIOD], "heavy": [KEY_KP_3, KEY_SLASH],
 		"throw": [KEY_KP_4, KEY_SEMICOLON], "technique": [KEY_KP_5, KEY_APOSTROPHE],
-		"finisher": [KEY_KP_6, KEY_BRACKETRIGHT], "dash": [KEY_KP_0, KEY_BACKSLASH], "block": [KEY_KP_DECIMAL]},
+		"finisher": [KEY_KP_6, KEY_BRACKETRIGHT], "dash": [KEY_KP_0, KEY_BACKSLASH], "block": [KEY_KP_PERIOD]},
 ]
 const BITS := {
 	"light": FighterInput.Action.LIGHT, "medium": FighterInput.Action.SPECIAL_1,

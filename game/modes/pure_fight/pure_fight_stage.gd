@@ -58,7 +58,7 @@ func _spread(ground: Callable, centre: Vector2, dir: Vector3) -> Vector2:
 	var across := Vector3(-dir.z, 0.0, dir.x)
 	for a in range(-8, 9, 2):
 		for b in [-2.0, 0.0, 2.0]:
-			var p := Vector3(centre.x, 0.0, centre.y) + dir * float(a) + across * b
+			var p: Vector3 = Vector3(centre.x, 0.0, centre.y) + dir * float(a) + across * float(b)
 			var h: float = ground.call(p.x, p.z)
 			low = minf(low, h)
 			high = maxf(high, h)

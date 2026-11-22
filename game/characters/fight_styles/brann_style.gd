@@ -129,3 +129,13 @@ func victory(n: int, t: float) -> Dictionary:
 		pose.lh = Vector3(0.3, 1.2, 0.1)
 		pose.hd = Vector3(-25, 0, 0)
 	return blend(stance(t), pose, _ease(clampf(t / 0.4, 0.0, 1.0)))
+
+
+func defeat(t: float) -> Dictionary:
+	# On one knee, a gauntlet planted on the floor holding him up.
+	var pose := kneel()
+	pose.lh = Vector3(0.20, 0.10, 0.45)
+	pose.rh = Vector3(-0.25, 0.70, 0.15)
+	pose.sp = Vector3(35, 0, 0)
+	pose.hd = Vector3(-5, 0, 0)
+	return blend(stance(t), pose, _ease(clampf(t / 0.6, 0.0, 1.0)))

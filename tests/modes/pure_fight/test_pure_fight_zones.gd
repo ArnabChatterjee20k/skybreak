@@ -32,7 +32,9 @@ func _play(zone: StringName, index: int) -> Dictionary:
 				rounds_seen += 1
 		if t % 3 == 0:
 			level.present_frame(1.0, 3.0 / 60.0)
-			if level.sim.phase == PureFightSim.Phase.FIGHT:
+			# The finisher punch-in frames the attacker on purpose.
+			if level.sim.phase == PureFightSim.Phase.FIGHT and level.sim.finisher_owner < 0 \
+					and level.camera._punch <= 0.0:
 				checked += 1
 				var a := level.views[0].position + Vector3.UP
 				var b := level.views[1].position + Vector3.UP

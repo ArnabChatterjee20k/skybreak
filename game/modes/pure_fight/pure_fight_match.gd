@@ -203,7 +203,7 @@ func _dummy_input(index: int) -> FighterInput:
 	var away := -float(signi(sim.opponent(index).x - me.x))
 	match dummy_mode:
 		1:
-			var guard := PureMoves.get_move(sim.opponent(index).legend, sim.opponent(index).move).get("guard", &"mid")
+			var guard: StringName = PureMoves.get_move(sim.opponent(index).legend, sim.opponent(index).move).get("guard", &"mid")
 			input.move = Vector2(away, -1.0 if guard == &"low" else 0.0)
 		2:
 			input.move = Vector2(away, -1.0)

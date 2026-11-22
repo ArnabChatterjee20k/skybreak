@@ -97,3 +97,18 @@ func victory(n: int, t: float) -> Dictionary:
 
 func _hikite(other: String, _kind: StringName) -> Vector3:
 	return lead_guard if other == "l" else rear_guard
+
+
+func defeat(t: float) -> Dictionary:
+	# Still standing, bent over with a hand on her knee, catching her breath.
+	var pose := stance(t)
+	pose.hip = Vector3(0, -0.12, -0.05)
+	pose.hipr = Vector3(0, -10, 0)
+	pose.sp = Vector3(40, 0, 0)
+	pose.ch = Vector3(10, 0, 0)
+	pose.hd = Vector3(-10 + 4.0 * sin(t * 5.0), 0, 0)
+	pose.lh = Vector3(0.12, 0.62, 0.30)
+	pose.rh = Vector3(-0.22, 0.85, 0.0)
+	pose.lf = Vector3(0.10, ANKLE, 0.25)
+	pose.rf = Vector3(-0.12, ANKLE, -0.25)
+	return blend(stance(t), pose, _ease(clampf(t / 0.6, 0.0, 1.0)))

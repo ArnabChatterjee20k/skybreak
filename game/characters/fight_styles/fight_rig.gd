@@ -61,10 +61,12 @@ static func euler(degrees: Vector3) -> Basis:
 static func frame_turn(rest_dir: Vector3, rest_axis: Vector3, dir: Vector3, axis: Vector3) -> Basis:
 	var a := rest_dir.normalized()
 	var b := (rest_axis - a * rest_axis.dot(a)).normalized()
-	var c := dir.normalized()
-	var d := (axis - c * axis.dot(c))
-	if d.length_squared() < 1e-8:
-		d = b
+	var c := dir.normalized() if dir.length_squared() > 1e-10 else a
+	var d := axis - c * axis.dot(c)
+	if d.length_squared() < 1e-6:
+		d = b - c * b.dot(c)
+	if d.length_squared() < 1e-6:
+		d = c.cross(Vector3.RIGHT if absf(c.x) < 0.9 else Vector3.FORWARD)
 	d = d.normalized()
 	var from := Basis(a, b, a.cross(b))
 	var to := Basis(c, d, c.cross(d))
