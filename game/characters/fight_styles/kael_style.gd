@@ -17,7 +17,7 @@ func _init() -> void:
 	rear_guard = Vector3(-0.10, 1.08, 0.12)
 	sway = 0.008
 	sway_hz = 0.45
-	walk_stride = 0.38
+	walk_cycle = 0.45
 	types = {&"5L": &"jab", &"5M": &"straight", &"5H": &"front", &"2L": &"front", &"2M": &"straight",
 		&"2H": &"uppercut", &"3H": &"sweep", &"6M": &"hammer", &"6H": &"side", &"j.L": &"front",
 		&"j.M": &"chop", &"j.H": &"side", &"5L>M": &"elbow", &"5M>H": &"front", &"iron_lunge": &"elbow"}
@@ -119,7 +119,7 @@ func victory(n: int, t: float) -> Dictionary:
 		pose.rt = Vector3(0, 0, 1)
 		pose.lk = Vector3(1, 0, 0.5)
 		pose.rk = Vector3(-1, 0, 0.5)
-		pose.lh = Vector3(0.75, 1.35, 0.0)
+		pose.lh = Vector3(0.45, 1.32, 0.42)
 		pose.rh = _hikite("r", &"")
 		pose.hd = Vector3(0, 90, 0)
 	var settle := clampf(t / 0.4, 0.0, 1.0)

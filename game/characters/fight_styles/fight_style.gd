@@ -24,6 +24,8 @@ var sway_hz := 0.5
 var bounce := 0.0
 var bounce_hz := 2.0
 var walk_stride := 0.34
+## Seconds per full walk cycle (two steps); the stride follows from the walk speed.
+var walk_cycle := 0.45
 ## Strike type per move id (see _strike_keys); missing ids pick a type from the limb.
 var types: Dictionary = {}
 ## Explicit keys per move id: Array of [frame spec, pose overrides]; beat the generator.
@@ -177,14 +179,16 @@ func roll(f: float, backwards: bool) -> Dictionary:
 
 func walk(t: float, forward: bool, speed: float) -> Dictionary:
 	var pose := stance(t)
-	# One step per foot each cycle; the planted foot slides back at exactly walk speed.
-	var cycle := maxf(walk_stride * 2.0 / maxf(speed, 0.1), 0.4)
+	# One step per foot each cycle; the planted foot moves back at exactly walk speed, so in
+	# the world it stays put while the body walks over it.
+	var cycle := walk_cycle
+	var stride := maxf(speed, 0.1) * cycle * 0.5
 	var phase := fposmod(t / cycle, 1.0)
 	var sign := 1.0 if forward else -1.0
 	var lead: Vector3 = pose.lf
 	var rear: Vector3 = pose.rf
-	pose.lf = lead + _step_offset(phase, sign)
-	pose.rf = rear + _step_offset(fposmod(phase + 0.5, 1.0), sign)
+	pose.lf = lead + _step_offset(phase, sign, stride)
+	pose.rf = rear + _step_offset(fposmod(phase + 0.5, 1.0), sign, stride)
 	var hips: Vector3 = pose.hip
 	pose.hip = hips + Vector3(0.0, -0.015 * absf(cos(phase * TAU)), 0.02 * sign)
 	var spine: Vector3 = pose.sp
@@ -194,12 +198,13 @@ func walk(t: float, forward: bool, speed: float) -> Dictionary:
 
 ## Foot offset over a step cycle: first half planted (moving back at walk speed), second half
 ## swinging forward with a lift.
-func _step_offset(phase: float, sign: float) -> Vector3:
-	var half := walk_stride * 0.5
+func _step_offset(phase: float, sign: float, stride: float) -> Vector3:
+	var half := stride * 0.5
 	if phase < 0.5:
 		return Vector3(0.0, 0.0, sign * lerpf(half, -half, phase / 0.5))
 	var swing := (phase - 0.5) / 0.5
-	return Vector3(0.0, sin(swing * PI) * 0.09, sign * lerpf(-half, half, _ease(swing)))
+	# The foot pops off the floor at once (sqrt) so it never skids while lifting or landing.
+	return Vector3(0.0, sqrt(sin(swing * PI)) * 0.08, sign * lerpf(-half, half, _ease(swing)))
 
 
 func dash(f: float, forward: bool) -> Dictionary:
@@ -410,6 +415,10 @@ func _strike_keys(id: StringName, data: Dictionary) -> Array:
 	var target_key := side + ("h" if String(limb).ends_with("hand") else "f")
 	if follow.has(target_key):
 		follow[target_key] = (follow[target_key] as Vector3).lerp(windup.get(target_key, follow[target_key]), 0.35)
+	if target_key.ends_with("f") and not air:
+		# Re-chamber over the stance spot, then set the foot down straight (no skid home).
+		var home: Vector3 = (crouch(0.0) if data.stance == &"crouch" else stance(0.0))[target_key]
+		follow[target_key] = home + Vector3(0, 0.10, 0)
 	var spec_w := "s-%d" % maxi(int(data.startup) / 2, 1)
 	if air:
 		return [[spec_w, windup], ["s", strike], ["e", strike], ["e+6", follow]]
@@ -508,16 +517,23 @@ func _kick(side: String, kind: StringName, reach: float, height: float, air: boo
 			strike["sp"] = Vector3(lean - 30.0, 0, 0)
 		&"sweep":
 			windup[side + "f"] = Vector3(0.15 * mirror, 0.20, 0.2)
-			strike[side + "f"] = Vector3(0.05 * mirror, ANKLE + 0.02, reach)
+			strike[side + "f"] = Vector3(0.05 * mirror, ANKLE + 0.04, reach)
 			strike[side + "k"] = Vector3(0.6 * mirror, 1.0, 0.2)
 			strike[side + "t"] = Vector3(-0.7 * mirror, 0.0, 0.7)
 			strike["hipr"] = Vector3(0, stance_yaw - 60.0 * mirror, 0)
+	# Short voxel legs: the hips lunge toward the target (at most 30 cm) to close the gap.
+	var leg := 0.66
+	var hip_y := 0.8 - hip_drop
+	var room := sqrt(maxf(leg * leg - pow(kick_height - hip_y, 2.0), 0.04))
+	var lunge := clampf(reach - room - 0.05, 0.0, 0.30)
+	var hips: Vector3 = strike.get("hip", Vector3(0, -hip_drop, 0))
+	strike["hip"] = hips + Vector3(0, 0, lunge)
 	if crouching:
 		var low := crouch(0.0)
 		for key in [support + "f", "lh", "rh"]:
 			strike[key] = low[key]
 			windup[key] = low[key]
-		strike["hip"] = Vector3(0, -0.40, -0.05)
+		strike["hip"] = Vector3(0, -0.40, -0.05 + lunge * 0.5)
 		windup["hip"] = Vector3(0, -0.40, -0.02)
 		strike["sp"] = Vector3(lean + 10.0, 0, 0)
 		strike[support + "k"] = Vector3(0.6 * -mirror, 0.3, 1)

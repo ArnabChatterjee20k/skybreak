@@ -18,7 +18,7 @@ func _init() -> void:
 	rear_guard = Vector3(-0.10, 1.34, 0.24)
 	sway = 0.012
 	sway_hz = 0.35
-	walk_stride = 0.30
+	walk_cycle = 0.6
 	types = {&"5L": &"jab", &"5M": &"hook", &"5H": &"hook", &"2L": &"axe", &"2M": &"uppercut",
 		&"2H": &"uppercut", &"3H": &"sweep", &"6M": &"hammer", &"j.L": &"elbow", &"j.M": &"hammer",
 		&"5L>M": &"hook", &"5M>H": &"hook", &"gauntlet_uppercut": &"uppercut"}

@@ -8,6 +8,7 @@ signal launched(scene_path: String)
 const ZONE_MATCH_SCENE := "res://game/levels/zone_match.tscn"
 const FALLBACK_SCENE := "res://game/levels/test_arena.tscn"
 const FRONT_END_SCENE := "res://game/ui/menus/front_end.tscn"
+const PURE_FIGHT_SCENE := "res://game/modes/pure_fight/pure_fight_match.tscn"
 
 var zone: StringName = &"stormfall_city"
 var fighters: Array[Dictionary] = []
@@ -49,9 +50,9 @@ static func match_scene_path() -> String:
 ## background thread behind a LoadingScreen. Returns the scene path, or "" on
 ## failure.
 func launch() -> String:
-	var path := match_scene_path()
+	var path := PURE_FIGHT_SCENE if MatchRules.is_pure_fight(mode) else match_scene_path()
 	var bake := zone_bake_path()
-	if bake != "" and path == ZONE_MATCH_SCENE and not VoxelZoneBake.preloaded.has(bake) and is_inside_tree():
+	if bake != "" and (path == ZONE_MATCH_SCENE or path == PURE_FIGHT_SCENE) and not VoxelZoneBake.preloaded.has(bake) and is_inside_tree():
 		_reset_engine_state()
 		var screen := LoadingScreen.new()
 		screen.title = String(zone).capitalize()

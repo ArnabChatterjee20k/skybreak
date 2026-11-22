@@ -19,7 +19,7 @@ func _init() -> void:
 	sway = 0.006
 	bounce = 0.025
 	bounce_hz = 2.2
-	walk_stride = 0.30
+	walk_cycle = 0.4
 	types = {&"5L": &"jab", &"5M": &"round", &"5H": &"side", &"2L": &"front", &"2M": &"round",
 		&"2H": &"up", &"3H": &"sweep", &"6M": &"axe", &"4H": &"spin", &"j.L": &"front",
 		&"j.M": &"round", &"j.H": &"side", &"5M>M": &"round", &"5L>H": &"side",

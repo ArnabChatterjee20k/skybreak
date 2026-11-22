@@ -7,6 +7,9 @@ const MODE_VS_AI := &"vs_ai"
 const MODE_FFA := &"ffa"
 const MODE_TRAINING := &"training"
 const MODE_DUO := &"duo"
+## Pure Fight (GAME_DESIGN §16): 2.5D 1v1, P2 an AI or a second local player.
+const MODE_PURE_FIGHT := &"pure_fight"
+const MODE_PURE_FIGHT_TRAINING := &"pure_fight_training"
 
 const MIN_AI_LEVEL := 1
 const MAX_AI_LEVEL := 5
@@ -17,6 +20,8 @@ const FIGHTER_LIMITS := {
 	MODE_FFA: Vector2i(2, 4),
 	MODE_TRAINING: Vector2i(2, 2),
 	MODE_DUO: Vector2i(3, 6),
+	MODE_PURE_FIGHT: Vector2i(2, 2),
+	MODE_PURE_FIGHT_TRAINING: Vector2i(2, 2),
 }
 
 ## One fighter entry, clamped to the valid ranges.
@@ -44,6 +49,10 @@ static func build_ffa(entries: Array, zone_id: StringName, round_count: int = DE
 		var e: Dictionary = entries[i]
 		list.append(fighter(e.character, e.get("team", i), e.get("is_ai", i > 0), e.get("ai_level", 3)))
 	return make(MODE_FFA, zone_id, list, round_count)
+
+
+static func is_pure_fight(mode_id: StringName) -> bool:
+	return mode_id == MODE_PURE_FIGHT or mode_id == MODE_PURE_FIGHT_TRAINING
 
 
 static func make(mode_id: StringName, zone_id: StringName, list: Array[Dictionary], round_count: int) -> Dictionary:

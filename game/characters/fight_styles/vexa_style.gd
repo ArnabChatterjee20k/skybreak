@@ -17,7 +17,7 @@ func _init() -> void:
 	rear_guard = Vector3(-0.30, 1.0, -0.10)
 	sway = 0.03
 	sway_hz = 0.7
-	walk_stride = 0.40
+	walk_cycle = 0.42
 	types = {&"5L": &"backfist", &"5M": &"side", &"5H": &"spin", &"2L": &"sweep", &"2M": &"front",
 		&"2H": &"up", &"3H": &"sweep", &"6M": &"axe", &"6H": &"round", &"j.L": &"front",
 		&"j.M": &"round", &"j.H": &"spin", &"5L>M": &"round", &"2M>H": &"sweep",
@@ -75,10 +75,10 @@ func stance(t: float) -> Dictionary:
 	var left_back := maxf(swing, 0.0)
 	var right_back := maxf(-swing, 0.0)
 	# A foot only moves while it is off the floor: the lift is up whenever it travels.
-	var lift_l := 0.07 * absf(sin(phase * TAU * 2.0)) if phase < 0.5 else 0.0
-	var lift_r := 0.07 * absf(sin(phase * TAU * 2.0)) if phase >= 0.5 else 0.0
-	pose.lf = lead_foot + Vector3(0.0, lift_l, -0.42 * left_back)
-	pose.rf = rear_foot + Vector3(0.0, lift_r, -0.42 * right_back)
+	var lift_l := 0.08 * sqrt(absf(sin(phase * TAU * 2.0))) if phase < 0.5 else 0.0
+	var lift_r := 0.08 * sqrt(absf(sin(phase * TAU * 2.0))) if phase >= 0.5 else 0.0
+	pose.lf = lead_foot + Vector3(0.0, lift_l, -0.42 * left_back * left_back)
+	pose.rf = rear_foot + Vector3(0.0, lift_r, -0.42 * right_back * right_back)
 	pose.hip = Vector3(0.02 * swing, -hip_drop - 0.04 * absf(swing), -0.10 * absf(swing))
 	pose.hipr = Vector3(0, stance_yaw + 18.0 * swing, 0)
 	pose.lh = Vector3(0.10 + 0.08 * left_back, 1.05 + 0.30 * left_back, 0.30)
