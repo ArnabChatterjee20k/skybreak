@@ -17,7 +17,7 @@ static func sheet(style: FightStyle, which: String) -> Array:
 			if data.kind == &"technique":
 				cells.append([String(data.name), active_pose(style, id), SIDE])
 		cells.append(["finisher", style.throwing(_finisher(legend), 40, 100), SIDE])
-		cells.append(["victory", style.victory(0, 1.0), 30.0])
+		cells.append(["victory", style.victory(0, 1.0), 60.0])
 		return cells
 	cells.append(["walk fwd", style.walk(0.2, true, 2.5), SIDE])
 	cells.append(["walk back", style.walk(0.5, false, 2.0), SIDE])

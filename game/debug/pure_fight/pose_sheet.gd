@@ -64,13 +64,17 @@ func _sheet(out: String, legend: StringName, which: String) -> void:
 	for node in view.find_children("*", "SkeletonModifier3D", true, false):
 		if node is MotionLayers:
 			(node as SkeletonModifier3D).active = false
+	# Unarmed, as in the game (PureFightFighterView hides the same nodes).
+	for node in view.find_children("*", "BoneAttachment3D", true, false):
+		(node as Node3D).visible = false
 	var skeleton: Skeleton3D = view.model.get_node("%GeneralSkeleton")
 	var rig := FightRig.new()
 	rig.setup(skeleton)
 	var style := FightStyle.for_legend(legend)
 	var cells := PureFightPoses.sheet(style, which)
-	var rows := ceili(float(cells.size()) / COLUMNS)
-	var sheet := Image.create(_cell.x * mini(cells.size(), COLUMNS), _cell.y * rows, false, Image.FORMAT_RGB8)
+	var columns := cells.size() if which == "strip" else COLUMNS
+	var rows := ceili(float(cells.size()) / columns)
+	var sheet := Image.create(_cell.x * mini(cells.size(), columns), _cell.y * rows, false, Image.FORMAT_RGB8)
 	for i in cells.size():
 		var entry: Array = cells[i]
 		_label.text = "%s  %s" % [String(legend).to_upper(), entry[0]]
@@ -83,7 +87,7 @@ func _sheet(out: String, legend: StringName, which: String) -> void:
 		await RenderingServer.frame_post_draw
 		var image := _viewport.get_texture().get_image()
 		image.convert(Image.FORMAT_RGB8)
-		sheet.blit_rect(image, Rect2i(Vector2i.ZERO, _cell), Vector2i((i % COLUMNS) * _cell.x, (i / COLUMNS) * _cell.y))
+		sheet.blit_rect(image, Rect2i(Vector2i.ZERO, _cell), Vector2i((i % columns) * _cell.x, (i / columns) * _cell.y))
 	var path := out.path_join("%s_%s.png" % [legend, which])
 	sheet.save_png(path)
 	print("[pose_sheet] %s (%d cells)" % [path, cells.size()])

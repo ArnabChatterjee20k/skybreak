@@ -48,7 +48,8 @@ func _run() -> void:
 			level.present_frame(1.0, 1.0 / 60.0)
 			await process_frame
 		# No impact-frame flash in the review still.
-		level.effects.impact_frame.visible = false
+		level.effects.impact_frame.queue_free()
+		level.effects.impact_frame = null
 		await process_frame
 		await RenderingServer.frame_post_draw
 		var path := out.path_join("zone_%s.png" % zone)

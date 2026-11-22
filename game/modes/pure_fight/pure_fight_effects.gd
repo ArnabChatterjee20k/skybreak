@@ -57,7 +57,7 @@ func react(events: Array) -> void:
 				_burst(at, "counter" if counter else "hit", 10 + strength * 8, 2.5 + strength)
 				camera.shake(0.25 + strength * 0.3 + (0.3 if counter else 0.0))
 				if strength >= 2 or counter:
-					impact_frame.flash(2 if strength >= 3 or counter else 1, 0.7 + 0.1 * strength)
+					_flash(2 if strength >= 3 or counter else 1, 0.7 + 0.1 * strength)
 				if type == Ev.COUNTER:
 					_say("COUNTER")
 				elif type == Ev.PUNISH:
@@ -74,7 +74,7 @@ func react(events: Array) -> void:
 				_say("ARMOR")
 			Ev.COUNTER_STANCE:
 				_burst(at, "counter", 22, 3.5)
-				impact_frame.flash(2, 1.0)
+				_flash(2, 1.0)
 				camera.shake(0.8)
 				_say("STARGUARD!")
 			Ev.THROW_TECH:
@@ -97,12 +97,12 @@ func react(events: Array) -> void:
 				_speed = 1.0
 			Ev.FINISHER:
 				var fighter := sim.pf[int(event.a)]
-				impact_frame.flash(3, 1.0)
+				_flash(3, 1.0)
 				camera.punch_in(world(fighter.x, 1300), 1.0)
 				_say(String(PureMoves.get_move(fighter.legend, event.move).name).to_upper())
 				_speed = 1.0
 			Ev.KO:
-				impact_frame.flash(4, 1.0)
+				_flash(4, 1.0)
 				camera.shake(1.2)
 				_burst(at, "counter", 30, 4.5)
 
@@ -158,3 +158,8 @@ func _process(delta: float) -> void:
 		_speed = maxf(_speed - delta * 3.0, 0.0)
 		speed_lines.visible = _speed > 0.01
 		(speed_lines.material as ShaderMaterial).set_shader_parameter("amount", _speed * 0.6)
+
+
+func _flash(frames: int, amount: float) -> void:
+	if impact_frame != null:
+		impact_frame.flash(frames, amount)

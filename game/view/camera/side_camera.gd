@@ -50,6 +50,11 @@ func follow(a: Vector3, b: Vector3, delta: float) -> void:
 	centre.y = floor_y + maxf((a.y + b.y) * 0.5 - floor_y, 0.0) * 0.5
 	var apart := absf((b - a).dot(line_dir))
 	var want := distance_for(apart)
+	# Airborne fighters: frame from the floor to the highest head, with a margin.
+	var top := maxf(a.y, b.y) - floor_y + 2.1
+	var tall := (top * 0.5 + 0.2) / tan(deg_to_rad(fov) * 0.5)
+	want = clampf(maxf(want, tall), MIN_DISTANCE, MAX_DISTANCE)
+	centre.y = maxf(centre.y, floor_y + top * 0.5 - LOOK_HEIGHT)
 	var k := 1.0 - exp(-SMOOTH * delta)
 	if not _ready_once:
 		k = 1.0
