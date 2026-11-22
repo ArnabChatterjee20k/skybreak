@@ -1,0 +1,126 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 9,
+			"20": 1
+		},
+		"breaker": {
+			"7": 12,
+			"8": 6,
+			"10": 1
+		},
+		"chakram/breaker": {
+			"8": 2,
+			"20": 1
+		},
+		"chakram/light_1": {
+			"4": 4
+		},
+		"chakram/light_2": {
+			"4": 3,
+			"20": 1
+		},
+		"chakram/light_3": {
+			"6": 3
+		},
+		"kael_comet_drive": {
+			"9": 7
+		},
+		"light_1": {
+			"3": 10,
+			"4": 3,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 11,
+			"8": 4,
+			"9": 3
+		},
+		"light_2": {
+			"3": 18,
+			"4": 6,
+			"5": 3
+		},
+		"light_3": {
+			"3": 10,
+			"4": 6,
+			"5": 8,
+			"8": 3
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 3,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		2,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 104,
+	"sim_ms_per_tick": 1.32323270833333,
+	"ticks": 4800,
+	"view": {
+		"camera_jerk_p95": 0.0100463721901178,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.06938285332649,
+		"foot_slide_cm_per_frame": 0.237580752805241,
+		"foot_slide_frames": 1090,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.981593763533997,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.45146229166667,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 1,
+			"detail": "fighters 0 and 2 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 3539,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 3539,
+			"worst_value": 0.88
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 1,
+			"detail": "fighters 1 and 3 overlap 1.12 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 3539,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 3539,
+			"worst_value": 1.12
+		}
+	],
+	"wall_seconds": 127.724,
+	"zone": "verdant_falls"
+}

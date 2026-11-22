@@ -172,3 +172,14 @@ shots. After merging main into #143 all visual goldens were re-rendered on the
 merged code with `bless_goldens.sh --visual` (Godot 4.7.2 linux x86_64). The eight
 `heartbloom_*` shots change because they show the new HUD over the art round 2
 Heartbloom zone; the zone shots changed only by art round 2 noise.
+
+## Re-bless for #150 (MOVE-ESCAPE, `fix/move-escape`)
+
+Intended combat change, all ten replays and `tests/combat/data/flat_floor_golden.json`
+re-recorded: a dash pressed in blockstun or hitstun now waits for the first free tick (or
+the air-tech window), a string's next light cuts the blocker's blockstun to leave a 4-tick
+gap, light links and heavy cancels turn at most 15 degrees, a dodged light ends the string,
+a side vanish goes up to 90 degrees round the target, guard drift 2.5 -> 4 m/s (climbs in the
+air, ascend on the floor jumps out), and the AI's new `PressureAI` rolls. First drift on main's
+goldens: facing_yaw within 30-150 ticks (the follow-up turn cap). `det_check total` goes from
+`65ec2f54272115fd` to `b8bab850a4256dc7` (`reports/gameplay/det_check_move_escape.txt`).

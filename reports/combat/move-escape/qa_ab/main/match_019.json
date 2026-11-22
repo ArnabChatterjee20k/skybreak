@@ -1,0 +1,151 @@
+{
+	"hitstops": {
+		"blade/breaker+counter": {
+			"12": 1
+		},
+		"blade/launcher": {
+			"8": 2
+		},
+		"blade/light_1+counter": {
+			"8": 2
+		},
+		"blade/light_2": {
+			"4": 2
+		},
+		"blade/light_3": {
+			"4": 2
+		},
+		"breaker": {
+			"7": 5,
+			"8": 9
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"chakram/light_1": {
+			"4": 4
+		},
+		"chakram/light_1+counter": {
+			"8": 2
+		},
+		"chakram/light_2": {
+			"4": 6
+		},
+		"chakram/light_3": {
+			"6": 6
+		},
+		"kael_comet_drive": {
+			"9": 5
+		},
+		"light_1": {
+			"3": 5,
+			"4": 7,
+			"5": 5,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 11,
+			"8": 6,
+			"9": 2
+		},
+		"light_2": {
+			"3": 15,
+			"4": 9,
+			"5": 4
+		},
+		"light_3": {
+			"3": 5,
+			"4": 9,
+			"5": 5,
+			"8": 3,
+			"20": 1
+		},
+		"smash+counter": {
+			"20": 1
+		},
+		"vexa_razor_waltz": {
+			"5": 9
+		},
+		"vexa_shade_flicker+counter": {
+			"11": 3
+		},
+		"weapon/thrown": {
+			"6": 1
+		},
+		"weapon/thrown+counter": {
+			"10": 1
+		}
+	},
+	"id": "119:ember_rift:ffa4:brann,lyra,kael,vexa:4433",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 3,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		4,
+		4,
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 119,
+	"sim_ms_per_tick": 1.31988166666667,
+	"ticks": 4800,
+	"view": {
+		"camera_jerk_p95": 0.00898472964763641,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.05411098550618,
+		"foot_slide_cm_per_frame": 0.0315143767609019,
+		"foot_slide_frames": 1089,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.992709045340624,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.39742395833333,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 1,
+			"detail": "fighters 0 and 2 overlap 1.12 m (IDLE vs IDLE)",
+			"fighter": 0,
+			"first_tick": 3471,
+			"legend": "brann",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 3471,
+			"worst_value": 1.12
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 1,
+			"detail": "fighters 1 and 3 overlap 0.88 m (IDLE vs IDLE)",
+			"fighter": 1,
+			"first_tick": 3471,
+			"legend": "lyra",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 3471,
+			"worst_value": 0.88
+		}
+	],
+	"wall_seconds": 96.831,
+	"zone": "ember_rift"
+}

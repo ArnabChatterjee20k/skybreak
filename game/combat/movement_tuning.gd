@@ -16,7 +16,7 @@ extends Resource
 @export var takeoff_speed: float = 14.0
 
 ## Slow drift speed while blocking, on the ground and in the air.
-@export var guard_drift_speed: float = 2.5
+@export var guard_drift_speed: float = 4.0
 
 @export_group("Flight")
 ## Top horizontal speed in free flight.

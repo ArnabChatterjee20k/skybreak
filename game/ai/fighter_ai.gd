@@ -111,6 +111,8 @@ var _ki: int = 0
 var escapes: EscapeAI
 ## Ki blasts, beams and beam clashes (T-KI1).
 var _ki_game := AIKi.new()
+## Dodging out of blockstrings and punishing dodges (#150); its own rng.
+var pressure: PressureAI
 
 
 ## seed_value should come from seed_for(sim seed, slot).
@@ -119,6 +121,7 @@ func _init(index: int, level: int = 3, seed_value: int = 0) -> void:
 	rng.seed = seed_value
 	profile = AIProfile.for_level(level, rng)
 	escapes = EscapeAI.new(level, hash([seed_value, "skybreak-escapes"]))
+	pressure = PressureAI.new(level, hash([seed_value, "skybreak-pressure"]))
 	_ki_game.rng.seed = seed_value ^ 0x4B49
 
 
@@ -167,6 +170,7 @@ func snapshot() -> Dictionary:
 			_last_state, _grudge, _grudge_tick, _push_rolled, _step_out, _edge_gap, _perfect_streak, _target_air_ticks, legend,
 			profile.spacing, _last_hitter.duplicate(), _ki_game.snapshot_values()],
 		"escapes": escapes.snapshot(),
+		"pressure": pressure.snapshot(),
 	}
 
 
@@ -196,6 +200,8 @@ func restore(saved: Dictionary) -> void:
 		_ki_game.restore_values(v[32])
 	if saved.has("escapes"):
 		escapes.restore(saved.escapes)
+	if saved.has("pressure"):
+		pressure.restore(saved.pressure)
 
 
 ## How far a move's hitboxes reach from the attacker's centre to a target's centre (planar).
@@ -230,6 +236,7 @@ func _decide(sim: CombatSim, me: FighterState, plan: FighterInput) -> void:
 			plan.target_switch = 1
 	var distance := to_target.length()
 	escapes.level = profile.level
+	pressure.level = profile.level
 	if me.state in [_S.IDLE, _S.MOVING, _S.FLYING, _S.FALLING, _S.CHARGING, _S.BLOCKING] \
 			and _ki_game.answer_beams(self, sim, me, plan):
 		return
@@ -273,6 +280,8 @@ func _keep_guard(sim: CombatSim, me: FighterState, target: FighterState, distanc
 		plan: FighterInput) -> void:
 	if me.state == _S.BLOCKSTUN and not me.blocking:
 		return # A push, not a guard.
+	if pressure.keep_dodging_out(plan):
+		return # Guard let go: the buffered dodge comes out in the gap.
 	var threat := _threat_ticks(sim, me)
 	if threat >= 1 and threat <= 5 and _guard_roll == 2 and me.state == _S.BLOCKING \
 			and me.perfect_block_lockout == 0 and not me.perfect_block_armed:
@@ -292,6 +301,8 @@ func _keep_guard(sim: CombatSim, me: FighterState, target: FighterState, distanc
 		_push_rolled = true
 		if rng.randf() < profile.escape_chance * (1.6 if low_guard else 0.7):
 			_tap(plan, _A.HEAVY)
+		elif (_previous.held_actions & _A.DASH) == 0 and pressure.try_dodge_out(me, _strafe, plan):
+			return
 	if me.state == _S.BLOCKING and target.state == _S.BLOCKING and distance < 2.0 \
 			and rng.randf() < profile.grab_guard_chance * 0.2:
 		plan.held_actions &= ~_A.BLOCK # Let go to grab next.
@@ -561,7 +572,9 @@ func _act_free(sim: CombatSim, me: FighterState, target: FighterState, distance:
 		_defend_left -= 1
 		plan.held_actions |= _A.BLOCK
 		return
-	# Whiff punish.
+	# A dodge's recovery, then a whiff.
+	if _may_attack(me) and pressure.punish_dodge(sim, me, _target, distance, light_reach, _ticks, plan):
+		return
 	if _punish(sim, me, target, distance, light_reach, plan):
 		return
 	if _ki_game.punish(self, me, target, distance, plan):
@@ -655,6 +668,7 @@ func _neutral(sim: CombatSim, me: FighterState, target: FighterState, distance: 
 			and rng.randf() < profile.guard_habit * 0.06:
 		_defend_left = rng.randi_range(8, 20)
 		plan.held_actions |= _A.BLOCK
+		plan.vertical = 0 # Guard in place: ascend with block held would jump out of it (#150).
 		return
 	match _plan:
 		Plan.WAIT:

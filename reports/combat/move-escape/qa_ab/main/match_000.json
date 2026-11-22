@@ -1,0 +1,114 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1,
+			"8": 1
+		},
+		"chakram/light_1": {
+			"4": 1
+		},
+		"kael_gale_riposte": {
+			"10": 1
+		},
+		"lance/breaker": {
+			"9": 1
+		},
+		"lance/light_1": {
+			"4": 3
+		},
+		"lance/light_1+counter": {
+			"8": 1
+		},
+		"lance/light_2": {
+			"4": 4
+		},
+		"lance/light_3": {
+			"7": 4
+		},
+		"launcher": {
+			"7": 3,
+			"8": 3
+		},
+		"light_1": {
+			"3": 5,
+			"4": 5
+		},
+		"light_1+counter": {
+			"7": 3
+		},
+		"light_2": {
+			"3": 6,
+			"4": 1
+		},
+		"light_3": {
+			"3": 5,
+			"4": 1
+		},
+		"repeater/projectile": {
+			"1": 100
+		},
+		"repeater/projectile+counter": {
+			"5": 4
+		},
+		"vexa_shade_flicker": {
+			"7": 2,
+			"20": 1
+		}
+	},
+	"id": "100:shattered_mesa:1v1:kael,vexa:54",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 1,
+	"legends": [
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		5,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 100,
+	"sim_ms_per_tick": 0.9427375,
+	"ticks": 4800,
+	"view": {
+		"camera_jerk_p95": 0.00810135249048471,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.27295619266565,
+		"foot_slide_cm_per_frame": 0.0201220250230664,
+		"foot_slide_frames": 628,
+		"foot_slide_skipped_frames": 1,
+		"locked_on_screen_share": 0.996986438975389,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.897850416666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +7.5 cm off the visible ground (IDLE, clip turn_step)",
+			"fighter": 0,
+			"first_tick": 3923,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 3923,
+			"worst_value": 0.0749282829913476
+		}
+	],
+	"wall_seconds": 36.594,
+	"zone": "shattered_mesa"
+}

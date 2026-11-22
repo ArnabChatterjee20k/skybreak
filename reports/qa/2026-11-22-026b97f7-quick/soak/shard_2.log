@@ -1,0 +1,92 @@
+ERROR: No GDExtension library found for current OS and architecture (linux.x86_64) in configuration file: res://addons/webrtc_native/webrtc_native.gdextension
+   at: parse_gdextension_file (core/extension/gdextension_library_loader.cpp:369)
+ERROR: GDExtension dynamic library not found: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: open_library (core/extension/gdextension.cpp:810)
+ERROR: Error loading extension: 'res://addons/webrtc_native/webrtc_native.gdextension'.
+   at: load_extensions (core/extension/gdextension_manager.cpp:333)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: VoxelZoneView: building stormfall_city live (no bake at res://game/world/voxel_zone_kit/baked/stormfall_city_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:186)
+         [2] _build_world (res://game/levels/zone_match.gd:177)
+         [3] _ready (res://game/levels/zone_match.gd:111)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+         [6] _run (res://game/debug/qa/qa_soak.gd:34)
+[qa] match 2 102:stormfall_city:2v2:kael,vexa,brann,lyra:4455: 2400 ticks, 1 violation kinds, 44.4 s
+WARNING: VoxelZoneView: building ember_rift live (no bake at res://game/world/voxel_zone_kit/baked/ember_rift_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:186)
+         [2] _build_world (res://game/levels/zone_match.gd:177)
+         [3] _ready (res://game/levels/zone_match.gd:111)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 5 105:ember_rift:2v2:vexa,brann,lyra,kael:3224: 2400 ticks, 1 violation kinds, 76.8 s
+WARNING: VoxelZoneView: building skyhold_ruins live (no bake at res://game/world/voxel_zone_kit/baked/skyhold_ruins_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:186)
+         [2] _build_world (res://game/levels/zone_match.gd:177)
+         [3] _ready (res://game/levels/zone_match.gd:111)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 8 108:skyhold_ruins:2v2:brann,lyra,kael,vexa:5343: 2400 ticks, 0 violation kinds, 61.1 s
+WARNING: VoxelZoneView: building verdant_falls live (no bake at res://game/world/voxel_zone_kit/baked/verdant_falls_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:186)
+         [2] _build_world (res://game/levels/zone_match.gd:177)
+         [3] _ready (res://game/levels/zone_match.gd:111)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+  _floor: 78530 ms
+  _cliff: 5898 ms
+  _backdrop: 632 ms
+  _water: 2 ms
+  _falls: 3 ms
+  _trees: 12 ms
+  _canopies: 11 ms
+  _scatter: 1394 ms
+  _shore: 35 ms
+  _story_props: 9 ms
+  _mist: 2 ms
+  _shafts: 1 ms
+  _particles: 0 ms
+[qa] match 11 111:verdant_falls:2v2:lyra,kael,vexa,brann:4432: 2400 ticks, 0 violation kinds, 107.2 s
+WARNING: VoxelZoneView: building shattered_mesa live (no bake at res://game/world/voxel_zone_kit/baked/shattered_mesa_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:186)
+         [2] _build_world (res://game/levels/zone_match.gd:177)
+         [3] _ready (res://game/levels/zone_match.gd:111)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 14 114:shattered_mesa:2v2:kael,vexa,brann,lyra:3355: 2400 ticks, 0 violation kinds, 21.7 s
+WARNING: VoxelZoneView: building frozen_peaks live (no bake at res://game/world/voxel_zone_kit/baked/frozen_peaks_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:186)
+         [2] _build_world (res://game/levels/zone_match.gd:177)
+         [3] _ready (res://game/levels/zone_match.gd:111)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 17 117:frozen_peaks:2v2:vexa,brann,lyra,kael:2343: 2400 ticks, 1 violation kinds, 98.0 s
+WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_high.scn); run tools/voxel_zone_bake.gd
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] build (res://game/world/voxel_zone_view.gd:59)
+         [1] _build_voxel_zone (res://game/levels/zone_match.gd:186)
+         [2] _build_world (res://game/levels/zone_match.gd:177)
+         [3] _ready (res://game/levels/zone_match.gd:111)
+         [4] build (res://game/debug/qa/qa_match_run.gd:41)
+         [5] _soak (res://game/debug/qa/qa_soak.gd:65)
+[qa] match 20 120:heartbloom_gardens:2v2:brann,lyra,kael,vexa:5245: 2400 ticks, 0 violation kinds, 104.4 s

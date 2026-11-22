@@ -1,0 +1,123 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 8,
+			"8": 1
+		},
+		"breaker+counter": {
+			"12": 1
+		},
+		"kael_comet_drive": {
+			"9": 2
+		},
+		"ki_blast": {
+			"4": 1
+		},
+		"launcher": {
+			"8": 5,
+			"20": 1
+		},
+		"light_1": {
+			"3": 5,
+			"4": 5,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 6,
+			"8": 4,
+			"9": 1
+		},
+		"light_2": {
+			"3": 11,
+			"4": 7,
+			"5": 1
+		},
+		"light_3": {
+			"3": 6,
+			"4": 7,
+			"5": 3,
+			"8": 1
+		},
+		"repeater/projectile": {
+			"1": 113
+		},
+		"repeater/projectile+counter": {
+			"5": 3
+		},
+		"smash": {
+			"8": 1
+		},
+		"vexa_razor_waltz": {
+			"5": 12
+		},
+		"vexa_shade_flicker": {
+			"7": 1
+		},
+		"vexa_shade_flicker+counter": {
+			"20": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "111:verdant_falls:2v2:lyra,kael,vexa,brann:4432",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 2,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 1,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 3,
+	"legends": [
+		"lyra",
+		"kael",
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4,
+		3,
+		2
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 111,
+	"sim_ms_per_tick": 1.31323645833333,
+	"ticks": 4800,
+	"view": {
+		"camera_jerk_p95": 0.00492342421784997,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.02962058642717,
+		"foot_slide_cm_per_frame": 0.0743328817686196,
+		"foot_slide_frames": 1049,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.982148653034729,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.24942979166667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +5.2 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 2,
+			"first_tick": 2420,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2420,
+			"worst_value": 0.0521007564329645
+		}
+	],
+	"wall_seconds": 126.032,
+	"zone": "verdant_falls"
+}

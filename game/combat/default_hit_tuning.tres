@@ -31,3 +31,5 @@ push_block_guard_cost = 10
 push_block_distance = 8.0
 push_block_stun_ticks = 16
 push_block_from_blockstun_tick = 4
+string_block_gap_ticks = 4
+follow_up_turn_degrees = 15.0

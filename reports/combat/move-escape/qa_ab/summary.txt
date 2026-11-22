@@ -1,0 +1,2 @@
+main: 21 matches, 100616 ticks: camera_on_screen 1 matches/1 frames, fighter_overlap 6 matches/12 frames, foot_ground 9 matches/17 frames, pop 1 matches/1 frames
+branch: 21 matches, 100339 ticks: camera_on_screen 4 matches/4 frames, fighter_overlap 6 matches/12 frames, foot_ground 11 matches/69 frames, pop 1 matches/1 frames

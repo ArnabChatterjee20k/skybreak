@@ -1,0 +1,128 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 8,
+			"8": 6,
+			"10": 1
+		},
+		"breaker+counter": {
+			"11": 2,
+			"14": 1
+		},
+		"charged_blast": {
+			"10": 5
+		},
+		"kael_comet_drive": {
+			"9": 4
+		},
+		"kael_comet_drive+counter": {
+			"20": 1
+		},
+		"ki_blast": {
+			"4": 6
+		},
+		"launcher": {
+			"8": 3
+		},
+		"light_1": {
+			"3": 22,
+			"4": 10,
+			"5": 4,
+			"20": 1
+		},
+		"light_1+counter": {
+			"7": 18,
+			"8": 6,
+			"9": 4
+		},
+		"light_2": {
+			"3": 32,
+			"4": 9,
+			"5": 6,
+			"20": 1
+		},
+		"light_3": {
+			"3": 12,
+			"4": 9,
+			"5": 17,
+			"8": 6,
+			"20": 1
+		},
+		"smash+counter": {
+			"12": 1,
+			"14": 1
+		}
+	},
+	"id": "101:skyhold_ruins:ffa4:kael,vexa,brann,lyra:4235",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 11,
+		"charged": 5,
+		"clashes": 0,
+		"ki_hits": 11,
+		"reflects": 2,
+		"soaks": 1,
+		"ultimates": 0
+	},
+	"kos": 4,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		2,
+		3,
+		5
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 2,
+	"seed": 101,
+	"sim_ms_per_tick": 1.364751875,
+	"ticks": 4800,
+	"view": {
+		"camera_jerk_p95": 0.00835280399769545,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.0,
+		"foot_slide_cm_per_frame": 0.0,
+		"foot_slide_frames": 0,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.964160839160839,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.28555104166667,
+	"violations": [
+		{
+			"check": "fighter_overlap",
+			"count": 1,
+			"detail": "fighters 0 and 2 overlap 1.12 m (FLYING vs FLYING)",
+			"fighter": 0,
+			"first_tick": 2996,
+			"legend": "kael",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 2996,
+			"worst_value": 1.12
+		},
+		{
+			"check": "fighter_overlap",
+			"count": 1,
+			"detail": "fighters 1 and 3 overlap 0.88 m (FLYING vs FLYING)",
+			"fighter": 1,
+			"first_tick": 2996,
+			"legend": "vexa",
+			"limit": 0.1,
+			"weapon": "",
+			"worst_tick": 2996,
+			"worst_value": 0.88
+		}
+	],
+	"wall_seconds": 74.414,
+	"zone": "skyhold_ruins"
+}
