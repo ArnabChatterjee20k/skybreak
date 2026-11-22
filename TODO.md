@@ -15,10 +15,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
      HIGH/MEDIUM first); cloud ms are lavapipe only.
   3. QA-12 view soak: foot_ground 4/21 quick matches, 8 frames (worst Lyra +22 cm, frozen_peaks seed
      117 t268), same as main before the merge.
-  4. Windows build (`play-windows`, now from 746036c1) not boot-tested on Windows; the Linux export of
+  4. Windows build (`play-windows` fb267e32, from fe71e7c8) not boot-tested on Windows; the Linux export of
      012ec23 boots the menu and voxel Frozen Peaks / Shattered Mesa matches from their bakes.
-  5. Appwrite deploy of the new web build: about 250 MB with the zone packs (`web-build` BUILD.md);
-     check the site's upload limit [owner, Mac].
+  5. Live web site (fe71e7c8, deployed by the `Deploy web build` workflow): only checked by size and
+     `version.json`; play one Vs AI and one Duo match on it [owner] (the cloud proxy blocks the site).
   6. run_qa.sh defaults to 8 soak jobs; on a 4-core box that doubles sim/view ms (use QA_JOBS=nproc)
      [developer, tools/].
   7. Filed earlier, still open: QA-22 (voxel Brann view cost), VOXEL-PALETTE, the classic menu
@@ -411,6 +411,11 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+- BUILD 2026-11-22 [desktop] Build of `main` fe71e7c8 with all four lanes (camera round 3, WEB-CACHE,
+  aura v2, Duo online): GUT 1894 / 0 failing, det_check stable; web on `web-build` 0cc630f0
+  (index.pck 56.7 MB, smoke PASS, cache 6/6, Duo browser test PASS), live on Appwrite (deployment
+  6b02e1ce83ba5adf73d3); Windows on `play-windows` fb267e32 (zip 726 MB, 8 parts).
+  Report: `reports/builds/2026-11-22-fe71e7c8.md`.
 - T-D15b [desktop] Duo online end to end (`net/duo-online`, report `reports/net/duo-online/`):
   Main menu -> Duo -> sign in (remembered) -> Host (5-letter code) / Join -> legends, host's
   zone/AI/lives/minutes -> Ready -> Start; `DuoLink` keeps the WebRTC link across menu and match;
