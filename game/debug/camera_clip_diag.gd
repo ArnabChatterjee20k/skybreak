@@ -25,6 +25,6 @@ func _run() -> void:
 			if n is MeshInstance3D:
 				desc += "%s parent %s box %s; " % [n.name, n.get_parent().name, (n as MeshInstance3D).global_transform * (n as MeshInstance3D).mesh.get_aabb()]
 		print("i%d at %s clear %.3f ground %.2f near %.2f inside %s | %s" % [s.index, p, s.clearance,
-			obstacles.ground_at(p), obstacles.ground_near(p), obstacles.is_inside(p), desc])
+			obstacles.ground_at(p), obstacles.floor_near(p), obstacles.is_inside(p), desc])
 	print("samples %d" % (c.samples as Array).size())
 	quit()

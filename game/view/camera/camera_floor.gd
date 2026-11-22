@@ -5,7 +5,7 @@ extends RefCounted
 ## above the sim's heightmap (a raised floor tier, T-135). Each chunk is turned
 ## into a CELL grid of its highest triangle the first time the camera nears it.
 
-const CELL := 0.5
+const CELL := 1.0
 ## Chunk lookup grid (m).
 const BUCKET := 16.0
 ## Floor chunks are at least this wide (smaller pieces are prop boxes) and at
@@ -21,9 +21,10 @@ const WARM_REACH := 12.0
 var _boxes: Array[AABB] = []
 var _meshes: Array[Mesh] = []
 var _xforms: Array[Transform3D] = []
-var _done: PackedByteArray = PackedByteArray()
+## Per chunk: its CELL grid of floor tops (row-major over its box), empty until rasterized.
+var _grids: Array[PackedFloat32Array] = []
+var _sizes: Array[Vector2i] = []
 var _buckets := {}
-var _heights := {}
 
 
 ## Floor chunks of a voxel zone within reach (planar) of centre.
@@ -49,7 +50,8 @@ func add_chunk(mesh: Mesh, xform: Transform3D) -> void:
 	_boxes.append(box)
 	_meshes.append(mesh)
 	_xforms.append(xform)
-	_done.append(0)
+	_grids.append(PackedFloat32Array())
+	_sizes.append(Vector2i(ceili(box.size.x / CELL) + 1, ceili(box.size.z / CELL) + 1))
 	for bx in range(floori(box.position.x / BUCKET), floori(box.end.x / BUCKET) + 1):
 		for bz in range(floori(box.position.z / BUCKET), floori(box.end.z / BUCKET) + 1):
 			var key := Vector2i(bx, bz)
@@ -64,12 +66,17 @@ func chunk_count() -> int:
 
 ## Floor top under (x, z) at most ABOVE over from_y, or -INF.
 func height_at(x: float, z: float, from_y: float) -> float:
+	var h := -INF
 	for index in _buckets.get(Vector2i(floori(x / BUCKET), floori(z / BUCKET)), PackedInt32Array()):
-		if _done[index] == 0:
-			var box := _boxes[index]
-			if x >= box.position.x and x <= box.end.x and z >= box.position.z and z <= box.end.z:
-				_rasterize(index)
-	var h: float = _heights.get(Vector2i(floori(x / CELL), floori(z / CELL)), -INF)
+		var box := _boxes[index]
+		if x < box.position.x or x > box.end.x or z < box.position.z or z > box.end.z:
+			continue
+		if _grids[index].is_empty():
+			_rasterize(index)
+		var size := _sizes[index]
+		var cx := mini(floori((x - box.position.x) / CELL), size.x - 1)
+		var cz := mini(floori((z - box.position.z) / CELL), size.y - 1)
+		h = maxf(h, _grids[index][cz * size.x + cx])
 	return h if h <= from_y + ABOVE else -INF
 
 
@@ -81,35 +88,47 @@ func warm(point: Vector3) -> void:
 	for bx in range(lo.x, hi.x + 1):
 		for bz in range(lo.y, hi.y + 1):
 			for index in _buckets.get(Vector2i(bx, bz), PackedInt32Array()):
-				if _done[index] == 0:
+				if _grids[index].is_empty():
 					_rasterize(index)
 					return
 
 
 func _rasterize(index: int) -> void:
-	_done[index] = 1
+	var size := _sizes[index]
+	var origin := _boxes[index].position
+	var grid := PackedFloat32Array()
+	grid.resize(size.x * size.y)
+	grid.fill(-INF)
 	var faces := _meshes[index].get_faces()
 	var xf := _xforms[index]
 	for t in range(0, faces.size(), 3):
-		var a := xf * faces[t]
-		var b := xf * faces[t + 1]
-		var c := xf * faces[t + 2]
+		var a := xf * faces[t] - origin
+		var b := xf * faces[t + 1] - origin
+		var c := xf * faces[t + 2] - origin
 		var top := maxf(a.y, maxf(b.y, c.y))
 		var bottom := minf(a.y, minf(b.y, c.y))
-		# Sloped faces: the plane's height at the cell corners, within the face's
-		# own height range; steep faces (step sides) stand at their top edge.
+		var x0 := clampi(floori(minf(a.x, minf(b.x, c.x)) / CELL), 0, size.x - 1)
+		var x1 := clampi(floori(maxf(a.x, maxf(b.x, c.x)) / CELL), 0, size.x - 1)
+		var z0 := clampi(floori(minf(a.z, minf(b.z, c.z)) / CELL), 0, size.y - 1)
+		var z1 := clampi(floori(maxf(a.z, maxf(b.z, c.z)) / CELL), 0, size.y - 1)
+		# Sloped faces: the plane's height at the cell corner it rises toward,
+		# within the face's own height range; flat ones and steep ones (step
+		# sides) stand at their top.
 		var n := (b - a).cross(c - a)
-		var sloped := absf(n.y) > 0.2 * n.length()
-		for cx in range(floori(minf(a.x, minf(b.x, c.x)) / CELL), floori(maxf(a.x, maxf(b.x, c.x)) / CELL) + 1):
-			for cz in range(floori(minf(a.z, minf(b.z, c.z)) / CELL), floori(maxf(a.z, maxf(b.z, c.z)) / CELL) + 1):
-				var h := top
+		var sloped := absf(n.y) > 0.2 * n.length() and top - bottom > 0.01
+		var gx := -n.x / n.y if sloped else 0.0
+		var gz := -n.z / n.y if sloped else 0.0
+		var h := top
+		for cz in range(z0, z1 + 1):
+			var row := cz * size.x
+			for cx in range(x0, x1 + 1):
 				if sloped:
-					h = -INF
-					for corner: Vector2 in [Vector2(cx, cz), Vector2(cx + 1, cz), Vector2(cx, cz + 1), Vector2(cx + 1, cz + 1)]:
-						var x := corner.x * CELL
-						var z := corner.y * CELL
-						h = maxf(h, a.y - (n.x * (x - a.x) + n.z * (z - a.z)) / n.y)
-					h = clampf(h, bottom, top)
-				var key := Vector2i(cx, cz)
-				if h > _heights.get(key, -INF):
-					_heights[key] = h
+					var px := (cx + (1 if gx > 0.0 else 0)) * CELL
+					var pz := (cz + (1 if gz > 0.0 else 0)) * CELL
+					h = clampf(a.y + gx * (px - a.x) + gz * (pz - a.z), bottom, top)
+				if h > grid[row + cx]:
+					grid[row + cx] = h
+	# Back to world heights.
+	for i in grid.size():
+		grid[i] += origin.y
+	_grids[index] = grid

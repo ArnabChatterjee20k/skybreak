@@ -130,21 +130,28 @@ func _add_box(box: AABB, centre: Vector2, reach: float) -> void:
 
 ## Ground height under point (terrain or an island top below it).
 func ground_at(point: Vector3) -> float:
-	var ground: float = ground_height.call(point.x, point.z, point.y) if ground_height.is_valid() else -INF
+	if not ground_height.is_valid():
+		return -INF
+	return ground_height.call(point.x, point.z, point.y)
+
+
+## The visible floor under point: ground_at, or the voxel floor where it stands higher.
+func floor_at(point: Vector3) -> float:
+	var ground := ground_at(point)
 	if voxel_floor != null:
 		ground = maxf(ground, voxel_floor.height_at(point.x, point.z, point.y))
 	return ground
 
 
-## Highest ground within radius of point (centre and 8 around it): on a steep
-## bank the floor beside the lens is nearer than the floor straight below.
-func ground_near(point: Vector3, radius: float = CLEARANCE) -> float:
-	var top := ground_at(point)
+## Highest visible floor within radius of point (centre and 8 around it): on a
+## steep bank the floor beside the lens is nearer than the floor straight below.
+func floor_near(point: Vector3, radius: float = CLEARANCE) -> float:
+	var top := floor_at(point)
 	if top == -INF:
 		return top
 	for k in 8:
 		var d := Vector3.FORWARD.rotated(Vector3.UP, TAU * k / 8.0) * radius
-		top = maxf(top, ground_at(point + d))
+		top = maxf(top, floor_at(point + d))
 	return top
 
 

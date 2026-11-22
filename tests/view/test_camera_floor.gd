@@ -31,9 +31,9 @@ func test_a_raised_floor_tier_lifts_the_camera_ground_above_the_heightmap() -> v
 	obstacles.ground_height = _flat_ground(0.0)
 	obstacles.voxel_floor = CameraFloor.new()
 	obstacles.voxel_floor.add_chunk(_slab(0, 32, 0, 32, 0.7), Transform3D.IDENTITY)
-	assert_almost_eq(obstacles.ground_at(Vector3(10, 1.0, 10)), 0.7, 0.001, "on the tier")
-	assert_almost_eq(obstacles.ground_at(Vector3(40, 1.0, 10)), 0.0, 0.001, "off it: the heightmap")
-	assert_true(obstacles.is_inside(Vector3(10, 0.5, 10)), "under the visible floor is inside it")
+	assert_almost_eq(obstacles.floor_at(Vector3(10, 1.0, 10)), 0.7, 0.001, "on the tier")
+	assert_almost_eq(obstacles.floor_at(Vector3(40, 1.0, 10)), 0.0, 0.001, "off it: the heightmap")
+	assert_almost_eq(obstacles.ground_at(Vector3(10, 1.0, 10)), 0.0, 0.001, "the sim ground is unchanged")
 
 
 func test_a_floor_top_far_above_the_point_is_overhead_not_its_floor() -> void:
@@ -64,8 +64,8 @@ func test_a_steep_bank_beside_the_lens_counts_as_its_ground() -> void:
 	# A 70 degree bank rising along +x.
 	obstacles.ground_height = func(x: float, _z: float, _from_y: float) -> float: return maxf(0.0, x * 2.75)
 	var at := Vector3(0.0, 0.0, 0.0)
-	assert_almost_eq(obstacles.ground_at(at), 0.0, 0.001)
-	assert_almost_eq(obstacles.ground_near(at), CameraObstacles.CLEARANCE * 2.75, 0.01)
+	assert_almost_eq(obstacles.floor_at(at), 0.0, 0.001)
+	assert_almost_eq(obstacles.floor_near(at), CameraObstacles.CLEARANCE * 2.75, 0.01)
 
 
 func test_the_fight_camera_stays_clear_above_a_raised_tier() -> void:

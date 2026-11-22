@@ -459,7 +459,7 @@ func _keep_clear(pivot: Vector3, wanted: Vector3, delta: float) -> Vector3:
 	else:
 		_clip_length = minf(move_toward(_clip_length, safe, obstacle_release_speed * delta), safe)
 	var position := look_from + (wanted - look_from) / length * minf(length, _clip_length)
-	position.y = maxf(position.y, obstacles.ground_near(position) + CameraObstacles.CLEARANCE)
+	position.y = maxf(position.y, obstacles.floor_near(position) + CameraObstacles.CLEARANCE)
 	return obstacles.out_of_target(position)
 
 
