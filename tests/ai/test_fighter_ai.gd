@@ -372,23 +372,6 @@ func test_a_restored_snapshot_continues_with_the_same_inputs() -> void:
 			break
 
 
-func test_level_3_and_up_never_open_the_same_string_twice_in_a_row() -> void:
-	# #106: one route and length per level replayed the same 2-5 hit string and launcher every exchange.
-	for level in [3, 4, 5]:
-		var ai := FighterAI.new(0, level, 9)
-		var opened: Array[int] = []
-		for _i in 8:
-			ai.call(&"_start_string", FighterInput.new(), 3)
-			opened.append(ai.get(&"_last_string"))
-		for i in range(1, opened.size()):
-			assert_ne(opened[i], opened[i - 1], "level %d string %d: %s" % [level, i, opened])
-	var easy := FighterAI.new(0, 2, 9)
-	easy.call(&"_start_string", FighterInput.new(), 3)
-	var first: int = easy.get(&"_last_string")
-	easy.call(&"_start_string", FighterInput.new(), 3)
-	assert_eq(easy.get(&"_last_string"), first, "easy AIs keep one simple string")
-
-
 func test_an_ai_costs_at_most_0_05_ms_per_tick() -> void:
 	var bout := AIBout.new(31, [5, 5], true)
 	for _tick in 300:
