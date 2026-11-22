@@ -1,0 +1,68 @@
+{
+  "verdict": "PASS",
+  "problems": [],
+  "wall_seconds": 673,
+  "match_sim_seconds": 148,
+  "common_state_hashes": 299,
+  "mismatched_hashes": 0,
+  "net": {
+    "net_lag": 45,
+    "net_jitter": 20,
+    "net_loss": 0.02
+  },
+  "burst": {
+    "burst_frame": 4200,
+    "burst_ms": 140
+  },
+  "appwrite_mock": {
+    "latency_ms": 120,
+    "requests": 82,
+    "byRoute": {
+      "POST /v1/account/sessions/email": 2,
+      "GET /v1/account": 2,
+      "POST /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows": 1,
+      "GET /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows/:id": 38,
+      "PATCH /v1/tablesdb/skybreak/tables/skybreak_lobbies/rows/:id": 2,
+      "POST /v1/tablesdb/skybreak/tables/skybreak_signals/rows": 4,
+      "GET /v1/tablesdb/skybreak/tables/skybreak_signals/rows": 7,
+      "DELETE /v1/tablesdb/skybreak/tables/skybreak_signals/rows/:id": 4
+    },
+    "errors": {},
+    "refusedOrigins": 0,
+    "permissionRefusals": 0
+  },
+  "host": {
+    "frames": 8905,
+    "winning_team": 0,
+    "timed_out": false,
+    "rollbacks": 3068,
+    "max_rollback_depth": 8,
+    "hashes_compared_in_band": 296,
+    "stalls": 3342,
+    "sync_skips": 111,
+    "rtt_ms_median": 132,
+    "fps_median": 59,
+    "console_errors": 0,
+    "godot_warnings": [
+      "WARNING: ZoneBakeDownload: no zone manifest (result 0, HTTP 404); the zone builds live",
+      "WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_web.scn); run tools/voxel_zone_bake.gd"
+    ]
+  },
+  "guest": {
+    "frames": 8905,
+    "winning_team": 0,
+    "timed_out": false,
+    "rollbacks": 3105,
+    "max_rollback_depth": 8,
+    "hashes_compared_in_band": 296,
+    "stalls": 3076,
+    "sync_skips": 191,
+    "rtt_ms_median": 135,
+    "fps_median": 58,
+    "console_errors": 0,
+    "godot_warnings": [
+      "WARNING: ZoneBakeDownload: no zone manifest (result 0, HTTP 404); the zone builds live",
+      "WARNING: VoxelZoneView: building heartbloom_gardens live (no bake at res://game/world/voxel_zone_kit/baked/heartbloom_gardens_web.scn); run tools/voxel_zone_bake.gd"
+    ]
+  }
+}

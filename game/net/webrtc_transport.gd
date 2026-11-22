@@ -105,6 +105,14 @@ func state_name() -> String:
 	return ["new", "connecting", "connected", "disconnected", "failed", "closed"][_connection.get_connection_state()]
 
 
+## "connection/inputs/control" states, for debugging a stuck connection.
+func debug_state() -> String:
+	var channels := ["connecting", "open", "closing", "closed"]
+	return "%s/%s/%s" % [state_name(),
+		channels[_inputs.get_ready_state()] if _inputs else "-",
+		channels[_control.get_ready_state()] if _control else "-"]
+
+
 func is_open() -> bool:
 	return _inputs != null and _control != null \
 		and _inputs.get_ready_state() == WebRTCDataChannel.STATE_OPEN \

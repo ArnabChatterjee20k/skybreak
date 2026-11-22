@@ -96,3 +96,32 @@ func test_the_main_menu_opens_the_duo_screen() -> void:
 	add_child_autofree(front)
 	assert_true(front.screens.has(&"duo_lobby"))
 	assert_true(front.screens[&"duo_lobby"] is DuoScreen)
+
+
+class OpenedTransport:
+	extends WebRtcTransport
+	var polls := 0
+	var open := false
+
+	func is_open() -> bool:
+		return open
+
+	func poll() -> void:
+		polls += 1
+		if open:
+			connected.emit()
+
+
+func test_signalling_keeps_polling_until_the_open_transport_says_connected() -> void:
+	# Regression: polling stopped once is_open() was true, so connected never fired.
+	var signalling := AppwriteSignalling.new()
+	signalling.client = FakeClient.new()
+	add_child_autofree(signalling)
+	var transport := OpenedTransport.new()
+	signalling.transport = transport
+	transport.connected.connect(signalling._on_connected)
+	watch_signals(signalling)
+	transport.open = true
+	signalling._process(0.016)
+	assert_eq(transport.polls, 1)
+	assert_signal_emitted(signalling, "peer_connected")

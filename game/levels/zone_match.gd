@@ -388,8 +388,8 @@ func _local_input() -> FighterInput:
 	return FighterInput.new() if input_blocked else input
 
 
-## Stalled for over a second: say so; DISCONNECT_SECONDS without a packet: offer to carry on.
-const STALL_NOTICE_MS := 1000
+## Stalled for over two seconds: say so; DISCONNECT_SECONDS without a packet: offer to carry on.
+const STALL_NOTICE_MS := 2000
 const DISCONNECT_SECONDS := 30
 
 

@@ -19,7 +19,8 @@ var _leave: Button
 
 
 func _init() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Laid out on the 1920x1080 design canvas and scaled to the screen like MatchHud.
+	size = MatchHud.DESIGN
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	theme = MenuTheme.theme()
 
@@ -62,6 +63,9 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	var screen := get_viewport_rect().size
+	scale = Vector2.ONE * MatchHud.design_scale(screen)
+	position = MatchHud.design_offset(screen)
 	if flow == null:
 		return
 	var text := "LIVES  DUO %d  ·  AI %d" % [flow.lives[DuoFlow.HUMAN_TEAM], flow.lives[DuoFlow.AI_TEAM]]

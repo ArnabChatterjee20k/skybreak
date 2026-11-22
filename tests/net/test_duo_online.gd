@@ -105,3 +105,29 @@ func test_the_ai_drivers_roll_back_exactly() -> void:
 		assert_eq(hash([sim.state_hash(), flow.state_hash()]), first[i], "tick %d after the rewind" % i)
 		if hash([sim.state_hash(), flow.state_hash()]) != first[i]:
 			return
+
+
+func test_a_silent_partner_gets_about_ten_packets_a_second_instead_of_sixty() -> void:
+	var config := DuoMatch.build_config(SETUP, 8)
+	var ends := LoopbackTransport.pair(_clock, 40.0, 0.0, 0.0, 5)
+	var a := _peer(config, ends[0], 0)
+	var b := _peer(config, ends[1], 1)
+	var host: RollbackSession = a[0]
+	var guest: RollbackSession = b[0]
+	for tick in 120:
+		now_ms += 1000.0 / CombatSim.TICKS_PER_SECOND
+		host.advance(FighterInput.new())
+		guest.advance(FighterInput.new())
+	var before := ends[0].sent_packets
+	# The guest freezes (hidden tab): the host stalls and keeps sending, but slowly.
+	for tick in 60:
+		now_ms += 1000.0 / CombatSim.TICKS_PER_SECOND
+		host.advance(FighterInput.new())
+	var sent := ends[0].sent_packets - before
+	assert_between(sent, 8, 30, "about 10 packets a second once the partner is quiet (sent %d)" % sent)
+	for tick in 120:
+		now_ms += 1000.0 / CombatSim.TICKS_PER_SECOND
+		host.advance(FighterInput.new())
+		guest.advance(FighterInput.new())
+	assert_eq(host.desync_frame, -1)
+	assert_gt(host.frame, 200, "the match goes on once the partner is back")

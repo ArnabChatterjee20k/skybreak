@@ -54,7 +54,9 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if transport and not transport.is_open() and not _closed:
+	# Poll until the transport reports connected (it emits that from poll()); then
+	# DuoLink takes it over (release_transport() clears it here).
+	if transport and not _closed:
 		transport.poll()
 		if _connect_deadline_ms > 0 and Time.get_ticks_msec() > _connect_deadline_ms:
 			_connect_deadline_ms = -1
@@ -185,8 +187,13 @@ func _start_transport(offerer: bool) -> bool:
 	if error != OK:
 		failed.emit("WebRTC failed to start (%s)" % error_string(error))
 		return false
-	_connect_deadline_ms = Time.get_ticks_msec() + int(CONNECT_TIMEOUT_SECONDS * 1000.0)
+	# The clock starts once the remote description is in (_apply_signal): it measures ICE only.
 	return true
+
+
+func _start_deadline() -> void:
+	if _connect_deadline_ms < 0:
+		_connect_deadline_ms = Time.get_ticks_msec() + int(CONNECT_TIMEOUT_SECONDS * 1000.0)
 
 
 func _send_signal(kind: String, payload: Dictionary) -> void:
@@ -232,6 +239,7 @@ func _apply_signal(row: Dictionary) -> void:
 	match row.get("kind", ""):
 		"offer", "answer":
 			transport.set_remote_description(payload["type"], payload["sdp"])
+			_start_deadline()
 		"ice":
 			transport.add_remote_candidate(payload["media"], int(payload["index"]), payload["candidate"])
 

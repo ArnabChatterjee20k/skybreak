@@ -36,18 +36,30 @@ static func drive_lobby(screen: DuoScreen) -> void:
 	if _driving:
 		return
 	_driving = true
+	throttle_rendering(screen.get_tree())
 	var role := DevParams.get_value("duo_test")
 	var tree := screen.get_tree()
 	var link := screen.link
 	report("lobby", {"role": role})
+	var last_status := [""]
+	link.changed.connect(func() -> void:
+		if link.status != last_status[0]:
+			last_status[0] = link.status
+			report("status", {"status": link.status, "rtc": link.signalling.transport.state_name() if link.signalling and link.signalling.transport else ""}))
 	await _until(tree, func() -> bool: return not screen._restoring, 20.0)
-	if not link.client.is_signed_in():
+	for attempt in 3:
+		if link.client.is_signed_in():
+			break
 		screen.email_field.text = DevParams.get_value("email")
 		screen.password_field.text = DevParams.get_value("password")
 		screen.sign_in_button.pressed.emit()
-		if not await _until(tree, link.client.is_signed_in, 20.0):
-			report("error", {"what": "sign-in", "status": screen.status_label.text})
-			return
+		await _until(tree, func() -> bool: return not screen.sign_in_button.disabled, 70.0)
+		report("sign_in_attempt", {"attempt": attempt, "status": screen.status_label.text})
+	if not link.client.is_signed_in():
+		report("error", {"what": "sign-in", "status": screen.status_label.text})
+		return
+	# The screen shows Host and Join once sign-in has fully finished (account read).
+	await _until(tree, func() -> bool: return screen.page == DuoScreen.Page.CHOOSE, 20.0)
 	report("signed_in", {"user": link.client.user_id})
 	if role == "host":
 		screen.host_button.pressed.emit()
@@ -58,7 +70,16 @@ static func drive_lobby(screen: DuoScreen) -> void:
 	else:
 		screen.code_field.text = DevParams.get_value("code")
 		screen.join_button.pressed.emit()
-	if not await _until(tree, link.is_connected_to_partner, 90.0):
+	var rtc_timer := Timer.new()
+	rtc_timer.wait_time = 5.0
+	rtc_timer.autostart = true
+	screen.add_child(rtc_timer)
+	rtc_timer.timeout.connect(func() -> void:
+		if link.signalling and link.signalling.transport:
+			report("rtc", {"state": link.signalling.transport.debug_state()}))
+	var connected := await _until(tree, link.is_connected_to_partner, 300.0)
+	rtc_timer.queue_free()
+	if not connected:
 		report("error", {"what": "connect", "status": screen.status_label.text})
 		return
 	report("connected", {"peer": link.local_peer})
@@ -75,7 +96,10 @@ static func drive_lobby(screen: DuoScreen) -> void:
 					break
 				screen.step_setup(key, 1)
 	report("picked", {"setup": JSON.parse_string(JSON.stringify(link.setup))})
-	while screen.is_inside_tree() and screen.is_visible_in_tree() and not screen._launched:
+	# Time for the harness to screenshot the lobby before the zone load blocks the page.
+	await tree.create_timer(float(DevParams.get_value("start_delay", "0"))).timeout
+	# The screen is freed when the match scene replaces the front end.
+	while is_instance_valid(screen) and screen.is_visible_in_tree() and not screen._launched:
 		if not link.ready_flags[link.local_peer]:
 			screen.ready_button.pressed.emit()
 		if link.is_host() and link.both_ready():
@@ -83,6 +107,26 @@ static func drive_lobby(screen: DuoScreen) -> void:
 			report("start_pressed")
 		await tree.create_timer(0.5).timeout
 	_driving = false
+
+
+## Software-rendered test browsers draw about one frame a second; with the
+## render_hz DevParam only that many frames a second are drawn, so the game loop
+## (sim, netcode, HTTP) runs at full speed. Test harness only.
+static func throttle_rendering(tree: SceneTree) -> void:
+	var hz := float(DevParams.get_value("render_hz", "0"))
+	if hz <= 0.0 or tree.root.has_node(^"DuoTestRenderThrottle"):
+		return
+	var timer := Timer.new()
+	timer.name = "DuoTestRenderThrottle"
+	timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	timer.wait_time = 1.0 / hz
+	timer.autostart = true
+	tree.root.add_child.call_deferred(timer)
+	RenderingServer.render_loop_enabled = false
+	timer.timeout.connect(func() -> void:
+		RenderingServer.render_loop_enabled = true
+		await RenderingServer.frame_post_draw
+		RenderingServer.render_loop_enabled = false)
 
 
 static func _until(tree: SceneTree, condition: Callable, seconds: float) -> bool:

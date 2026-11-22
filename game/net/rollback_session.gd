@@ -20,6 +20,11 @@ const HASH_INTERVAL := 30
 const MAX_INPUTS_PER_PACKET := 24
 ## A sync skip happens at most once per this many ticks (about 10% slowdown).
 const SYNC_SKIP_SPACING := 10
+## While the other peer has been silent this long (ms), send at most every QUIET_SEND_MS:
+## a stalled or hidden browser tab cannot drain 60 packets a second, and every
+## packet repeats the unacknowledged inputs anyway.
+const QUIET_AFTER_MS := 250
+const QUIET_SEND_MS := 100
 ## Average frame advantage (ticks) above which this peer skips a tick.
 const SYNC_THRESHOLD := 1.0
 const _SNAPSHOTS := MAX_ROLLBACK + 2
@@ -82,6 +87,7 @@ var _advantages: PackedFloat64Array = PackedFloat64Array()
 var _last_skip_frame: int = -SYNC_SKIP_SPACING
 var _echo_ms: int = 0
 var _echo_received_at: int = 0
+var _last_send_ms: int = -QUIET_SEND_MS
 
 
 ## fighter_peers[i] is the peer controlling fighter i (-1 = AI, driven by bots[i]).
@@ -391,6 +397,11 @@ func _compare_hash(at: int) -> void:
 func _send() -> void:
 	if transport == null:
 		return
+	var sent_at := _now()
+	if last_receive_ms > 0 and sent_at - last_receive_ms > QUIET_AFTER_MS \
+			and sent_at - _last_send_ms < QUIET_SEND_MS:
+		return
+	_last_send_ms = sent_at
 	var buffer := StreamPeerBuffer.new()
 	buffer.put_u8(_KIND_INPUTS)
 	buffer.put_u8(local_peer)

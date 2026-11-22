@@ -6,16 +6,34 @@ runs on both, so it costs no traffic (§12.1).
 
 | File | What it is |
 |---|---|
-| `rollback_session.gd` | `RollbackSession`: 2-tick input delay, prediction (last input held, presses dropped), confirmed-input queue, rollback of up to 8 ticks, desync detection (state hash every 30 ticks, once all inputs are confirmed), frame-advantage time sync (skips at most 1 tick in 10). Transport-agnostic: it only calls `send(bytes)` and handles `on_receive(bytes)`. |
-| `input_codec.gd` | `InputCodec`: a `FighterInput` takes 8 bytes (flags, held u24, move 2 x s8, yaw u16), up to 18 bytes with presses, releases and camera offset. Both peers simulate the decoded input. |
+| `rollback_session.gd` | `RollbackSession`: 2-tick input delay, prediction (last input held, presses dropped), confirmed-input queue, rollback of up to 8 ticks, desync detection (state hash of sim + rules every 30 ticks, once all inputs are confirmed), frame-advantage time sync (skips at most 1 tick in 10), RTT estimate, time since the last packet. Rules with `accepts_input()` neutralise every input while false (intro). Transport-agnostic. |
+| `input_codec.gd` | `InputCodec`: a `FighterInput` takes 8 bytes, up to 18 with presses, releases and camera offset. |
 | `net_transport.gd` | `NetTransport` interface: `send()`, `poll()`, `received` signal. |
 | `loopback_transport.gd` | In-process transport with latency, jitter and loss, for tests. |
-| `webrtc_transport.gd` | Two negotiated data channels: `inputs` (unordered, `maxRetransmits` 0) and `control` (reliable). Public STUN only. |
-| `appwrite_client.gd` | Minimal Appwrite REST client: email/password sessions (sign in, restore and extend, sign out), documents. The HTTP layer is one overridable `_send()`, faked in tests. |
-| `session_store.gd` | `SessionStore`: "Remember me". Keeps the session cookies and player name (never the password) in `user://skybreak_session.cfg`, encrypted with a random per-install key in `user://skybreak_install.key`. |
-| `appwrite_signalling.gd` | Lobby codes plus offer/answer/ICE exchange as documents, polled every 0.5 s. |
-| `duo_match.gd` | Builds the Duo sim, owners and bots the same way on both peers; an instance holds the round-restart rule. |
-| `duo_lobby.tscn` | Sign-in panel (email, password, Remember me; then the player name and Sign out) and host/join UI. After connecting it runs the match with a text readout and emits `match_started(session)` for an arena to draw. |
+| `laggy_transport.gd` | Dev tool: wraps a real transport with delay, jitter, loss and a `hold(ms)` burst (DevParams `net_lag`, `net_jitter`, `net_loss`, debug builds only). |
+| `webrtc_transport.gd` | Two negotiated data channels: `inputs` (unordered, `maxRetransmits` 0) and `control` (reliable). Public STUN only (`stun.l.google.com:19302`). |
+| `appwrite_client.gd` | Minimal Appwrite REST client: email/password sessions (sign in, restore and extend, sign out) and **TablesDB rows** (`/tablesdb/skybreak/tables/<table>/rows`, response format 1.8.0). Session in memory as the cookie (desktop) and `X-Fallback-Cookies` (the only thing the browser can use). Debug builds accept an endpoint override (env `SKYBREAK_APPWRITE_ENDPOINT` or URL `?appwrite=`), release builds never. |
+| `session_store.gd` | `SessionStore`: "Remember me". Keeps the session (never the password) in `user://skybreak_session.cfg`, encrypted with a random per-install key. On the web `user://` is the browser's IndexedDB for the site. |
+| `appwrite_signalling.gd` | Lobby rows (5-letter code) plus offer/answer/ICE rows, polled every 0.5 s; a clear "P2P blocked, needs TURN" error after 30 s without an open channel. |
+| `duo_link.gd` | `DuoLink` at `/root/DuoLink`: survives scene changes (menu -> match -> menu). Owns the signed-in client, the signalling, the open transport and the lobby protocol on the control channel (hello, pick, setup, ready, start, loaded, leave). |
+| `duo_screen.gd` | The front end's Duo page: sign in -> Host (code) / Join -> legends, host's zone/AI/lives/minutes -> Ready -> Start. |
+| `duo_match.gd` | Builds the identical Duo config on both peers (humans on team 0, AI on team 1 with seeded legends), peers per fighter, AI drivers. |
+| `duo_flow.gd` | `DuoFlow` (extends `MatchFlow`): Duo rules as rollback-safe session rules: shared team lives (duo default 6, AI 3 each), respawn 3 s after a KO, team out of lives loses, time limit, no slow motion. |
+| `duo_hud.gd` | In-match overlay: lives, ping, rollback count; waiting / disconnected / out-of-sync panel with "Continue vs AI" and "Leave". |
+| `duo_test_pilot.gd` | Dev tool for `tools/net/duo_browser_test.js` (DevParam `duo_test`, debug builds only): drives the Duo screen's buttons and plays the local fighter with an AI, printing `SKYBREAK_DUO {json}` lines. |
+| `dev_params.gd` | Dev-only switches from the URL (web) or `-- --name=value` (desktop); empty in release builds. |
+
+How a match runs: `ZoneMatch` with `mode == duo` and an open `DuoLink` builds the sim
+from the shared config (seed, teams), makes a `RollbackSession` over the link with
+the AI drivers as bots and `DuoFlow` as rules, reports "loaded" and only starts
+ticking once the partner has loaded too. Each physics tick it calls
+`session.advance(local_input)`; the view interpolates as usual. Online the tree never
+pauses (the pause menu blocks local input only, Restart is hidden), the results go
+back to the Duo lobby with the link still open. More than 1 s without a packet shows
+"Waiting for partner"; 30 s, or the partner leaving, shows "Partner disconnected"
+with "Continue vs AI" (the partner's fighter goes to an AI and the match runs
+locally) or "Leave". A short network drop recovers by itself: unacknowledged inputs
+are re-sent until confirmed.
 
 `CombatSim.snapshot()`/`restore()` are in `game/combat/sim_snapshot.gd`. They copy
 every script variable by reflection, so new sim fields are covered automatically.
@@ -55,8 +73,8 @@ add, never change shared resources):
 2. **Platforms**: a **Web** platform for the web build's hostname, when there is one.
    The desktop build sends no `Origin`, so it needs none.
 3. **Database** `skybreak` (name "Skybreak").
-4. **Collection** `skybreak_lobbies`. Document security **on**. Collection
-   permission: `create("users")`. The document id is the 5-letter lobby code.
+4. **Table** `skybreak_lobbies` (TablesDB). Row security **on**. Table
+   permission: `create("users")`. The row id is the 5-letter lobby code.
 
    | Attribute | Type | Size | Required |
    |---|---|---|---|
@@ -67,10 +85,10 @@ add, never change shared resources):
    | `seed` | integer | | yes |
    | `ai_count` | integer (1-2) | | yes |
 
-   Each lobby document gets `read("users")`, `update("users")` and
+   Each lobby row gets `read("users")`, `update("users")` and
    `delete("user:<host>")`, so the guest can claim it
    (`AppwriteSignalling.lobby_permissions()`).
-5. **Collection** `skybreak_signals`. Document security **on**. Collection
+5. **Table** `skybreak_signals` (TablesDB). Row security **on**. Table
    permission: `create("users")`.
 
    | Attribute | Type | Size | Required |
@@ -81,18 +99,25 @@ add, never change shared resources):
    | `kind` | string (`offer`, `answer`, `ice`) | 16 | yes |
    | `payload` | string (JSON) | 16384 | yes |
 
-   Key index `skybreak_signals_inbox` on (`lobby`, `to`). Each signal document gets
-   `read("user:<to>")`, `read("user:<from>")` and `delete("user:<to>")`
-   (`AppwriteSignalling.signal_permissions()`). The receiver deletes it after use.
-   Unverified: Appwrite may refuse a client granting roles it does not hold
-   (`user:<to>`); if signalling fails with 401 on the first offer, switch these to
-   `read("users")` / `delete("users")`.
+   Key index `skybreak_signals_inbox` on (`lobby`, `to`). Each signal row gets
+   `read("users")` and `delete("users")` (`AppwriteSignalling.signal_permissions()`):
+   Appwrite refuses a client granting a role it does not hold, so `user:<partner>`
+   would fail with 401 on the first offer (the mock enforces the same rule). The inbox
+   query filters by lobby and receiver; the receiver deletes each row after use.
 6. Optional, not created: a scheduled cleanup function `skybreak_cleanup` that
    deletes lobbies and signals older than a day.
 
-Follow-ups: Presence-based signalling (`upsertPresence`, as §12.1 plans), which
-removes the polling and adds disconnect detection, plus TURN for networks
-where direct P2P fails.
+Follow-ups: TURN for networks where direct P2P fails; Presence/Realtime-based
+signalling (`upsertPresence`, as §12.1 plans) instead of polling. The client uses no
+Realtime websocket today.
+
+## Testing without Appwrite
+
+`tools/net/appwrite_mock.js` mocks the endpoints the client uses (CORS with a Web
+platform allowlist and exposed `X-Fallback-Cookies`, email sessions, TablesDB rows
+with row security and the granted-roles rule). `tools/net/duo_browser_test.js` runs
+the full Duo flow in two headless Chromium pages over real browser WebRTC against an
+exported debug web build (see `reports/net/duo-online/README.md`).
 
 ## WebRTC on desktop (developer, Windows PC)
 
@@ -123,15 +148,3 @@ Other desktop platforms (Linux, macOS) are a local install step:
 The web build uses the browser's native WebRTC and needs no extension.
 
 Tests never need the extension: they run over `LoopbackTransport`.
-
-## Hooking the session into the arena (follow-up)
-
-`DuoLobby.match_started(session)` hands over a running `RollbackSession`. An arena
-should:
-
-- build its `FighterView`s from `session.sim.fighters`;
-- call `session.advance(keyboard_input)` instead of `sim.tick()` in `_physics_process`;
-- stop running the sim itself.
-
-After a rollback, `sim.events` hold only the last re-simulated tick, so feedback
-can miss or repeat an event at most once per rollback.

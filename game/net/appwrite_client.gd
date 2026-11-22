@@ -12,7 +12,7 @@ const DATABASE_ID := "skybreak"
 ## TablesDB (rows) responses; the skybreak database is a TablesDB database.
 const RESPONSE_FORMAT := "1.8.0"
 ## A dead network fails a request instead of hanging the lobby.
-const REQUEST_TIMEOUT_SECONDS := 15.0
+const REQUEST_TIMEOUT_SECONDS := 30.0
 ## Dev builds only: env var (desktop) or URL parameter `appwrite` (web) that points
 ## the client at a local mock (tools/net/appwrite_mock.js). Ignored in release builds.
 const ENDPOINT_OVERRIDE_ENV := "SKYBREAK_APPWRITE_ENDPOINT"
