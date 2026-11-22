@@ -40,9 +40,10 @@ void vertex() {
 	vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), to_cam));
 	float s = length(MODEL_MATRIX[1].xyz);
 	shape_uv = vec2(UV.x * 2.0 - 1.0, 1.0 - UV.y);
-	vec3 local = right * shape_uv.x * half_width * 1.25 + vec3(0.0, shape_uv.y * height - feet, 0.0)
+	// Grows from the feet: the scale stretches width and height but never sinks the base into the floor.
+	vec3 local = right * shape_uv.x * half_width * 1.25 * s + vec3(0.0, shape_uv.y * height * s - feet, 0.0)
 		+ to_cam * depth_offset;
-	vec3 world = origin + local * s;
+	vec3 world = origin + local;
 	MODELVIEW_MATRIX = VIEW_MATRIX;
 	MODELVIEW_NORMAL_MATRIX = mat3(VIEW_MATRIX);
 	VERTEX = world;

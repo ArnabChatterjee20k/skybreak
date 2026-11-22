@@ -3,6 +3,7 @@ extends SceneTree
 ## the ki charge, then power levels 1, 2 and 3. 1920x1080 through a SubViewport.
 ##   godot --path . --disable-vsync -s res://game/view/shaders/preview/aura_capture.gd -- <out dir>
 ##       [stills|clip|all] [--heroes=kael,vexa,lyra,brann] [--quality=1.0] [--seconds=6]
+##       [--shots=kicharge,level1,level2,level3,close]
 ## Clips write numbered PNG frames at 30 fps for ffmpeg.
 
 const AURA_SCENE := "res://game/view/shaders/vfx/fighter_aura.tscn"
@@ -26,6 +27,7 @@ var _view: CharacterView
 var _aura: Node3D
 var _fighter := FighterState.new()
 var _quality := 1.0
+var _shots := PackedStringArray()
 
 
 func _initialize() -> void:
@@ -35,6 +37,7 @@ func _initialize() -> void:
 	var heroes := args.get_option("heroes", "kael,vexa,lyra,brann").split(",")
 	_quality = float(args.get_option("quality", "1.0"))
 	var seconds := float(args.get_option("seconds", "6"))
+	_shots = args.get_option("shots", "kicharge,level1,level2,level3,close").split(",")
 	if _out == "":
 		print("usage: aura_capture.gd -- <out dir> [stills|clip|all] [--heroes=...]")
 		quit(1)
@@ -101,13 +104,16 @@ func _set_shot(level: float, charging: bool) -> void:
 func _stills(id: StringName) -> void:
 	var shots := [["kicharge", 1.0, true], ["level1", 1.0, false], ["level2", 2.0, false], ["level3", 3.0, false]]
 	for shot: Array in shots:
+		if not String(shot[0]) in _shots:
+			continue
 		_set_shot(shot[1], shot[2])
 		_aura.call(&"snap")
 		await _advance(int(SETTLE_SECONDS * 60.0))
 		_stage.frame(Vector3(0, 1.05, 0), 2.6, 0.78, -6.0)
 		await _save("%s_%s" % [id, shot[0]])
-	_stage.frame(Vector3(0, 1.2, 0), 1.3, 0.8, -6.0)
-	await _save("%s_level3_close" % id)
+	if "close" in _shots:
+		_stage.frame(Vector3(0, 1.2, 0), 1.3, 0.8, -6.0)
+		await _save("%s_level3_close" % id)
 
 
 ## Off, then the ki charge rising, then levels 1, 2, 3 (eased by the aura itself).
