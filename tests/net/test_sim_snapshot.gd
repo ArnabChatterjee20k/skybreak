@@ -1,5 +1,6 @@
 extends GutTest
 
+const BotMatch := preload("res://tests/net/bot_match.gd")
 const NetScript := preload("res://tests/net/net_script.gd")
 
 var _sim: CombatSim
@@ -9,8 +10,8 @@ var _humans: Array
 
 func before_each() -> void:
 	# Seed 12: with pushboxes (T-D29) seed 11 never has drops and shots out on the same tick.
-	_sim = DuoMatch.new_sim(12, 2)
-	_bots = DuoMatch.new_bots(_sim, 12)
+	_sim = BotMatch.new_sim(12, 2)
+	_bots = BotMatch.new_bots(_sim, 12)
 	_humans = [NetScript.new(1), NetScript.new(2)]
 
 

@@ -9,8 +9,16 @@ const ENDPOINT := "https://sgp.cloud.appwrite.io/v1"
 const PROJECT_ID := "6a113777000db893b12e"
 ## Skybreak's database in the shared project; every resource is skybreak-prefixed.
 const DATABASE_ID := "skybreak"
+## TablesDB (rows) responses; the skybreak database is a TablesDB database.
+const RESPONSE_FORMAT := "1.8.0"
 ## A dead network fails a request instead of hanging the lobby.
-const REQUEST_TIMEOUT_SECONDS := 15.0
+const REQUEST_TIMEOUT_SECONDS := 30.0
+## Dev builds only: env var (desktop) or URL parameter `appwrite` (web) that points
+## the client at a local mock (tools/net/appwrite_mock.js). Ignored in release builds.
+const ENDPOINT_OVERRIDE_ENV := "SKYBREAK_APPWRITE_ENDPOINT"
+
+## Base URL every request goes to; ENDPOINT unless a dev build overrides it.
+var endpoint: String = ENDPOINT
 
 ## Id of the signed-in user, empty before sign-in.
 var user_id: String = ""
@@ -19,6 +27,20 @@ var user_name: String = ""
 ## Session cookies, sent back on every request (desktop has no cookie jar).
 var _cookies: Dictionary = {}
 var _fallback_cookies: String = ""
+
+
+func _init() -> void:
+	endpoint = endpoint_for_build()
+
+
+## ENDPOINT, or a dev override in debug builds (never in a release export).
+static func endpoint_for_build(debug: bool = OS.is_debug_build()) -> String:
+	if not debug:
+		return ENDPOINT
+	var override := OS.get_environment(ENDPOINT_OVERRIDE_ENV)
+	if override.is_empty():
+		override = DevParams.get_value("appwrite")
+	return override.trim_suffix("/") if override.begins_with("http") else ENDPOINT
 
 
 func is_signed_in() -> bool:
@@ -76,31 +98,31 @@ func export_session() -> Dictionary:
 		"user_id": user_id, "user_name": user_name}
 
 
-## Creates a document; id "" lets Appwrite pick one.
-func create_document(collection: String, id: String, data: Dictionary,
+## Creates a row; id "" lets Appwrite pick one.
+func create_row(table: String, id: String, data: Dictionary,
 		permissions: Array = []) -> Dictionary:
-	return await request(HTTPClient.METHOD_POST, _documents(collection),
-		{"documentId": id if id else "unique()", "data": data, "permissions": permissions})
+	return await request(HTTPClient.METHOD_POST, _rows(table),
+		{"rowId": id if id else "unique()", "data": data, "permissions": permissions})
 
 
-func get_document(collection: String, id: String) -> Dictionary:
-	return await request(HTTPClient.METHOD_GET, _documents(collection) + "/" + id)
+func get_row(table: String, id: String) -> Dictionary:
+	return await request(HTTPClient.METHOD_GET, _rows(table) + "/" + id)
 
 
-func update_document(collection: String, id: String, data: Dictionary) -> Dictionary:
-	return await request(HTTPClient.METHOD_PATCH, _documents(collection) + "/" + id, {"data": data})
+func update_row(table: String, id: String, data: Dictionary) -> Dictionary:
+	return await request(HTTPClient.METHOD_PATCH, _rows(table) + "/" + id, {"data": data})
 
 
-func delete_document(collection: String, id: String) -> Dictionary:
-	return await request(HTTPClient.METHOD_DELETE, _documents(collection) + "/" + id)
+func delete_row(table: String, id: String) -> Dictionary:
+	return await request(HTTPClient.METHOD_DELETE, _rows(table) + "/" + id)
 
 
-## Lists documents; queries are Appwrite JSON queries (see equal_query()).
-func list_documents(collection: String, queries: Array[Dictionary] = []) -> Dictionary:
+## Lists rows ({total, rows}); queries are Appwrite JSON queries (see equal_query()).
+func list_rows(table: String, queries: Array[Dictionary] = []) -> Dictionary:
 	var parts: PackedStringArray = []
 	for query in queries:
 		parts.append("queries[]=" + JSON.stringify(query).uri_encode())
-	var path := _documents(collection)
+	var path := _rows(table)
 	if not parts.is_empty():
 		path += "?" + "&".join(parts)
 	return await request(HTTPClient.METHOD_GET, path)
@@ -119,17 +141,19 @@ func request(method: HTTPClient.Method, path: String, body: Variant = null) -> D
 	var headers := PackedStringArray([
 		"X-Appwrite-Project: " + PROJECT_ID,
 		"Content-Type: application/json",
-		"X-Appwrite-Response-Format: 1.6.0",
+		"X-Appwrite-Response-Format: " + RESPONSE_FORMAT,
 	])
 	if not _cookies.is_empty() and not OS.has_feature("web"):
 		var pairs: PackedStringArray = []
 		for name: String in _cookies:
 			pairs.append("%s=%s" % [name, _cookies[name]])
 		headers.append("Cookie: " + "; ".join(pairs))
+	# The browser never shows Set-Cookie to the page and sends no cross-site cookies
+	# from fetch, so the web build authenticates with the fallback header alone.
 	if _fallback_cookies:
 		headers.append("X-Fallback-Cookies: " + _fallback_cookies)
 	var payload := "" if body == null else JSON.stringify(body)
-	var reply: Dictionary = await _send(method, ENDPOINT + path, headers, payload)
+	var reply: Dictionary = await _send(method, endpoint + path, headers, payload)
 	var code: int = reply.code
 	_remember_cookies(reply.headers)
 	var text := (reply.body as PackedByteArray).get_string_from_utf8()
@@ -159,8 +183,8 @@ func _send(method: HTTPClient.Method, url: String, headers: PackedStringArray,
 	return {"result": result[0], "code": result[1], "headers": result[2], "body": result[3]}
 
 
-func _documents(collection: String) -> String:
-	return "/databases/%s/collections/%s/documents" % [DATABASE_ID, collection]
+func _rows(table: String) -> String:
+	return "/tablesdb/%s/tables/%s/rows" % [DATABASE_ID, table]
 
 
 func _display_name(account: Dictionary, fallback: String) -> String:

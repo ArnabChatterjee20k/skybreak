@@ -6,8 +6,6 @@ extends MenuScreen
 signal mode_chosen(mode: StringName)
 signal quit_requested
 
-## Online lobby scenes the Duo entry opens once a net lane adds one.
-const LOBBY_SCENES: Array[String] = ["res://game/net/lobby.tscn", "res://game/net/duo_lobby.tscn"]
 const ENTRIES := [
 	{"id": &"vs_ai", "text": "Play", "tag": "VS AI", "blurb": "Fight 1 to 3 AI legends. One AI is a classic duel; more is an all-out brawl."},
 	{"id": &"ffa", "text": "Free-for-All", "tag": "2-4", "blurb": "Every legend for themselves. Set each seat to human or AI, pick levels and teams."},
@@ -103,12 +101,9 @@ static func entries(is_web: bool = OS.has_feature("web")) -> Array:
 	return ENTRIES.filter(func(entry: Dictionary) -> bool: return not (is_web and entry.id == &"quit"))
 
 
-## True once an online lobby scene exists.
+## True once the Duo screen exists (it explains a build without WebRTC itself).
 static func duo_available() -> bool:
-	for path in LOBBY_SCENES:
-		if ResourceLoader.exists(path):
-			return true
-	return false
+	return ClassDB.class_exists(&"DuoScreen") or ResourceLoader.exists("res://game/net/duo_screen.gd")
 
 
 func _choose(id: StringName) -> void:

@@ -10,6 +10,8 @@ extends RefCounted
 
 ## A confirmed state hash differs between the peers.
 signal desynced(frame: int, local_hash: int, remote_hash: int)
+## This peer's state hash at frame, once every input up to it is confirmed.
+signal hash_checked(frame: int, local_hash: int)
 
 const MAX_ROLLBACK := 8
 ## Confirmed state hashes are exchanged every this many ticks.
@@ -18,6 +20,11 @@ const HASH_INTERVAL := 30
 const MAX_INPUTS_PER_PACKET := 24
 ## A sync skip happens at most once per this many ticks (about 10% slowdown).
 const SYNC_SKIP_SPACING := 10
+## While the other peer has been silent this long (ms), send at most every QUIET_SEND_MS:
+## a stalled or hidden browser tab cannot drain 60 packets a second, and every
+## packet repeats the unacknowledged inputs anyway.
+const QUIET_AFTER_MS := 250
+const QUIET_SEND_MS := 100
 ## Average frame advantage (ticks) above which this peer skips a tick.
 const SYNC_THRESHOLD := 1.0
 const _SNAPSHOTS := MAX_ROLLBACK + 2
@@ -34,7 +41,9 @@ var fighter_peers: Array[int] = []
 ## Per fighter: an object with next_input(sim) -> FighterInput for AI fighters, else null.
 var bots: Array = []
 ## Optional match rules with after_tick(sim), run after every tick on every peer
-## (round restarts); rolled back with the sim.
+## (round restarts); rolled back with the sim. If they have accepts_input() and it
+## is false (intro countdown), every fighter gets neutral input that tick. A
+## state_hash() of theirs joins the desync check.
 var rules: Object
 ## Next tick to simulate; frames count from 0 at session start.
 var frame: int = 0
@@ -48,6 +57,11 @@ var sync_skips: int = 0
 var desync_frame: int = -1
 var hashes_compared: int = 0
 var rtt_ms: float = 0.0
+## Last state hash both peers agreed on, and its frame (-1 before the first).
+var matched_hash: int = 0
+var matched_hash_frame: int = -1
+## Clock time of the last packet from another peer (0 before the first).
+var last_receive_ms: int = 0
 
 var _clock: Callable
 ## Per peer: frame -> encoded input, as confirmed by its owner.
@@ -73,6 +87,7 @@ var _advantages: PackedFloat64Array = PackedFloat64Array()
 var _last_skip_frame: int = -SYNC_SKIP_SPACING
 var _echo_ms: int = 0
 var _echo_received_at: int = 0
+var _last_send_ms: int = -QUIET_SEND_MS
 
 
 ## fighter_peers[i] is the peer controlling fighter i (-1 = AI, driven by bots[i]).
@@ -146,6 +161,7 @@ func on_receive(bytes: PackedByteArray) -> void:
 	var sender := buffer.get_u8()
 	if sender >= peer_count or sender == local_peer:
 		return
+	last_receive_ms = _now()
 	var their_frame := buffer.get_32()
 	var acks := PackedInt64Array()
 	for peer in peer_count:
@@ -176,6 +192,13 @@ func on_receive(bytes: PackedByteArray) -> void:
 		InputCodec.read(buffer)
 		var input_bytes := bytes.slice(begin, buffer.get_position())
 		_add_confirmed(sender, start + i, input_bytes)
+
+
+## Milliseconds since the last packet from another peer (since the session start before one).
+func ms_since_remote() -> int:
+	if last_receive_ms == 0:
+		last_receive_ms = _now()
+	return _now() - last_receive_ms
 
 
 ## Highest frame up to which every peer's input is confirmed.
@@ -212,10 +235,16 @@ func _simulate(at: int) -> void:
 		_snapshots[at % _SNAPSHOTS] = [at, sim.snapshot(), _bot_snapshots(),
 			SimSnapshot.capture(rules) if rules else null]
 	if at % HASH_INTERVAL == 0:
-		_hash_at[at] = sim.state_hash()
+		_hash_at[at] = _state_hash()
+	var live: bool = rules == null or not rules.has_method(&"accepts_input") or rules.accepts_input()
 	var inputs: Array[FighterInput] = []
 	for i in fighter_peers.size():
 		var peer := fighter_peers[i]
+		if not live:
+			if peer >= 0 and peer != local_peer:
+				_used[peer][at] = _input_for(peer, at)
+			inputs.append(FighterInput.new())
+			continue
 		if peer < 0:
 			inputs.append(bots[i].next_input(sim) if bots[i] else FighterInput.new())
 			continue
@@ -226,6 +255,12 @@ func _simulate(at: int) -> void:
 	sim.tick(inputs)
 	if rules:
 		rules.after_tick(sim)
+
+
+func _state_hash() -> int:
+	if rules and rules.has_method(&"state_hash"):
+		return hash([sim.state_hash(), rules.state_hash()])
+	return sim.state_hash()
 
 
 func _bot_snapshots() -> Array:
@@ -338,6 +373,7 @@ func _confirm_hashes() -> void:
 			_local_hashes[at] = _hash_at[at]
 			_last_hash_frame = at
 			_last_hash = _hash_at[at]
+			hash_checked.emit(at, _last_hash)
 			_compare_hash(at)
 		_next_hash_frame += HASH_INTERVAL
 
@@ -350,6 +386,9 @@ func _compare_hash(at: int) -> void:
 	var remote_hash: int = _remote_hashes[at]
 	_local_hashes.erase(at)
 	_remote_hashes.erase(at)
+	if local_hash == remote_hash:
+		matched_hash = local_hash
+		matched_hash_frame = at
 	if local_hash != remote_hash and desync_frame < 0:
 		desync_frame = at
 		desynced.emit(at, local_hash, remote_hash)
@@ -358,6 +397,11 @@ func _compare_hash(at: int) -> void:
 func _send() -> void:
 	if transport == null:
 		return
+	var sent_at := _now()
+	if last_receive_ms > 0 and sent_at - last_receive_ms > QUIET_AFTER_MS \
+			and sent_at - _last_send_ms < QUIET_SEND_MS:
+		return
+	_last_send_ms = sent_at
 	var buffer := StreamPeerBuffer.new()
 	buffer.put_u8(_KIND_INPUTS)
 	buffer.put_u8(local_peer)
