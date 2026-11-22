@@ -30,6 +30,8 @@ uniform bool back_faces_only = false;
 // Ignores the tint and uses this colour instead (sky-tinted pops, sparkles).
 uniform bool fixed_color = false;
 uniform vec4 own_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
+// View depth (m) over which a layer fades in from the lens, so nothing glows across the screen (#127).
+uniform vec2 near_fade = vec2(0.6, 2.5);
 
 varying float age;
 varying float seed;
@@ -140,5 +142,6 @@ void fragment() {
 	}
 	vec3 base = fixed_color ? own_color.rgb : tint.rgb;
 	vec3 hot = mix(base * COLOR.rgb, vec3(1.0), clamp(core * core_whiteness, 0.0, 1.0));
+	fade *= smoothstep(near_fade.x, near_fade.y, -VERTEX.z);
 	ALBEDO = max(hot * alpha * fade * intensity, vec3(0.0));
 }

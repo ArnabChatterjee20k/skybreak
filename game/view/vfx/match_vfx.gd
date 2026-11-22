@@ -15,6 +15,11 @@ const GHOST_EVERY := 3
 ## Speed (m/s) that fires the sonic ring, and ticks before it can fire again.
 const SONIC_SPEED := 50.0
 const SONIC_COOLDOWN := 45
+## Trails (afterimages, sonic rings) that would start this close to the lens (m) are skipped:
+## a body-sized shell right in front of the camera covers the fight (#127).
+const NEAR_LENS := 2.5
+## A sonic ring is 5.5 m wide, so it keeps further from the lens.
+const NEAR_LENS_RING := 4.0
 ## Flying at this share of fly_speed or faster counts as top speed (speed lines).
 const TOP_SPEED_SHARE := 0.95
 ## Falling faster than this (m/s) onto the ground kicks up dust.
@@ -351,13 +356,15 @@ func _watch_fighters() -> void:
 		# Dash afterimages, stretched along the dash.
 		if not calm and state == S.DASHING and fighter.dash_kind != FighterState.DashKind.DODGE \
 				and (was != S.DASHING or fighter.state_ticks % GHOST_EVERY == 0):
-			spawn(&"afterimage", _prev_position[i], color, 1.0, stretch_along(fighter.velocity, speed))
-		elif DodgeTrail.wants_ghost(fighter):
+			if not near_lens(_prev_position[i], NEAR_LENS):
+				spawn(&"afterimage", _prev_position[i], color, 1.0, stretch_along(fighter.velocity, speed))
+		elif DodgeTrail.wants_ghost(fighter) and not near_lens(_prev_position[i], NEAR_LENS):
 			spawn(&"afterimage", _prev_position[i], DodgeTrail.ghost_color(fighter, color), 1.0,
 				stretch_along(fighter.velocity, speed))
 		# Vanish: a ghost and a burst where they left, a burst where they appear.
 		if state == S.VANISHING and was != S.VANISHING:
-			spawn(&"afterimage", _prev_position[i], color.lerp(Color.WHITE, 0.4), 1.15)
+			if not near_lens(_prev_position[i], NEAR_LENS):
+				spawn(&"afterimage", _prev_position[i], color.lerp(Color.WHITE, 0.4), 1.15)
 			spawn(&"vanish_burst", _prev_position[i], Color.TRANSPARENT)
 		elif was == S.VANISHING and state != S.VANISHING:
 			spawn(&"vanish_burst", fighter.position, color)
@@ -376,7 +383,8 @@ func _watch_fighters() -> void:
 		_aura_to[i] = fighter.position
 		# Sonic ring the moment they break the speed line.
 		var fast := speed >= SONIC_SPEED
-		if fast and not calm and _was_fast[i] == 0 and sim.current_tick >= _sonic_ready[i]:
+		if fast and not calm and _was_fast[i] == 0 and sim.current_tick >= _sonic_ready[i] \
+				and not near_lens(fighter.position, NEAR_LENS_RING):
 			spawn(&"sonic_ring", fighter.position, color.lerp(Color.WHITE, 0.6), 1.0, facing_along(fighter.velocity))
 			_sonic_ready[i] = sim.current_tick + SONIC_COOLDOWN
 		_was_fast[i] = 1 if fast else 0
@@ -486,6 +494,12 @@ static func facing_along(direction: Vector3) -> Basis:
 	var side := Vector3.UP if absf(z.y) < 0.99 else Vector3.RIGHT
 	var x := side.cross(z).normalized()
 	return Basis(x, z.cross(x), z)
+
+
+## True when the scene camera is within reach (m) of where.
+func near_lens(where: Vector3, reach: float) -> bool:
+	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
+	return camera != null and camera.global_position.distance_to(where) < reach
 
 
 func _facing_camera(where: Vector3) -> Basis:
