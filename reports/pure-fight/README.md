@@ -218,7 +218,10 @@ VK_ICD_FILENAMES=/opt/lavapipe/lvp_icd.json xvfb-run -a godot --path . --disable
   - `84a4b94`: 1875 / 1866 / 0 failing.
   - Baseline main 7cad385: 1826 / 1817 / 0 failing / 13 pending.
   - The pending/risky tests are main's (renderer-only, VOXEL-BAKES, live Appwrite, QA-11/12).
-  - The final merge of main fbfe18e (CI workflow and reports only) is re-run below.
+  - `6a92142` (with main fbfe18e: CI workflow and reports): **1946 / 1935 / 0 failing / 15 pending
+    / 15 orphans, exit 0**, det_check `65ec2f54272115fd`.
+  - Main's last move (954ba33) changed only TODO.md and `reports/builds/`, so the final tree's code is
+    byte-identical to 6a92142.
 - **New tests (68):**
   - `tests/combat/pure_fight/`: rules, frames (measured), combos, rollback, goldens.
   - `tests/modes/pure_fight/`: the 7-zone 3-round bot match with framing, plus the menu tests.
