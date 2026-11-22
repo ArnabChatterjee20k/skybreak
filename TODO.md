@@ -90,6 +90,18 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
     them (up to ~10 ms once per chunk, not seen in view_ms). Could move into the zone bake.
 
 ## In review
+- ISSUE-SWEEP [desktop] Open GitHub issues triaged against main (`reports/issues/triage.md`); fixes on
+  `fix/issue-sweep`: #128 FFA-4 spawns on a 12 m ring (were 0.92 m apart), #127 dash afterimage is the
+  fighter's silhouette (`PoseGhost`) and the sonic ring is half the size, #73 `BodySeparation` eases drawn
+  bodies apart (Frozen Peaks VisualQa overlap 410/1679 -> 34/1628 close frames) and stacked fliers out
+  sideways, #106 level 3+ AI never repeats a string back to back (det_check changes on the AI duel lines
+  only). Open:
+  - ISSUE-SWEEP-a [developer] Locked camera with a vertical gap over `STACK_MAX_HEIGHT` (12 m): the
+    target leaves the frame for ~1 s while a flier dives onto it (Heartbloom seed 7 with an AI variant:
+    far band 65/108 frames). Raising the limit to 24 m broke 10 flight-camera asserts, so it was not
+    changed; `camera_offscreen_diag.gd` shows the frames.
+  - ISSUE-SWEEP-b [desktop] QA-11 drawn overlap left after `BodySeparation`: ~2% of close frames, mostly
+    the first frame of a lunge (poses are a frame old). #109 needs the GTX 1650 PC.
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
   all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
   energy on GLOW, emblems at 5.5 mm), drop-in behind `VoxelArmory` / `WeaponModels.voxel_everywhere`
