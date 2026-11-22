@@ -419,6 +419,21 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   disconnected (continue vs AI / leave) and out-of-sync panels. Tests: GUT loopback 150 ms RTT /
   20 ms jitter / 2% loss + rollback burst; `tools/net/duo_browser_test.js` (two Chromium pages,
   real WebRTC, Appwrite mock). Open (ranked) in the report README.
+- T-VFX-AURA2 [desktop] Aura v2 (owner: "looking like rectangles"), merged into `main` `--no-ff` from
+  `vfx/aura-v2`; evidence and ranked critique in `reports/vfx/aura-v2/README.md`. `FighterAura` rebuilt
+  and now in every match (`MatchVfx`, one per fighter): three noise-scrolled flame layers hugging the body,
+  a faint fresnel core, tumbling voxel motes with round halos, the ki gather while CHARGING (converging
+  streaks, chest orb, floor shock rings, light pulse), lightning arcs from level 2, one shadowless
+  OmniLight3D in the ki colour. Levels 1/2/3 by charge time (0 / 1 s / 2.5 s); `KiGather` streaks into
+  the hands for charged blasts and beam charges. HDR clamped, no instance uniforms (Compatibility/web OK),
+  `particle_quality` from `vfx_density` (60/51/36/24 particles, 6/5/4/2 arcs). Sim untouched (det_check
+  65ec2f54272115fd); QA quick view_ms 1.755 vs main 1.773 (same box, same load). Follow-ups:
+  - AURA2-1 [developer, GPU] Look on the GTX 1650 in real zones (it reads pale on the grey look-dev stage)
+    and render-benchmark four fighters charging at once (three flame sheets each).
+  - AURA2-2 [desktop] One aura size for every legend: Brann's shoulders and fists stick out of the
+    flame (needs a per-legend size from the measured silhouette). The chest orb is faint on Kael; the shell keeps a faint bubble edge at the boots;
+    the flame sheets flatten from directly above. The 4-hero stills and mp4 predate the flame-base fix
+    (re-render them).
 - T-135 [developer/desktop] MERGED into `main` at 61925008 (PR #149, `--no-ff`; web-build 66250942, play-windows 05e02e73; evidence in
   `reports/camera/round3/README.md`). Hybrid exchange cam, terrain-wall push, closer base framing,
   low voxel props as obstacles, `CameraClearance` no-clip measure, `VoxelCameraFight` tests; plus this

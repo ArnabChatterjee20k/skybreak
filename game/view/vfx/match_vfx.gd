@@ -3,7 +3,8 @@ extends Node3D
 ## The T-D27 effects layer: reads CombatSim.events and fighter state (read-only) and
 ## plays pooled effects: heavy-hit bursts, guard-break shatter, KO contact burst, zone
 ## extras, swing smears, dash/vanish afterimages, speed lines, sonic rings, landing
-## dust and aura flares. CombatFeedback forwards each tick's events to react().
+## dust, aura flares and the power-up aura while charging ki. CombatFeedback forwards
+## each tick's events to react().
 
 const E := CombatSim.EventType
 const S := FighterState.State
@@ -46,6 +47,8 @@ const SPARK_STANDOFF := 0.4
 const CROWD_SCALE := 0.8
 ## Rendered frames the KO impact frame holds (ART_BIBLE §7: the 1-frame KO impact frame).
 const KO_IMPACT_FRAMES := 1
+## Ticks of continuous ki charging before the aura reaches power level 2 and 3.
+const AURA_LEVEL_TICKS: Array[int] = [60, 150]
 
 ## Read-only. Found among the ancestors (the arena's `sim`) when not set.
 var sim: CombatSim
@@ -67,9 +70,17 @@ var _sonic_ready := PackedInt32Array()
 var _was_fast := PackedByteArray()
 ## Ki blasts, beams and clash prompts (T-KI1).
 var ki_layer := KiLayer.new()
+## Particle share for the graphics tier (GraphicsSettings vfx_density); set before the first tick.
+var particle_quality := 1.0
+var _auras: Array[FighterAura] = []
+## Each aura eases between the fighter's last two tick positions.
+var _aura_from := PackedVector3Array()
+var _aura_to := PackedVector3Array()
+var _aura_level := PackedInt32Array()
 
 
 func _ready() -> void:
+	particle_quality = float(GraphicsSettings.load_saved().quality_value("vfx_density"))
 	for kind in VfxCatalog.kinds():
 		var pool := VfxPool.new(kind, VfxCatalog.CAPACITY[kind])
 		add_child(pool)
@@ -93,8 +104,8 @@ func react(events: Array[Dictionary]) -> void:
 			_play_perfect_dodge(event)
 	specials.react(self, sim, events)
 	if sim != null:
-		_watch_fighters()
 		ki_layer.sim = sim
+		_watch_fighters()
 		ki_layer.react(events)
 
 
@@ -119,6 +130,9 @@ func _process(delta: float) -> void:
 func follow_fighters(delta: float = 1.0 / 60.0) -> void:
 	if sim == null:
 		return
+	var blend := Engine.get_physics_interpolation_fraction()
+	for i in mini(_auras.size(), _aura_to.size()):
+		_auras[i].global_position = _aura_from[i].lerp(_aura_to[i], blend)
 	for i in mini(_trails.size(), sim.fighters.size()):
 		var fighter := sim.fighters[i]
 		var lines := wants_speed_lines(fighter, sim.tuning) and not sim.round_over
@@ -347,9 +361,19 @@ func _watch_fighters() -> void:
 			spawn(&"vanish_burst", _prev_position[i], Color.TRANSPARENT)
 		elif was == S.VANISHING and state != S.VANISHING:
 			spawn(&"vanish_burst", fighter.position, color)
-		# Power-up flare.
+		# Power-up flare, the aura while charging, and a flare at each level it climbs.
 		if state == S.CHARGING and was != S.CHARGING:
 			spawn(&"aura_flare", fighter.position, color)
+		var level := 0 if calm else aura_level(fighter)
+		if level > _aura_level[i] and _aura_level[i] > 0:
+			spawn(&"aura_flare", fighter.position, color, 0.8 + 0.2 * level)
+		_aura_level[i] = level
+		var aura := _auras[i]
+		aura.color = ki_layer.color_of(i)
+		aura.power_level = level
+		aura.charging = state == S.CHARGING
+		_aura_from[i] = _aura_to[i]
+		_aura_to[i] = fighter.position
 		# Sonic ring the moment they break the speed line.
 		var fast := speed >= SONIC_SPEED
 		if fast and not calm and _was_fast[i] == 0 and sim.current_tick >= _sonic_ready[i]:
@@ -390,6 +414,18 @@ func _start_watching(count: int) -> void:
 		var trail := FlightTrail.new()
 		add_child(trail)
 		_trails.append(trail)
+	_aura_from.resize(count)
+	_aura_to.resize(count)
+	_aura_level.resize(count)
+	while _auras.size() < count:
+		var aura := FighterAura.new()
+		aura.particle_quality = particle_quality
+		add_child(aura)
+		_auras.append(aura)
+	for i in count:
+		_aura_from[i] = sim.fighters[i].position
+		_aura_to[i] = sim.fighters[i].position
+		_aura_level[i] = 0
 
 
 func _land(where: Vector3, impact_speed: float, knocked_down: bool) -> void:
@@ -467,6 +503,22 @@ func _screen_point(where: Vector3) -> Vector2:
 	var size := get_viewport().get_visible_rect().size
 	var point := camera.unproject_position(where) / size
 	return point.clamp(Vector2(0.1, 0.1), Vector2(0.9, 0.9))
+
+
+## Aura power level for a fighter: 0 unless charging ki, then 1, 2, 3 the longer they charge.
+static func aura_level(fighter: FighterState) -> int:
+	if fighter.state != S.CHARGING:
+		return 0
+	var level := 1
+	for ticks in AURA_LEVEL_TICKS:
+		if fighter.state_ticks >= ticks:
+			level += 1
+	return level
+
+
+## The power-up aura of each fighter, for tests and captures.
+func auras() -> Array[FighterAura]:
+	return _auras
 
 
 func _find_sim() -> CombatSim:

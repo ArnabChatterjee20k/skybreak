@@ -120,3 +120,33 @@ func test_the_charge_hum_rises_through_a_charged_blast_and_beam_startup() -> voi
 				levels.append(loop.intensity)
 	assert_gt(levels.size(), 5, "the hum plays while charging")
 	assert_gt(levels[levels.size() - 1], levels[0], "and rises")
+
+
+func test_ki_streaks_converge_into_the_hands_while_a_beam_charges() -> void:
+	var arena := _arena()
+	arena.set_physics_process(false)
+	await wait_frames(1)
+	var sim: CombatSim = arena.sim
+	var held := [A.SPECIAL_1, 0]
+	var previous: Array[FighterInput] = [FighterInput.new(), FighterInput.new()]
+	arena.input_override = func(index: int, _tick: int) -> FighterInput:
+		var input := FighterInput.from_held(held[index], previous[index])
+		previous[index] = input
+		return input
+	var fighter := sim.fighters[0]
+	fighter.ki = 100 * FighterState.METER_UNIT
+	var stats := fighter.stats.duplicate() as FighterStats
+	stats.special_kit = null
+	fighter.stats = stats
+	var layer: KiLayer = arena.combat_feedback.vfx.ki_layer
+	arena.step_tick()
+	held[0] = 0
+	arena.step_tick()
+	assert_true(KiRules.kit_of(fighter).is_beam(fighter.move), "the beam is charging")
+	assert_true(layer.gathers()[0].emitting, "streaks gather at the hands")
+	assert_false(layer.gathers()[1].emitting, "not for the fighter who isn't charging")
+	for _i in 400:
+		arena.step_tick()
+		if sim.beams.is_empty() and fighter.state != FighterState.State.ATTACKING:
+			break
+	assert_false(layer.gathers()[0].emitting, "the gather stops once the beam is over")
