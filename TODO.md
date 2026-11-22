@@ -15,10 +15,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
      HIGH/MEDIUM first); cloud ms are lavapipe only.
   3. QA-12 view soak: foot_ground 4/21 quick matches, 8 frames (worst Lyra +22 cm, frozen_peaks seed
      117 t268), same as main before the merge.
-  4. Windows build (`play-windows`, now from 746036c1) not boot-tested on Windows; the Linux export of
+  4. Windows build (`play-windows` fb267e32, from fe71e7c8) not boot-tested on Windows; the Linux export of
      012ec23 boots the menu and voxel Frozen Peaks / Shattered Mesa matches from their bakes.
-  5. Appwrite deploy of the new web build: about 250 MB with the zone packs (`web-build` BUILD.md);
-     check the site's upload limit [owner, Mac].
+  5. Live web site (fe71e7c8, deployed by the `Deploy web build` workflow): only checked by size and
+     `version.json`; play one Vs AI and one Duo match on it [owner] (the cloud proxy blocks the site).
   6. run_qa.sh defaults to 8 soak jobs; on a 4-core box that doubles sim/view ms (use QA_JOBS=nproc)
      [developer, tools/].
   7. Filed earlier, still open: QA-22 (voxel Brann view cost), VOXEL-PALETTE, the classic menu
@@ -94,14 +94,27 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   `fix/issue-sweep`: #128 FFA-4 spawns on a 12 m ring (were 0.92 m apart), #127 dash afterimage is the
   fighter's silhouette (`PoseGhost`) and the sonic ring is half the size, #73 `BodySeparation` eases drawn
   bodies apart (Frozen Peaks VisualQa overlap 410/1679 -> 34/1628 close frames) and stacked fliers out
-  sideways, #106 level 3+ AI never repeats a string back to back (det_check changes on the AI duel lines
-  only). Open:
+  sideways. Open:
+  - ISSUE-SWEEP-c [desktop] #106 AI string variety is on `fix/issue-106-ai-variety` (3+ hit back-to-back
+    repeats 22.5% -> 7.5% over 5 seeds x 4 matchups). Not merged: any AI change reshuffles the seeded AI
+    fights; it failed the seed-2026 ki duel (7 blasts vs > 10; main clears 10 only on that seed of
+    2026-2035) and needs the golden replays re-recorded.
   - ISSUE-SWEEP-a [developer] Locked camera with a vertical gap over `STACK_MAX_HEIGHT` (12 m): the
     target leaves the frame for ~1 s while a flier dives onto it (Heartbloom seed 7 with an AI variant:
     far band 65/108 frames). Raising the limit to 24 m broke 10 flight-camera asserts, so it was not
     changed; `camera_offscreen_diag.gd` shows the frames.
   - ISSUE-SWEEP-b [desktop] QA-11 drawn overlap left after `BodySeparation`: ~2% of close frames, mostly
     the first frame of a lunge (poses are a frame old). #109 needs the GTX 1650 PC.
+- T-PF1 [desktop] Pure Fight, 2.5D 1v1 martial-arts mode (`feature/pure-fight`, report
+  `reports/pure-fight/README.md`, GAME_DESIGN §16): `PureFightSim` (a `CombatSim` subclass, integer
+  fight-line sim: walls, rounds, 99 s timer, crouch/low/air block, just defend, throws and techs,
+  motion inputs + technique key, target combos, cancels, juggles, wall/ground bounce, counters,
+  armour, counter stance, finishers and meter), 4 legends x 19-20 moves with frame data, styled
+  keyframed poses on the voxel rigs by IK (`game/characters/fight_styles/`), side camera, platform per
+  zone, HUD, effects, AI levels 1-5, Play/Training menu entries, local 2P, pause-menu move list,
+  online 1v1 through the Duo lobby (host picks Game: Pure Fight 1v1; `PureFightNet`). Open, ranked in
+  the report: two-device online playtest, Lyra's robe hides her kicks, shared reaction poses,
+  code-keyframed poses (no Animation resources), no gamepad, no Pure Fight QA soak, human balance.
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
   all 11 weapons rebuilt as rigid voxel models with the voxel kit (1.1 cm world cell, owner palettes,
   energy on GLOW, emblems at 5.5 mm), drop-in behind `VoxelArmory` / `WeaponModels.voxel_everywhere`
@@ -423,6 +436,11 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+- BUILD 2026-11-22 [desktop] Build of `main` fe71e7c8 with all four lanes (camera round 3, WEB-CACHE,
+  aura v2, Duo online): GUT 1894 / 0 failing, det_check stable; web on `web-build` 0cc630f0
+  (index.pck 56.7 MB, smoke PASS, cache 6/6, Duo browser test PASS), live on Appwrite (deployment
+  6b02e1ce83ba5adf73d3); Windows on `play-windows` fb267e32 (zip 726 MB, 8 parts).
+  Report: `reports/builds/2026-11-22-fe71e7c8.md`.
 - T-D15b [desktop] Duo online end to end (`net/duo-online`, report `reports/net/duo-online/`):
   Main menu -> Duo -> sign in (remembered) -> Host (5-letter code) / Join -> legends, host's
   zone/AI/lives/minutes -> Ready -> Start; `DuoLink` keeps the WebRTC link across menu and match;

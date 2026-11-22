@@ -173,8 +173,15 @@ func set_active_slot(index: int) -> void:
 	refresh()
 
 
+## Pure Fight: the same picks as a training session against a dummy.
+func _pure_fight_training() -> void:
+	mode = MatchRules.MODE_PURE_FIGHT_TRAINING
+	slots[1].is_ai = true
+	refresh()
+
+
 func max_slots() -> int:
-	return 2 if mode == &"training" else 4
+	return 2 if mode == &"training" or MatchRules.is_pure_fight(mode) else 4
 
 
 func min_slots() -> int:
@@ -199,9 +206,9 @@ func remove_slot(index: int) -> void:
 	refresh()
 
 
-## FFA only: switches a seat between human and AI (P1 stays human).
+## FFA and Pure Fight: switches a seat between human and AI (P1 stays human).
 func toggle_ai(index: int) -> void:
-	if mode != &"ffa" or index <= 0 or index >= slots.size():
+	if not (mode == &"ffa" or mode == &"pure_fight") or index <= 0 or index >= slots.size():
 		return
 	slots[index].is_ai = not slots[index].is_ai
 	refresh()
@@ -247,6 +254,8 @@ func refresh() -> void:
 	var subtitle := {
 		&"vs_ai": "VERSUS AI  ·  1 TO 3 AI OPPONENTS",
 		&"ffa": "FREE-FOR-ALL  ·  2 TO 4 FIGHTERS",
+		&"pure_fight": "PURE FIGHT  ·  1V1 HAND TO HAND  ·  P2: AI OR SECOND PLAYER (ARROWS + NUMPAD)",
+		&"pure_fight_training": "PURE FIGHT TRAINING  ·  DUMMY (F4 CYCLES BLOCKING)  ·  FRAME DATA ON SCREEN",
 		&"training": "TRAINING  ·  YOU AND A DUMMY",
 	}
 	_sub.text = subtitle.get(mode, String(mode).to_upper())
@@ -353,11 +362,13 @@ func _slot_card(index: int) -> Control:
 	var controls := HBoxContainer.new()
 	controls.add_theme_constant_override("separation", 8)
 	rows.add_child(controls)
-	if mode == &"ffa" and index > 0:
+	if (mode == &"ffa" or mode == &"pure_fight") and index > 0:
 		controls.add_child(_small_button("AI" if slot.is_ai else "HUMAN", toggle_ai.bind(index)))
+	if mode == &"pure_fight":
+		controls.add_child(_small_button("TRAINING", _pure_fight_training))
 	elif index == 0:
 		controls.add_child(MenuTheme.label("HUMAN", 24, MenuTheme.TEXT_DIM, 6))
-	if mode != &"training":
+	if mode != &"training" and not MatchRules.is_pure_fight(mode):
 		controls.add_child(_small_button("TEAM %d" % (slot.team + 1), cycle_team.bind(index, 1)))
 	if slot.is_ai:
 		var level_row := HBoxContainer.new()

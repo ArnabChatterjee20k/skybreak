@@ -8,6 +8,7 @@ signal quit_requested
 
 const ENTRIES := [
 	{"id": &"vs_ai", "text": "Play", "tag": "VS AI", "blurb": "Fight 1 to 3 AI legends. One AI is a classic duel; more is an all-out brawl."},
+	{"id": &"pure_fight", "text": "Pure Fight", "tag": "1V1", "blurb": "Hand to hand, side-on, on a platform in any zone. No ki, no flight: just martial arts. Vs AI or a friend on the same keyboard."},
 	{"id": &"ffa", "text": "Free-for-All", "tag": "2-4", "blurb": "Every legend for themselves. Set each seat to human or AI, pick levels and teams."},
 	{"id": &"duo", "text": "Duo", "tag": "ONLINE", "blurb": "You and a partner against AI legends, each on your own device."},
 	{"id": &"training", "text": "Training", "tag": "", "blurb": "A quiet sky and a patient dummy. Practise strings, vanishes and weapons."},
@@ -108,7 +109,7 @@ static func duo_available() -> bool:
 
 func _choose(id: StringName) -> void:
 	match id:
-		&"vs_ai", &"ffa", &"training":
+		&"vs_ai", &"ffa", &"training", &"pure_fight":
 			mode_chosen.emit(id)
 			navigate.emit(&"character_select")
 		&"duo":

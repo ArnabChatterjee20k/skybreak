@@ -27,6 +27,8 @@ var cancel_button: Button
 var my_legend_label: Label
 var partner_label: Label
 var zone_label: Label
+## Duo or Pure Fight 1v1 (host picks).
+var game_label: Label
 var ai_label: Label
 var rules_label: Label
 var ready_button: Button
@@ -202,6 +204,8 @@ func step_setup(key: String, step: int) -> void:
 			values = DuoMatch.LIVES_CHOICES
 		"minutes":
 			values = DuoMatch.MINUTE_CHOICES
+		"game":
+			values = [&"duo", &"pure_fight"]
 	if values.is_empty():
 		return
 	var at := maxi(values.find(link.setup[key]), 0)
@@ -252,6 +256,11 @@ func _refresh_setup() -> void:
 	partner_label.text = "%s  ·  %s  ·  %s" % [link.partner_name if link.partner_name else "Partner",
 		LegendCatalog.display_name(theirs).to_upper(), "READY" if link.ready_flags[1 - me] else "picking"]
 	zone_label.text = ZoneCatalog.display_name(link.setup.zone).to_upper()
+	var pure := link.is_pure_fight()
+	game_label.text = "PURE FIGHT 1V1" if pure else "DUO VS AI"
+	# Pure Fight has no AI, lives or time limit to set: best of 3 rounds, 99 s each.
+	for label: Label in [ai_label, rules_label]:
+		label.get_parent().visible = not pure
 	ai_label.text = "%d AI  ·  LEVEL %d" % [link.setup.ai_count, link.setup.ai_level]
 	rules_label.text = "%d LIVES  ·  %d MIN" % [link.setup.lives, link.setup.minutes]
 	for row in host_rows:
@@ -379,6 +388,8 @@ func _build_setup(parent: Control) -> Control:
 	parent.add_child(box)
 	my_legend_label = _stepper_row(box, "You", func(step: int) -> void: step_legend(step))[0]
 	partner_label = _info_row(box, "Partner")
+	var game_row := _stepper_row(box, "Game", func(step: int) -> void: step_setup("game", step))
+	game_label = game_row[0]
 	var zone_row := _stepper_row(box, "Zone", func(step: int) -> void: step_setup("zone", step))
 	zone_label = zone_row[0]
 	var ai_row := _stepper_row(box, "AI", func(step: int) -> void: step_setup("ai_count", step))
@@ -387,7 +398,7 @@ func _build_setup(parent: Control) -> Control:
 	var lives_row := _stepper_row(box, "Lives", func(step: int) -> void: step_setup("lives", step))
 	rules_label = lives_row[0]
 	var minutes_row := _stepper_row(box, "Minutes", func(step: int) -> void: step_setup("minutes", step))
-	for row: Array in [zone_row, ai_row, lives_row]:
+	for row: Array in [game_row, zone_row, ai_row, lives_row]:
 		for button: Control in row.slice(1):
 			host_rows.append(button)
 	# Value-less rows (level, minutes) are host-only buttons: hidden whole for the guest.
