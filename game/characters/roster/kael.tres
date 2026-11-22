@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://game/characters/roster/roster_character.gd" id="1_entry"]
 [ext_resource type="PackedScene" path="res://game/characters/kael_chunky/kael_chunky.tscn" id="2_scene"]
-[ext_resource type="Resource" path="res://game/combat/default_fighter_stats.tres" id="3_stats"]
+[ext_resource type="Resource" path="res://game/combat/moves/kael/kael_fighter_stats.tres" id="3_stats"]
 [ext_resource type="PackedScene" path="res://game/characters/kael_voxel/kael_voxel.tscn" id="9_voxel"]
 
 [resource]

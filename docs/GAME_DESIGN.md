@@ -67,17 +67,17 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 | **Block** | `E` (hold) | **Tap** just before a hit = perfect block (§5.4) |
 | **Dodge / dash** | `Left Shift` (+ direction) | Tap = **dodge** (§5.4): with a direction a directional dodge, alone a spot dodge, locked with `A`/`D` a sidestep round the target. Hold = the dodge turns into the sustained flight-dash. Toward the target while locked = rush dash (no i-frames) |
 | Grab | `F` | Beats block. Loses to strikes |
-| Pick up / throw item | `G` | Tap near an item to pick it up. Tap while holding a weapon to throw it at the target |
+| Pick up / throw item | `G` / `V` | Tap `G` near an item to pick it up; with nothing in reach it throws the held weapon at the target. `V` always throws |
 | Ki blast | `Q` | Tap = rapid shot. Hold = charged blast |
 | Charge ki | `R` (hold) | Fast ki gain, but you're vulnerable |
-| Specials 1 / 2 / 3 | `1` `2` `3` | Character-specific (cost ki) |
+| Specials 1 / 2 / 3 | `1` `2` `3` | Character-specific, 25–35 ki (§6.1). `Space`/`C` + key = rising/diving variant where a special has one |
 | Ultimate | `4` | Costs burst. Cinematic on hit |
 | Transform | `T` | Costs burst. Drains ki over time |
 | **Vanish** | `Shift + E` | While blocking or in the first frames of hitstun = vanish counter (§5.5) |
 | Combo breaker | `X` | While in hitstun. Costs 1 burst stock |
-| Lock-on toggle | `Middle Mouse` | |
-| Switch target | `Tab` | For later multi-opponent modes |
-| Cycle weapons | `Mouse Wheel` | Unarmed → slot 1 → slot 2 (wraps) |
+| Lock-on toggle | `Middle Mouse` or `Tab` | |
+| Switch target | `Mouse Wheel` | Multi-opponent modes |
+| Cycle weapons | `B` / `Z` | Next / previous: Unarmed → slot 1 → slot 2 → slot 3 (wraps) |
 | Quick-swap weapon | `Y` | Toggles between the current and the last-used weapon |
 | Camera | Mouse movement | Free orbit when unlocked; small offset orbit when locked (§4) |
 | Pause / menu | `Esc` | |
@@ -356,6 +356,28 @@ Each fighter has a clear playstyle, one strength, one weakness and one unique me
 - **Vexa** (speed/trickster; Ki Gauntlets + Orbit Chakram): a masked **shadow rogue** with a deep violet hood with long ear-like points, a cropped silver jacket, wrapped arms, and a mischievous visor-mask with glowing eyes.
 - **Brann** (heavy grappler; Titan Hammer + Scatter Cannon): a huge **stone-forged blacksmith** with mossy rock shoulders, a leather apron, a braided ember-red beard, and anvil-sized fists.
 - **Lyra** (zoner; Ki Bow + Sky Lance): a **star-cartographer mage** with a wide-brimmed midnight-blue hat dotted with constellation lights, a flowing star-map cape and floating brass astrolabe rings.
+
+### 6.1 Specials (T-SP1)
+
+Keys `1` `2` `3`, all in `game/combat/specials/` (data in `kits/*.tres`, API in its README). Specials sit at the **Special** level of the cancel hierarchy: they come out of a free state or cancel a Light or Heavy that made contact (inside its cancel window), and on hit they cancel only into Vanish-step or an Ultimate, never into another special or backwards. Whiffed or blocked, every special is punishable. Frames are 60 Hz ticks; *on block* is the defender's advantage when the first active frame is blocked.
+
+**Kael** (all-rounder, orange-white) · **Momentum:** +2% damage per consecutive landed hit, up to +20% (10 diamond pips beside his burst stocks), all lost the moment he takes damage.
+
+| Key | Special | Cost | Startup / active / recovery | Damage | What it does | Beats | Loses to |
+|---|---|---|---|---|---|---|---|
+| 1 | **Comet Drive** | 25 ki | 12 / 10 / 22 | 900 | Crouch and flare, then a 6 m shoulder-first rush toward the target; blowback. `Space`+1 climbs (launch, 800), `C`+1 dives (spike, 850) | Backdashes, whiffs, mid-range ki; chases a heavy ender | Block (−17 blocked early, −8 late), sidestep, a jab in its face |
+| 2 | **Gale Counter** | 25 ki | 3 / 20 (stance) / 24 | 1,000 riposte | A guard stance; a strike landing in it is caught (no damage), the attacker freezes and Kael answers with a blowback riposte | Strikes, strings, rushes | Grabs, ki shots, waiting it out (47 f whiff) |
+| 3 | **Skyfall** | 35 ki | 22 / 4 / 22 | 850 | Leaps up to 5 m in an arc and crashes down; spike. 40 guard damage, breaks a guard under 40 | Turtling | Anti-air Rising heavy, dodges and sidesteps (huge tell) |
+
+**Vexa** (trickster, violet) · **Afterimage:** Mirage Step leaves a decoy where she stood for 2.5 s. The first opponent hitbox or shot that touches it is wasted on it, and it bursts (2.4 m, 500 damage, blowback; blockable). One decoy at a time; a violet marker beside her burst stocks shows it is out.
+
+| Key | Special | Cost | Startup / active / recovery | Damage | What it does | Beats | Loses to |
+|---|---|---|---|---|---|---|---|
+| 1 | **Shade Flicker** | 30 ki | 14 / 3 / 18 | 600 | Sinks into violet smoke (invulnerable f7–13), reappears 1.6 m round the target, past its guard but to the side (`A`/`D` picks which, so the player's camera keeps her in view; within 8 m), and strikes; +6 on hit links a light | A late-turning or unlocked guard, zoning | A locked guard that turns in time (−8), spot dodge, a fast button on her arrival |
+| 2 | **Mirage Step** | 25 ki | 3 / 10 (slide) / 12 | — (decoy 500) | Slides 4.5 m: `A`/`D` sideways, `W` forward, otherwise back; leaves the afterimage | Committed attacks, rushes, beams aimed at her spot | Tracking attacks and anyone who ignores the decoy |
+| 3 | **Razor Waltz** | 35 ki | 9 / 18 / 20 | 3 × 260 | A spinning three-cut rush; the confirm ender | Cashing out a confirmed string | Block (−13), a jab before it starts |
+
+Ultimates (`4`) and transformations (`T`) slot into the same kit (`SpecialKit.ultimate`, 2 burst; `transform_burst_stocks`, 1 burst; `FighterSpecials.transform_ticks`) in the next lane. Until a kit defines an ultimate, key 4 is left to the ki beam ultimate (T-KI1); key 1 stays the ki beam special for legends without a kit (Brann, Lyra).
 
 **Balance target:** in AI-vs-AI simulations and playtests, no fighter wins more than 55% of matches against any other.
 

@@ -96,12 +96,12 @@ func zone(ai: FighterAI, sim: CombatSim, me: FighterState, target: FighterState,
 		return
 	var unit := FighterState.METER_UNIT
 	var target_busy := target.state in [_S.ATTACKING, _S.CHARGING, _S.GUARD_BROKEN] or not target.blocking
-	if kit.beam != null and me.ki >= (kit.beam.ki_cost + 10) * unit and distance > ZONE_NEAR \
+	if KiRules.beam_special(me) != null and me.ki >= (kit.beam.ki_cost + 10) * unit and distance > ZONE_NEAR \
 			and distance < kit.beam_range * 0.9 and target_busy and rng.randf() < BEAM_CHANCE[level]:
 		plan.held_actions |= _A.SPECIAL_1
 		return
 	# Below the reserve it saves up for a beam (charging when safely far), then zones again.
-	if KI_RESERVE[level] > 0 and kit.beam != null:
+	if KI_RESERVE[level] > 0 and KiRules.beam_special(me) != null:
 		if me.ki < KI_RESERVE[level] * unit:
 			_saving = true
 		elif me.ki >= (kit.beam.ki_cost + 10) * unit:
@@ -127,7 +127,7 @@ static func target_busy_close(target: FighterState, distance: float) -> bool:
 ## A seen whiff at beam range: fire a beam into the recovery.
 func punish(ai: FighterAI, me: FighterState, target: FighterState, distance: float, plan: FighterInput) -> bool:
 	var kit := KiRules.kit_of(me)
-	if kit.beam == null or distance < ZONE_NEAR or distance > kit.beam_range * 0.8 or not ai.may_attack(me) \
+	if KiRules.beam_special(me) == null or distance < ZONE_NEAR or distance > kit.beam_range * 0.8 or not ai.may_attack(me) \
 			or me.ki < kit.beam.ki_cost * FighterState.METER_UNIT:
 		return false
 	# A long recovery, or charging ki in the open at range: both too slow to get out of a beam.

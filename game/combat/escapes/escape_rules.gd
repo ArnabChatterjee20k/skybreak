@@ -79,6 +79,7 @@ static func move(sim: CombatSim, fighter: FighterState) -> void:
 
 ## Dash right after a knockback hit chases: an auto-homing rush whose way (over with
 ## ascend, under with descend, else straight) a matching air tech cannot escape.
+## Out of a special or ultimate it is a Vanish-level cancel (GAME_DESIGN §5.3, §6).
 static func try_chase(sim: CombatSim, index: int, input: FighterInput) -> bool:
 	var fighter := sim.fighters[index]
 	var escapes := fighter.escapes
@@ -89,7 +90,9 @@ static func try_chase(sim: CombatSim, index: int, input: FighterInput) -> bool:
 	var chased := sim.fighters[target]
 	if chased.state != _S.HITSTUN or chased.is_knocked_out():
 		return false
-	var may := sim._is_free(fighter) or (fighter.state == _S.ATTACKING and fighter.contact_hit)
+	var may := sim._is_free(fighter) or (fighter.state == _S.ATTACKING and fighter.contact_hit \
+		and (fighter.move.cancel_level < MoveData.CancelLevel.SPECIAL \
+		or sim.can_cancel_into(index, MoveData.CancelLevel.VANISH)))
 	if not may or not sim._spend_ki(fighter, sim.escape_tuning.chase_ki_cost):
 		return false
 	sim.consume_buffered(index, FighterInput.Action.DASH)

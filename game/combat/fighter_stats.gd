@@ -25,3 +25,5 @@ extends Resource
 @export var move_set: MoveSet
 ## Ki blasts and beams (T-KI1); null uses Kael's.
 @export var ki_kit: KiKit
+## Specials on keys 1/2/3, unique mechanic, ultimate and transform hooks (T-SP1); null for none.
+@export var special_kit: SpecialKit

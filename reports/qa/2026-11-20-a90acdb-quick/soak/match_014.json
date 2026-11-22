@@ -1,0 +1,132 @@
+{
+	"hitstops": {
+		"beam": {
+			"14": 1
+		},
+		"blade/light_1": {
+			"4": 1
+		},
+		"breaker": {
+			"7": 4,
+			"8": 1
+		},
+		"breaker+counter": {
+			"12": 1
+		},
+		"charged_blast": {
+			"10": 8
+		},
+		"kael_comet_drive": {
+			"9": 1
+		},
+		"ki_blast": {
+			"4": 27
+		},
+		"ki_blast+counter": {
+			"8": 2
+		},
+		"light_1": {
+			"3": 2,
+			"4": 2
+		},
+		"light_1+counter": {
+			"7": 2
+		},
+		"light_2": {
+			"3": 3
+		},
+		"light_3": {
+			"3": 2
+		},
+		"vexa_razor_waltz": {
+			"5": 10
+		},
+		"vexa_shade_flicker": {
+			"7": 1
+		}
+	},
+	"id": "114:shattered_mesa:2v2:kael,vexa,brann,lyra:3355",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 1,
+		"blasts": 32,
+		"charged": 13,
+		"clashes": 0,
+		"ki_hits": 38,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		3,
+		3,
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 114,
+	"sim_ms_per_tick": 1.1833475,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0110414186492562,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.20979088615023,
+		"foot_slide_cm_per_frame": 0.00249973599424575,
+		"foot_slide_frames": 553,
+		"foot_slide_skipped_frames": 2,
+		"locked_on_screen_share": 0.973974415527128,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 0.865662916666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 2,
+			"detail": "lowest sole +7.4 cm off the visible ground (CHARGING, clip charge)",
+			"fighter": 3,
+			"first_tick": 1890,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1890,
+			"worst_value": 0.0744534675381487
+		},
+		{
+			"check": "foot_ground",
+			"count": 6,
+			"detail": "lowest sole -20.0 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 1,
+			"first_tick": 1936,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1937,
+			"worst_value": -0.200110026178322
+		},
+		{
+			"check": "foot_ground",
+			"count": 5,
+			"detail": "lowest sole -7.5 cm off the visible ground (MOVING, clip run)",
+			"fighter": 0,
+			"first_tick": 1984,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 2109,
+			"worst_value": -0.0754943606679959
+		}
+	],
+	"wall_seconds": 17.349,
+	"zone": "shattered_mesa"
+}

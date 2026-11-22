@@ -187,6 +187,9 @@ var escapes := FighterEscapes.new()
 # Dodge (T-DEF2).
 var dodge := FighterDodge.new()
 
+# Specials and legend mechanics (T-SP1); hashed by CombatSim.state_hash() via SpecialRules.
+var specials := FighterSpecials.new()
+
 # Pushback (T-D29): a hit or block slides the target apart from its attacker.
 ## Slide per second still owed, zero when none.
 var pushback_velocity: Vector3 = Vector3.ZERO

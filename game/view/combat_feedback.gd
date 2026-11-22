@@ -13,6 +13,8 @@ const PERFECT_BLOCK := preload("res://game/view/shaders/vfx/perfect_block_flash.
 const READ_POP := preload("res://game/view/shaders/vfx/read_pop.tscn")
 ## Perfect dodge flash: white-blue (T-DEF2).
 const PERFECT_DODGE_COLOR := Color(0.75, 0.9, 1.0)
+## Special tells (T-SP1): a neutral white-violet puff under the legend's own colour from SpecialVfx.
+const SPECIAL_COLOR := Color(0.85, 0.8, 1.0)
 const GUARD_BREAK := preload("res://game/view/shaders/vfx/guard_break_shatter.tscn")
 const SHOCKWAVE := preload("res://game/view/shaders/vfx/shockwave.tscn")
 
@@ -121,6 +123,22 @@ static func plan_for(event: Dictionary) -> Dictionary:
 			plan.effects = [PERFECT_BLOCK, READ_POP]
 			plan.color = PERFECT_DODGE_COLOR
 			plan.shake = 0.1
+		E.SPECIAL_START, E.SPECIAL_BLINK, E.DECOY_SPAWN, E.DECOY_FADE:
+			# A small puff; the coloured flare, trail and decoy ghost are SpecialVfx's.
+			plan.effects = [SHOCKWAVE]
+			plan.color = SPECIAL_COLOR
+			plan.scale = 0.35
+		E.SPECIAL_DENIED:
+			plan.effects = [SPARK_LIGHT]
+			plan.color = ARMOR_COLOR
+			plan.scale = 0.3
+		E.SPECIAL_COUNTER:
+			plan.effects = [PERFECT_BLOCK, READ_POP]
+			plan.shake = 0.2
+		E.DECOY_BURST:
+			plan.effects = [SHOCKWAVE]
+			plan.scale = 0.8
+			plan.shake = 0.3
 		E.GUARD_BREAK:
 			plan.effects = [GUARD_BREAK]
 			plan.shake = 0.6

@@ -34,6 +34,13 @@ static func kit_of(fighter: FighterState) -> KiKit:
 	return _default_kit
 
 
+## The beam on key 1, or null when the legend has none or its special kit owns key 1 (T-SP1).
+static func beam_special(fighter: FighterState) -> MoveData:
+	if SpecialRules.owns_key(fighter, 1):
+		return null
+	return kit_of(fighter).beam
+
+
 ## True for a move this module runs (blast, charged blast, beams).
 static func is_ki_move(fighter: FighterState, move: MoveData) -> bool:
 	var kit := kit_of(fighter)
@@ -52,7 +59,7 @@ static func start(sim: CombatSim, index: int, input: FighterInput) -> void:
 			_begin(sim, index, kit.ultimate)
 			sim.events.append(_event(sim, CombatSim.EventType.BEAM_START, index, fighter.position, kit.ultimate))
 		return
-	if sim.is_buffered(index, _SPECIAL) and kit.beam != null:
+	if sim.is_buffered(index, _SPECIAL) and beam_special(fighter) != null:
 		if sim._spend_ki(fighter, kit.beam.ki_cost):
 			sim.consume_buffered(index, _SPECIAL)
 			_begin(sim, index, kit.beam)

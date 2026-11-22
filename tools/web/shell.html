@@ -72,6 +72,20 @@ const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
 		engine.start().then(() => cover.remove(), fail);
 	}
 
+	// The engine already cancels key, wheel and mouse defaults on the canvas. Browser-reserved
+	// shortcuts (Ctrl+W/T/N/Tab on Windows and Linux) can only be captured with Keyboard Lock,
+	// which browsers allow in fullscreen; Esc then needs a long press to leave fullscreen.
+	document.addEventListener('fullscreenchange', () => {
+		if (!navigator.keyboard || !navigator.keyboard.lock) {
+			return;
+		}
+		if (document.fullscreenElement) {
+			navigator.keyboard.lock().catch(() => {});
+		} else {
+			navigator.keyboard.unlock();
+		}
+	});
+
 	const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
 	if (missing.length !== 0) {
 		fail(new Error('This browser is missing: ' + missing.join(', ') + '. Try a recent Chrome, Edge or Firefox.'));

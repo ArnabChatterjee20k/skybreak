@@ -51,6 +51,9 @@ const BANNER_POP := 1.35
 const BANNER_POP_SECONDS := 0.15
 const BANNER_SIZE := 132
 const BANNER_OUTLINE := 22
+## Kael's Momentum pips and Vexa's afterimage marker (T-SP1).
+const MOMENTUM := Color(1.0, 0.62, 0.22)
+const AFTERIMAGE := Color(0.72, 0.38, 1.0)
 
 ## Set by the arena.
 var sim: CombatSim
@@ -161,6 +164,9 @@ func _draw_plate(index: int, rect: Rect2) -> void:
 		var won := flow != null and index < flow.wins.size() and p < flow.wins[index]
 		var x := far_x + step * (p * 30.0 + 16.0)
 		_slant(Rect2(x - 11, rect.position.y + 20, 22, 22), MenuTheme.GOLD if won else Color(INK, 0.8), INK, 3.0)
+	# Legend mechanic (T-SP1) just inside the win pips, growing toward the name.
+	_draw_mechanic(fighter, inner.position.x, inner.size.x, rect.position.y + 31, not right,
+		MatchFlow.WINS_NEEDED * 30.0 + 18.0)
 	_health_bar(index, fighter, team, Rect2(inner.position.x, rect.position.y + 52, inner.size.x, 30), right)
 	# Ki in KI_BARS cells, filling from the portrait side.
 	var ki := ki_fraction(fighter, sim.meter_tuning)
@@ -203,6 +209,40 @@ func _draw_portrait(index: int, fighter: FighterState, team: Color, tile: Rect2)
 	for s in count:
 		var x := foot.get_center().x + (s - (count - 1) * 0.5) * 20.0
 		_slant(Rect2(x - 7, foot.position.y + 3, 14, 10), MenuTheme.GOLD if s < stocks else INK, INK, 2.0)
+
+
+## Legend mechanic pips in the name row (T-SP1): Kael's Momentum, Vexa's afterimage.
+func _draw_mechanic(fighter: FighterState, inner_x: float, inner_w: float, y: float, right_side: bool,
+		offset: float) -> void:
+	var kit := SpecialRules.kit_of(fighter)
+	if kit == null:
+		return
+	var font := MenuTheme.font()
+	var start := inner_x + inner_w - offset if right_side else inner_x + offset
+	var step := -9.0 if right_side else 9.0
+	match kit.mechanic:
+		SpecialKit.Mechanic.MOMENTUM:
+			var lit := momentum_pips(fighter)
+			for p in kit.momentum_max_stacks:
+				var at := Vector2(start + p * step, y)
+				var pip := PackedVector2Array([at + Vector2(0, -6), at + Vector2(4, 0), at + Vector2(0, 6), at + Vector2(-4, 0)])
+				draw_colored_polygon(pip, MOMENTUM if p < lit else INK)
+			if lit > 0:
+				var label_x := start + kit.momentum_max_stacks * step + (step * 0.5)
+				_text(font, Vector2(label_x, y + 6), "+%d%%" % SpecialRules.momentum_percent(fighter), 16,
+					MOMENTUM, HORIZONTAL_ALIGNMENT_RIGHT if right_side else HORIZONTAL_ALIGNMENT_LEFT)
+		SpecialKit.Mechanic.AFTERIMAGE:
+			var live := fighter.specials.has_decoy()
+			draw_circle(Vector2(start, y), 6, AFTERIMAGE if live else INK)
+			draw_arc(Vector2(start + step * 1.3, y), 6, 0.0, TAU, 16, AFTERIMAGE if live else INK, 2.0)
+
+
+## Lit Momentum pips (one per consecutive landed hit, up to the kit's cap); 0 for other legends.
+static func momentum_pips(fighter: FighterState) -> int:
+	var kit := SpecialRules.kit_of(fighter)
+	if kit == null or kit.mechanic != SpecialKit.Mechanic.MOMENTUM:
+		return 0
+	return mini(fighter.specials.momentum, kit.momentum_max_stacks)
 
 
 ## Cyan info chip with the weapon name, then the inventory slots.
