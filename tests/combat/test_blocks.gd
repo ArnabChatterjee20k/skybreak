@@ -45,6 +45,13 @@ func _attack(limit := 30) -> Array[Dictionary]:
 	return []
 
 
+## Light 1's blockstun inside a string: it ends string_block_gap_ticks before light 2 turns active (#150).
+func _string_blockstun() -> int:
+	var light_2: MoveData = _sim.fighters[0].stats.move_set.light_string[1]
+	return mini(_light.blockstun_ticks,
+		_light.active_ticks + light_2.startup_ticks - _sim.hit_tuning.string_block_gap_ticks)
+
+
 func _blocker() -> FighterState:
 	return _sim.fighters[1]
 
@@ -89,7 +96,7 @@ func test_a_blocked_hit_gives_the_attacker_contact_and_blocked_hit_ki() -> void:
 func test_blockstun_lasts_exactly_the_move_blockstun_after_hitstop() -> void:
 	_start()
 	_attack()
-	_tick(_light.hitstop_ticks / 2 + _light.blockstun_ticks)
+	_tick(_light.hitstop_ticks / 2 + _string_blockstun())
 	assert_eq(_blocker().state, State.BLOCKSTUN, "still in blockstun on its last tick")
 	assert_true(_blocker().blocking, "blockstun keeps the guard up")
 	_tick()
@@ -101,7 +108,7 @@ func test_blockstun_ends_in_the_movement_state_when_block_was_let_go() -> void:
 	_start()
 	_attack()
 	_blocker_held = 0
-	_tick(_light.hitstop_ticks / 2 + _light.blockstun_ticks + 1)
+	_tick(_light.hitstop_ticks / 2 + _string_blockstun() + 1)
 	assert_eq(_blocker().state, State.IDLE)
 	assert_false(_blocker().blocking)
 

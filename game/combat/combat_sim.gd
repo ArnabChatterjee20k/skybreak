@@ -1743,8 +1743,12 @@ func _start_pushback(target_index: int, attacker_index: int, distance: float) ->
 	away.y = 0.0
 	if away.length_squared() < 0.0001:
 		away = DetMath.forward(attacker.facing_yaw)
-	target.pushback_velocity = away.normalized() * (distance / (hit_tuning.pushback_ticks * TICK_SECONDS))
-	target.pushback_ticks = hit_tuning.pushback_ticks
+	# A stun shorter than the slide (a gapped blockstring) gets the whole slide inside it.
+	var ticks := hit_tuning.pushback_ticks
+	if target.stun_ticks > 0:
+		ticks = mini(ticks, target.stun_ticks)
+	target.pushback_velocity = away.normalized() * (distance / (ticks * TICK_SECONDS))
+	target.pushback_ticks = ticks
 	target.pushback_from = attacker_index
 
 
