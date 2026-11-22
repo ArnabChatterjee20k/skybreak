@@ -56,6 +56,11 @@ fi
 # Zone bakes ship as one pack per zone, fetched when a match needs it (ZoneBakePacks).
 "${GODOT}" --headless --path "${ROOT}" -s res://tools/web/pack_zone_bakes.gd -- "${OUT}"
 
+# Service worker and boot cache (sw.js, boot_cache.js), then version.json: the build id and
+# each file's SHA-256 and size, which the page checks on launch to update only changed files.
+cp "${ROOT}/tools/web/sw.js" "${ROOT}/tools/web/boot_cache.js" "${OUT}/"
+"${ROOT}/tools/web/write_version.sh" "${OUT}" "${SKYBREAK_BUILD:-}"
+
 # Pre-compressed copies for hosts that serve them; most hosts compress on the fly.
 for f in "${OUT}"/*.{wasm,pck,js}; do
 	gzip -9 -k -f "${f}"
