@@ -18,16 +18,16 @@ const THROW_TECH_WINDOW := 10
 const THROW_TICKS := 42
 const TECH_TICKS := 20
 
-## Per legend: health, walk forward/back (mm/tick), dash ticks/speed, backdash ticks/speed,
+## Per legend: body (pushbox half width, mm), hurt (hurtbox half width), health, walk forward/back (mm/tick), dash ticks/speed, backdash ticks/speed,
 ## jump vy, gravity, jump vx, pose style.
 const STATS := {
-	&"kael": {"health": 1000, "walk_f": 42, "walk_b": 32, "dash_ticks": 16, "dash_speed": 115,
+	&"kael": {"body": 280, "hurt": 260, "health": 1000, "walk_f": 42, "walk_b": 32, "dash_ticks": 16, "dash_speed": 115,
 		"back_ticks": 20, "back_speed": 85, "jump_vy": 150, "gravity": 8, "jump_vx": 48},
-	&"vexa": {"health": 950, "walk_f": 46, "walk_b": 38, "dash_ticks": 14, "dash_speed": 135,
+	&"vexa": {"body": 270, "hurt": 250, "health": 950, "walk_f": 46, "walk_b": 38, "dash_ticks": 14, "dash_speed": 135,
 		"back_ticks": 18, "back_speed": 100, "jump_vy": 160, "gravity": 8, "jump_vx": 54},
-	&"lyra": {"health": 980, "walk_f": 44, "walk_b": 34, "dash_ticks": 16, "dash_speed": 120,
+	&"lyra": {"body": 270, "hurt": 250, "health": 980, "walk_f": 44, "walk_b": 34, "dash_ticks": 16, "dash_speed": 120,
 		"back_ticks": 20, "back_speed": 95, "jump_vy": 152, "gravity": 8, "jump_vx": 50},
-	&"brann": {"health": 1100, "walk_f": 34, "walk_b": 26, "dash_ticks": 20, "dash_speed": 95,
+	&"brann": {"body": 390, "hurt": 330, "health": 1100, "walk_f": 34, "walk_b": 26, "dash_ticks": 20, "dash_speed": 95,
 		"back_ticks": 22, "back_speed": 70, "jump_vy": 140, "gravity": 9, "jump_vx": 42},
 }
 

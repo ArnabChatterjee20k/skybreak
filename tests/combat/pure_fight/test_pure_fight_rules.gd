@@ -30,7 +30,7 @@ func test_walking_back_stops_at_the_wall() -> void:
 	var driver := PureFightDriver.new(sim)
 	driver.hold(500, [4, ""], [6, ""])
 	assert_eq(sim.pf[0].x, -PureFightSim.WALL, "the wall holds")
-	assert_true(sim.pf[1].x - sim.pf[0].x >= PureFightSim.PUSH_HALF * 2, "bodies never overlap")
+	assert_true(sim.pf[1].x - sim.pf[0].x >= sim.body_gap(), "bodies never overlap")
 
 
 func test_fighters_cannot_walk_further_apart_than_the_camera_allows() -> void:

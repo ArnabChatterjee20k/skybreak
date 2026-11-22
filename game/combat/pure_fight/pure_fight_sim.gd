@@ -25,8 +25,6 @@ const VICTORY_AT := 80
 const WALL := 7400
 const MAX_SEPARATION := 6600
 const START_GAP := 2400
-const PUSH_HALF := 280
-const HURT_HALF := 260
 const STAND_HEIGHT := 1750
 const CROUCH_HEIGHT := 1100
 const PREJUMP_TICKS := 4
@@ -171,7 +169,8 @@ func hurtbox(fighter: PureFighter) -> Array[int]:
 			top = CROUCH_HEIGHT
 		if _in_frames(data.low_profile, fighter.move_tick + 1):
 			top = 900
-	return [fighter.x - HURT_HALF, fighter.x + HURT_HALF, fighter.y + bottom, fighter.y + top]
+	var half := int(PureMoves.stats(fighter.legend).hurt)
+	return [fighter.x - half, fighter.x + half, fighter.y + bottom, fighter.y + top]
 
 
 ## Active hitbox of a fighter this tick, or [] when it has none.
@@ -1041,11 +1040,12 @@ func _resolve_bodies() -> void:
 		var b_top := b.y + (CROUCH_HEIGHT if b.crouching else STAND_HEIGHT)
 		var vertical := mini(a_top, b_top) - maxi(a.y, b.y)
 		var dx := b.x - a.x
-		if vertical > 300 and absi(dx) < PUSH_HALF * 2:
+		var gap := body_gap()
+		if vertical > 300 and absi(dx) < gap:
 			var side := signi(dx)
 			if side == 0:
 				side = a.facing
-			var overlap := PUSH_HALF * 2 - absi(dx)
+			var overlap := gap - absi(dx)
 			var a_move := overlap / 2
 			var b_move := overlap - a_move
 			a.x -= side * a_move
@@ -1065,6 +1065,11 @@ func _resolve_bodies() -> void:
 		var side := signi(apart)
 		a.x += side * (excess / 2)
 		b.x -= side * (excess - excess / 2)
+
+
+## Closest the two bodies' centres can get (their pushbox half widths added).
+func body_gap() -> int:
+	return int(PureMoves.stats(pf[0].legend).body) + int(PureMoves.stats(pf[1].legend).body)
 
 
 func _check_round_end() -> void:

@@ -65,7 +65,8 @@ func test_strikes_stop_at_the_opponents_body() -> void:
 			var data := PureMoves.get_move(legend, id)
 			if (data.box as Array).is_empty() or data.grab:
 				continue
-			var sim := PureFightDriver.fighting([legend, &"kael"] as Array[StringName], PureFightSim.PUSH_HALF * 2)
+			var sim := PureFightDriver.fighting([legend, &"kael"] as Array[StringName], 0)
+			sim.pf[1].x = sim.pf[0].x + sim.body_gap()
 			var animator := FightAnimator.new(FightStyle.for_legend(legend))
 			sim._start_move(0, id)
 			for f in PureMoves.total(data):

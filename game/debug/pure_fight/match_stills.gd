@@ -47,6 +47,9 @@ func _run() -> void:
 		for f in 6:
 			level.present_frame(1.0, 1.0 / 60.0)
 			await process_frame
+		# No impact-frame flash in the review still.
+		level.effects.impact_frame.visible = false
+		await process_frame
 		await RenderingServer.frame_post_draw
 		var path := out.path_join("zone_%s.png" % zone)
 		root.get_texture().get_image().save_png(path)

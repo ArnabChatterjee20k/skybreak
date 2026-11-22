@@ -168,10 +168,10 @@ func _process(delta: float) -> void:
 		var left := i == 0
 		var x0 := 80.0 if left else 1920.0 - 80.0 - BAR_SIZE.x
 		_bars[i].size.x = width
-		_bars[i].position.x = x0 + (BAR_SIZE.x - width if left else 0.0)
+		_bars[i].position.x = x0 + (0.0 if left else BAR_SIZE.x - width)
 		_bars[i].color = Color(1.0, 0.82, 0.2) if share > 0.3 else Color(1.0, 0.3, 0.2)
 		_trails[i].size.x = BAR_SIZE.x * _trail_hp[i]
-		_trails[i].position.x = x0 + (BAR_SIZE.x - _trails[i].size.x if left else 0.0)
+		_trails[i].position.x = x0 + (0.0 if left else BAR_SIZE.x - _trails[i].size.x)
 		var pips := ""
 		for r in PureFightSim.ROUNDS_TO_WIN:
 			pips += "◆" if r < fighter.round_wins else "◇"
