@@ -9,9 +9,10 @@ var _humans: Array
 
 
 func before_each() -> void:
-	# Seed 12: with pushboxes (T-D29) seed 11 never has drops and shots out on the same tick.
-	_sim = BotMatch.new_sim(12, 2)
-	_bots = BotMatch.new_bots(_sim, 12)
+	# Seed 13: with pushboxes (T-D29) seed 11, and with the #150 block gaps seed 12, never has
+	# drops and shots out on the same tick.
+	_sim = BotMatch.new_sim(13, 2)
+	_bots = BotMatch.new_bots(_sim, 13)
 	_humans = [NetScript.new(1), NetScript.new(2)]
 
 

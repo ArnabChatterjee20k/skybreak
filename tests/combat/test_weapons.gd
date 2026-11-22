@@ -583,7 +583,8 @@ func test_a_3600_tick_seeded_bot_match_uses_at_least_three_weapons() -> void:
 
 func test_longer_bot_matches_land_every_weapon_event() -> void:
 	var types := {}
-	for seed_value in [3, 4, 5]:
+	# Seed 5 stopped switching weapons once blocked strings got gaps (#150).
+	for seed_value in [3, 4, 6]:
 		types.merge(_bot_match(seed_value, 7200)[2])
 	# Bots grab every drop, so PICKUP_DESPAWN is covered by its own test above.
 	# KO_BOUNCE and later are covered by test_knockout.gd and the T-D26 tests.
