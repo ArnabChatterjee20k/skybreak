@@ -76,26 +76,18 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   - the render benchmark on the GTX 1650 (estimated 4-6 ms against the 3 ms budget)
   - stream, Blossom Falls, petal whirlwinds, fireflies, the nearest-4 lantern OmniLights
 
-- T-135 [developer/desktop] Camera round 3 (`T-135-camera-round3` @ bce74bb8, pushed, NOT merged): hybrid
-  camera (exchange cam), terrain-wall push, merged with main 746036c1; plus (de4b99e1) low voxel props
-  (<= 6 m tall) as camera obstacles, `CameraClearance` no-clip measure (triangles, ground, inside a
-  prop), `VoxelCameraFight` + `game/debug/voxel_camera_qa.gd`, tests `test_voxel_zone_camera`,
-  `test_camera_clearance`, `test_voxel_camera_obstacles`. det_check unchanged by camera code
-  (65ec2f54272115fd x2). Full GUT on bce74bb8: 1839 tests, 1832 passing, **1 failing**
-  (`test_every_voxel_zone_fight_frames_both_fighters_near_and_far_without_clipping`), 10 pending.
-  Left, exactly:
-  1. With specials on (since #141) the all-AI Kael vs Vexa fight (seed 7, 1200 ticks) frames both
-     locked fighters below 95%: shattered_mesa 94.5% (936/990), stormfall_city 94.8% (921/972),
-     frozen_peaks 95.0% (961/1012, just under), verdant_falls 90.2% (944/1046). Before #141 the same
-     fight was 95.8-100% on every zone. Same root as SP1-5 (rush/blink/ranged juggle framing).
-  2. verdant_falls: the camera comes within 8 cm of the visible voxel floor chunk (FloorT2) in 6
-     frames; the camera keeps 0.4 m above the sim ground, the voxel floor stands higher there and
-     `VoxelZone.ground_at` doesn't see the bump (tried max(sim, ground_at): no change).
-  3. Pinned "back to a wall" scenario: heartbloom gap 2 m side 0 is 87.2% both-on (same without the
-     voxel obstacles); only heartbloom and verdant have a tall prop on level ground in reach.
-  4. Tall voxel props (trees, spires) aren't obstacles: as AABBs they pushed the camera off framing
-     (verdant 100% -> 87%) and into a fern patch; needs triangle-level avoidance.
-  5. QA quick on the camera branch not run (blocked on 1); then PR and merge.
+- T-135 [developer/desktop] Camera round 3: see Done (merged). Open follow-ups:
+  - T-135-a [developer] Tall voxel props (trees, spires) still aren't camera obstacles; as AABBs they
+    pushed the camera off framing (verdant 100% -> 87%). Needs triangle-level avoidance.
+  - T-135-b [developer] Visual goldens disagree with this cloud container's renders on main itself
+    (heartbloom x8, ember, shattered, frozen, verdant: props missing, SSIM 0.79-0.93), so they weren't
+    re-blessed here. The camera branch changes only `zone_frozen_peaks` (SSIM 0.50 vs main's render)
+    and `zone_verdant_falls` (0.90): the round-3 base framing (boom 4.0 m, height 1.2 m). Re-bless
+    both (`tools/qa/bless_goldens.sh --visual`) in an environment whose main renders match the goldens.
+  - T-135-c [developer] QA quick `camera_on_screen` still trips in 2 of 21 multi-fighter matches
+    (heartbloom 2v2 seed 120 94.2%, skyhold FFA-4 seed 101 94.8%; main had 90.5% and 94.8%).
+  - T-135-d [developer] `CameraFloor` rasterizes floor chunks on the main thread as the camera nears
+    them (up to ~10 ms once per chunk, not seen in view_ms). Could move into the zone bake.
 
 ## In review
 - T-LD-W [desktop] Voxel weapons look-dev (`lookdev/voxel-weapons`, sheet `docs/lookdev/weapons.md`):
@@ -427,6 +419,27 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
   disconnected (continue vs AI / leave) and out-of-sync panels. Tests: GUT loopback 150 ms RTT /
   20 ms jitter / 2% loss + rollback burst; `tools/net/duo_browser_test.js` (two Chromium pages,
   real WebRTC, Appwrite mock). Open (ranked) in the report README.
+- T-135 [developer/desktop] MERGED into `main` at 61925008 (PR #149, `--no-ff`; web-build 66250942, play-windows 05e02e73; evidence in
+  `reports/camera/round3/README.md`). Hybrid exchange cam, terrain-wall push, closer base framing,
+  low voxel props as obstacles, `CameraClearance` no-clip measure, `VoxelCameraFight` tests; plus this
+  round: the locked target's body no longer pulls the boom in front of them (the main cause of lost
+  frames since #141), a fit-to-frame FOV safety net (up to 95 deg, not past the pitch limits),
+  and `CameraFloor` (visible voxel floor height, Verdant's FloorT2 tier) in the camera's ground clamp
+  with the highest floor within the clearance radius. Seed-7 fight both-on: shattered 99.4%,
+  stormfall 100%, frozen 97.5%, verdant 98.8%, others 100%; 0 clip frames; every pinned-wall case 100%.
+  SP1-5 framing addressed by this (QA on-screen share 0.9816 vs 0.9784).
+- WEB-CACHE [desktop] The browser keeps the web build in Cache Storage (`web/cache-sw`, evidence in
+  `reports/web/cache/README.md`): `tools/web/sw.js` serves the cached build, `boot_cache.js` (loaded
+  by the shell before the engine) checks `version.json` with a 3 s timeout and downloads only files
+  whose SHA-256 changed into a new cache, then swaps with one pointer write; timeout/offline boots
+  the cache, too little storage loads from the network. Zone packs are cached on demand.
+  `build_web.sh` writes `version.json` (`write_version.sh`). Test: `tools/web/cache_test.js`
+  (6 scenarios). Open:
+  - WEB-CACHE-1 [desktop] On-demand zone packs are stored twice (the worker's cache and the game's
+    user:// copy in IndexedDB, ~15-57 MB each); drop one once the cache is on the live site.
+  - WEB-CACHE-2 [owner, Mac] Appwrite's CDN headers for `version.json` are unverified on the live
+    site; the page asks with `cache: no-store` and a `?t=` query, so a CDN that ignores both could
+    delay an update by its cache time.
 - T-SP1 [desktop] MERGED into `main` at 746036c1 (PR #141, `--no-ff`; evidence in
   `reports/gameplay/resume.md`). Specials framework + Kael and Vexa kits (`claude/T-SP1-specials`): `game/combat/specials/`
   (`SpecialKit` .tres per legend, `SpecialRules`, small `combat_sim.gd` hooks), keys 1/2/3 with

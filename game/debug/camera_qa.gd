@@ -22,9 +22,14 @@ const CONFIGS := [
 		"fighters": [&"kael", &"vexa"]},
 	{"name": "heartbloom_2621", "zone": &"heartbloom_gardens", "seed": 2621,
 		"fighters": [&"kael", &"vexa"]},
+	{"name": "1v1_mesa", "zone": &"shattered_mesa", "seed": 4,
+		"fighters": [&"kael", &"brann"]},
 ]
 ## A fighter covering more than this share of the screen is "in the lens".
 const MAX_COVERAGE := 0.40
+## Terrain/props covering more than this share of the screen in front of the
+## fighters fails (#134).
+const MAX_TERRAIN_COVER := 0.25
 ## Drawn fighter box for coverage: half width and height (m), around the centre.
 const BODY_HALF_WIDTH := 0.55
 const BODY_HEIGHT := 2.0
@@ -68,6 +73,9 @@ func _measure(config: Dictionary, ticks: int) -> String:
 	var worst_accel := 0.0
 	var worst_coverage := 0.0
 	var covered := 0
+	var terrain_frames := 0
+	var worst_terrain := 0.0
+	var heights: Array[float] = []
 	var turns: Array[float] = []
 	var previous_basis := Basis()
 	for t in ticks:
@@ -90,8 +98,16 @@ func _measure(config: Dictionary, ticks: int) -> String:
 				who = vi
 		worst_coverage = maxf(worst_coverage, coverage)
 		covered += int(coverage > MAX_COVERAGE)
+		if zone_match.match_flow.phase == MatchFlow.Phase.FIGHT:
+			var cover_terrain := CameraQaMetrics.terrain_cover(view, camera.fov, obstacles, zone_match)
+			worst_terrain = maxf(worst_terrain, cover_terrain)
+			terrain_frames += int(cover_terrain > MAX_TERRAIN_COVER)
+			if OS.get_environment("CAMQA_DETAIL") == config.name and cover_terrain > MAX_TERRAIN_COVER:
+				print("  t%d TERRAIN %.0f%% cam=%s" % [t, cover_terrain * 100.0, view.origin.snapped(Vector3.ONE * 0.1)])
+			var me_view: FighterView = zone_match.fighter_views[zone_match.player]
+			heights.append(CameraQaMetrics.screen_height(view, camera.fov, me_view.position))
 		if OS.get_environment("CAMQA_DETAIL") == config.name and coverage > MAX_COVERAGE:
-			print("  t%d COVER %.0f%% by fighter %d (player %d) fade=%.2f phase=%s cam-player %.2f m" % [t, coverage * 100.0, who, zone_match.player, zone_match.fighter_views[who].camera_fade(),
+			print("  t%d COVER %.0f%% by fighter %d (player %d) fade=%.2f xw=%.2f cam-other %.2f phase=%s cam-player %.2f m" % [t, coverage * 100.0, who, zone_match.player, zone_match.fighter_views[who].camera_fade(), zone_match.camera.exchange_weight(), view.origin.distance_to(zone_match.fighter_views[who].position),
 				MatchFlow.Phase.find_key(zone_match.match_flow.phase),
 				view.origin.distance_to(zone_match.fighter_views[zone_match.player].position)])
 		if zone_match.match_flow.phase == MatchFlow.Phase.INTRO:
@@ -138,9 +154,11 @@ func _measure(config: Dictionary, ticks: int) -> String:
 		inside += int(obstacles.is_inside(view.origin))
 		occluded += int(obstacles.blocks(player_pos, view.origin))
 	zone_match.free()
-	return "%-15s frames %d | player on %.1f%% | target on %.1f%% | both %.1f%% | blank %d | inside geometry %d | occluded %d | worst accel %.0f deg/s^2 | >40%% cover %d (worst %.0f%%)" % [
-		config.name, frames, 100.0 * player_on / maxi(frames, 1), 100.0 * target_on / maxi(frames, 1),
-		100.0 * both_on / maxi(frames, 1), blank, inside, occluded, worst_accel, covered, worst_coverage * 100.0]
+	heights.sort()
+	var median_height := heights[heights.size() / 2] if not heights.is_empty() else 0.0
+	return "%-15s frames %d | both on %.1f%% | blank %d | inside %d | >40%% cover %d (worst %.0f%%) | terrain>25%% %d (worst %.0f%%) | player height median %.1f%% | worst accel %.0f" % [
+		config.name, frames, 100.0 * both_on / maxi(frames, 1), blank, inside, covered, worst_coverage * 100.0,
+		terrain_frames, worst_terrain * 100.0, median_height * 100.0, worst_accel]
 
 
 ## Share of the screen a fighter's drawn box covers (0..1), clipped to the frame.
