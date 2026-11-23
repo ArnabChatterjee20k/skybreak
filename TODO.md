@@ -15,12 +15,14 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   after the change: camera_on_screen 1 -> 4 of 21 long matches at 92-95 % (T-135-c, hybrid camera)
   [developer] and cliff-ledge landings the voxel art does not show (+2.6-3.1 m, Shattered Mesa seed
   107) [desktop, terrain].
-- MOVE-ESCAPE-CAM [desktop, blocks the next build] Main is red since the #150 merge 61b47407:
-  `tests/playtest/test_voxel_zone_camera.gd` fails with `verdant_falls: both on screen 926/976`
-  (0.949, needs 0.95). It's deterministic and passes on 6b618350. The test only runs with zone bakes
-  present (otherwise pending), so run the bake before the full GUT. Evidence:
-  `reports/builds/2026-11-22-61b47407.md`. Fix the cause, or re-pick the fight with a written reason;
-  don't loosen 0.95.
+- #106-KI-DUEL [owner/desktop decision] #106 AI variety (re-applied on `fix/issue-106-ai-variety`
+  2330020c) fails `test_a_ki_heavy_ai_duel_is_deterministic_and_uses_blasts_and_beams` (7 blasts, needs
+  > 10). Main passes only by seed luck: blasts over seeds 2026-2035 mean 5.5 on main (only 2026 > 10),
+  5.1 with #106. Decide: L5 AI zones more, or the test checks several seeds; then re-bless goldens and
+  merge. Evidence: `reports/builds/2026-11-23-3b86467c.md`.
+- DUO-ICE-RACE [desktop, net] Under CPU load the Duo browser test logged a host
+  `addIceCandidate` before the remote description was set (and a short match); alone it passes.
+  Queue ICE candidates until the remote description is set.
 
 - VOXEL-SHIP open items [desktop unless tagged] (voxel art shipped on `main`, see
   `reports/ship/voxel-ship.md`), ranked:
@@ -111,7 +113,7 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   fighter's silhouette (`PoseGhost`) and the sonic ring is half the size, #73 `BodySeparation` eases drawn
   bodies apart (Frozen Peaks VisualQa overlap 410/1679 -> 34/1628 close frames) and stacked fliers out
   sideways. Open:
-  - ISSUE-SWEEP-c [desktop] #106 AI string variety is on `fix/issue-106-ai-variety` (3+ hit back-to-back
+  - ISSUE-SWEEP-c [desktop] (see #106-KI-DUEL under In progress) #106 AI string variety is on `fix/issue-106-ai-variety` (3+ hit back-to-back
     repeats 22.5% -> 7.5% over 5 seeds x 4 matchups). Not merged: any AI change reshuffles the seeded AI
     fights; it failed the seed-2026 ki duel (7 blasts vs > 10; main clears 10 only on that seed of
     2026-2035) and needs the golden replays re-recorded.
@@ -452,6 +454,11 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+
+- MOVE-ESCAPE-CAM [desktop] merged 3b86467c: a clipped boom turns to keep both fighters framed after
+  the #150 escapes (Verdant 926 -> 948/976); `SKYBREAK_REQUIRE_BAKES=1` fails bake-dependent tests.
+  Live on web 6c9d5cc6 and Windows 259519c1. `reports/builds/2026-11-23-3b86467c.md`.
+- BUILD-DUO-TEST [desktop] the Duo browser test finds the Duo button from `main_menu.gd` (PASS on 3b86467c).
 - BUILD 2026-11-22 [desktop] Build of `main` fe71e7c8 with all four lanes (camera round 3, WEB-CACHE,
   aura v2, Duo online): GUT 1894 / 0 failing, det_check stable; web on `web-build` 0cc630f0
   (index.pck 56.7 MB, smoke PASS, cache 6/6, Duo browser test PASS), live on Appwrite (deployment

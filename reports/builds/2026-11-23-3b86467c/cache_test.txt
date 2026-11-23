@@ -1,0 +1,7 @@
+PASS a) first load caches everything
+PASS b) offline (server stopped) boots from cache and reaches a match
+PASS c) version.json delayed 6 s boots the cached build at ~3 s
+PASS d) new build with one changed file: only that file is downloaded
+PASS e) update interrupted halfway: the old build still boots
+PASS f) storage quota too small: plain network load
+6/6 cache scenarios passed
