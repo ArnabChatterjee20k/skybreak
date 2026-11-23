@@ -87,8 +87,38 @@ The layout is chosen to keep the risk low:
 
 Ghosting-safe set (by design, and passed in Chromium): any direction or diagonal + up to two
 buttons per player, with dash (Shift) on top. If a combo drops a key on the owner's laptop, it will
-be two non-modifier keys from the same row; tell me which and I'll move that action.
+be two non-modifier keys from the same matrix line; note the combo in `TODO.md` (NO-NUMPAD) and
+the next controls run moves that action.
 
 ## Evidence
 
-(filled in below after the merge run)
+Cloud container, 4 cores, lavapipe; Godot `4.7.2.stable.official.ed1daf0bf`, web templates `.tpz`
+SHA-512 OK. Branch at 21b70c6d + later commits, on main fe18f894.
+
+- **Zone bakes**: 7 zones x 4 tiers baked (xvfb + lavapipe, 3 jobs); `voxel_zone_bake.gd --check`
+  exit 0.
+- **New tests** `tests/input/test_pure_fight_keys.gd`: 12/12 pass (with `test_pure_fight_menu.gd`:
+  17 tests, 642 asserts, 0 failing). They cover: no default binding (Pure Fight, flight game on web
+  and desktop, every non-`ui_*` InputMap action) is a numpad key; no F-key, Ctrl/Cmd/Alt, Tab,
+  Backspace, Insert/Home/End/PageUp/PageDown, Delete, Esc or Enter in the two-player layout; no key
+  drives both players; Left Shift dashes only P1, Right Shift only P2; every P2 key sets its action
+  and leaves P1 idle; both players holding a diagonal + two buttons at once; P2's 236 / 623 / 214
+  on the arrows, technique key + down, light/medium/heavy, throw, finisher, Right Shift dash
+  forward/back, double-tap dash, holding back guards, `[` block key; hints name no numpad key.
+- **Full GUT, bakes present** (branch = main fe18f894 + this change): 1980 tests, 1973 passing,
+  **1 failing**, 10 pending. The failure is main's known red, unchanged:
+  `test_voxel_zone_camera` `verdant_falls: both on screen 926/976` (0.949 < 0.95), the same
+  numbers as main 61b47407 in `reports/builds/2026-11-22-61b47407.md` (MOVE-ESCAPE-CAM, the
+  GREEN-AND-SHIP lane's job). Main has 1968 tests; the 12 new ones all pass.
+- **det_check**: two runs identical, `det_check total b8bab850a4256dc7`, the same as main
+  (input mapping does not touch the sim).
+- **Browser, real web export of this branch** (`controls_web.js conflicts`): PASS. Every P2 key
+  (arrows, `, . / ; ' [ ]`, Right Shift + arrow, Right Shift + `/`) and Left Shift + D is
+  suppressed on the focused canvas, focus never leaves the canvas, page scroll stays 0.
+- **Browser rollover matrix** (`controls_web.js rollover --stub`, a page with the engine's own
+  canvas key listeners): PASS, `2860 chords (P1 x P2, up to 8 keys held at once), 0 with a
+  dropped, leaked or misrouted key`, `numpad keys in the layout: none`.
+  The same matrix against the running build did not finish: a sample of 286, then 29 chords timed
+  out (1500-1700 s) because the running game (swiftshader) stops answering Playwright's key calls
+  after a few chords, most likely the held keys driving the main menu into a match load. Open.
+- **QA quick** (QA_JOBS=3): see below.
