@@ -1,8 +1,21 @@
-# Skybreak status (2026-11-23 08:10 UTC)
+# Skybreak status (2026-11-23 08:40 UTC, PF-ZONE-HANG lane)
+
+## Urgent fix: Pure Fight "stuck" on the zone select (PF-ZONE-HANG)
+
+- **Cause:** the web Settings screen offered LOW/MEDIUM/HIGH. With one of those saved (in the browser's
+  IndexedDB, so incognito was fine), FIGHT found no prebuilt zone and built it live on the page's only
+  thread with no loading screen: minutes of a frozen page. Not the service worker or the caches.
+- **Fix merged:** main `2df1bdbc` (+ evidence `72441bd`): the web build always uses WEB (repairs saved
+  profiles on the next visit), every match starts behind a loading screen, zone packs retry fresh, old
+  packs and caches are dropped. Built and pushed to `web-build` 39c8784; **live**: deploy workflow run 6 succeeded and its live check read
+  `version.json` build `2df1bdbc731f...` and index.pck 56899180 bytes (this cloud session can't reach the site itself).
+- Evidence and the new `tools/web/upgrade_test.js`: `reports/web/pf-zone-hang/README.md`.
+
 
 ## What's live
 
-- Site: https://skybreak-web-6a113777000db893b12e.appwrite.network, built from `main` **3b86467c**
+- Site: https://skybreak-web-6a113777000db893b12e.appwrite.network, built from `main` **2df1bdbc** since 08:39
+  (PF-ZONE-HANG, above). Before that: built from `main` **3b86467c**
   (`version.json` build `3b86467c3c1b325b19e91b0f3f6db7aba75f45e8`, web-build 6c9d5cc6; checked by the deploy
   workflow, the cloud proxy blocks the site for me). Windows: `play-windows` 259519c1, same build.
 - New in this build: **#150 move escape** (dodge, sidestep or side vanish out of, or round, the

@@ -116,3 +116,10 @@ the freeze and the repair on such a profile. Filed as UPGRADE-TEST-SEED in TODO.
 - Live check from this session: the cloud proxy blocks the site's host (HTTP 403), so the live
   `version.json` and the live upgrade test can only be checked by the deploy workflow's
   "Check the live site" step or from another machine.
+
+## Shipped
+
+main `2df1bdbc` built and pushed to `web-build` 39c8784 at 08:37 UTC. Deploy workflow run 6 succeeded,
+and its "Check the live site" step read the live `version.json` build `2df1bdbc731fc48895871a3e28bd62ca4432f8a0`
+and a live index.pck of 56899180 bytes. The live upgrade test (`--live ... --phase verify`) could not
+run from this session because the proxy blocks the site's host.
