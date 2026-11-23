@@ -160,11 +160,16 @@ func set_sensitivity(value: float) -> void:
 ## Waits for the next key press to bind to `action`.
 func start_rebind(action: StringName) -> void:
 	rebinding = action
-	(_key_buttons[action] as Button).text = "PRESS A KEY"
+	(_key_buttons[action] as Button).text = "KEY OR CLICK"
 
 
 func rebind(action: StringName, keycode: Key) -> void:
-	controls.rebind(action, keycode)
+	rebind_event(action, _key_event(keycode))
+
+
+## Binds a key or a mouse button (left, right, middle, side buttons) to `action`.
+func rebind_event(action: StringName, event: InputEvent) -> void:
+	controls.rebind_event(action, event)
 	controls.save(save_path)
 	rebinding = &""
 	_share_controls()
@@ -181,6 +186,11 @@ func reset_keys() -> void:
 func _input(event: InputEvent) -> void:
 	if rebinding == &"" or not is_visible_in_tree():
 		return
+	var click := event as InputEventMouseButton
+	if click != null and click.pressed and ControlSettings.is_bindable_button(click.button_index):
+		get_viewport().set_input_as_handled()
+		rebind_event(rebinding, click)
+		return
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return
@@ -190,6 +200,12 @@ func _input(event: InputEvent) -> void:
 		_refresh_keys()
 		return
 	rebind(rebinding, key.physical_keycode)
+
+
+static func _key_event(keycode: Key) -> InputEventKey:
+	var key := InputEventKey.new()
+	key.physical_keycode = keycode
+	return key
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -306,7 +322,7 @@ func _refresh_graphics() -> void:
 
 func _refresh_keys() -> void:
 	for action: StringName in _key_buttons:
-		(_key_buttons[action] as Button).text = ControlSettings.key_label(action).to_upper()
+		(_key_buttons[action] as Button).text = ControlSettings.binding_label(action).to_upper()
 
 
 func _page_rows() -> VBoxContainer:

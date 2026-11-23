@@ -1,0 +1,5 @@
+# Paired soak timing (QA quick matrix, 3 shards, run in turn): main 6a731815 (sb-main) vs merge be1d1763 (skybreak)
+sb-main_1 21 matches sim 1.417 view 1.575
+skybreak_1 21 matches sim 1.353 view 1.509
+sb-main_2 21 matches sim 1.405 view 1.568
+skybreak_2 21 matches sim 1.476 view 1.628

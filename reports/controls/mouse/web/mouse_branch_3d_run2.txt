@@ -1,0 +1,7 @@
+PASS Versus AI (3D): first left click reaches the sim: tick 177, moves light_1
+PASS Versus AI (3D): left click = light: pressed 1 at tick 225 in state 8, moves started: light_1, focus canvas, try 1 (state 8)
+PASS Versus AI (3D): right click = heavy: pressed 2 at tick 481 in state 8, moves started: smash, focus canvas, try 4 (state 9 / state 9 / state 9 / state 8)
+PASS Versus AI (3D): J = light (keyboard only): pressed 1 at tick 537 in state 8, moves started: light_1, focus canvas, try 1 (state 8)
+PASS Versus AI: no context menu on right click: 0 contextmenu events, all defaultPrevented: true, pointer lock on canvas
+PASS
+test=0

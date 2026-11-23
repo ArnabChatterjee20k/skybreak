@@ -1,0 +1,17 @@
+PASS Pure Fight: first left click reaches the sim: tick 73, moves 
+PASS Pure Fight: left click = light: pressed 1 at tick 121, moves started: 5L, focus canvas, try 1
+PASS Pure Fight: right click = heavy: pressed 2 at tick 177, moves started: 5H, focus canvas, try 1
+PASS Pure Fight: middle click = medium: pressed 128 at tick 289, moves started: 5M, focus canvas, try 2
+PASS Pure Fight: Q = medium: pressed 128 at tick 337, moves started: 5M, focus canvas, try 1
+PASS Pure Fight: F = throw: pressed 16 at tick 385, moves started: throw, focus canvas, try 1
+PASS Pure Fight: J = light (keyboard only): pressed 1 at tick 481, moves started: 5L, focus canvas, try 2
+PASS Pure Fight: L = heavy (keyboard only): pressed 2 at tick 529, moves started: 5H, focus canvas, try 1
+PASS Pure Fight: left click held while D walks: pressed 1 at tick 585, moves started: 5L, focus canvas, try 1
+PASS Pure Fight never takes pointer lock: pointerLockElement null
+PASS Pure Fight: no context menu on right click: 1 contextmenu events, all defaultPrevented: true
+PASS Versus AI (3D): first left click reaches the sim: tick 169, moves light_1
+PASS Versus AI (3D): left click = light: pressed 1 at tick 217, moves started: light_1, focus canvas, try 1
+FAIL Versus AI (3D): right click = heavy: pressed 2 at tick 393, moves started: none, focus canvas, try 3
+PASS Versus AI (3D): J = light (keyboard only): pressed 1 at tick 441, moves started: light_1, focus canvas, try 1
+FAIL Versus AI: no context menu on right click: 0 contextmenu events, all defaultPrevented: true
+FAIL

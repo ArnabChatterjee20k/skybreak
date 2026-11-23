@@ -13,6 +13,14 @@
 - Windows (`play-windows` 259519c1) is still the 3b86467c build: DEPLOY.md doesn't cover it, so it
   was not rebuilt. It has the old numpad P2 keys.
 
+## Also on main, not live yet: mouse controls (MOUSE-CONTROLS lane, merged 13:20 UTC as 388564ab)
+
+- Another lane merged **WASD + mouse in every mode** while this run was shipping: Pure Fight P1 left
+  click light, middle click or Q medium, right click heavy, F throw, R technique, C finisher (J/K/L/U/I/O
+  still work). P2's keys are unchanged and there is still no numpad key anywhere. Its evidence:
+  `reports/controls/mouse/README.md`. **It is not in the live build**: the web build here is 6a731815,
+  made and tested before that merge. The next ship run should build main and deploy it.
+
 ## Pure Fight keys (two players, one laptop)
 
 | Action | P1 | P2 |

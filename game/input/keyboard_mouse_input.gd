@@ -13,6 +13,12 @@ var _descend_was_held := false
 var _ticks_since_descend_tap := DOUBLE_TAP_TICKS + 1
 ## Ticks left in a double-tap dive; 0 when not diving.
 var _dive_ticks := 0
+## Actions pressed since the last tick, so a click shorter than a tick (a trackpad tap) counts.
+var _tapped := 0
+## Physics frame of the last latched press; a latch older than TAP_FRAMES is dropped (a menu
+## or a round intro in between), so a stale click never fires later.
+var _tapped_frame := -100
+const TAP_FRAMES := 2
 
 
 func _ready() -> void:
@@ -25,6 +31,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pending_target_switch = 1
 	elif event.is_action_pressed(InputBindings.TARGET_PREVIOUS):
 		_pending_target_switch = -1
+	note_event(event)
+
+
+## Latches a press of a fighter action until the next tick reads it.
+func note_event(event: InputEvent) -> void:
+	if not event.is_pressed() or event.is_echo():
+		return
+	for action: int in InputBindings.FIGHTER_ACTIONS:
+		if event.is_action_pressed(InputBindings.FIGHTER_ACTIONS[action]):
+			_tapped |= action
+			_tapped_frame = Engine.get_physics_frames()
 
 
 ## True while a double-tap dive holds descend for the player.
@@ -39,6 +56,9 @@ func read_tick(view_yaw: float, camera_offset: Vector2, grounded: bool = false) 
 	for action in InputBindings.FIGHTER_ACTIONS:
 		if Input.is_action_pressed(InputBindings.FIGHTER_ACTIONS[action]):
 			held |= action
+	if Engine.get_physics_frames() - _tapped_frame <= TAP_FRAMES:
+		held |= _tapped
+	_tapped = 0
 	var input := FighterInput.from_held(held, _previous)
 	input.move = Input.get_vector(
 		InputBindings.MOVE_LEFT, InputBindings.MOVE_RIGHT,

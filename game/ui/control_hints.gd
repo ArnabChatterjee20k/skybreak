@@ -157,8 +157,8 @@ static func entries_for(use_gamepad: bool) -> Array:
 			_key(InputBindings.MOVE_BACK), _key(InputBindings.MOVE_RIGHT)]), "Move"],
 		["%s / %s" % [_key(InputBindings.ASCEND), descend], "Fly up / down"],
 		["%s %s" % [descend, descend], "Dive to ground"],
-		["LMB", "Light"],
-		["RMB", "Heavy"],
+		[_mouse_first(&"fighter_light"), "Light"],
+		[_mouse_first(&"fighter_heavy"), "Heavy"],
 		[_key(&"fighter_block"), "Block"],
 		[_key(&"fighter_dash"), "Dodge / dash"],
 		[_key(&"fighter_ki_blast"), "Ki blast"],
@@ -203,3 +203,11 @@ static func joypad_label(action: StringName) -> String:
 
 static func _key(action: StringName) -> String:
 	return ControlSettings.key_label(action).to_upper()
+
+
+## The action's first mouse button ("LMB"), or its key when it has none.
+static func _mouse_first(action: StringName) -> String:
+	for button in ControlSettings.mouse_buttons(action):
+		if ControlSettings.is_bindable_button(button):
+			return InputBindings.mouse_label(button).to_upper()
+	return _key(action)
