@@ -415,5 +415,7 @@ func test_the_pure_fight_hud_fits_a_laptop_browser_window() -> void:
 		hud.fit_to(screen)
 		var hint_box := hud.get_global_transform() * hud._hint.get_rect()
 		assert_true(Rect2(Vector2.ZERO, screen).encloses(hint_box), "hint on screen at %s" % screen)
+		var meter_tops := hud._meter_text.map(func(m: Label) -> float: return m.position.y)
+		assert_lt(hud._hint.position.y + hud._hint.size.y, meter_tops.min(), "hint clear of the finisher meters")
 		var right_edge := hud.get_global_transform() * Vector2(1920.0 - 80.0, 54.0)
 		assert_lte(right_edge.x, screen.x, "P2's bar on screen at %s" % screen)

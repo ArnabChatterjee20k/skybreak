@@ -1,0 +1,17 @@
+PASS Pure Fight: first left click reaches the sim: tick 73, moves 
+PASS Pure Fight: left click = light: pressed 1 at tick 129 in state 8, moves started: 5L, focus canvas, try 1 (state 8)
+PASS Pure Fight: right click = heavy: pressed 2 at tick 201 in state 8, moves started: 5H, focus canvas, try 1 (state 8)
+PASS Pure Fight: middle click = medium: pressed 128 at tick 281 in state 8, moves started: 5M, focus canvas, try 1 (state 8)
+PASS Pure Fight: Q = medium: pressed 128 at tick 345 in state 8, moves started: 5M, focus canvas, try 1 (state 8)
+PASS Pure Fight: F = throw: pressed 16 at tick 417 in state 8, moves started: throw, focus canvas, try 1 (state 8)
+PASS Pure Fight: J = light (keyboard only): pressed 1 at tick 481 in state 8, moves started: 5L, focus canvas, try 1 (state 8)
+PASS Pure Fight: L = heavy (keyboard only): pressed 2 at tick 537 in state 8, moves started: 5H, focus canvas, try 1 (state 8)
+PASS Pure Fight: left click held while D walks: pressed 1 at tick 601 in state 8, moves started: 5L, focus canvas, try 1 (state 8)
+PASS Pure Fight never takes pointer lock: pointerLockElement null
+PASS Pure Fight: no context menu on right click: 1 contextmenu events, all defaultPrevented: true
+PASS Versus AI (3D): first left click reaches the sim: tick 185, moves light_1
+PASS Versus AI (3D): left click = light: pressed 1 at tick 233 in state 8, moves started: light_1, focus canvas, try 1 (state 8)
+PASS Versus AI (3D): right click = heavy: pressed 2 at tick 305 in state 9, moves started: smash, focus canvas, try 1 (state 9)
+PASS Versus AI (3D): J = light (keyboard only): pressed 1 at tick 513 in state 8, moves started: light_1, focus canvas, try 4 (state 9 / state 9 / state 9 / state 8)
+PASS Versus AI: no context menu on right click: 0 contextmenu events, all defaultPrevented: true, pointer lock on canvas
+PASS

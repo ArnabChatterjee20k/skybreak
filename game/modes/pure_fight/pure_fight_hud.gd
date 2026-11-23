@@ -120,7 +120,7 @@ func _ready() -> void:
 	_info.visible = training
 	add_child(_info)
 	_hint = MenuTheme.label(hint, 22, MenuTheme.TEXT, 6)
-	_hint.position = Vector2(0, 1016)
+	_hint.position = Vector2(0, 914)
 	_hint.size = Vector2(1920, 44)
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint.visible = hint != ""

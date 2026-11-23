@@ -89,8 +89,13 @@ trackpad has no middle click: medium is also on Q in Pure Fight, lock-on also on
   and any action can take a mouse button (left, right, middle, side buttons; not the wheel). A
   mouse button bound to one action moves off the other; keys stay. Saved in `user://settings.cfg`.
   Pure Fight keys are still not on that screen (they never were).
-- Pure Fight shows a one-line mouse-first hint along the bottom for the first 12 seconds when a
-  human plays P1 (vs AI, training, Duo). The 3D hint strip reads light / heavy from the bindings.
+- Pure Fight shows a one-line mouse-first hint along the bottom for the first 12 seconds of fight
+  time when a human plays P1 (vs AI, training, Duo). It counts sim ticks: the first version counted
+  frame time (0cdc970e fixed that). The main build's screenshot then showed the real problem: the
+  Pure Fight HUD was laid out in 1920x1080 pixels **without scaling**, so in a 1280x720 (or MacBook)
+  browser window the hint sat below the window and **P2's health bar was cut off at the right
+  edge**. The HUD now scales the 1920x1080 design to the window like the 3D HUD does (1080p is
+  unchanged), in 88dff379. The 3D hint strip reads light / heavy from the bindings.
 - Browser: the engine already cancels the right-click menu, middle-click autoscroll and wheel
   scroll on the canvas, and clicks keep the keyboard focus on the canvas; the new browser test
   proves both on a real build.
@@ -154,5 +159,9 @@ Cloud container, 4 cores, lavapipe / swiftshader; Godot `4.7.2.stable.official.e
     menu at all (0 contextmenu events). The first three right clicks landed while the AI had Kael
     in hitstun (state 9), where no attack can start; the test now retries up to 6 times and logs
     each try's state.
+- **Main's own web build 388564ab** (the first merge): the same mouse test, **every check PASS**
+  (`web/mouse_main_388564ab.txt`): Pure Fight 5L / 5H / 5M / 5M / throw / 5L / 5H / 5L, no pointer
+  lock, the context menu suppressed; 3D light_1, smash (buffered through hitstun), light_1, pointer
+  lock on the canvas and no menu. HINT_WEB_PLACEHOLDER
 - **Not tested here**: a real mouse and a real MacBook trackpad (headless Chromium sends real DOM
   mouse events, but no hardware); the trackpad tap is covered by the latch test in GUT.
