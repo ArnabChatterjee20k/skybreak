@@ -1,0 +1,71 @@
+{
+	"hitstops": {
+		"chakram/breaker": {
+			"8": 5
+		},
+		"chakram/disc_hit+counter": {
+			"8": 1
+		},
+		"chakram/light_1": {
+			"4": 10
+		},
+		"chakram/light_1+counter": {
+			"8": 2
+		},
+		"chakram/light_2": {
+			"4": 11
+		},
+		"chakram/light_3": {
+			"6": 8
+		},
+		"light_1": {
+			"5": 1
+		},
+		"light_2": {
+			"5": 1
+		}
+	},
+	"id": "106:heartbloom_gardens:1v1:brann,lyra:33",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		3,
+		3
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 106,
+	"sim_ms_per_tick": 0.88359,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00967178121209145,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.30389107243332,
+		"foot_slide_cm_per_frame": 0.00235245588870403,
+		"foot_slide_frames": 289,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 1.0,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.42008708333333,
+	"violations": [],
+	"wall_seconds": 21.261,
+	"zone": "heartbloom_gardens"
+}

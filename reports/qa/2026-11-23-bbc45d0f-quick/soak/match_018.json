@@ -1,0 +1,83 @@
+{
+	"hitstops": {
+		"gauntlets/breaker": {
+			"7": 1
+		},
+		"gauntlets/light_1": {
+			"3": 1
+		},
+		"gauntlets/light_1+counter": {
+			"7": 1
+		},
+		"gauntlets/light_2": {
+			"3": 1
+		},
+		"gauntlets/light_3": {
+			"3": 1
+		},
+		"lance/breaker": {
+			"9": 2
+		},
+		"lance/light_1": {
+			"4": 8
+		},
+		"lance/light_1+counter": {
+			"8": 1
+		},
+		"lance/light_2": {
+			"4": 9
+		},
+		"lance/light_3": {
+			"7": 11
+		},
+		"launcher": {
+			"7": 2
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "118:verdant_falls:1v1:brann,lyra:24",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 1,
+		"charged": 1,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 118,
+	"sim_ms_per_tick": 0.8487575,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0131100881844759,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.892079843408666,
+		"foot_slide_cm_per_frame": 0.014924020523058,
+		"foot_slide_frames": 289,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.971182795698925,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.22387125,
+	"violations": [],
+	"wall_seconds": 18.926,
+	"zone": "verdant_falls"
+}
