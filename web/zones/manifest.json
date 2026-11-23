@@ -1,38 +1,38 @@
 {
 	"packs": {
 		"res://game/world/voxel_zone_kit/baked/ember_rift_web.scn": {
-			"file": "ember_rift_web.ff0944d1bd45.pck",
-			"sha256": "6b8dc6f668a02f8493aab93c35819d6feaf5dcd32b71b81cc5ce22cad0cd4219",
+			"file": "ember_rift_web.de5fb78aa9a9.pck",
+			"sha256": "f1904b95c9eb43a2c805364fc83213171ccf32670a7f1826d090ffa8482b277c",
 			"size": 21083456
 		},
 		"res://game/world/voxel_zone_kit/baked/frozen_peaks_web.scn": {
-			"file": "frozen_peaks_web.bec5c6416820.pck",
-			"sha256": "46c3780539fd25a4335a957a704dde764f5e6da96365b97cffa78ecaac33d83c",
+			"file": "frozen_peaks_web.b6cf4ccbd89e.pck",
+			"sha256": "d49f9ebbe6cf9ce46b396b1626d2159db60f9285a86eede32823325776c63fc5",
 			"size": 33040224
 		},
 		"res://game/world/voxel_zone_kit/baked/heartbloom_gardens_web.scn": {
-			"file": "heartbloom_gardens_web.f23f419bbda7.pck",
-			"sha256": "f89f797798636457bbbc2dce46c714aa7b43895766be796054ab916cf9ffb389",
-			"size": 22960328
+			"file": "heartbloom_gardens_web.bd00b17c157b.pck",
+			"sha256": "246acc461c7ea6fd29eb36a89a5cda01130c7797ad1b233ecaf793fdc656d579",
+			"size": 22960296
 		},
 		"res://game/world/voxel_zone_kit/baked/shattered_mesa_web.scn": {
-			"file": "shattered_mesa_web.4cc3be8e5f7b.pck",
-			"sha256": "53e8e8078f3600812ee010415bc881cbd9b79b3b1b8f1e506d97fd8929e38824",
+			"file": "shattered_mesa_web.acb82eceb699.pck",
+			"sha256": "547b92ddb4cf7b1fadadf0e5a6aa724f7626b7415c5938549ee87a2d9be44b6f",
 			"size": 29872036
 		},
 		"res://game/world/voxel_zone_kit/baked/skyhold_ruins_web.scn": {
-			"file": "skyhold_ruins_web.62683714e665.pck",
-			"sha256": "8030d7c507df8b4b9ab3d604b7a3aaf5b873bb433f3ef4065749c7216285946a",
+			"file": "skyhold_ruins_web.0f6d99b6be17.pck",
+			"sha256": "9068850f9c53535ce851f38fda2f376ca336eecc67294f841a34dd86da43b9a3",
 			"size": 18921860
 		},
 		"res://game/world/voxel_zone_kit/baked/stormfall_city_web.scn": {
-			"file": "stormfall_city_web.9df939dc2549.pck",
-			"sha256": "06e3bd297db70227b28cfa8e7058872d319825f5ef2bedfe22aa671e9cebf02c",
+			"file": "stormfall_city_web.1f08800e004b.pck",
+			"sha256": "bb4d5055efccb9f670dc1fb97a50e1d9ab60da87f42cb1af2e699e3a901a52bb",
 			"size": 59937412
 		},
 		"res://game/world/voxel_zone_kit/baked/verdant_falls_web.scn": {
-			"file": "verdant_falls_web.828fbc2f50aa.pck",
-			"sha256": "afe66059b8bbe1956410c1561a54dd2daee976f2a7e5df62ea38f62d42ff6b36",
+			"file": "verdant_falls_web.226d1a15548d.pck",
+			"sha256": "c147023048adc7be162b06a5252b26c686affb22da115cbb9103453d3380ab85",
 			"size": 15968868
 		}
 	},
