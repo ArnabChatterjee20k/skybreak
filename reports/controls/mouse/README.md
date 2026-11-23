@@ -175,5 +175,11 @@ Cloud container, 4 cores, lavapipe / swiftshader; Godot `4.7.2.stable.official.e
   as the final merge): Pure Fight by mouse, Pure Fight by Enter, versus, and "only the new build is
   cached" **PASS**; the cold-profile check was not reached because I stopped the run to keep the
   final GUT run quiet (`web/upgrade_test_7f4a42a7.txt`).
+- **Main d788fdc2's own web build** (the one to ship), same mouse test: every check PASS except
+  "left click held while D walks", where all 6 tries landed while the AI had Kael in hitstun,
+  juggle, a throw or knockdown (states 10 / 11 / 16 / 12), so no move could start; the press itself
+  reached the sim every time (`web/mouse_main_d788fdc2.txt`). The same check passed on the four
+  earlier builds. **Not deployed**: the DEPLOY.md gate (smoke test, upgrade test cold profile) did
+  not finish inside this run; main needs a web build.
 - **Not tested here**: a real mouse and a real MacBook trackpad (headless Chromium sends real DOM
   mouse events, but no hardware); the trackpad tap is covered by the latch test in GUT.
