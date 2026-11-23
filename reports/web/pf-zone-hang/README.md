@@ -67,6 +67,52 @@ older builds are pruned.
 
 Browser regression: `tools/web/upgrade_test.js` (in the `tools/web/DEPLOY.md` checklist).
 
-## Evidence
+## Evidence (real runs, 2026-11-23, cloud container, 4 cores, headless Chromium + SwiftShader)
 
-See "Results" below (filled from the runs).
+**The bug, end to end through the real UI** (build 9e645967, one persistent profile):
+Settings -> Graphics -> HIGH, browser closed and reopened (IndexedDB `/userfs` then holds
+`settings.cfg` with `quality=2`), Pure Fight -> Verdant Falls -> FIGHT. Console:
+`WARNING: VoxelZoneView: building verdant_falls live (no bake at res://game/world/voxel_zone_kit/baked/verdant_falls_high.scn)`,
+then `page.screenshot: Timeout 30000ms exceeded`: the page stopped answering on the zone select.
+
+**The same broken profile on the fix** (main 2df1bdbc build, IndexedDB still holding `quality=2`):
+the boot updates to 2df1bdbc (`reload`, then `cached`), FIGHT shows the loading screen
+("DOWNLOADING ZONE 52%"), and 33 s later a Pure Fight match is running in Verdant Falls. Nothing
+had to be cleared by hand.
+
+**Upgrade test** `tools/web/upgrade_test.js` on main 2df1bdbc's build, replaying
+746036c1 -> 61925008 -> fe71e7c8 -> 9e645967 -> 3b86467c (the live build) -> 2df1bdbc in one profile,
+with an update cut off halfway (index.pck dropped at 50 %):
+
+| check | result |
+|---|---|
+| Pure Fight -> Verdant Falls -> FIGHT (mouse) | PASS: match in 8.8 s, longest stall 1.8 s |
+| Pure Fight -> FIGHT (Enter, Heartbloom Gardens) | PASS: match in 12.4 s, longest stall 4.0 s |
+| Versus -> Ember Rift -> FIGHT | PASS: match in 14.8 s, longest stall 6.9 s |
+| Only the new build is cached afterwards | PASS: `skybreak-meta` + `skybreak-2df1bdbc...`, no `pending.json` |
+| Cold profile (like incognito), Pure Fight | PASS: match in 8.7 s |
+| Control: old build with HIGH saved stalls >= 20 s | not shown in this run (see below) |
+
+Known gap in the harness: in the scripted run, the "pick HIGH" visit didn't leave `settings.cfg` in
+IndexedDB by the time the next visit started (read back afterwards: none), so the control didn't
+freeze. Run alone, the same steps do persist `quality=2`, and the hand-driven runs above prove both
+the freeze and the repair on such a profile. Filed as UPGRADE-TEST-SEED in TODO.md.
+
+**Other checks on the merge with origin/main** (3b86467c, later 820ca47: reports only):
+
+- Full GUT with all 28 zone bakes and `SKYBREAK_REQUIRE_BAKES=1`: 1981 tests, 1975 passing,
+  **0 failing**, 10 pending (exit 0). Before the merge, on the branch alone: 1976 / 1969 / 1 failing,
+  the MOVE-ESCAPE-CAM camera test that main fixed in 3b86467c.
+- det_check: `det_check total b8bab850a4256dc7` on two runs, identical (same as main).
+- `node tools/web/cache_test.js`: 6/6 scenarios PASS (first load, offline, slow version.json, one
+  changed file, interrupted update, small quota).
+- `node tools/web/match_smoke_test.js`: PASS (menu -> vs AI, 30 s, no console errors).
+- Web build: index.pck 56,899,180 bytes (54.3 MB, under 60 MB), 7 zone packs 191.3 MB.
+
+## Not fixed here
+
+- LOADING-SCREEN-LAYOUT: the loading screen's bar and label draw clipped in the top-left corner
+  instead of centred (old builds too). It still shows progress, so FIGHT no longer looks frozen.
+- Live check from this session: the cloud proxy blocks the site's host (HTTP 403), so the live
+  `version.json` and the live upgrade test can only be checked by the deploy workflow's
+  "Check the live site" step or from another machine.

@@ -1,0 +1,36 @@
+builds: 746036c1 -> 61925008 -> fe71e7c8 -> 9e645967 -> 3b86467c -> main2df (new 2df1bdbc731fc48895871a3e28bd62ca4432f8a0)
+[old1_746036c1] engine running in 31.6 s, boot null
+[old1_746036c1] versus match: null after 47 s
+[old1_746036c1] network 6 responses, 0 from the service worker
+[old2_61925008] engine running in 21.6 s, boot {"mode":"updated","build":"619250080bfc134b0824e5a8fdb62e47adb22cd1"}
+[old2_61925008] versus match: null after 47 s
+[old2_61925008] network 13 responses, 6 from the service worker
+[old3_fe71e7c8] engine running in 20.3 s, boot {"mode":"cached","build":"fe71e7c81b574d59edefb1f662e66fe85414c540"}
+[old3_fe71e7c8] versus match: null after 46 s
+[old3_fe71e7c8] network 3 responses, 11 from the service worker
+[old4_9e645967] engine running in 21.0 s, boot {"mode":"cached","build":"9e645967856d252c592e9c5e2b5b1eb626056f4d"}
+[old4_9e645967] versus match: null after 45 s
+[old4_9e645967] network 3 responses, 11 from the service worker
+[old5_3b86467c] engine running in 19.0 s, boot {"mode":"cached","build":"3b86467c3c1b325b19e91b0f3f6db7aba75f45e8"}
+[old5_3b86467c] versus match: null after 46 s
+[old5_3b86467c] network 3 responses, 11 from the service worker
+[old5_3b86467c_owner] engine running in 19.8 s, boot {"mode":"cached","build":"3b86467c3c1b325b19e91b0f3f6db7aba75f45e8"}
+[old5_3b86467c_owner] network 0 responses, 6 from the service worker
+[old5_3b86467c_freeze] engine running in 20.6 s, boot {"mode":"cached","build":"3b86467c3c1b325b19e91b0f3f6db7aba75f45e8"}
+[old5_3b86467c] control: Pure Fight FIGHT with HIGH saved: longest stall 13.4 s
+[old5_3b86467c_freeze] network 0 responses, 8 from the service worker
+[interrupted] index.pck cut at 50%: true
+[new_pf_click] engine running in 22.2 s, boot {"mode":"cached","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0"}
+[new_pf_click] network 2 responses, 11 from the service worker
+PASS new_pf_click: {"boot":"cached","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0","ok":true,"framesIn5s":4,"match":{"mode":"pure_fight","scene":"res://game/modes/pure_fight/pure_fight_match.tscn","zone":"verdant_falls"},"worstStallMs":1846,"ms":8828}
+[new_pf_enter] engine running in 19.6 s, boot {"mode":"cached","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0"}
+[new_pf_enter] network 0 responses, 8 from the service worker
+PASS new_pf_enter: {"boot":"cached","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0","ok":true,"framesIn5s":4,"match":{"mode":"pure_fight","scene":"res://game/modes/pure_fight/pure_fight_match.tscn","zone":"heartbloom_gardens"},"worstStallMs":4031,"ms":12405}
+[new_vs] engine running in 20.9 s, boot {"mode":"cached","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0"}
+[new_vs] network 0 responses, 8 from the service worker
+PASS new_vs: {"boot":"cached","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0","ok":true,"framesIn5s":6,"match":{"mode":"vs_ai","scene":"res://game/levels/zone_match.tscn","zone":"ember_rift"},"worstStallMs":6939,"ms":14820}
+PASS only the new build is cached after the update: {"caches":["skybreak-meta","skybreak-2df1bdbc731fc48895871a3e28bd62ca4432f8a0"],"pending":false}
+[cold_pf] engine running in 25.8 s, boot {"mode":"updated","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0"}
+[cold_pf] network 13 responses, 6 from the service worker
+PASS cold profile (like incognito) reaches a Pure Fight match: {"ok":true,"framesIn5s":4,"match":{"mode":"pure_fight","scene":"res://game/modes/pure_fight/pure_fight_match.tscn","zone":"verdant_falls"},"worstStallMs":2606,"ms":8703}
+FAIL: control: the old build stalls >= 20 s with HIGH saved

@@ -1,0 +1,87 @@
+[
+ {
+  "name": "control: the old build stalls >= 20 s with HIGH saved",
+  "ok": false,
+  "detail": {
+   "worstStallMs": 13385
+  },
+  "control": true
+ },
+ {
+  "name": "new_pf_click",
+  "ok": true,
+  "detail": {
+   "boot": "cached",
+   "build": "2df1bdbc731fc48895871a3e28bd62ca4432f8a0",
+   "ok": true,
+   "framesIn5s": 4,
+   "match": {
+    "mode": "pure_fight",
+    "scene": "res://game/modes/pure_fight/pure_fight_match.tscn",
+    "zone": "verdant_falls"
+   },
+   "worstStallMs": 1846,
+   "ms": 8828
+  }
+ },
+ {
+  "name": "new_pf_enter",
+  "ok": true,
+  "detail": {
+   "boot": "cached",
+   "build": "2df1bdbc731fc48895871a3e28bd62ca4432f8a0",
+   "ok": true,
+   "framesIn5s": 4,
+   "match": {
+    "mode": "pure_fight",
+    "scene": "res://game/modes/pure_fight/pure_fight_match.tscn",
+    "zone": "heartbloom_gardens"
+   },
+   "worstStallMs": 4031,
+   "ms": 12405
+  }
+ },
+ {
+  "name": "new_vs",
+  "ok": true,
+  "detail": {
+   "boot": "cached",
+   "build": "2df1bdbc731fc48895871a3e28bd62ca4432f8a0",
+   "ok": true,
+   "framesIn5s": 6,
+   "match": {
+    "mode": "vs_ai",
+    "scene": "res://game/levels/zone_match.tscn",
+    "zone": "ember_rift"
+   },
+   "worstStallMs": 6939,
+   "ms": 14820
+  }
+ },
+ {
+  "name": "only the new build is cached after the update",
+  "ok": true,
+  "detail": {
+   "caches": [
+    "skybreak-meta",
+    "skybreak-2df1bdbc731fc48895871a3e28bd62ca4432f8a0"
+   ],
+   "pending": false
+  }
+ },
+ {
+  "name": "cold profile (like incognito) reaches a Pure Fight match",
+  "ok": true,
+  "detail": {
+   "ok": true,
+   "framesIn5s": 4,
+   "match": {
+    "mode": "pure_fight",
+    "scene": "res://game/modes/pure_fight/pure_fight_match.tscn",
+    "zone": "verdant_falls"
+   },
+   "worstStallMs": 2606,
+   "ms": 8703
+  }
+ }
+]

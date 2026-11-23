@@ -1,0 +1,16 @@
+load: start click -> engine running in 21.4 s, 92.3 MB served (uncompressed)
+screenshot 1_menu.png
+menu frame time: 4 frames, avg 1794.6 ms (0.6 fps), p95 2633.2 ms, max 2633.2 ms
+screenshot 2_character_select.png
+screenshot 3_zone_select.png
+screenshot 3b_after_fight_click.png
+screenshot 4_match_5s.png
+screenshot 4_match_15s.png
+screenshot 4_match_30s.png
+match frame time: 277 frames, avg 20.3 ms (49.4 fps), p95 33.3 ms, max 966.6 ms
+--- browser console ---
+[log] Skybreak boot: {"mode":"updated","fetched":["boot_cache.js","index.apple-touch-icon.png","index.audio.position.worklet.js","index.audio.worklet.js","index.html","index.icon.png","index.js","index.pck","index.png","index.wasm","zones/manifest.json"],"copied":0,"total":96755113,"build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0","ms":1017}
+[log] Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+[log] OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL
+[log] Build configuration: Emscripten 4.0.20, single-threaded, no GDExtension support.
+PASS: menu -> vs AI match ran 30 s with no console errors
