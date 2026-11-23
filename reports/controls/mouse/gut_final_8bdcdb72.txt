@@ -1,0 +1,13 @@
+Full GUT, SKYBREAK_REQUIRE_BAKES=1, on 8bdcdb72 (final merge tree), nothing else running:
+Scripts             204
+Tests              2014
+Passing Tests      2008
+Asserts           295927
+Time              1080.778s
+gut_exit=0
+    AI cost: 0.0465 ms per AI per tick
+
+Earlier run on 7f4a42a7 with a web export and a swiftshader browser test on the same 4 cores: 2014 tests, 1 failing:
+    [Failed]:  [0.05468133333333] expected to be <= than [0.05]:  
+      at line 391
+    AI cost: 0.0547 ms per AI per tick

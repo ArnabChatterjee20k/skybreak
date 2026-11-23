@@ -131,8 +131,13 @@ Cloud container, 4 cores, lavapipe / swiftshader; Godot `4.7.2.stable.official.e
 - **Full GUT on the merge with main 6a731815 (be1d1763)**, bakes required
   (`SKYBREAK_REQUIRE_BAKES=1`): **2013 tests, 2007 passing, 0 failing, 10 pending** (the known
   QA-11 / QA-12 / renderer / T-KI1-b pendings), exit 0 (`gut_merge_be1d1763.txt`).
-- **det_check** on the merge: two runs identical, `det_check total b8bab850a4256dc7` (= main;
-  input mapping does not touch the sim) (`det_check_merge.txt`).
+- **Final full GUT on 8bdcdb72** (main bc67198f merged in; the HUD fit and hint fixes on top),
+  bakes required, nothing else running: **2014 tests, 2008 passing, 0 failing**, exit 0
+  (`gut_final_8bdcdb72.txt`). A first run of 7f4a42a7 with a web export and a browser test sharing
+  the 4 cores failed one wall-clock budget, `test_an_ai_costs_at_most_0_05_ms_per_tick` (0.0547 ms);
+  alone it measured 0.0465 ms. No AI code changed.
+- **det_check** on the merge be1d1763 and again on 7f4a42a7: two runs each, all
+  `det_check total b8bab850a4256dc7` (= main; input mapping does not touch the sim) (`det_check_merge.txt`).
 - **Camera QA** (`voxel_camera_qa.gd -- 1200 7`): every zone identical to main's last log
   (Verdant Falls 97.1 %, the other six 100 %, clip frames 0) (`camera_qa_branch.log`). No camera
   file changed.
@@ -162,6 +167,13 @@ Cloud container, 4 cores, lavapipe / swiftshader; Godot `4.7.2.stable.official.e
 - **Main's own web build 388564ab** (the first merge): the same mouse test, **every check PASS**
   (`web/mouse_main_388564ab.txt`): Pure Fight 5L / 5H / 5M / 5M / throw / 5L / 5H / 5L, no pointer
   lock, the context menu suppressed; 3D light_1, smash (buffered through hitstun), light_1, pointer
-  lock on the canvas and no menu. HINT_WEB_PLACEHOLDER
+  lock on the canvas and no menu. Its screenshot showed the hint and P2's bar cut off (see "What
+  changed"); after the HUD fit (88dff379) the Pure Fight part passed again and the screenshot shows
+  both bars, the finisher meters and the hint (`web/pf_match_hud_fit.png`, `web/mouse_88dff379_pf.txt`).
+- **Upgrade test** (`tools/web/upgrade_test.js`, one persistent profile: 2df1bdbc build ->
+  6a731815 live build -> HIGH saved, update cut off at 50 % -> a build of 7f4a42a7, the same source
+  as the final merge): Pure Fight by mouse, Pure Fight by Enter, versus, and "only the new build is
+  cached" **PASS**; the cold-profile check was not reached because I stopped the run to keep the
+  final GUT run quiet (`web/upgrade_test_7f4a42a7.txt`).
 - **Not tested here**: a real mouse and a real MacBook trackpad (headless Chromium sends real DOM
   mouse events, but no hardware); the trackpad tap is covered by the latch test in GUT.
