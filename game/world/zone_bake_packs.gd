@@ -91,6 +91,21 @@ static func entry_in(manifest_text: String, bake_path: String) -> Dictionary:
 	return {"file": e.file, "size": int(e.size), "sha256": e.sha256}
 
 
+## Every pack file the manifest names (any zone); [] for a bad manifest.
+static func files_in(manifest_text: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	var json := JSON.new()
+	if json.parse(manifest_text) != OK:
+		return out
+	var m: Variant = json.data
+	if not m is Dictionary or not (m as Dictionary).get("packs") is Dictionary:
+		return out
+	for e: Variant in (m.packs as Dictionary).values():
+		if e is Dictionary and (e as Dictionary).get("file") is String:
+			out.append(String(e.file).get_file())
+	return out
+
+
 ## Mounts a pack so its bake loads from its res:// path; true once mounted.
 static func mount(pck_path: String) -> bool:
 	var key := pck_path.get_file()
@@ -117,6 +132,15 @@ static func prune_cache(keep: String) -> void:
 	var stem := keep.get_slice(".", 0)
 	for f in DirAccess.get_files_at(CACHE_DIR):
 		if f != keep and f.get_slice(".", 0) == stem:
+			DirAccess.remove_absolute(CACHE_DIR.path_join(f))
+
+
+## Removes cached files the current manifest doesn't name (packs of older builds).
+static func prune_unlisted(listed: PackedStringArray) -> void:
+	if listed.is_empty():
+		return
+	for f in DirAccess.get_files_at(CACHE_DIR):
+		if not listed.has(f):
 			DirAccess.remove_absolute(CACHE_DIR.path_join(f))
 
 

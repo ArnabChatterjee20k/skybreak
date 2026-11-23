@@ -10,6 +10,7 @@ const SkybreakCache = (function () {
 	const PREFIX = 'skybreak-';
 	const META = 'skybreak-meta';
 	const POINTER = 'pointer.json';
+	const PENDING = 'pending.json';
 	const VERSION_TIMEOUT_MS = 3000;
 	const CONTROLLER_TIMEOUT_MS = 4000;
 	// Files the worker never serves from the cache.
@@ -47,6 +48,16 @@ const SkybreakCache = (function () {
 			new Response(body, { headers: { 'Content-Type': 'application/json' } }));
 	}
 
+	// Marks the build being filled, so a worker activating meanwhile keeps its cache.
+	async function writePending(build) {
+		await (await caches.open(META)).put(key(PENDING),
+			new Response(JSON.stringify({ build }), { headers: { 'Content-Type': 'application/json' } }));
+	}
+
+	async function clearPending() {
+		await (await caches.open(META)).delete(key(PENDING));
+	}
+
 	async function clearPointer() {
 		await (await caches.open(META)).delete(key(POINTER));
 	}
@@ -78,7 +89,9 @@ const SkybreakCache = (function () {
 	}
 
 	async function controller() {
-		await navigator.serviceWorker.register('sw.js');
+		const reg = await navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
+		// Checks sw.js now, so a newer worker replaces an older one on this visit.
+		reg.update().catch(() => {});
 		if (navigator.serviceWorker.controller) {
 			return navigator.serviceWorker.controller;
 		}
@@ -170,6 +183,7 @@ const SkybreakCache = (function () {
 			}
 		}
 		let done = 0;
+		await writePending(v.build);
 		try {
 			for (const [f, res] of copy) {
 				await target.put(key(f), res);
@@ -188,6 +202,7 @@ const SkybreakCache = (function () {
 				throw e;
 			}
 			await caches.delete(PREFIX + v.build);
+			await clearPending();
 			return { mode: 'nospace', total, estimate: lastEstimate, why: e.message };
 		}
 		// Zone packs the old build kept and the new one still lists.
@@ -200,6 +215,7 @@ const SkybreakCache = (function () {
 			}
 		}
 		await writePointer(v);
+		await clearPending();
 		await deleteBuilds([v.build]);
 		return { mode: 'updated', fetched: fetchList, copied: copy.length, total };
 	}

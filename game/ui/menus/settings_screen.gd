@@ -25,6 +25,8 @@ var _key_buttons: Dictionary = {}
 var _vsync: Button
 var _fullscreen: Button
 var _built := false
+## Whether this is the web build, which offers only the WEB quality tier.
+var web := OS.has_feature("web")
 
 
 func _ready() -> void:
@@ -74,7 +76,7 @@ func _ready() -> void:
 ## Reloads every settings group from save_path.
 func load_settings() -> void:
 	audio = AudioSettings.load_saved(save_path)
-	graphics = GraphicsSettings.load_saved(save_path)
+	graphics = GraphicsSettings.load_saved(save_path, web)
 	controls = ControlSettings.load_saved(save_path)
 
 
@@ -238,9 +240,8 @@ func _graphics_page() -> Control:
 	rows.add_child(_row("ART STYLE", style_row))
 	var quality_row := HBoxContainer.new()
 	quality_row.add_theme_constant_override("separation", 12)
-	for quality_name: String in GraphicsSettings.Quality.keys():
-		var q: GraphicsSettings.Quality = GraphicsSettings.Quality[quality_name]
-		var b := make_button(quality_name, set_quality.bind(q), 28)
+	for q in _tiers():
+		var b := make_button(String(GraphicsSettings.Quality.keys()[q]), set_quality.bind(q), 28)
 		b.custom_minimum_size = Vector2(190, 60)
 		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		quality_row.add_child(b)
@@ -295,7 +296,7 @@ func _refresh_graphics() -> void:
 		_style_buttons[i].add_theme_stylebox_override("normal", MenuTheme.box(MenuTheme.GOLD if on else MenuTheme.PANEL_LIGHT, MenuTheme.INK, 4))
 		_style_buttons[i].add_theme_color_override("font_color", MenuTheme.INK if on else MenuTheme.TEXT)
 	for i in _quality_buttons.size():
-		var on := i == graphics.quality
+		var on := _tiers()[i] == graphics.quality
 		_quality_buttons[i].add_theme_stylebox_override("normal", MenuTheme.box(MenuTheme.GOLD if on else MenuTheme.PANEL_LIGHT, MenuTheme.INK, 4))
 		_quality_buttons[i].add_theme_color_override("font_color", MenuTheme.INK if on else MenuTheme.TEXT)
 	if _vsync != null:
@@ -348,3 +349,7 @@ func _slider(min_value: float, max_value: float, step: float, value: float) -> H
 	slider.focus_mode = Control.FOCUS_ALL
 	slider.focus_entered.connect(play_cue.bind(&"move"))
 	return slider
+
+
+func _tiers() -> Array[GraphicsSettings.Quality]:
+	return GraphicsSettings.tiers(web)

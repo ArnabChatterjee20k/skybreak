@@ -8,9 +8,23 @@
 const PREFIX = 'skybreak-';
 const META = 'skybreak-meta';
 const POINTER = 'pointer.json';
+// The build an update is filling right now (boot_cache.js); its cache is kept.
+const PENDING = 'pending.json';
 
+// A new worker takes over at once, even from an older or broken one, and drops build caches the
+// pointer no longer names (left by an update that stopped halfway, or by older workers).
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener('activate', (event) => event.waitUntil((async () => {
+	await self.clients.claim();
+	const ptr = await pointer();
+	const pending = await readMeta(PENDING);
+	const keep = [ptr && ptr.build, pending && pending.build].filter(Boolean).map((b) => PREFIX + b);
+	for (const name of await caches.keys()) {
+		if (name.startsWith(PREFIX) && name !== META && !keep.includes(name)) {
+			await caches.delete(name);
+		}
+	}
+})()));
 
 // Path relative to the worker's folder ("" for the folder itself).
 function relativePath(url) {
@@ -21,14 +35,18 @@ function relativePath(url) {
 	return decodeURIComponent(url.pathname.slice(scope.pathname.length));
 }
 
-async function pointer() {
+async function readMeta(name) {
 	try {
 		const meta = await caches.open(META);
-		const res = await meta.match(new URL(POINTER, self.registration.scope).href);
+		const res = await meta.match(new URL(name, self.registration.scope).href);
 		return res ? await res.json() : null;
 	} catch (e) {
 		return null;
 	}
+}
+
+function pointer() {
+	return readMeta(POINTER);
 }
 
 // Zone packs are fetched per match and named by content hash, so they never go stale.
