@@ -10,7 +10,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   Pure Fight P2 moves off Num0-6 / Num. to arrows + `, . /` `; ' ]` `[` + Right Shift dash (P1 dash
   pinned to Left Shift); hints, docs and tests updated (`reports/controls/no-numpad/README.md`).
   Open: physical ghosting on the owner's laptops is untested (headless Chromium only); the combat
-  training room still uses F1-F7 (Fn on a Mac) [developer, game/modes/training].
+  training room still uses F1-F7 (Fn on a Mac) [developer, game/modes/training]. Not merged yet:
+  GUT 0 failing and det_check equal on the merge with 3b86467c, but main has moved again and QA ms
+  needs a re-run at main's job count; the rollover matrix against a running web build stalls
+  (stub page passes).
 
 - MOVE-ESCAPE [desktop] #150 "can't move away or get behind while the opponent attacks": fixed on
   `fix/move-escape` (see `reports/combat/move-escape/README.md`). Dash presses wait out stun, 4-tick

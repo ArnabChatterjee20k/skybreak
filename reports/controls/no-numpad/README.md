@@ -93,7 +93,7 @@ the next controls run moves that action.
 ## Evidence
 
 Cloud container, 4 cores, lavapipe; Godot `4.7.2.stable.official.ed1daf0bf`, web templates `.tpz`
-SHA-512 OK. Branch at 21b70c6d + later commits, on main fe18f894.
+SHA-512 OK. Branch first on main fe18f894, then merged with main 3b86467c (75f08248).
 
 - **Zone bakes**: 7 zones x 4 tiers baked (xvfb + lavapipe, 3 jobs); `voxel_zone_bake.gd --check`
   exit 0.
@@ -133,3 +133,18 @@ SHA-512 OK. Branch at 21b70c6d + later commits, on main fe18f894.
 - Full GUT, bakes required (`SKYBREAK_REQUIRE_BAKES=1`): **1985 tests, 1979 passing, 0 failing,
   10 pending** (main's 1973 + the 12 new ones).
 - det_check: two runs identical, `det_check total b8bab850a4256dc7` (= main).
+- QA quick (QA_JOBS=4, `reports/qa/2026-11-23-75f08248-quick.md`): sim PASS, view FAIL with the
+  same violations as main d270c6ad (foot_ground 4/21, camera_on_screen 1/21, pop 1/21), scenarios
+  and golden replays PASS; hitstop, pops, foot, camera jerk (0.0094) and on-screen share (0.9875)
+  equal to main's d270c6ad run. Only wall-clock ms differ: sim 1.37 vs 1.16 ms/tick (+18 %), view
+  1.56 vs 1.28 ms/frame (+21 %), over the 15 % line. This change adds no code to the soak's path
+  (ZoneMatch never builds PureFightKeys) and every gameplay metric is identical, so this reads as
+  4 jobs on 4 cores, but by the rule it is not proven "no worse": re-run at main's job count.
+
+## Status
+
+**Not merged.** Main moved to bbc45d0f (PF-ZONE-HANG, 2df1bdbc) after the evidence run, the QA ms
+check above needs a re-run, and the run hit its 180-minute stop. Next controls run: merge the
+latest `origin/main` into `fix/no-numpad`, run full GUT with bakes, det_check twice and QA quick
+at main's job count, then `merge --no-ff` and add the "main has no-numpad, needs a web build"
+line to `reports/status/latest.md`.
