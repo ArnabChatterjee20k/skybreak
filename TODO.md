@@ -6,6 +6,14 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In progress
 
+- MOUSE-CONTROLS [developer] Owner: "we can use the mouse as well right? lmb and rmb???", "two person
+  always on duo mode online and not on the same laptop". `fix/mouse-controls`: WASD + mouse is the
+  default in every mode (Pure Fight P1: LMB light, MMB/Q medium, RMB heavy, F throw, R technique,
+  C finisher; 3D: LMB/RMB/MMB as before plus J/L/U/I/O keyboard-only), J/K/L/U/I/O kept, presses
+  shorter than a tick latched (trackpad taps), Pure Fight never takes pointer lock, mouse buttons
+  bindable on the controls screen (`reports/controls/mouse/README.md`). Open: Pure Fight keys are
+  still not on the rebinding screen; Pure Fight has no in-match hint strip (pause menu move list
+  shows the controls); real trackpad / mouse not tested (headless Chromium only).
 - NO-NUMPAD [desktop] Owner: "dont use any numpad keys for any fight techniques". `fix/no-numpad`:
   Pure Fight P2 moves off Num0-6 / Num. to arrows + `, . /` `; ' ]` `[` + Right Shift dash (P1 dash
   pinned to Left Shift); hints, docs and tests updated (`reports/controls/no-numpad/README.md`).

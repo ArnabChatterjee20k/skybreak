@@ -83,12 +83,13 @@ Branch `feature/pure-fight`. Evidence: see "Verification" at the end.
 | | P1 | P2 |
 |---|---|---|
 | Move / jump / crouch | A D / W, Space / S | Left Right / Up / Down arrows |
-| Light / medium / heavy | J / K / L | , / . / / |
-| Throw / technique / finisher | U / I / O | ; / ' / ] |
+| Light / medium / heavy | left click / middle click or Q / right click (or J / K / L) | , / . / / |
+| Throw / technique / finisher | F / R / C (or U / I / O) | ; / ' / ] |
 | Dash | Left Shift + direction or tap twice | Right Shift + direction or tap twice |
 | Block | hold back (down-back for lows), E | hold back, [ |
 
-No numpad keys (since `fix/no-numpad`, `reports/controls/no-numpad/README.md`).
+No numpad keys (since `fix/no-numpad`, `reports/controls/no-numpad/README.md`). WASD + mouse is
+P1's default since `fix/mouse-controls` (`reports/controls/mouse/README.md`); the mouse never drives P2.
 
 Techniques: a motion + attack (236 / 623 / 214), or the technique key + a direction: forward or
 neutral = 236, down = 623, back = 214. Finisher: 236236 + attack or the finisher key, needs a full meter.

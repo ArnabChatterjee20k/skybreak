@@ -62,16 +62,16 @@ All rebindable. Designed so the left hand moves and defends and the right hand a
 |---|---|---|
 | Move | `W A S D` | Relative to camera. When locked on, W/S = toward/away, A/D = circle-strafe |
 | Ascend / Descend | `Space` / `C` | Hold for continuous flight. Tap Space on the ground = jump. **Double-tap `C`** = dive straight down until you land (`Space` cancels). `Left Ctrl` also descends on desktop, never in the web build (Ctrl+W closes the tab) |
-| **Light attack** | `Left Mouse` | Strings, hit-confirms |
-| **Heavy attack** | `Right Mouse` | Direction + heavy = different heavies (see §5.3). Hold = charged smash |
+| **Light attack** | `Left Mouse` (or `J`) | Strings, hit-confirms. A Mac trackpad's tap counts even when shorter than a tick |
+| **Heavy attack** | `Right Mouse` (or `L`) | Direction + heavy = different heavies (see §5.3). Hold = charged smash. Trackpad: two-finger click |
 | **Block** | `E` (hold) | **Tap** just before a hit = perfect block (§5.4) |
 | **Dodge / dash** | `Left Shift` (+ direction) | Tap = **dodge** (§5.4): with a direction a directional dodge, alone a spot dodge, locked with `A`/`D` a sidestep round the target. Hold = the dodge turns into the sustained flight-dash. Toward the target while locked = rush dash (no i-frames) |
-| Grab | `F` | Beats block. Loses to strikes |
+| Grab | `F` (or `U`) | Beats block. Loses to strikes |
 | Pick up / throw item | `G` / `V` | Tap `G` near an item to pick it up; with nothing in reach it throws the held weapon at the target. `V` always throws |
 | Ki blast | `Q` | Tap = rapid shot. Hold = charged blast |
 | Charge ki | `R` (hold) | Fast ki gain, but you're vulnerable |
-| Specials 1 / 2 / 3 | `1` `2` `3` | Character-specific, 25–35 ki (§6.1). `Space`/`C` + key = rising/diving variant where a special has one |
-| Ultimate | `4` | Costs burst. Cinematic on hit |
+| Specials 1 / 2 / 3 | `1` (or `I`) `2` `3` | Character-specific, 25–35 ki (§6.1). `Space`/`C` + key = rising/diving variant where a special has one |
+| Ultimate | `4` (or `O`) | Costs burst. Cinematic on hit |
 | Transform | `T` | Costs burst. Drains ki over time |
 | **Vanish** | `Shift + E` | While blocking or in the first frames of hitstun = vanish counter (§5.5) |
 | Combo breaker | `X` | While in hitstun. Costs 1 burst stock |
@@ -629,19 +629,21 @@ Defaults chosen by the desktop controller; the owner can redirect any of them.
   the flight game's, so every other mode stays bit-identical. Integer state (mm, mm/tick), 60 Hz,
   snapshot/restore by reflection, so rollback (`RollbackSession`) takes it unchanged.
 
-### 16.2 Controls (keyboard; two players can share one laptop)
+### 16.2 Controls (WASD + mouse; two players can still share one laptop)
 
-No numpad, F-keys or Ctrl/Cmd/Alt anywhere, so it works on a Mac laptop in a browser.
+No numpad, F-keys or Ctrl/Cmd/Alt anywhere, so it works on a Mac laptop in a browser. P1 plays
+WASD + mouse by default (one player per laptop, Duo included); P1's keyboard-only keys work at
+the same time. The mouse never drives P2.
 
-| Action | P1 | P2 |
-|---|---|---|
-| Walk / jump / crouch | A D / W (or Space) / S | Left Right / Up / Down arrows |
-| Light / medium / heavy | J / K / L | , / . / / |
-| Throw | U | ; |
-| Technique key | I | ' |
-| Finisher key | O | ] |
-| Dash | Left Shift + direction, or tap forward/back twice | Right Shift + direction, or tap twice |
-| Block | hold back (down-back for lows); E blocks from the front | hold back; [ blocks from the front |
+| Action | P1 (WASD + mouse) | P1 keyboard only | P2 |
+|---|---|---|---|
+| Walk / jump / crouch | A D / W (or Space) / S | same | Left Right / Up / Down arrows |
+| Light / medium / heavy | Left click / middle click or Q / right click | J / K / L | , / . / / |
+| Throw | F | U | ; |
+| Technique key | R | I | ' |
+| Finisher key | C | O | ] |
+| Dash | Left Shift + direction, or tap forward/back twice | same | Right Shift + direction, or tap twice |
+| Block | hold back (down-back for lows); E blocks from the front | same | hold back; [ blocks from the front |
 
 - Normals: button alone (standing), with down (crouching), in the air (jump attacks). Command
   normals: forward + M (overhead), forward + H or back + H (legend), down-forward + H (sweep).

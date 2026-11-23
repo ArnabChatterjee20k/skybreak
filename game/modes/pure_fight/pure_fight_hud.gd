@@ -11,6 +11,11 @@ var sim: PureFightSim
 var names: Array[String] = ["", ""]
 var colors: Array[Color] = [MenuTheme.HOT, MenuTheme.CYAN]
 var training := false
+## One-line controls hint along the bottom for the first HINT_SECONDS ("" = none). Set before _ready.
+var hint := ""
+const HINT_SECONDS := 12.0
+var _hint: Label
+var _hint_time := HINT_SECONDS
 var _bars: Array[ColorRect] = []
 var _trails: Array[ColorRect] = []
 var _meters: Array[ColorRect] = []
@@ -110,6 +115,12 @@ func _ready() -> void:
 	_info.size = Vector2(700, 300)
 	_info.visible = training
 	add_child(_info)
+	_hint = MenuTheme.label(hint, 22, MenuTheme.TEXT, 6)
+	_hint.position = Vector2(0, 1016)
+	_hint.size = Vector2(1920, 44)
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint.visible = hint != ""
+	add_child(_hint)
 
 
 func show_callout(text: String) -> void:
@@ -195,6 +206,8 @@ func _process(delta: float) -> void:
 	_banner.modulate.a = clampf(_banner_time / 0.3, 0.0, 1.0)
 	_callout_time = maxf(_callout_time - delta, 0.0)
 	_callout.modulate.a = clampf(_callout_time / 0.3, 0.0, 1.0)
+	_hint_time = maxf(_hint_time - delta, 0.0)
+	_hint.modulate.a = clampf(_hint_time, 0.0, 1.0)
 	if training:
 		_info.text = _training_text()
 

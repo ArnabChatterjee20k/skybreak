@@ -56,6 +56,8 @@ var net_session: RollbackSession
 var duo_hud: DuoHud
 ## Input is neutral while true (the online pause menu: the match keeps running).
 var input_blocked := false
+## Web only: logs the local player's presses for browser tests.
+var input_probe := WebInputProbe.new()
 var _net_started := false
 var _net_wait_ticks := 0
 var _partner_gone := false
@@ -399,12 +401,19 @@ func _step_online() -> void:
 	weapon_layer.remember_previous_tick()
 	var input := _local_input()
 	if net_session.advance(input):
+		input_probe.record(sim.current_tick, input, _move_id(player), sim.fighters[player].state)
 		combat_feedback.react(sim.events)
 		match_cues.after_tick(match_flow, sim)
 		match_audio.after_tick()
 	if _duo_test:
 		_duo_test.after_tick()
 	_watch_partner()
+
+
+## The fighter's current move id, or "".
+func _move_id(index: int) -> String:
+	var move := sim.fighters[index].move
+	return String(move.id) if move != null else ""
 
 
 func _local_input() -> FighterInput:
@@ -469,6 +478,8 @@ func step_tick() -> void:
 		else:
 			inputs.append(FighterInput.new())
 	sim.tick(inputs)
+	if player < inputs.size():
+		input_probe.record(sim.current_tick, inputs[player], _move_id(player), sim.fighters[player].state)
 	combat_feedback.react(sim.events)
 	match_flow.step(sim)
 	match_cues.after_tick(match_flow, sim)

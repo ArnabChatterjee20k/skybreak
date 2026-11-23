@@ -76,7 +76,14 @@ func resume() -> void:
 		get_parent().set(&"input_blocked", false)
 	get_tree().paused = false
 	_music(&"set_paused", false)
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if uses_mouse_look():
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+## False for a level without a free camera (Pure Fight): its clicks are attacks, so the
+## pointer stays free and the browser is never asked for pointer lock.
+func uses_mouse_look() -> bool:
+	return get_parent() == null or get_parent().get(&"mouse_look") != false
 
 
 func restart() -> void:
