@@ -19,6 +19,12 @@ static func strict() -> bool:
 	return OS.get_environment("SKYBREAK_QA_STRICT") == "1"
 
 
+## True when the zone bakes must be present (lanes claiming a full GUT run set
+## SKYBREAK_REQUIRE_BAKES=1): a missing or stale bake fails instead of going pending.
+static func bakes_required() -> bool:
+	return strict() or OS.get_environment("SKYBREAK_REQUIRE_BAKES") == "1"
+
+
 static func describe(id: StringName) -> String:
 	return "%s: %s" % [id, ISSUES.get(id, "unfiled")]
 

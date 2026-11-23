@@ -72,8 +72,8 @@ func test_every_zone_fly_through_keeps_a_metre_from_solid_geometry() -> void:
 	if missing.is_empty():
 		return
 	# Bakes are generated locally (VOXEL-BAKES); without a current one there is no geometry to sweep.
-	if not QaKnownIssues.strict():
-		pending("%s — %d zones without a current HIGH bake: %s" % [QaKnownIssues.describe(&"VOXEL-BAKES"),
+	if not QaKnownIssues.bakes_required():
+		pending("%s — %d zones without a current HIGH bake (SKYBREAK_REQUIRE_BAKES=1 fails): %s" % [QaKnownIssues.describe(&"VOXEL-BAKES"),
 			missing.size(), missing[0]])
 		return
 	assert_eq(missing, [] as Array[String], "rebake: tools/voxel_zone_bake.gd --tier=high")
