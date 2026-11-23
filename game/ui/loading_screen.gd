@@ -5,6 +5,10 @@ extends Control
 ## the zone's name and a progress bar. On the web the bake's pack downloads
 ## first (download). When everything is in, calls done.
 
+const BUILDING_NOTE := "  BUILDING THE ZONE, THIS CAN TAKE A MOMENT"
+## Frames drawn with the final text before a live build starts.
+const HOLD_FRAMES := 3
+
 ## Resource paths to load, in order of the bar's weight (all equal).
 var paths: Array[String] = []
 ## Title on the screen (the zone's name).
@@ -16,12 +20,17 @@ var progress := 0.0
 ## Optional: fetches the bake's pack first; its bake path loads once it is done
 ## and is left out of done's resources if it fails.
 var download: ZoneBakeDownload
+## True when the zone has no bake to load and builds on the main thread after
+## done: the screen says so and is drawn before that build starts.
+var builds_live := false
 
 var _bar: ProgressBar
 var _label: Label
 var _finished := false
 var _waiting := false
 var _note := ""
+## Frames still to draw before done is called (so the last text is on screen).
+var _hold := -1
 
 
 func _ready() -> void:
@@ -50,6 +59,8 @@ func _ready() -> void:
 	_label.text = "LOADING"
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(_label)
+	if builds_live:
+		_note = BUILDING_NOTE
 	for p in paths:
 		if download == null or p != download.bake:
 			_request(p)
@@ -70,10 +81,16 @@ func _on_downloaded(ok: bool, _why: String) -> void:
 		_request(download.bake)
 	else:
 		paths.erase(download.bake)
-		_note = "  (ZONE DOWNLOAD FAILED: BUILDING IT HERE)"
+		builds_live = true
+		_note = "  (ZONE DOWNLOAD FAILED)" + BUILDING_NOTE
 
 
 func _process(_delta: float) -> void:
+	if _hold >= 0:
+		_hold -= 1
+		if _hold < 0:
+			_hand_over()
+		return
 	if _finished:
 		return
 	var total := 0.0
@@ -96,11 +113,19 @@ func _process(_delta: float) -> void:
 	_label.text = "LOADING  %d%%" % roundi(progress * 100.0) + _note
 	if all_in:
 		_finished = true
-		var loaded := {}
-		for p in paths:
-			loaded[p] = ResourceLoader.load_threaded_get(p)
-		if done.is_valid():
-			done.call(loaded)
+		# A live build blocks the main thread: draw this text first.
+		_hold = HOLD_FRAMES if builds_live else 0
+		if _hold == 0:
+			_hold = -1
+			_hand_over()
+
+
+func _hand_over() -> void:
+	var loaded := {}
+	for p in paths:
+		loaded[p] = ResourceLoader.load_threaded_get(p)
+	if done.is_valid():
+		done.call(loaded)
 
 
 ## [status, fraction] of one path's load.

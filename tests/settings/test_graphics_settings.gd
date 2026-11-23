@@ -93,8 +93,25 @@ func test_web_default_is_used_when_nothing_is_saved() -> void:
 	assert_eq(loaded.quality, GraphicsSettings.Quality.WEB)
 
 
-func test_saved_quality_wins_over_the_web_default() -> void:
+func test_a_saved_quality_loads_back_on_desktop() -> void:
 	var settings := GraphicsSettings.new()
 	settings.quality = GraphicsSettings.Quality.LOW
 	settings.save(TEST_PATH)
-	assert_eq(GraphicsSettings.load_saved(TEST_PATH, true).quality, GraphicsSettings.Quality.LOW)
+	assert_eq(GraphicsSettings.load_saved(TEST_PATH, false).quality, GraphicsSettings.Quality.LOW)
+
+
+func test_the_web_build_ignores_a_saved_desktop_tier_and_keeps_the_rest() -> void:
+	# PF-ZONE-HANG: a saved HIGH on the web built the zone live and froze the page.
+	for q in [GraphicsSettings.Quality.LOW, GraphicsSettings.Quality.MEDIUM, GraphicsSettings.Quality.HIGH]:
+		var settings := GraphicsSettings.new(true)
+		settings.quality = q
+		settings.exchange_camera = false
+		settings.save(TEST_PATH)
+		var loaded := GraphicsSettings.load_saved(TEST_PATH, true)
+		assert_eq(loaded.quality, GraphicsSettings.Quality.WEB, "saved %s loads as WEB" % q)
+		assert_false(loaded.exchange_camera, "other settings still load")
+
+
+func test_the_web_build_offers_only_the_web_tier() -> void:
+	assert_eq(GraphicsSettings.tiers(true), [GraphicsSettings.Quality.WEB] as Array[GraphicsSettings.Quality])
+	assert_eq(GraphicsSettings.tiers(false).size(), GraphicsSettings.Quality.size())

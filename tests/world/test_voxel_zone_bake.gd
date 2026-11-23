@@ -35,7 +35,7 @@ func _baked_stub() -> VoxelZone:
 
 ## Known issues go pending in CI; under SKYBREAK_QA_STRICT=1 (run_qa.sh) they fail.
 func _known_issue(id: StringName, why: String) -> bool:
-	if QaKnownIssues.strict():
+	if QaKnownIssues.strict() or (id == &"VOXEL-BAKES" and QaKnownIssues.bakes_required()):
 		return false
 	pending("%s — %s" % [QaKnownIssues.describe(id), why])
 	return true
