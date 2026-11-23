@@ -257,18 +257,20 @@ async function mouseScheme(page, out) {
 		}
 		record(`${label}: first left click reaches the sim`, !!first, first ? `tick ${first.hit.tick}, moves ${first.moves.join(',')}` : 'no press in 180 s');
 		for (const [name, act, bit, wantMove] of list) {
-			// Up to 3 tries: the AI can put us in hitstun, where a press starts no move.
+			// Up to 6 tries: the AI can put us in hitstun, where a press starts no move.
 			let ok = false;
 			let detail = '';
-			for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+			const tries = [];
+			for (let attempt = 1; attempt <= 6 && !ok; attempt++) {
 				await page.waitForTimeout(3000);
 				await page.evaluate(() => { window.skybreakInputs = []; });
 				await act();
 				const r = await waitPress(page, bit, 30000, 6000);
 				const focus = await page.evaluate(() => document.activeElement && document.activeElement.id);
 				ok = !!r && (!wantMove || r.moves.length > 0) && focus === 'canvas';
+				tries.push(r ? `state ${r.hit.state}` : 'no press');
 				detail = (r ? `pressed ${r.hit.pressed} at tick ${r.hit.tick} in state ${r.hit.state}, moves started: ${r.moves.join(',') || 'none'}`
-					: 'no press seen') + `, focus ${focus}, try ${attempt}`;
+					: 'no press seen') + `, focus ${focus}, try ${attempt} (${tries.join(' / ')})`;
 			}
 			record(`${label}: ${name}`, ok, detail);
 		}
