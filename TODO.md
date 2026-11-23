@@ -14,14 +14,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   bindable on the controls screen (`reports/controls/mouse/README.md`). Open: Pure Fight keys are
   still not on the rebinding screen; Pure Fight has no in-match hint strip (pause menu move list
   shows the controls); real trackpad / mouse not tested (headless Chromium only).
-- NO-NUMPAD [desktop] Owner: "dont use any numpad keys for any fight techniques". `fix/no-numpad`:
-  Pure Fight P2 moves off Num0-6 / Num. to arrows + `, . /` `; ' ]` `[` + Right Shift dash (P1 dash
-  pinned to Left Shift); hints, docs and tests updated (`reports/controls/no-numpad/README.md`).
-  Open: physical ghosting on the owner's laptops is untested (headless Chromium only); the combat
-  training room still uses F1-F7 (Fn on a Mac) [developer, game/modes/training]. Not merged yet:
-  GUT 0 failing and det_check equal on the merge with 3b86467c, but main has moved again and QA ms
-  needs a re-run at main's job count; the rollover matrix against a running web build stalls
-  (stub page passes).
+- NO-NUMPAD [desktop] MERGED into `main` at 6a731815 (`--no-ff`; evidence in
+  `reports/controls/no-numpad/README.md`): Pure Fight P2 on arrows + `, . /` `; ' ]` `[` + Right Shift
+  dash, P1 dash on Left Shift, no numpad key anywhere. Open: physical ghosting on the owner's laptops
+  (headless Chromium only); the combat training room still uses F1-F7 (Fn on a Mac)
+  [developer, game/modes/training]; the rollover matrix against a running web build stalls.
 
 - MOVE-ESCAPE [desktop] #150 "can't move away or get behind while the opponent attacks": fixed on
   `fix/move-escape` (see `reports/combat/move-escape/README.md`). Dash presses wait out stun, 4-tick
@@ -32,11 +29,13 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   after the change: camera_on_screen 1 -> 4 of 21 long matches at 92-95 % (T-135-c, hybrid camera)
   [developer] and cliff-ledge landings the voxel art does not show (+2.6-3.1 m, Shattered Mesa seed
   107) [desktop, terrain].
-- #106-KI-DUEL [owner/desktop decision] #106 AI variety (re-applied on `fix/issue-106-ai-variety`
-  2330020c) fails `test_a_ki_heavy_ai_duel_is_deterministic_and_uses_blasts_and_beams` (7 blasts, needs
-  > 10). Main passes only by seed luck: blasts over seeds 2026-2035 mean 5.5 on main (only 2026 > 10),
-  5.1 with #106. Decide: L5 AI zones more, or the test checks several seeds; then re-bless goldens and
-  merge. Evidence: `reports/builds/2026-11-23-3b86467c.md`.
+- #106-AI-VARIETY [desktop] Not merged. Ki-duel test is now multi-seed on the branch (every seed
+  2026-2035 throws blasts, mean >= 4.0 from main's 5.5; #106 gives 5.1 and passes) and the replay
+  goldens are re-blessed (afcfe0dd). But QA quick on the merge with main 6a731815 is worse than main:
+  view foot_ground 8/21 matches, 16 frames (main 4/21, 5; worst Vexa -112 cm strafing, ember_rift
+  ffa4 seed 119) and foot_slide +22 % (trend FAIL); the new fights also reach QA-25 (Brann's Heartstring Bow in his arm, filed on the branch). Needs: the foot
+  grounding fixes (QA-12, the ember_rift ledge) or a look at why the varied strings sink feet, then
+  full GUT + QA again. `reports/qa/2026-11-23-afcfe0dd-quick.md` on the branch.
 - DUO-ICE-RACE [desktop, net] Under CPU load the Duo browser test logged a host
   `addIceCandidate` before the remote description was set (and a short match); alone it passes.
   Queue ICE candidates until the remote description is set.
