@@ -13,7 +13,10 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   shorter than a tick latched (trackpad taps), Pure Fight never takes pointer lock, mouse buttons
   bindable on the controls screen (`reports/controls/mouse/README.md`). Open: Pure Fight keys are
   still not on the rebinding screen; Pure Fight has no in-match hint strip (pause menu move list
-  shows the controls); real trackpad / mouse not tested (headless Chromium only).
+  shows the controls); real trackpad / mouse not tested (headless Chromium only). Merged: main
+  d788fdc2. Not deployed yet: the next ship run builds main and runs DEPLOY.md's gates. The browser
+  mouse test can flake when the AI keeps the player in hitstun (it retries 6 times); a training-dummy
+  route would make it steady.
 - NO-NUMPAD [desktop] MERGED into `main` at 6a731815 (`--no-ff`; evidence in
   `reports/controls/no-numpad/README.md`): Pure Fight P2 on arrows + `, . /` `; ' ]` `[` + Right Shift
   dash, P1 dash on Left Shift, no numpad key anywhere. Open: physical ghosting on the owner's laptops

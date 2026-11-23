@@ -13,13 +13,34 @@
 - Windows (`play-windows` 259519c1) is still the 3b86467c build: DEPLOY.md doesn't cover it, so it
   was not rebuilt. It has the old numpad P2 keys.
 
-## Also on main, not live yet: mouse controls (MOUSE-CONTROLS lane, merged 13:20 UTC as 388564ab)
+## On main, not live yet: mouse controls (MOUSE-CONTROLS lane) -> **main needs a web build**
 
-- Another lane merged **WASD + mouse in every mode** while this run was shipping: Pure Fight P1 left
-  click light, middle click or Q medium, right click heavy, F throw, R technique, C finisher (J/K/L/U/I/O
-  still work). P2's keys are unchanged and there is still no numpad key anywhere. Its evidence:
-  `reports/controls/mouse/README.md`. **It is not in the live build**: the web build here is 6a731815,
-  made and tested before that merge. The next ship run should build main and deploy it.
+- Owner: "we can use the mouse as well right? lmb and rmb???" **Yes, in every mode**, on main
+  **d788fdc2**: left click light, right click heavy (MacBook trackpad: two-finger click), WASD moves;
+  Pure Fight middle click or Q medium, F throw, R technique, C finisher; 3D unchanged (it already had
+  the mouse) plus J/L/U/I/O keyboard keys. Every old key still works. Also fixed: the Pure Fight HUD
+  did not scale, so in a 1280x720 or MacBook browser window P2's health bar was cut off; it now fits.
+- Evidence: full GUT 2014 tests 0 failing, det_check `b8bab850a4256dc7`, QA quick and camera QA equal
+  to main, the browser mouse test clicks LMB/RMB in a real build and sees 5L / 5H / light_1 / smash.
+  `reports/controls/mouse/README.md`.
+- **Not deployed**: a web build of d788fdc2 was made and mouse-tested here, but the DEPLOY.md gate
+  (smoke test, and the upgrade test's cold-profile check) did not finish inside this run's time.
+  Next ship run: build main d788fdc2 (or later) per `tools/web/DEPLOY.md` and push `web-build`.
+
+## How to play: WASD + mouse, one player per laptop (after the next web build)
+
+| Action | Pure Fight | 3D (vs AI, FFA, Training, Duo) |
+|---|---|---|
+| Move | A / D walk, W or Space jump, S crouch | W A S D, Space / C fly up / down |
+| Light / heavy | **Left click / right click** | **Left click / right click** (hold to charge) |
+| Medium | Middle click or Q | - |
+| Throw / grab | F | F |
+| Technique / specials | R + direction | 1 2 3 (ultimate 4) |
+| Finisher | C (full meter) | - |
+| Dash / block | Left Shift + direction / hold back or E | Shift / E |
+| Camera | - | mouse (click once to grab, Esc lets go) |
+
+Keyboard-only keys still work: J/K/L, U, I, O. Full table: `reports/controls/mouse/README.md`.
 
 ## Pure Fight keys (two players, one laptop)
 
