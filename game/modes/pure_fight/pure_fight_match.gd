@@ -66,6 +66,10 @@ var net_session: RollbackSession
 var local_peer := 0
 ## Set by MatchSession while its menu is open online (the match itself never pauses).
 var input_blocked := false
+## No free camera: clicks are attacks and the pointer is never captured (MatchSession).
+var mouse_look := false
+## Web only: logs the first keyboard player's presses for browser tests.
+var input_probe := WebInputProbe.new()
 var _net_started := false
 var _net_wait_ticks := 0
 ## Partner left: the match carries on locally against the AI.
@@ -199,8 +203,11 @@ func _step_online() -> void:
 	for view in views:
 		view.remember_previous_tick(sim)
 	var keys := drivers[local_peer] as PureFightKeys
-	var input := FighterInput.new() if input_blocked or keys == null else keys.read_tick()
+	var input := keys.read_tick() if keys != null else FighterInput.new()
+	if input_blocked:
+		input = FighterInput.new()
 	if net_session.advance(input):
+		input_probe.record(sim.current_tick, input, String(sim.pf[local_peer].move))
 		effects.react(sim.events)
 		hud.after_tick(sim.events)
 		_play_sounds(sim.events)
@@ -254,6 +261,12 @@ func _process(delta: float) -> void:
 			match_finished.emit(sim.match_winner)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	for driver: Variant in drivers:
+		if driver is PureFightKeys:
+			(driver as PureFightKeys).note_event(event)
+
+
 func _unhandled_key_input(event: InputEvent) -> void:
 	if training and event.is_pressed() and not event.is_echo() and (event as InputEventKey).physical_keycode in DUMMY_KEYS:
 		dummy_mode = (dummy_mode + 1) % 4
@@ -268,6 +281,7 @@ func step_tick() -> void:
 	for view in views:
 		view.remember_previous_tick(sim)
 	var inputs: Array[FighterInput] = []
+	var probed := -1
 	for i in 2:
 		if input_override.is_valid():
 			inputs.append(input_override.call(i, sim.current_tick))
@@ -275,9 +289,13 @@ func step_tick() -> void:
 			inputs.append((drivers[i] as PureFightAI).next_input(sim))
 		elif drivers[i] is PureFightKeys:
 			inputs.append((drivers[i] as PureFightKeys).read_tick())
+			if probed < 0:
+				probed = i
 		else:
 			inputs.append(_dummy_input(i))
 	sim.tick(inputs)
+	if probed >= 0:
+		input_probe.record(sim.current_tick, inputs[probed], String(sim.pf[probed].move))
 	if training:
 		_refill()
 	effects.react(sim.events)

@@ -38,6 +38,8 @@ const FIGHTER_ACTIONS := {
 }
 
 ## Vanish is DASH + BLOCK (Shift+E); the sim reads the combination.
+## Light and heavy are on the mouse (DEFAULT_MOUSE_BUTTONS); J/L are their keyboard-only keys,
+## and U/I/O mirror Pure Fight's throw/technique/finisher keys.
 const DEFAULT_KEYS := {
 	MOVE_FORWARD: [KEY_W],
 	MOVE_BACK: [KEY_S],
@@ -46,15 +48,17 @@ const DEFAULT_KEYS := {
 	ASCEND: [KEY_SPACE],
 	# C, not Ctrl: Ctrl+W closes a browser tab (T-UX1). Ctrl stays a desktop alternate.
 	DESCEND: [KEY_C],
+	&"fighter_light": [KEY_J],
+	&"fighter_heavy": [KEY_L],
 	&"fighter_block": [KEY_E],
 	&"fighter_dash": [KEY_SHIFT],
-	&"fighter_grab": [KEY_F],
+	&"fighter_grab": [KEY_F, KEY_U],
 	&"fighter_ki_blast": [KEY_Q],
 	&"fighter_charge": [KEY_R],
-	&"fighter_special_1": [KEY_1],
+	&"fighter_special_1": [KEY_1, KEY_I],
 	&"fighter_special_2": [KEY_2],
 	&"fighter_special_3": [KEY_3],
-	&"fighter_ultimate": [KEY_4],
+	&"fighter_ultimate": [KEY_4, KEY_O],
 	&"fighter_transform": [KEY_T],
 	&"fighter_breaker": [KEY_X],
 	&"fighter_lock_toggle": [KEY_TAB],
@@ -73,6 +77,7 @@ const DESKTOP_ALTERNATE_KEYS := {
 	DESCEND: [KEY_CTRL],
 }
 
+## Mouse buttons (a Mac trackpad's two-finger click arrives as the right button).
 const DEFAULT_MOUSE_BUTTONS := {
 	&"fighter_light": [MOUSE_BUTTON_LEFT],
 	&"fighter_heavy": [MOUSE_BUTTON_RIGHT],
@@ -93,9 +98,24 @@ static func install_defaults() -> void:
 			key_event.physical_keycode = keycode
 			InputMap.action_add_event(action_name, key_event)
 		for button in DEFAULT_MOUSE_BUTTONS.get(action_name, []):
-			var mouse_event := InputEventMouseButton.new()
-			mouse_event.button_index = button
-			InputMap.action_add_event(action_name, mouse_event)
+			InputMap.action_add_event(action_name, mouse_event(button))
+
+
+## A mouse button event for the InputMap (any modifiers, any device).
+static func mouse_event(button: MouseButton) -> InputEventMouseButton:
+	var event := InputEventMouseButton.new()
+	event.button_index = button
+	return event
+
+
+## Short label of a mouse button, e.g. "LMB".
+static func mouse_label(button: MouseButton) -> String:
+	const NAMES := {
+		MOUSE_BUTTON_LEFT: "LMB", MOUSE_BUTTON_RIGHT: "RMB", MOUSE_BUTTON_MIDDLE: "MMB",
+		MOUSE_BUTTON_WHEEL_UP: "Wheel up", MOUSE_BUTTON_WHEEL_DOWN: "Wheel down",
+		MOUSE_BUTTON_XBUTTON1: "Mouse 4", MOUSE_BUTTON_XBUTTON2: "Mouse 5",
+	}
+	return NAMES.get(button, "Mouse %d" % button)
 
 
 ## Default keys of one action on this platform (no Ctrl alternate on the web).

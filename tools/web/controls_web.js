@@ -9,6 +9,12 @@
 //     and Shift side, is suppressed, and focus never moves. --stub runs it on a bare page with
 //     the engine's canvas listeners instead of a build; ROLLOVER_EVERY=n samples every nth
 //     chord. Exits 1 on a dropped or leaked key.
+//   node tools/web/controls_web.js mouse <build dir> [out dir]
+//     WASD + mouse on the real build: a Pure Fight vs AI match (left click light, right click
+//     heavy, middle click and Q medium, F throw, J keyboard-only light), then a Versus AI 3D
+//     match (left / right click). Reads window.skybreakInputs (WebInputProbe: presses and the
+//     moves they start in the sim), checks every right click's context menu is suppressed,
+//     focus stays on the canvas and Pure Fight never takes pointer lock. Exits 1 on a miss.
 //   node tools/web/controls_web.js audit <build dir>
 //     Runs tests/combat/controls_audit.gd inside the wasm build (export it with
 //     tools/web/controls_audit_web.sh) and prints its table. Exits 1 on BROKEN rows.
@@ -21,7 +27,7 @@ const mode = process.argv[2];
 const root = path.resolve(process.argv[3] || 'build/web');
 const types = {
 	'.html': 'text/html', '.js': 'application/javascript', '.wasm': 'application/wasm',
-	'.pck': 'application/octet-stream', '.png': 'image/png',
+	'.pck': 'application/octet-stream', '.png': 'image/png', '.json': 'application/json',
 };
 
 const server = http.createServer((req, res) => {
@@ -179,6 +185,146 @@ async function conflicts(page) {
 	return leaks === 0 && scrollY === 0;
 }
 
+// Screen points at 1280x720 (the game lays out at 1920x1080), as in upgrade_test.js.
+const AT = { chooseZone: [1180, 686], fight: [1107, 657], verdant: [893, 388], ember: [1117, 388] };
+// FighterInput.Action bits.
+const BIT = { LIGHT: 1, HEAVY: 2, BLOCK: 4, GRAB: 16, SPECIAL_1: 128 };
+
+// Splash -> main menu -> the nth entry (0 Play, 1 Pure Fight) -> zone -> FIGHT; waits for the match.
+async function startMatch(page, entry, zone, mode) {
+	const key = async (k, wait) => { await page.keyboard.press(k); await page.waitForTimeout(wait); };
+	await key('Enter', 2500);
+	for (let i = 0; i < entry; i++) await key('ArrowDown', 300);
+	await key('Enter', 4000);
+	for (const at of [AT.chooseZone, zone, AT.fight]) {
+		await page.mouse.click(at[0], at[1]);
+		await page.waitForTimeout(2500);
+	}
+	const t0 = Date.now();
+	while (Date.now() - t0 < 300000) {
+		const m = await page.evaluate(() => window.skybreakMatch || null).catch(() => null);
+		if (m && m.mode === mode) return true;
+		await page.waitForTimeout(1000);
+	}
+	return false;
+}
+
+// Polls window.skybreakInputs for an entry whose press has `bit`; resolves it (or null).
+async function waitPress(page, bit, ms) {
+	const t0 = Date.now();
+	while (Date.now() - t0 < ms) {
+		const hit = await page.evaluate((b) => (window.skybreakInputs || []).find((e) => e.pressed & b) || null, bit);
+		if (hit) {
+			await page.waitForTimeout(2500);
+			const after = await page.evaluate((t) => (window.skybreakInputs || []).filter((e) => e.tick >= t), hit.tick);
+			return { hit, moves: [...new Set(after.map((e) => e.move).filter((m) => m))] };
+		}
+		await page.waitForTimeout(250);
+	}
+	return null;
+}
+
+// One mouse button held about 120 ms over the canvas centre (a real click, not a synthetic event).
+async function clickButton(page, button) {
+	await page.mouse.move(640, 360);
+	await page.mouse.down({ button });
+	await page.waitForTimeout(120);
+	await page.mouse.up({ button });
+}
+
+async function tapKey(page, code) {
+	await page.keyboard.down(code);
+	await page.waitForTimeout(120);
+	await page.keyboard.up(code);
+}
+
+async function mouseScheme(page, out) {
+	const rows = [];
+	const record = (name, ok, detail) => { rows.push({ name, ok, detail }); console.log(`${ok ? 'PASS' : 'FAIL'} ${name}: ${detail}`); };
+	const shot = (name) => out && page.screenshot({ path: path.join(out, `${name}.png`), timeout: 60000 }).catch(() => {});
+	await page.evaluate(() => {
+		window.__menus = [];
+		window.addEventListener('contextmenu', (e) => window.__menus.push(e.defaultPrevented), { passive: false });
+	});
+	const probes = async (label, list) => {
+		// Waits out the round intro: clicks until the first light press lands.
+		const t0 = Date.now();
+		let first = null;
+		while (!first && Date.now() - t0 < 180000) {
+			await page.evaluate(() => { window.skybreakInputs = []; });
+			await clickButton(page, 'left');
+			first = await waitPress(page, BIT.LIGHT, 8000);
+		}
+		record(`${label}: first left click reaches the sim`, !!first, first ? `tick ${first.hit.tick}, moves ${first.moves.join(',')}` : 'no press in 180 s');
+		for (const [name, act, bit, wantMove] of list) {
+			// Up to 3 tries: the AI can put us in hitstun, where a press starts no move.
+			let ok = false;
+			let detail = '';
+			for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+				await page.waitForTimeout(3000);
+				await page.evaluate(() => { window.skybreakInputs = []; });
+				await act();
+				const r = await waitPress(page, bit, 30000);
+				const focus = await page.evaluate(() => document.activeElement && document.activeElement.id);
+				ok = !!r && (!wantMove || r.moves.length > 0) && focus === 'canvas';
+				detail = (r ? `pressed ${r.hit.pressed} at tick ${r.hit.tick}, moves started: ${r.moves.join(',') || 'none'}`
+					: 'no press seen') + `, focus ${focus}, try ${attempt}`;
+			}
+			record(`${label}: ${name}`, ok, detail);
+		}
+	};
+	if (!await startMatch(page, 1, AT.verdant, 'pure_fight')) {
+		record('Pure Fight match starts', false, 'window.skybreakMatch never said pure_fight');
+		return false;
+	}
+	await shot('pf_match');
+	await probes('Pure Fight', [
+		['left click = light', () => clickButton(page, 'left'), BIT.LIGHT, true],
+		['right click = heavy', () => clickButton(page, 'right'), BIT.HEAVY, true],
+		['middle click = medium', () => clickButton(page, 'middle'), BIT.SPECIAL_1, true],
+		['Q = medium', () => tapKey(page, 'KeyQ'), BIT.SPECIAL_1, true],
+		['F = throw', () => tapKey(page, 'KeyF'), BIT.GRAB, true],
+		['J = light (keyboard only)', () => tapKey(page, 'KeyJ'), BIT.LIGHT, true],
+		['L = heavy (keyboard only)', () => tapKey(page, 'KeyL'), BIT.HEAVY, true],
+		['left click held while D walks', async () => {
+			await page.mouse.move(640, 360);
+			await page.mouse.down({ button: 'left' });
+			await tapKey(page, 'KeyD');
+			await page.mouse.up({ button: 'left' });
+		}, BIT.LIGHT, true],
+	]);
+	await shot('pf_after_clicks');
+	const lock = await page.evaluate(() => document.pointerLockElement ? document.pointerLockElement.id : null);
+	record('Pure Fight never takes pointer lock', lock === null, `pointerLockElement ${lock}`);
+	const menus = await page.evaluate(() => window.__menus.slice());
+	record('Pure Fight: no context menu on right click', menus.length > 0 && menus.every((p) => p),
+		`${menus.length} contextmenu events, all defaultPrevented: ${menus.every((p) => p)}`);
+	// The 3D Versus AI match in a fresh page.
+	await page.goto(page.url());
+	await page.click('#start', { timeout: 120000 });
+	await page.waitForSelector('#cover', { state: 'detached', timeout: 300000 });
+	await page.waitForTimeout(8000);
+	await page.evaluate(() => {
+		window.__menus = [];
+		window.addEventListener('contextmenu', (e) => window.__menus.push(e.defaultPrevented), { passive: false });
+	});
+	if (!await startMatch(page, 0, AT.ember, 'vs_ai')) {
+		record('Versus AI match starts', false, 'window.skybreakMatch never said vs_ai');
+		return false;
+	}
+	await shot('vs_match');
+	await probes('Versus AI (3D)', [
+		['left click = light', () => clickButton(page, 'left'), BIT.LIGHT, true],
+		['right click = heavy', () => clickButton(page, 'right'), BIT.HEAVY, true],
+		['J = light (keyboard only)', () => tapKey(page, 'KeyJ'), BIT.LIGHT, true],
+	]);
+	await shot('vs_after_clicks');
+	const menus3d = await page.evaluate(() => window.__menus.slice());
+	record('Versus AI: no context menu on right click', menus3d.length > 0 && menus3d.every((p) => p),
+		`${menus3d.length} contextmenu events, all defaultPrevented: ${menus3d.every((p) => p)}`);
+	return rows.every((r) => r.ok);
+}
+
 (async () => {
 	await new Promise((r) => server.listen(0, '127.0.0.1', r));
 	const browser = await chromium.launch({
@@ -215,6 +361,11 @@ async function conflicts(page) {
 	} else if (mode === 'conflicts') {
 		await page.waitForTimeout(8000);
 		ok = await conflicts(page);
+	} else if (mode === 'mouse') {
+		await page.waitForTimeout(8000);
+		const out = process.argv[4] ? path.resolve(process.argv[4]) : null;
+		if (out) fs.mkdirSync(out, { recursive: true });
+		ok = await mouseScheme(page, out);
 	} else {
 		await Promise.race([done, page.waitForTimeout(Number(process.env.AUDIT_SECONDS || 1500) * 1000)]);
 		ok = lines.some((l) => l.startsWith('| lock-on toggle (Tab)')) && !lines.some((l) => l.includes('BROKEN'));
