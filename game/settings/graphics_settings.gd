@@ -123,7 +123,15 @@ func save(path: String = SAVE_PATH) -> Error:
 	return config.save(path)
 
 
-## Loads saved settings; anything missing or invalid keeps its default.
+## The quality tiers a build offers. The web build has only WEB: its zone bakes
+## are WEB packs, and any other tier would build the zone live and freeze the page.
+static func tiers(is_web: bool = OS.has_feature("web")) -> Array[Quality]:
+	if is_web:
+		return [Quality.WEB]
+	return [Quality.LOW, Quality.MEDIUM, Quality.HIGH, Quality.WEB]
+
+
+## Loads saved settings; anything missing, invalid or not offered here (tiers) keeps its default.
 static func load_saved(
 		path: String = SAVE_PATH, is_web: bool = OS.has_feature("web")) -> GraphicsSettings:
 	var settings := GraphicsSettings.new(is_web)
@@ -131,7 +139,7 @@ static func load_saved(
 	if config.load(path) != OK:
 		return settings
 	var saved_quality: int = config.get_value(SECTION, "quality", settings.quality)
-	if QUALITY_VALUES.has(saved_quality):
+	if QUALITY_VALUES.has(saved_quality) and tiers(is_web).has(saved_quality as Quality):
 		settings.quality = saved_quality as Quality
 	settings.resolution_scale = config.get_value(SECTION, "resolution_scale", settings.resolution_scale)
 	settings.vsync_enabled = config.get_value(SECTION, "vsync_enabled", settings.vsync_enabled)

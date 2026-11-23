@@ -331,6 +331,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   zoom with 40° floor, band hysteresis) and shoulder frozen during a re-lock.
 
 ## Backlog
+- LOADING-SCREEN-LAYOUT [desktop] `LoadingScreen` draws its bar and label clipped in the top-left corner
+  on the web instead of centred (seen in every build's screenshots in `reports/web/pf-zone-hang/`).
+- UPGRADE-TEST-SEED [desktop] In `tools/web/upgrade_test.js`, the "pick HIGH" visit doesn't always leave
+  `settings.cfg` in IndexedDB before the next visit, so the `--old-freeze-check` control can miss the
+  freeze. Read `/userfs` back after the step and retry until it's there.
 - DUO-1 [desktop owner action] Appwrite Web platform for `skybreak-web-6a113777000db893b12e.appwrite.network`
   if sign-in from the web build says "Invalid Origin" (unverified: the cloud agent cannot reach
   Appwrite). See `reports/net/duo-online/README.md`.
@@ -463,6 +468,12 @@ T-113–T-115 and T-D01b: camera and movement ≥ 4/5, then re-run the playteste
 - T-301 [developer] Playtest milestone 3 depth on Windows and report feel notes.
 
 ## Done
+
+- PF-ZONE-HANG [desktop] merged 2df1bdbc: FIGHT froze on the web when Settings had LOW/MEDIUM/HIGH saved
+  (the zone built live on the page's thread, no loading screen; incognito worked). The web build now
+  only offers and loads WEB, every zone launch shows a loading screen, zone packs retry fresh and old
+  packs are pruned, sw.js drops stale build caches. `tools/web/upgrade_test.js` is in DEPLOY.md.
+  `reports/web/pf-zone-hang/README.md`.
 
 - MOVE-ESCAPE-CAM [desktop] merged 3b86467c: a clipped boom turns to keep both fighters framed after
   the #150 escapes (Verdant 926 -> 948/976); `SKYBREAK_REQUIRE_BAKES=1` fails bake-dependent tests.

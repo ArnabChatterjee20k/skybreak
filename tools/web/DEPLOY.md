@@ -28,6 +28,26 @@ The browser keeps the build in Cache Storage (`sw.js`, `boot_cache.js`; see
 be part of the same deployment as the files it lists; never upload it alone.
 `node tools/web/cache_test.js build/web reports/web/cache` checks the cache.
 
+**Before every deploy, also run the upgrade test** (PF-ZONE-HANG; see
+`reports/web/pf-zone-hang/README.md`). It replays a real player's browser in one
+persistent profile: the previous live builds in order (a match on each), Graphics set
+to HIGH in Settings, an update cut off halfway, then the new build must reach a running
+Pure Fight match (mouse and Enter) and a versus match, and a cold profile must too:
+
+```sh
+git fetch --depth=1 origin web-build && git archive FETCH_HEAD web | tar -x -C /tmp/prev --strip-components=1
+node tools/web/upgrade_test.js reports/web/upgrade /tmp/prev build/web   # older builds first, new last
+```
+
+Deploy only on `PASS`. After the push, check the live site from a profile that held the
+previous live build (seed it **before** pushing):
+
+```sh
+node tools/web/upgrade_test.js /tmp/live-seed --live <site url> --profile /tmp/live-profile --phase seed
+# ... push web-build, wait until <site url>/version.json names the new build ...
+node tools/web/upgrade_test.js /tmp/live-verify --live <site url> --profile /tmp/live-profile --phase verify --expect-build <sha>
+```
+
 ## 2. One-time: create the site (Console)
 
 1. Open https://cloud.appwrite.io/console/project-sgp-6a113777000db893b12e/sites
