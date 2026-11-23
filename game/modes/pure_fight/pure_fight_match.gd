@@ -144,6 +144,9 @@ func _ready() -> void:
 	effects.speed_lines = lines
 	hud.sim = sim
 	hud.training = training
+	# A human on P1's keys (vs AI, training, Duo online) sees the mouse scheme for a few seconds.
+	if online or drivers.any(func(d: Variant) -> bool: return d is PureFightKeys and (d as PureFightKeys).player == 0):
+		hud.hint = PureFightKeys.hint_text()
 	for i in 2:
 		var roster := Roster.character(legends[i])
 		hud.names[i] = roster.display_name.to_upper() if roster else String(legends[i]).to_upper()

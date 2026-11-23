@@ -125,6 +125,11 @@ static func button_text(player_index: int) -> String:
 		l.technique, l.finisher]
 
 
+## P1's mouse-first controls in one line for the in-match hint.
+static func hint_text() -> String:
+	return "LEFT CLICK light   MIDDLE CLICK / Q medium   RIGHT CLICK heavy   F throw   R technique   C finisher   SHIFT dash   E block   (J K L U I O work too)"
+
+
 ## One player's controls in a few short lines for the move list and menus.
 static func controls_text(player_index: int) -> String:
 	var l: Dictionary = LABELS[player_index]

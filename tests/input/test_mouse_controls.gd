@@ -365,6 +365,8 @@ func test_hints_show_the_mouse_scheme_first() -> void:
 	var caps: Array = entries.map(func(e: Array) -> String: return e[0])
 	assert_has(caps, "LMB")
 	assert_has(caps, "RMB")
+	assert_true(PureFightKeys.hint_text().begins_with("LEFT CLICK light"), "Pure Fight's in-match hint leads with the mouse")
+	assert_string_contains(PureFightKeys.hint_text(), "RIGHT CLICK heavy")
 	var p1 := PureFightKeys.controls_text(0)
 	assert_lt(p1.find("Left click"), p1.find("J/K/L"), "mouse before the keyboard-only keys")
 	assert_string_contains(p1, "Right click")
@@ -379,3 +381,20 @@ func test_no_default_binding_anywhere_is_a_numpad_key() -> void:
 		for event in InputMap.action_get_events(action):
 			if event is InputEventKey:
 				assert_false(PureFightKeys.is_numpad_key((event as InputEventKey).physical_keycode), "%s" % action)
+
+
+func test_pure_fight_shows_the_mouse_hint_then_fades_it() -> void:
+	var hud := PureFightHud.new()
+	hud.sim = PureFightDriver.fighting([&"kael", &"kael"] as Array[StringName])
+	hud.hint = PureFightKeys.hint_text()
+	add_child_autofree(hud)
+	assert_true(hud._hint.visible)
+	assert_eq(hud._hint.text, PureFightKeys.hint_text())
+	hud._process(1.0)
+	assert_gt(hud._hint.modulate.a, 0.0, "still showing after a second")
+	hud._process(PureFightHud.HINT_SECONDS)
+	assert_eq(hud._hint.modulate.a, 0.0, "gone after the first seconds")
+	var quiet := PureFightHud.new()
+	quiet.sim = hud.sim
+	add_child_autofree(quiet)
+	assert_false(quiet._hint.visible, "no hint without a human on P1's keys")
