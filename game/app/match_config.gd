@@ -110,6 +110,9 @@ func _start(path: String) -> String:
 		launched_scene = ""
 		return ""
 	launched.emit(path)
+	if OS.has_feature("web"):
+		# Browser tests (tools/web/upgrade_test.js) wait for this.
+		JavaScriptBridge.eval("window.skybreakMatch = %s;" % JSON.stringify({"scene": path, "zone": String(zone), "mode": String(mode)}))
 	return path
 
 
