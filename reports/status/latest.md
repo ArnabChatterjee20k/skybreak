@@ -57,6 +57,10 @@ ones). Still open: #106 and #109.
 
 Same as before: Main menu -> Pure Fight, Play (Vs AI), or Duo (sign in, Host gives a 5-letter code,
 partner Joins). Escapes: tap Shift with a direction during a blocked string to dodge or sidestep out.
+Pure Fight keys after the next web build (no numpad): P1 A/D, W or Space, S, J/K/L, U throw,
+I technique, O finisher, **Left** Shift + direction dash, hold back or E to block. P2 arrows,
+`, . /` light/medium/heavy, `;` throw, `'` technique, `]` finisher, **Right** Shift + direction dash,
+hold back or `[` to block. Training dummy: T. Table: `reports/controls/no-numpad/README.md`.
 
 ## Needs you
 

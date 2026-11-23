@@ -203,7 +203,7 @@ func _training_text() -> String:
 	var id := _last_move[0]
 	var legend := sim.pf[0].legend
 	if id == &"":
-		return "TRAINING  (dummy blocks nothing; F4 cycles dummy mode)\nAttack to see frame data."
+		return "TRAINING  (dummy blocks nothing; T or F4 cycles dummy mode)\nAttack to see frame data."
 	var data := PureMoves.get_move(legend, id)
 	var adv := PureMoves.advantage(data)
 	return "%s  [%s]\nstartup %d  active %d  recovery %d\ndamage %d  guard %s\non block %+d  on hit %s\nmeasured advantage %+d" % [
