@@ -13,6 +13,9 @@ func _run() -> void:
 	var zone := StringName(args[0]) if args.size() > 0 else &"shattered_mesa"
 	var ticks := int(args[1]) if args.size() > 1 else 1200
 	var fight_seed := int(args[2]) if args.size() > 2 else 7
+	# Optional tick range [from, to] that prints every locked frame, on screen or not.
+	var trace_from := int(args[3]) if args.size() > 3 else -1
+	var trace_to := int(args[4]) if args.size() > 4 else -1
 	var zone_match: ZoneMatch = load("res://game/levels/zone_match.tscn").instantiate()
 	zone_match.configure({"zone": zone, "voxel_zone": true, "quality": GraphicsSettings.Quality.HIGH,
 		"fighters": [{"character": &"kael", "team": 0, "is_ai": true, "ai_level": 4},
@@ -39,9 +42,9 @@ func _run() -> void:
 		var a_on := VoxelCameraFight.on_screen(view, cam.fov, a)
 		var b_on := VoxelCameraFight.on_screen(view, cam.fov, b)
 		locked += 1
-		if a_on and b_on:
+		if a_on and b_on and (t < trace_from or t > trace_to):
 			continue
-		off += 1
+		off += int(not (a_on and b_on))
 		var them := zone_match.sim.fighters[me.lock_on_target]
 		var la := view.affine_inverse() * a
 		var lb := view.affine_inverse() * b
@@ -61,8 +64,23 @@ func _run() -> void:
 				mid.snapped(Vector3.ONE * 0.1), cam.obstacles.ground_height.call(mid.x, mid.z, mid.y), cam.obstacles.voxel_floor.height_at(mid.x, mid.z, mid.y + 50.0)])
 		print("t%4d off=%s%s gap %.1f fov %.1f cam-me %.1f exch %.2f me %s them %s | me_local %s them_local %s" % [
 			t, "" if a_on else "ME ", "" if b_on else "THEM", a.distance_to(b), cam.fov,
-			view.origin.distance_to(a), cam.exchange_weight(),
-			FighterState.State.keys()[me.state], FighterState.State.keys()[them.state],
+			view.origin.distance_to(a), cam.exchange_weight(), _detail(me), _detail(them),
 			la.snapped(Vector3.ONE * 0.1), lb.snapped(Vector3.ONE * 0.1)])
 	print("%s locked %d off %d both %.2f%% %s" % [zone, locked, off, 100.0 - 100.0 * off / maxi(locked, 1), cats])
 	quit()
+
+
+## State plus the move, dash or dodge kind behind it.
+static func _detail(f: FighterState) -> String:
+	var s: String = FighterState.State.keys()[f.state]
+	if f.state == FighterState.State.DASHING:
+		s += ":" + str(FighterState.DashKind.keys()[f.dash_kind])
+		if f.dash_kind == FighterState.DashKind.DODGE:
+			s += ":" + str(FighterDodge.Kind.keys()[f.dodge.kind])
+	elif f.state == FighterState.State.ATTACKING and f.move != null:
+		s += ":" + str(f.move.id)
+	elif f.state == FighterState.State.ESCAPING:
+		s += ":" + str(FighterEscapes.Kind.keys()[f.escapes.kind])
+	elif f.state == FighterState.State.VANISHING:
+		s += ":anchor%d" % f.vanish_anchor
+	return s

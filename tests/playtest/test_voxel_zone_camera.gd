@@ -36,8 +36,8 @@ func _pend_missing() -> void:
 	if _missing.is_empty():
 		return
 	# Bakes are generated locally (VOXEL-BAKES); a live build takes minutes per zone.
-	if not QaKnownIssues.strict():
-		pending("%s — %d zones without a current HIGH bake: %s" % [QaKnownIssues.describe(&"VOXEL-BAKES"),
+	if not QaKnownIssues.bakes_required():
+		pending("%s — %d zones without a current HIGH bake (SKYBREAK_REQUIRE_BAKES=1 fails): %s" % [QaKnownIssues.describe(&"VOXEL-BAKES"),
 			_missing.size(), _missing[0]])
 		return
 	assert_eq(_missing, [] as Array[String], "rebake: tools/voxel_zone_bake.gd --tier=high")

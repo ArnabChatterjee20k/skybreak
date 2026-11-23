@@ -296,3 +296,36 @@ func test_a_low_wall_close_behind_lifts_the_camera_instead_of_pulling_onto_the_p
 	assert_false(obstacles.is_inside(camera.global_position))
 	assert_gt(camera.global_position.distance_to(player), 2.7,
 		"shifted over the wall rather than parked on the player")
+
+
+## MOVE-ESCAPE-CAM: the player escapes (dodge, air tech) with their back to a wall, so
+## the boom is clipped short, and the opponent swings round beside the lens. The
+## camera turns until both are in frame again (main lost the opponent for 45 frames).
+func test_a_camera_clipped_against_a_wall_turns_to_keep_an_opponent_beside_the_lens() -> void:
+	var player := Vector3(0, 10, 0)
+	var wall := CameraObstacles.new()
+	wall.ground_height = func(_x: float, _z: float, _from_y: float) -> float: return 0.0
+	wall.add_box(AABB(Vector3(-6, 0, 1.2), Vector3(12, 30, 3)))
+	var camera := _locked_camera(wall)
+	_settle(camera, player, Vector3(0, 10, -3), 120)
+	assert_lt(camera._clip_length, camera._offset.length() - 1.0, "the wall clips the boom short")
+	var off := 0
+	var last_off := -1
+	for i in 60:
+		var target := Vector3(0, 10, -3).rotated(Vector3.UP, -deg_to_rad(minf(i * 10.0, 80.0))) * 1.2
+		camera.follow(player, target, true, 1.0 / 60.0)
+		var view := camera.global_transform
+		if not (LockOnFraming.is_in_view(view, camera.fov, player) and LockOnFraming.is_in_view(view, camera.fov, target)):
+			off += 1
+			last_off = i
+	assert_lt(off, 25, "off screen for at most 24 of 60 frames")
+	assert_lt(last_off, 30, "both in frame again within half a second")
+
+
+func test_an_unclipped_camera_never_adds_the_pair_turn() -> void:
+	var camera := _locked_camera(CameraObstacles.new())
+	_settle(camera, Vector3(0, 10, 0), Vector3(0, 10, -3), 60)
+	for i in 30:
+		camera.follow(Vector3(0, 10, 0), Vector3(4, 10, 1), true, 1.0 / 60.0)
+		assert_false(camera._boom_clipped(), "open space: the close-combat framing is unchanged")
+		assert_eq(camera._pair_aim, 0.0)

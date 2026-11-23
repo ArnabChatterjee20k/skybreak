@@ -16,6 +16,23 @@ const path = require('path');
 const { chromium } = require('playwright');
 const mock = require('./appwrite_mock');
 
+// Main menu layout (game/ui/menus/main_menu.gd, 1920x1080 design): a column at
+// x 120 (clicked at 400), y 330, buttons 86 tall with 14 between them; the web build drops Quit.
+const MENU = { x: 400, top: 330, height: 86, gap: 14, design: 1080 };
+
+// Centre of the Duo button in page pixels, from the menu's own ENTRIES list, so a new
+// entry (Pure Fight moved Duo down one) can't make the test click the wrong one.
+function duoButtonAt(viewport) {
+	const src = fs.readFileSync(path.join(__dirname, '../../game/ui/menus/main_menu.gd'), 'utf8');
+	const list = src.slice(src.indexOf('const ENTRIES'), src.indexOf(']', src.indexOf('const ENTRIES')));
+	const ids = [...list.matchAll(/"id": &"(\w+)"/g)].map((m) => m[1]).filter((id) => id !== 'quit');
+	const index = ids.indexOf('duo');
+	if (index < 0) throw new Error('main_menu.gd ENTRIES has no duo entry');
+	const scale = viewport.height / MENU.design;
+	const y = MENU.top + index * (MENU.height + MENU.gap) + MENU.height / 2;
+	return { x: Math.round(MENU.x * scale), y: Math.round(y * scale) };
+}
+
 const root = path.resolve(process.argv[2] || 'build/web');
 const out = path.resolve(process.argv[3] || 'reports/net/duo-online');
 const minutes = Number(process.argv[4] || 3);
@@ -110,13 +127,13 @@ class Peer {
 		await this.page.click('#start', { timeout: 240000 });
 		await this.page.waitForSelector('#cover', { state: 'detached', timeout: 240000 });
 		await this.page.waitForTimeout(8000);
-		// Any key ends the splash; then click the main menu's third entry, Duo
-		// (1920x1080 design: x 120-680, y 530-616, drawn at a third here).
+		// Any key ends the splash; then click the main menu's Duo entry.
 		await this.page.keyboard.press('Space');
 		await this.page.waitForTimeout(2500);
-		await this.page.mouse.move(133, 191);
+		const at = duoButtonAt(this.page.viewportSize());
+		await this.page.mouse.move(at.x, at.y);
 		await this.page.waitForTimeout(300);
-		await this.page.mouse.click(133, 191);
+		await this.page.mouse.click(at.x, at.y);
 		await this.waitFor('lobby', 30000);
 	}
 
