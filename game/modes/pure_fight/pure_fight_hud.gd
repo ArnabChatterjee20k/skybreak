@@ -11,11 +11,11 @@ var sim: PureFightSim
 var names: Array[String] = ["", ""]
 var colors: Array[Color] = [MenuTheme.HOT, MenuTheme.CYAN]
 var training := false
-## One-line controls hint along the bottom for the first HINT_SECONDS ("" = none). Set before _ready.
+## One-line controls hint along the bottom for the match's first HINT_TICKS ("" = none). Set before
+## _ready. Counted in sim ticks, so a slow first frame (a zone loading) never uses it up.
 var hint := ""
-const HINT_SECONDS := 12.0
+const HINT_TICKS := 12 * 60
 var _hint: Label
-var _hint_time := HINT_SECONDS
 var _bars: Array[ColorRect] = []
 var _trails: Array[ColorRect] = []
 var _meters: Array[ColorRect] = []
@@ -38,8 +38,12 @@ var _advantage := 0
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Laid out in the 1920x1080 design and scaled to the window like MatchHud (a 1280x720 or
+	# MacBook browser window cut off P2's bar and the bottom hint before).
+	set_anchors_preset(Control.PRESET_TOP_LEFT)
+	size = MatchHud.DESIGN
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fit_to(get_viewport_rect().size)
 	for i in 2:
 		var left := i == 0
 		var x := 80.0 if left else 1920.0 - 80.0 - BAR_SIZE.x
@@ -116,11 +120,17 @@ func _ready() -> void:
 	_info.visible = training
 	add_child(_info)
 	_hint = MenuTheme.label(hint, 22, MenuTheme.TEXT, 6)
-	_hint.position = Vector2(0, 1016)
+	_hint.position = Vector2(0, 914)
 	_hint.size = Vector2(1920, 44)
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint.visible = hint != ""
 	add_child(_hint)
+
+
+## Scales the design to fit `screen`, centred across and pinned to the top.
+func fit_to(screen: Vector2) -> void:
+	scale = Vector2.ONE * MatchHud.design_scale(screen)
+	position = MatchHud.design_offset(screen)
 
 
 func show_callout(text: String) -> void:
@@ -169,6 +179,7 @@ func _measure_advantage() -> void:
 
 
 func _process(delta: float) -> void:
+	fit_to(get_viewport_rect().size)
 	if sim == null:
 		return
 	for i in 2:
@@ -206,8 +217,7 @@ func _process(delta: float) -> void:
 	_banner.modulate.a = clampf(_banner_time / 0.3, 0.0, 1.0)
 	_callout_time = maxf(_callout_time - delta, 0.0)
 	_callout.modulate.a = clampf(_callout_time / 0.3, 0.0, 1.0)
-	_hint_time = maxf(_hint_time - delta, 0.0)
-	_hint.modulate.a = clampf(_hint_time, 0.0, 1.0)
+	_hint.modulate.a = clampf((HINT_TICKS - sim.current_tick) / 60.0, 0.0, 1.0)
 	if training:
 		_info.text = _training_text()
 

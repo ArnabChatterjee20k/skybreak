@@ -1,3 +1,6 @@
 merge be1d1763, two runs:
 det_check total b8bab850a4256dc7
 det_check total b8bab850a4256dc7
+7f4a42a7 (tree of the final merge), two runs:
+det_check total b8bab850a4256dc7
+det_check total b8bab850a4256dc7

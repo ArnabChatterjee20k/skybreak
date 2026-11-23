@@ -1,0 +1,12 @@
+PASS Pure Fight: first left click reaches the sim: tick 73, moves 
+PASS Pure Fight: left click = light: pressed 1 at tick 121 in state 8, moves started: 5L, focus canvas, try 1 (state 8)
+PASS Pure Fight: right click = heavy: pressed 2 at tick 185 in state 8, moves started: 5H, focus canvas, try 1 (state 8)
+PASS Pure Fight: middle click = medium: pressed 128 at tick 249 in state 8, moves started: 5M, focus canvas, try 1 (state 8)
+PASS Pure Fight: Q = medium: pressed 128 at tick 305 in state 8, moves started: 5M, focus canvas, try 1 (state 8)
+PASS Pure Fight: F = throw: pressed 16 at tick 425 in state 8, moves started: throw, focus canvas, try 2 (state 10 / state 8)
+PASS Pure Fight: J = light (keyboard only): pressed 1 at tick 537 in state 8, moves started: 5L, focus canvas, try 2 (state 10 / state 8)
+PASS Pure Fight: L = heavy (keyboard only): pressed 2 at tick 641 in state 8, moves started: 5H, focus canvas, try 2 (state 12 / state 8)
+PASS Pure Fight: left click held while D walks: pressed 1 at tick 705 in state 8, moves started: 5L, focus canvas, try 1 (state 8)
+PASS Pure Fight never takes pointer lock: pointerLockElement null
+PASS Pure Fight: no context menu on right click: 1 contextmenu events, all defaultPrevented: true
+PASS

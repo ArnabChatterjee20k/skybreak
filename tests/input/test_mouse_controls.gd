@@ -390,11 +390,32 @@ func test_pure_fight_shows_the_mouse_hint_then_fades_it() -> void:
 	add_child_autofree(hud)
 	assert_true(hud._hint.visible)
 	assert_eq(hud._hint.text, PureFightKeys.hint_text())
-	hud._process(1.0)
-	assert_gt(hud._hint.modulate.a, 0.0, "still showing after a second")
-	hud._process(PureFightHud.HINT_SECONDS)
-	assert_eq(hud._hint.modulate.a, 0.0, "gone after the first seconds")
+	hud._process(30.0)
+	assert_eq(hud._hint.modulate.a, 1.0, "a long first frame (a zone loading) does not use it up")
+	hud.sim.current_tick = PureFightHud.HINT_TICKS - 30
+	hud._process(0.016)
+	assert_almost_eq(hud._hint.modulate.a, 0.5, 0.01, "fades over the last second of fight time")
+	hud.sim.current_tick = PureFightHud.HINT_TICKS
+	hud._process(0.016)
+	assert_eq(hud._hint.modulate.a, 0.0, "gone after the first 12 s of the match")
 	var quiet := PureFightHud.new()
 	quiet.sim = hud.sim
 	add_child_autofree(quiet)
 	assert_false(quiet._hint.visible, "no hint without a human on P1's keys")
+
+
+func test_the_pure_fight_hud_fits_a_laptop_browser_window() -> void:
+	var hud := PureFightHud.new()
+	hud.sim = PureFightDriver.fighting([&"kael", &"kael"] as Array[StringName])
+	hud.hint = PureFightKeys.hint_text()
+	add_child_autofree(hud)
+	hud.fit_to(Vector2(1920, 1080))
+	assert_eq(hud.scale, Vector2.ONE, "1080p is the design itself")
+	for screen: Vector2 in [Vector2(1280, 720), Vector2(1470, 800), Vector2(1512, 982)]:
+		hud.fit_to(screen)
+		var hint_box := hud.get_global_transform() * hud._hint.get_rect()
+		assert_true(Rect2(Vector2.ZERO, screen).encloses(hint_box), "hint on screen at %s" % screen)
+		var meter_tops := hud._meter_text.map(func(m: Label) -> float: return m.position.y)
+		assert_lt(hud._hint.position.y + hud._hint.size.y, meter_tops.min(), "hint clear of the finisher meters")
+		var right_edge := hud.get_global_transform() * Vector2(1920.0 - 80.0, 54.0)
+		assert_lte(right_edge.x, screen.x, "P2's bar on screen at %s" % screen)

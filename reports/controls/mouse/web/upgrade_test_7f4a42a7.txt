@@ -1,0 +1,20 @@
+[old1_prev] engine running in 39.7 s, boot {"mode":"updated","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0"}
+[old1_prev] versus match: {"mode":"vs_ai","scene":"res://game/levels/zone_match.tscn","zone":"shattered_mesa"} after 26 s
+[old1_prev] network 13 responses, 6 from the service worker
+[old2_prev2] engine running in 29.4 s, boot {"mode":"cached","build":"6a731815730379892a6a8c2e806d16087872a36a"}
+[old2_prev2] versus match: {"mode":"vs_ai","scene":"res://game/levels/zone_match.tscn","zone":"shattered_mesa"} after 25 s
+[old2_prev2] network 3 responses, 11 from the service worker
+[old2_prev2_owner] engine running in 30.2 s, boot {"mode":"cached","build":"6a731815730379892a6a8c2e806d16087872a36a"}
+[old2_prev2_owner] network 0 responses, 6 from the service worker
+[interrupted] index.pck cut at 50%: true
+[new_pf_click] engine running in 32.7 s, boot {"mode":"cached","build":"7f4a42a7b9bdcf1f356120699db664c69234eadc"}
+[new_pf_click] network 2 responses, 11 from the service worker
+PASS new_pf_click: {"boot":"cached","build":"7f4a42a7b9bdcf1f356120699db664c69234eadc","ok":true,"framesIn5s":3,"match":{"mode":"pure_fight","scene":"res://game/modes/pure_fight/pure_fight_match.tscn","zone":"verdant_falls"},"worstStallMs":3454,"ms":11627}
+[new_pf_enter] engine running in 31.3 s, boot {"mode":"cached","build":"7f4a42a7b9bdcf1f356120699db664c69234eadc"}
+[new_pf_enter] network 0 responses, 8 from the service worker
+PASS new_pf_enter: {"boot":"cached","build":"7f4a42a7b9bdcf1f356120699db664c69234eadc","ok":true,"framesIn5s":3,"match":{"mode":"pure_fight","scene":"res://game/modes/pure_fight/pure_fight_match.tscn","zone":"heartbloom_gardens"},"worstStallMs":4229,"ms":17035}
+[new_vs] engine running in 29.8 s, boot {"mode":"cached","build":"7f4a42a7b9bdcf1f356120699db664c69234eadc"}
+[new_vs] network 0 responses, 8 from the service worker
+PASS new_vs: {"boot":"cached","build":"7f4a42a7b9bdcf1f356120699db664c69234eadc","ok":true,"framesIn5s":4,"match":{"mode":"vs_ai","scene":"res://game/levels/zone_match.tscn","zone":"ember_rift"},"worstStallMs":8565,"ms":19880}
+PASS only the new build is cached after the update: {"caches":["skybreak-meta","skybreak-7f4a42a7b9bdcf1f356120699db664c69234eadc"],"pending":false}
+upgrade test stopped after 4/5 checks (cold-profile check not reached) to keep the GUT run quiet
