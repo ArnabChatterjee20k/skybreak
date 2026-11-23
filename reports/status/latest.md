@@ -4,7 +4,7 @@
 
 - "We can use the mouse as well right? LMB and RMB?": **yes, in every mode**. Left click = light,
   right click = heavy (a MacBook trackpad's two-finger click is a right click), WASD moves, and the
-  old J/K/L/U/I/O keys still work. Merged into main with `--no-ff` (MAIN_SHA_PLACEHOLDER); GUT 0 failing,
+  old J/K/L/U/I/O keys still work. Merged into main with `--no-ff` (branch tip d8dcf077, evidence on its merge with main 6a731815); GUT 0 failing,
   det_check unchanged, QA quick and camera QA same as main. **Main needs a web build** (the
   FINISH-AND-SHIP lane was still running; `web-build` is still 39c8784).
 - Table, what changed and evidence: `reports/controls/mouse/README.md`.
