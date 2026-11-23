@@ -61,7 +61,7 @@ Branch `feature/pure-fight`. Evidence: see "Verification" at the end.
 - **Modes**:
   - Play > Pure Fight: character select with two seats; P2 toggles AI or HUMAN, and HUMAN is local
     2P on one keyboard;
-  - a TRAINING button: a dummy that stands, blocks all, crouch-blocks or jumps (F4); health
+  - a TRAINING button: a dummy that stands, blocks all, crouch-blocks or jumps (T or F4); health
     refills, the meter stays full, and the HUD shows the last move's frame data and the measured
     advantage;
   - a pause-menu "Move list" with every legend's moves and frame data;
@@ -82,11 +82,13 @@ Branch `feature/pure-fight`. Evidence: see "Verification" at the end.
 
 | | P1 | P2 |
 |---|---|---|
-| Move / jump / crouch | A D / W, Space / S | Arrows |
-| Light / medium / heavy | J / K / L | Num1 2 3 (or , . /) |
-| Throw / technique / finisher | U / I / O | Num4 / Num5 / Num6 (or ; ' ]) |
-| Dash | Shift + direction or tap twice | Num0 |
-| Block | hold back (down-back for lows), E | hold back |
+| Move / jump / crouch | A D / W, Space / S | Left Right / Up / Down arrows |
+| Light / medium / heavy | J / K / L | , / . / / |
+| Throw / technique / finisher | U / I / O | ; / ' / ] |
+| Dash | Left Shift + direction or tap twice | Right Shift + direction or tap twice |
+| Block | hold back (down-back for lows), E | hold back, [ |
+
+No numpad keys (since `fix/no-numpad`, `reports/controls/no-numpad/README.md`).
 
 Techniques: a motion + attack (236 / 623 / 214), or the technique key + a direction: forward or
 neutral = 236, down = 623, back = 214. Finisher: 236236 + attack or the finisher key, needs a full meter.

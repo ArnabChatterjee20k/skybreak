@@ -52,7 +52,9 @@ Still open: #106, #109.
 
 - **Pure Fight**: Main menu -> Pure Fight. Pick legends; P2 can be AI or HUMAN (same keyboard).
   P1: A/D move, W or Space jump, S crouch, J/K/L light/medium/heavy, U throw, I technique, O finisher
-  (full meter), Shift+direction dash, hold back to block. P2: arrows, Num1-6, Num0 dash.
+  (full meter), Left Shift+direction dash, hold back (or E) to block. P2: arrows move/jump/crouch,
+  , . / light/medium/heavy, ; throw, ' technique, ] finisher, Right Shift+direction dash, hold back
+  (or [) to block. No numpad keys anywhere.
   **TRAINING** on the same screen gives a dummy with frame data.
 - **Duo** (web or Windows): Main menu -> Duo -> sign in (owner `skybreak-player-1@example.com`,
   partner `skybreak-player-2@example.com`, the passwords you set) -> owner presses **Host** and reads the

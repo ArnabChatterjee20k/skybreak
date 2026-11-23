@@ -6,6 +6,12 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
 
 ## In progress
 
+- NO-NUMPAD [desktop] Owner: "dont use any numpad keys for any fight techniques". `fix/no-numpad`:
+  Pure Fight P2 moves off Num0-6 / Num. to arrows + `, . /` `; ' ]` `[` + Right Shift dash (P1 dash
+  pinned to Left Shift); hints, docs and tests updated (`reports/controls/no-numpad/README.md`).
+  Open: physical ghosting on the owner's laptops is untested (headless Chromium only); the combat
+  training room still uses F1-F7 (Fn on a Mac) [developer, game/modes/training].
+
 - MOVE-ESCAPE [desktop] #150 "can't move away or get behind while the opponent attacks": fixed on
   `fix/move-escape` (see `reports/combat/move-escape/README.md`). Dash presses wait out stun, 4-tick
   gaps in continued blocked strings, 15 deg follow-up turn cap, a dodged light ends the string, side
