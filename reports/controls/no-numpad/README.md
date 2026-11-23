@@ -141,10 +141,25 @@ SHA-512 OK. Branch first on main fe18f894, then merged with main 3b86467c (75f08
   (ZoneMatch never builds PureFightKeys) and every gameplay metric is identical, so this reads as
   4 jobs on 4 cores, but by the rule it is not proven "no worse": re-run at main's job count.
 
+### On the merge with main bbc45d0f (PF-ZONE-HANG; 0090f427, evidence at 68eb50d1)
+
+- Merge: no conflicts. PF-ZONE-HANG's new `LoadingScreen` shows only the zone name, a bar and
+  "LOADING" (no key hints), so it needed no change. `grep -rniE 'kp_|numpad|num[0-9]'` over `game/`,
+  `docs/`, `README.md` and `tools/web/*.js`: only `NUMPAD_KEYS` / `is_numpad_key()` (the guard),
+  "numpad notation" comments for motion directions, the probe in `controls_web.js`, the "No numpad"
+  lines in docs, and the tutorial's menu-only keypad Enter (above).
+- Zone bakes: 7 zones x 4 tiers baked fresh (xvfb + lavapipe), `voxel_zone_bake.gd --check` exit 0.
+- Full GUT, `SKYBREAK_REQUIRE_BAKES=1`: **1993 tests, 1987 passing, 0 failing, 10 pending**, exit 0
+  (`gut_totals_merge_bbc45d0f.txt`).
+- det_check: two runs identical, `det_check total b8bab850a4256dc7` (= main;
+  `det_check_merge_bbc45d0f.txt`).
+- QA quick, QA_JOBS=3, run back to back with nothing else on the box: main bbc45d0f
+  (`reports/qa/2026-11-23-bbc45d0f-quick.md`) and this merge (`reports/qa/2026-11-23-68eb50d1-quick.md`)
+  give the same result: sim PASS, view FAIL with the same pre-existing violations (foot_ground 4/21,
+  camera_on_screen 1/21, pop 1/21), scenarios PASS, golden replays PASS, trend PASS. Every gameplay
+  metric identical; sim 1.33 vs 1.255 ms/tick (+6 %), view 1.499 vs 1.418 ms/frame (+6 %), under the
+  15 % line. Visual goldens not run on either.
+
 ## Status
 
-**Not merged.** Main moved to bbc45d0f (PF-ZONE-HANG, 2df1bdbc) after the evidence run, the QA ms
-check above needs a re-run, and the run hit its 180-minute stop. Next controls run: merge the
-latest `origin/main` into `fix/no-numpad`, run full GUT with bakes, det_check twice and QA quick
-at main's job count, then `merge --no-ff` and add the "main has no-numpad, needs a web build"
-line to `reports/status/latest.md`.
+**Merged into main** (`--no-ff`) after the evidence above.
