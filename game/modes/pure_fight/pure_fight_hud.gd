@@ -11,11 +11,11 @@ var sim: PureFightSim
 var names: Array[String] = ["", ""]
 var colors: Array[Color] = [MenuTheme.HOT, MenuTheme.CYAN]
 var training := false
-## One-line controls hint along the bottom for the first HINT_SECONDS ("" = none). Set before _ready.
+## One-line controls hint along the bottom for the match's first HINT_TICKS ("" = none). Set before
+## _ready. Counted in sim ticks, so a slow first frame (a zone loading) never uses it up.
 var hint := ""
-const HINT_SECONDS := 12.0
+const HINT_TICKS := 12 * 60
 var _hint: Label
-var _hint_time := HINT_SECONDS
 var _bars: Array[ColorRect] = []
 var _trails: Array[ColorRect] = []
 var _meters: Array[ColorRect] = []
@@ -206,8 +206,7 @@ func _process(delta: float) -> void:
 	_banner.modulate.a = clampf(_banner_time / 0.3, 0.0, 1.0)
 	_callout_time = maxf(_callout_time - delta, 0.0)
 	_callout.modulate.a = clampf(_callout_time / 0.3, 0.0, 1.0)
-	_hint_time = maxf(_hint_time - delta, 0.0)
-	_hint.modulate.a = clampf(_hint_time, 0.0, 1.0)
+	_hint.modulate.a = clampf((HINT_TICKS - sim.current_tick) / 60.0, 0.0, 1.0)
 	if training:
 		_info.text = _training_text()
 

@@ -390,10 +390,14 @@ func test_pure_fight_shows_the_mouse_hint_then_fades_it() -> void:
 	add_child_autofree(hud)
 	assert_true(hud._hint.visible)
 	assert_eq(hud._hint.text, PureFightKeys.hint_text())
-	hud._process(1.0)
-	assert_gt(hud._hint.modulate.a, 0.0, "still showing after a second")
-	hud._process(PureFightHud.HINT_SECONDS)
-	assert_eq(hud._hint.modulate.a, 0.0, "gone after the first seconds")
+	hud._process(30.0)
+	assert_eq(hud._hint.modulate.a, 1.0, "a long first frame (a zone loading) does not use it up")
+	hud.sim.current_tick = PureFightHud.HINT_TICKS - 30
+	hud._process(0.016)
+	assert_almost_eq(hud._hint.modulate.a, 0.5, 0.01, "fades over the last second of fight time")
+	hud.sim.current_tick = PureFightHud.HINT_TICKS
+	hud._process(0.016)
+	assert_eq(hud._hint.modulate.a, 0.0, "gone after the first 12 s of the match")
 	var quiet := PureFightHud.new()
 	quiet.sim = hud.sim
 	add_child_autofree(quiet)
