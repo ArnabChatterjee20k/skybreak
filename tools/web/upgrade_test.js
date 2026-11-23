@@ -40,6 +40,10 @@ const AT = {
 	verdant: [893, 388], ember: [1117, 388],
 };
 const MATCH_TIMEOUT_MS = 300000;
+const OLD_MATCH_WAIT_MS = 45000;
+// A page that doesn't answer this long counts as frozen.
+const STALL_MS = 20000;
+const MIN_FRAMES_5S = 2;
 const types = {
 	'.html': 'text/html', '.js': 'application/javascript', '.wasm': 'application/wasm',
 	'.pck': 'application/octet-stream', '.png': 'image/png', '.json': 'application/json',
@@ -121,7 +125,7 @@ async function close(v, name) {
 const key = async (v, k, wait = 1200) => { await v.page.keyboard.press(k); await v.page.waitForTimeout(wait); };
 const click = async (v, at, wait = 2500) => { await v.page.mouse.click(at[0], at[1]); await v.page.waitForTimeout(wait); };
 async function shot(v, name) {
-	await v.page.screenshot({ path: path.join(out, name + '.png'), timeout: 20000 })
+	await v.page.screenshot({ path: path.join(out, name + '.png'), timeout: 60000 })
 		.catch((e) => log(`[${v.label}] screenshot ${name} failed: ${e.message.split('\n')[0]}`));
 }
 
@@ -158,6 +162,24 @@ async function waitMatch(v, timeout) {
 	return { match: null, worstStallMs: worst, ms: Date.now() - t0 };
 }
 
+// Polls the page until stop(); stop() resolves the longest time it didn't answer.
+function watchStalls(page) {
+	let worst = 0;
+	let since = null;
+	let running = true;
+	(async () => {
+		while (running) {
+			since = Date.now();
+			await answers(page, 600000);
+			worst = Math.max(worst, Date.now() - since);
+			since = null;
+			await new Promise((r) => setTimeout(r, 500));
+		}
+	})();
+	// A stall still going on at stop() counts up to now.
+	return { stop: async () => { running = false; return Math.max(worst, since === null ? 0 : Date.now() - since); } };
+}
+
 async function frames(page, ms) {
 	return page.evaluate((ms) => new Promise((resolve) => {
 		let n = 0;
@@ -191,7 +213,7 @@ async function flow(v, name, kind) {
 		await click(v, AT.chooseZone);
 		await click(v, AT.verdant);
 		if (kind === 'pf-enter') {
-			// Verdant Falls -> Heartbloom -> Random -> FIGHT, then Enter.
+			// Focus picks a card: Verdant Falls -> Heartbloom (picked) -> Random -> FIGHT, then Enter.
 			await key(v, 'ArrowDown', 500);
 			await key(v, 'ArrowRight', 500);
 			await key(v, 'ArrowDown', 800);
@@ -208,8 +230,10 @@ async function flow(v, name, kind) {
 	await play(v, 8000);
 	const n = await Promise.race([frames(v.page, 5000), new Promise((res) => setTimeout(() => res(0), 20000))]);
 	await shot(v, `${name}_match`);
-	const want = kind === 'vs' ? { mode: 'vs_ai', zone: 'ember_rift' } : { mode: 'pure_fight', zone: 'verdant_falls' };
-	const ok = r.match.mode === want.mode && r.match.zone === want.zone && n >= 10;
+	const want = { vs: { mode: 'vs_ai', zone: 'ember_rift' }, 'pf-click': { mode: 'pure_fight', zone: 'verdant_falls' },
+		'pf-enter': { mode: 'pure_fight', zone: 'heartbloom_gardens' } }[kind];
+	// Software WebGL runs the match at a few fps: "running" = frames still come, no long stall.
+	const ok = r.match.mode === want.mode && r.match.zone === want.zone && n >= MIN_FRAMES_5S && r.worstStallMs < STALL_MS;
 	return Object.assign({ ok, framesIn5s: n }, r);
 }
 
@@ -254,7 +278,8 @@ async function localRun() {
 			await menu(v, 0);
 			await click(v, AT.chooseZone);
 			await click(v, AT.fight, 500);
-			const r = await waitMatch(v, MATCH_TIMEOUT_MS);
+			// Older builds set no window.skybreakMatch: give the match time to load, then play.
+			const r = await waitMatch(v, OLD_MATCH_WAIT_MS);
 			await play(v, 5000);
 			await shot(v, `${label}_match`);
 			log(`[${label}] versus match: ${JSON.stringify(r.match) || 'no skybreakMatch (older build, no hook)'} after ${(r.ms / 1000).toFixed(0)} s`);
@@ -264,15 +289,20 @@ async function localRun() {
 			await visitBuild(profile, url, `${label}_owner`, [['high', (v) => chooseHigh(v, `${label}_owner`)]]);
 			if (oldFreezeCheck) {
 				const v = await open(profile, url, `${label}_freeze`);
+				const watch = watchStalls(v.page);
 				await menu(v, 1);
 				await click(v, AT.chooseZone);
 				await click(v, AT.verdant);
 				await shot(v, `${label}_freeze_zone_select`);
 				await click(v, AT.fight, 500);
-				const ok = await answers(v.page, 60000) && await answers(v.page, 60000);
-				log(`[${label}] control: Pure Fight FIGHT with HIGH saved: page ${ok ? 'still answers' : 'frozen for 60 s (the bug)'}`);
-				results.push({ name: 'control: the old build freezes with HIGH saved', ok: !ok, detail: { answers: ok }, control: true });
-				await v.ctx.close().catch(() => {});
+				// The longest stretch the page didn't answer, from the menu to 3 minutes after FIGHT.
+				await v.page.waitForTimeout(180000);
+				const worst = await watch.stop();
+				const frozen = worst >= STALL_MS;
+				await shot(v, `${label}_freeze_after`);
+				log(`[${label}] control: Pure Fight FIGHT with HIGH saved: longest stall ${(worst / 1000).toFixed(1)} s`);
+				results.push({ name: 'control: the old build stalls >= 20 s with HIGH saved', ok: frozen, detail: { worstStallMs: worst }, control: true });
+				await close(v, `${label}_freeze`);
 			}
 		}
 	}
@@ -324,7 +354,7 @@ async function liveRun() {
 			await menu(v, 0);
 			await click(v, AT.chooseZone);
 			await click(v, AT.fight, 500);
-			const r = await waitMatch(v, MATCH_TIMEOUT_MS);
+			const r = await waitMatch(v, OLD_MATCH_WAIT_MS);
 			await play(v, 5000);
 			await shot(v, 'live_seed_match');
 			log(`[live_seed] versus: ${JSON.stringify(r.match)}`);
