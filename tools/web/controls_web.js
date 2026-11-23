@@ -7,7 +7,8 @@
 //     Pure Fight's two-players-one-keyboard matrix (no numpad): holds P1 and P2 chords
 //     together and checks every keydown/keyup reaches the focused canvas with the right code
 //     and Shift side, is suppressed, and focus never moves. --stub runs it on a bare page with
-//     the engine's canvas listeners instead of a build. Exits 1 on a dropped or leaked key.
+//     the engine's canvas listeners instead of a build; ROLLOVER_EVERY=n samples every nth
+//     chord. Exits 1 on a dropped or leaked key.
 //   node tools/web/controls_web.js audit <build dir>
 //     Runs tests/combat/controls_audit.gd inside the wasm build (export it with
 //     tools/web/controls_audit_web.sh) and prints its table. Exits 1 on BROKEN rows.
@@ -85,7 +86,9 @@ async function rollover(page) {
 	await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 	const all = new Set(P1.buttons.concat(P2.buttons, ...P1.dirs, ...P2.dirs));
 	const numpad = [...all].filter((c) => NUMPAD.test(c));
-	const rows = matrix();
+	// ROLLOVER_EVERY=n keeps every nth chord (a running build answers each key slowly).
+	const every = Number(process.env.ROLLOVER_EVERY || 1);
+	const rows = matrix().filter((_, i) => i % every === 0);
 	let bad = 0;
 	const failures = [];
 	for (const chord of rows) {
