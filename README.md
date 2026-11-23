@@ -1,13 +1,13 @@
 # Skybreak for Windows (x86_64)
 
-Built from `main` at `9e645967` (everything before, camera round 3, WEB-CACHE, aura v2 and Duo online,
-plus **Pure Fight**: 2.5D hand-to-hand 1v1 vs AI, local 2P on one keyboard, training, and online 1v1
-through the Duo lobby; and the issue sweep fixes: FFA-4 spawns, the dash afterimage, fighters no longer
-drawn inside each other) with the official Godot 4.7.2 Windows release template (export templates
+Built from `main` at `3b86467c` (everything in the 9e645967 build: camera round 3, WEB-CACHE, aura v2,
+Duo online, Pure Fight and the issue sweep fixes; plus the **#150 move escape**: dodges, sidesteps and side
+vanish get you out of, or round, the opponent's strings; every afterimage a pose ghost (#127); and the camera
+keeping both fighters framed when an escape leaves your back to a wall) with the official Godot 4.7.2 Windows release template (export templates
 SHA-512 checked against `SHA512-SUMS.txt`), `Windows Desktop` preset. The game data (including
 the high, medium and low voxel zone bakes) is embedded in `Skybreak.exe`.
 
-The zip is 726,800,985 bytes, more than GitHub's 100 MB file limit, so it is split into 8 parts
+The zip is 726,344,211 bytes, more than GitHub's 100 MB file limit, so it is split into 8 parts
 (`split -b 90m`).
 
 ## Join and play
@@ -20,9 +20,9 @@ The zip is 726,800,985 bytes, more than GitHub's 100 MB file limit, so it is spl
    ```
 
 3. Optional check (PowerShell): `Get-FileHash Skybreak-windows-x86_64.zip` must print
-   `3E4BA1511CCAEA0D838F05492B8F315CC1F65EEAC0A63B794C5A3E99C9F562A3`.
+   `1A48D991ED8255CA716C72646B135FE641AD4FB14C30DD63044BF490BB019EFC`.
 4. Extract the zip and run `Skybreak\Skybreak.exe` (keep the `.dll` next to it).
 
 Not boot-tested on Windows (no Windows machine in the cloud). The same commit's web export ran a
-Vs AI match for 30 s with no console errors; full GUT 0 failing; see `reports/builds/2026-11-22-9e645967.md`
+Vs AI match for 30 s with no console errors; full GUT 0 failing; see `reports/builds/2026-11-23-3b86467c.md`
 on `main`.
