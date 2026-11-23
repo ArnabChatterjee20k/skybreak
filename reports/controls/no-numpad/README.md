@@ -121,4 +121,15 @@ SHA-512 OK. Branch at 21b70c6d + later commits, on main fe18f894.
   The same matrix against the running build did not finish: a sample of 286, then 29 chords timed
   out (1500-1700 s) because the running game (swiftshader) stops answering Playwright's key calls
   after a few chords, most likely the held keys driving the main menu into a match load. Open.
-- **QA quick** (QA_JOBS=3): see below.
+- **QA quick, branch vs main** (QA_JOBS=3): main fe18f894 and the branch 202f6c30 give the same
+  result: sim PASS, view FAIL with the same violations (foot_ground 4/21, camera_on_screen 1/21,
+  pop 1/21), scenarios PASS, golden replays PASS, every feel metric identical; the branch's trend
+  PASSes against main (`reports/qa/2026-11-23-202f6c30-quick.md`). Main's run showed
+  +75 % sim/view ms only because Chromium was running beside it. Visual goldens were not run
+  (run_qa's python had no numpy), the same on both.
+
+### On the merge with main 3b86467c (75f08248)
+
+- Full GUT, bakes required (`SKYBREAK_REQUIRE_BAKES=1`): **1985 tests, 1979 passing, 0 failing,
+  10 pending** (main's 1973 + the 12 new ones).
+- det_check: two runs identical, `det_check total b8bab850a4256dc7` (= main).
