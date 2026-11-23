@@ -1,0 +1,14 @@
+builds: prev3b -> prev -> web (new 6a731815730379892a6a8c2e806d16087872a36a)
+[old1_prev3b] engine running in 34.5 s, boot {"mode":"updated","build":"3b86467c3c1b325b19e91b0f3f6db7aba75f45e8"}
+[old2_prev] engine running in 27.3 s, boot {"mode":"cached","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0"}
+[old2_prev_owner] engine running in 25.7 s, boot {"mode":"cached","build":"2df1bdbc731fc48895871a3e28bd62ca4432f8a0"}
+[new_pf_click] engine running in 24.9 s, boot {"mode":"cached","build":"6a731815730379892a6a8c2e806d16087872a36a"}
+PASS new_pf_click: {"boot":"cached","build":"6a731815730379892a6a8c2e806d16087872a36a","ok":true,"framesIn5s":3,"match":{"mode":"pure_fight","scene":"res://game/modes/pure_fight/pure_fight_match.tscn","zone":"verdant_falls"},"worstStallMs":1952,"ms":10059}
+[new_pf_enter] engine running in 25.3 s, boot {"mode":"cached","build":"6a731815730379892a6a8c2e806d16087872a36a"}
+PASS new_pf_enter: {"boot":"cached","build":"6a731815730379892a6a8c2e806d16087872a36a","ok":true,"framesIn5s":3,"match":{"mode":"pure_fight","scene":"res://game/modes/pure_fight/pure_fight_match.tscn","zone":"heartbloom_gardens"},"worstStallMs":3900,"ms":14484}
+[new_vs] engine running in 23.5 s, boot {"mode":"cached","build":"6a731815730379892a6a8c2e806d16087872a36a"}
+PASS new_vs: {"boot":"cached","build":"6a731815730379892a6a8c2e806d16087872a36a","ok":true,"framesIn5s":5,"match":{"mode":"vs_ai","scene":"res://game/levels/zone_match.tscn","zone":"ember_rift"},"worstStallMs":8086,"ms":18836}
+PASS only the new build is cached after the update: {"caches":["skybreak-meta","skybreak-6a731815730379892a6a8c2e806d16087872a36a"],"pending":false}
+[cold_pf] engine running in 33.7 s, boot {"mode":"updated","build":"6a731815730379892a6a8c2e806d16087872a36a"}
+PASS cold profile (like incognito) reaches a Pure Fight match: {"ok":true,"framesIn5s":3,"match":{"mode":"pure_fight","scene":"res://game/modes/pure_fight/pure_fight_match.tscn","zone":"verdant_falls"},"worstStallMs":2237,"ms":11149}
+PASS: 5 checks

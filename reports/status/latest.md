@@ -1,67 +1,71 @@
-# Skybreak status (2026-11-23 08:40 UTC, PF-ZONE-HANG lane)
-
-## Urgent fix: Pure Fight "stuck" on the zone select (PF-ZONE-HANG)
-
-- **Cause:** the web Settings screen offered LOW/MEDIUM/HIGH. With one of those saved (in the browser's
-  IndexedDB, so incognito was fine), FIGHT found no prebuilt zone and built it live on the page's only
-  thread with no loading screen: minutes of a frozen page. Not the service worker or the caches.
-- **Fix merged:** main `2df1bdbc` (+ evidence `72441bd`): the web build always uses WEB (repairs saved
-  profiles on the next visit), every match starts behind a loading screen, zone packs retry fresh, old
-  packs and caches are dropped. Built and pushed to `web-build` 39c8784; **live**: deploy workflow run 6 succeeded and its live check read
-  `version.json` build `2df1bdbc731f...` and index.pck 56899180 bytes (this cloud session can't reach the site itself).
-- Evidence and the new `tools/web/upgrade_test.js`: `reports/web/pf-zone-hang/README.md`.
-
+# Skybreak status (2026-11-23 13:52 UTC, ship lane)
 
 ## What's live
 
-- Site: https://skybreak-web-6a113777000db893b12e.appwrite.network, built from `main` **2df1bdbc** since 08:39
-  (PF-ZONE-HANG, above). Before that: built from `main` **3b86467c**
-  (`version.json` build `3b86467c3c1b325b19e91b0f3f6db7aba75f45e8`, web-build 6c9d5cc6; checked by the deploy
-  workflow, the cloud proxy blocks the site for me). Windows: `play-windows` 259519c1, same build.
-- New in this build: **#150 move escape** (dodge, sidestep or side vanish out of, or round, the
-  opponent's strings), every afterimage is now a pose ghost (#127), and the camera fix below.
+- Site: https://skybreak-web-6a113777000db893b12e.appwrite.network, built from `main` **6a731815**
+  (`web-build` de63342c). **Live**: deploy workflow run 7
+  succeeded at 13:48 UTC; its live check matched `index.pck` at 56900524 bytes (previous build 56899180).
+  The live-profile seed/verify step in DEPLOY.md was not run: this cloud session cannot reach the site.
+- New in this build: **no numpad keys anywhere** (owner: "also dont use any numpad keys for any fight
+  techniques"). Pure Fight's second player now plays on the arrows and the keys under the right hand.
+  Everything from the PF-ZONE-HANG build (2df1bdbc) is still in: FIGHT never freezes, every match
+  starts behind a loading screen.
+- Windows (`play-windows` 259519c1) is still the 3b86467c build: DEPLOY.md doesn't cover it, so it
+  was not rebuilt. It has the old numpad P2 keys.
 
-## What changed
+## Pure Fight keys (two players, one laptop)
 
-1. **Main is green again.** After #150, a dodge or air tech could leave you with your back to a wall.
-   The camera was then squeezed close and lost the opponent beside or under the lens (the Verdant
-   Falls test: 94.9 %, needs 95 %). Now, only in that squeezed case, it turns to keep you both in
-   frame: 97.1 %. The close-combat camera is unchanged everywhere else. Camera QA is equal or better
-   on every zone.
-2. Full GUT with zone bakes: 1973 tests, **0 failing**, 10 pending. det_check unchanged
-   (`b8bab850a4256dc7`, stable). QA quick is the same as main.
-3. Tests that need zone bakes now fail, instead of skipping, when run with
-   `SKYBREAK_REQUIRE_BAKES=1`. AGENTS.md tells lanes to bake first.
-4. The Duo browser test clicks the right menu button again, and passes.
+| Action | P1 | P2 |
+|---|---|---|
+| Walk back / forward | A / D | Left / Right arrow |
+| Jump | W or Space | Up arrow |
+| Crouch | S | Down arrow |
+| Light / medium / heavy | J / K / L | `,` / `.` / `/` |
+| Throw | U | `;` |
+| Technique key | I | `'` |
+| Finisher (full meter) | O | `]` |
+| Dash | **Left** Shift + direction, or tap twice | **Right** Shift + direction, or tap twice |
+| Block | hold back (down-back for lows), or E | hold back (down-back for lows), or `[` |
 
-Details: `reports/builds/2026-11-23-3b86467c.md`.
+Motions (236, 623, 214) are directions on the arrows for P2, not keypad keys. Training dummy: T.
+The pause menu's move list and the character select name the same keys. The loading screen shows
+only the zone name and a bar, so there was nothing to change there. A grep for
+`kp_|numpad|num[0-9]` over `game/` and the docs finds only the numpad guard itself, comments about
+"numpad notation" for directions, and the tutorial's keypad Enter (menu only, Return works).
+
+## What changed this run
+
+1. **`fix/no-numpad` merged** (main 6a731815, `--no-ff`) after main's PF-ZONE-HANG work was merged
+   in (no conflicts). Evidence on the merge: zone bakes 7 x 4 fresh, `--check` clean; full GUT
+   with `SKYBREAK_REQUIRE_BAKES=1`: **1993 tests, 1987 passing, 0 failing, 10 pending**; det_check
+   `b8bab850a4256dc7` on two runs, identical (same as before); QA quick the same as main bbc45d0f,
+   run back to back (same violations, every gameplay metric equal, ms +6 %).
+2. **#106 AI variety: still not merged.** The ki-duel test now checks 10 seeds (every seed must
+   throw ki blasts, mean >= 4.0, set from main's 5.5 average). #106 gives 5.1 and passes it
+   honestly. But on the merge with the new main, QA quick is **worse than main**: feet off the
+   ground in 8 of 21 matches, 16 frames (main: 4 matches, 5 frames; worst, Vexa's foot 1.1 m
+   under the ground strafing on Ember Rift), and foot slide +22 %. The changed fights also show
+   Brann's Heartstring Bow poking into his arm (filed as QA-25). So it stays on its branch with
+   the evidence (`fix/issue-106-ai-variety`).
+3. Web build of 6a731815: match smoke PASS, cache test 6/6, upgrade test PASS (5 checks: 3b86467c -> 2df1bdbc -> this build in one profile, HIGH saved, update cut off halfway; Pure Fight by mouse and Enter, versus and a cold profile reach a match). Evidence: `reports/web/no-numpad-ship/`.
 
 ## Still open, ranked
 
-1. **#106 AI variety: not merged, needs your call.** It fails a ki-duel test that asks for more than
-   10 ki blasts in one fixed fight. Main passes it only by luck: over 10 seeds main averages 5.5 blasts
-   (only 1 seed over 10), and #106 averages 5.1. Options: make the hardest AI throw more ki, or let
-   the test check several seeds. The change is ready on `fix/issue-106-ai-variety`.
-2. DUO-ICE-RACE: on a busy machine, one Duo test run hit a WebRTC set-up race and logged one console
-   error. The same test run alone passed. Worth a small fix in the net code.
+1. **#106 AI variety**, above: needs the foot grounding looked at before it can merge. The GitHub
+   issue was already closed on 22 Nov; the change itself is not live.
+2. DUO-ICE-RACE: on a busy machine, one Duo test run hit a WebRTC set-up race and logged a console
+   error. Alone it passes. Small fix in the net code.
 3. Rush tailgating (from #150), and the owner playing the held-Shift air tech.
-4. #109 needs the GTX 1650 PC. The Windows build is still not boot-tested on Windows.
-
-## GitHub issues that can be closed
-
-#150 is now live, so it can be closed. The ready comments in `reports/issues/triage.md` still apply
-(#73, #75, #77, #78, #80, #92, #93, #101, #127, #128, #134, #136, and the obsolete or superseded
-ones). Still open: #106 and #109.
+4. #109 needs the GTX 1650 PC. The Windows build is still not tested on Windows.
+5. No-numpad: real keyboard ghosting on your laptops can't be tested in the cloud. If a 3-4 key
+   combo drops a key for one of you, say which. The combat training room still uses F1-F7.
 
 ## How to play
 
-Same as before: Main menu -> Pure Fight, Play (Vs AI), or Duo (sign in, Host gives a 5-letter code,
-partner Joins). Escapes: tap Shift with a direction during a blocked string to dodge or sidestep out.
-Pure Fight keys after the next web build (no numpad): P1 A/D, W or Space, S, J/K/L, U throw,
-I technique, O finisher, **Left** Shift + direction dash, hold back or E to block. P2 arrows,
-`, . /` light/medium/heavy, `;` throw, `'` technique, `]` finisher, **Right** Shift + direction dash,
-hold back or `[` to block. Training dummy: T. Table: `reports/controls/no-numpad/README.md`.
+Main menu -> Pure Fight, Play (Vs AI), or Duo (sign in, Host gives a 5-letter code, partner Joins).
+Pure Fight on one laptop: the key table above. Escapes: tap Shift with a direction during a blocked
+string to dodge or sidestep out.
 
 ## Needs you
 
-The #106 decision above. Nothing about money, accounts or public things.
+Nothing urgent. Try two-player Pure Fight on your laptops and say if any key combo drops.
