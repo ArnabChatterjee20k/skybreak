@@ -8,6 +8,10 @@ const LYRA_STATS := preload("res://game/combat/moves/lyra/lyra_fighter_stats.tre
 ## The ki duel DetCheck chains (tools/diag/det_check_run.gd).
 const KI_MATCH_SEED := 2026
 const KI_MATCH_TICKS := 3600
+## Seeds for the blast count, KI_MATCH_SEED first.
+const KI_BLAST_SEEDS: Array[int] = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035]
+## Main bbc45d0f over KI_BLAST_SEEDS: 13,4,3,5,4,2,5,6,7,6 (mean 5.5, sd 3.0); 4.0 is mean - 1.5 standard errors.
+const KI_BLAST_MEAN_MIN := 4.0
 
 var _sim: CombatSim
 var _previous: Array[FighterInput] = []
@@ -366,7 +370,17 @@ func test_a_ki_heavy_ai_duel_is_deterministic_and_uses_blasts_and_beams() -> voi
 	var seen: Dictionary = first.seen
 	gut.p("ki duel events: blasts %d, beams %d, clashes %d" % [seen.get(E.KI_FIRE, 0), seen.get(E.BEAM_FIRE, 0),
 		seen.get(E.BEAM_CLASH, 0)])
-	assert_gt(seen.get(E.KI_FIRE, 0), 10)
+	# Blasts per duel swing 2-13 by seed, so one seed proves nothing: check every seed and the mean.
+	var blasts: Array[int] = [int(seen.get(E.KI_FIRE, 0))]
+	for seed_value in KI_BLAST_SEEDS.slice(1):
+		blasts.append(int(_ki_match(seed_value, KI_MATCH_TICKS).seen.get(E.KI_FIRE, 0)))
+	var total := 0
+	for i in blasts.size():
+		assert_gt(blasts[i], 0, "seed %d: the AIs throw ki blasts" % KI_BLAST_SEEDS[i])
+		total += blasts[i]
+	var mean := float(total) / blasts.size()
+	gut.p("ki blasts per duel, seeds %d-%d: %s, mean %.1f" % [KI_BLAST_SEEDS[0], KI_BLAST_SEEDS[-1], blasts, mean])
+	assert_gte(mean, KI_BLAST_MEAN_MIN, "AI ki zoning stays near main's rate")
 	# T-KI1-b: one 60 s L5 duel shows a beam only by seed luck (main: 1, 0, 0, 0 for seeds 2026-2029).
 	if seen.get(E.BEAM_FIRE, 0) == 0:
 		pending("T-KI1-b: no beam in this duel; AI beams are covered by test_ai_ki.gd")
