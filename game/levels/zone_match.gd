@@ -401,7 +401,7 @@ func _step_online() -> void:
 	weapon_layer.remember_previous_tick()
 	var input := _local_input()
 	if net_session.advance(input):
-		input_probe.record(sim.current_tick, input, _move_id(player))
+		input_probe.record(sim.current_tick, input, _move_id(player), sim.fighters[player].state)
 		combat_feedback.react(sim.events)
 		match_cues.after_tick(match_flow, sim)
 		match_audio.after_tick()
@@ -479,7 +479,7 @@ func step_tick() -> void:
 			inputs.append(FighterInput.new())
 	sim.tick(inputs)
 	if player < inputs.size():
-		input_probe.record(sim.current_tick, inputs[player], _move_id(player))
+		input_probe.record(sim.current_tick, inputs[player], _move_id(player), sim.fighters[player].state)
 	combat_feedback.react(sim.events)
 	match_flow.step(sim)
 	match_cues.after_tick(match_flow, sim)

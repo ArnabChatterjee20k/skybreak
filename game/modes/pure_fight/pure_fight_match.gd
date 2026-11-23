@@ -210,7 +210,7 @@ func _step_online() -> void:
 	if input_blocked:
 		input = FighterInput.new()
 	if net_session.advance(input):
-		input_probe.record(sim.current_tick, input, String(sim.pf[local_peer].move))
+		input_probe.record(sim.current_tick, input, String(sim.pf[local_peer].move), sim.pf[local_peer].state)
 		effects.react(sim.events)
 		hud.after_tick(sim.events)
 		_play_sounds(sim.events)
@@ -298,7 +298,7 @@ func step_tick() -> void:
 			inputs.append(_dummy_input(i))
 	sim.tick(inputs)
 	if probed >= 0:
-		input_probe.record(sim.current_tick, inputs[probed], String(sim.pf[probed].move))
+		input_probe.record(sim.current_tick, inputs[probed], String(sim.pf[probed].move), sim.pf[probed].state)
 	if training:
 		_refill()
 	effects.react(sim.events)

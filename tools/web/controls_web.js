@@ -210,12 +210,12 @@ async function startMatch(page, entry, zone, mode) {
 }
 
 // Polls window.skybreakInputs for an entry whose press has `bit`; resolves it (or null).
-async function waitPress(page, bit, ms) {
+async function waitPress(page, bit, ms, settle = 2500) {
 	const t0 = Date.now();
 	while (Date.now() - t0 < ms) {
 		const hit = await page.evaluate((b) => (window.skybreakInputs || []).find((e) => e.pressed & b) || null, bit);
 		if (hit) {
-			await page.waitForTimeout(2500);
+			await page.waitForTimeout(settle);
 			const after = await page.evaluate((t) => (window.skybreakInputs || []).filter((e) => e.tick >= t), hit.tick);
 			return { hit, moves: [...new Set(after.map((e) => e.move).filter((m) => m))] };
 		}
@@ -264,15 +264,17 @@ async function mouseScheme(page, out) {
 				await page.waitForTimeout(3000);
 				await page.evaluate(() => { window.skybreakInputs = []; });
 				await act();
-				const r = await waitPress(page, bit, 30000);
+				const r = await waitPress(page, bit, 30000, 6000);
 				const focus = await page.evaluate(() => document.activeElement && document.activeElement.id);
 				ok = !!r && (!wantMove || r.moves.length > 0) && focus === 'canvas';
-				detail = (r ? `pressed ${r.hit.pressed} at tick ${r.hit.tick}, moves started: ${r.moves.join(',') || 'none'}`
+				detail = (r ? `pressed ${r.hit.pressed} at tick ${r.hit.tick} in state ${r.hit.state}, moves started: ${r.moves.join(',') || 'none'}`
 					: 'no press seen') + `, focus ${focus}, try ${attempt}`;
 			}
 			record(`${label}: ${name}`, ok, detail);
 		}
 	};
+	const parts = (process.env.MOUSE_PARTS || 'pf,3d').split(',');
+	if (parts.includes('pf')) {
 	if (!await startMatch(page, 1, AT.verdant, 'pure_fight')) {
 		record('Pure Fight match starts', false, 'window.skybreakMatch never said pure_fight');
 		return false;
@@ -304,6 +306,8 @@ async function mouseScheme(page, out) {
 	await page.click('#start', { timeout: 120000 });
 	await page.waitForSelector('#cover', { state: 'detached', timeout: 300000 });
 	await page.waitForTimeout(8000);
+	}
+	if (!parts.includes('3d')) return rows.every((r) => r.ok);
 	await page.evaluate(() => {
 		window.__menus = [];
 		window.addEventListener('contextmenu', (e) => window.__menus.push(e.defaultPrevented), { passive: false });
@@ -320,8 +324,11 @@ async function mouseScheme(page, out) {
 	]);
 	await shot('vs_after_clicks');
 	const menus3d = await page.evaluate(() => window.__menus.slice());
-	record('Versus AI: no context menu on right click', menus3d.length > 0 && menus3d.every((p) => p),
-		`${menus3d.length} contextmenu events, all defaultPrevented: ${menus3d.every((p) => p)}`);
+	const lock3d = await page.evaluate(() => document.pointerLockElement ? document.pointerLockElement.id : null);
+	// The 3D camera takes pointer lock on the first click; under it the browser shows no menu and
+	// fires no contextmenu event. Unlocked, every event must be suppressed.
+	record('Versus AI: no context menu on right click', menus3d.every((p) => p) && (menus3d.length > 0 || lock3d === 'canvas'),
+		`${menus3d.length} contextmenu events, all defaultPrevented: ${menus3d.every((p) => p)}, pointer lock on ${lock3d}`);
 	return rows.every((r) => r.ok);
 }
 

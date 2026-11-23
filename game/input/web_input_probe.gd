@@ -10,14 +10,16 @@ var enabled := OS.has_feature("web")
 var _last_move := ""
 
 
-## Call once per tick with the local input and the local fighter's current move id ("" for none).
-func record(tick: int, input: FighterInput, move: String) -> void:
+## Call once per tick with the local input, the local fighter's current move id ("" for none)
+## and its state (the sim's enum value, for test logs).
+func record(tick: int, input: FighterInput, move: String, state: int = -1) -> void:
 	if not enabled:
 		return
 	var started := move != _last_move and move != ""
 	_last_move = move
 	if input.pressed_actions == 0 and not started:
 		return
-	var entry := {"tick": tick, "pressed": input.pressed_actions, "held": input.held_actions, "move": move}
+	var entry := {"tick": tick, "pressed": input.pressed_actions, "held": input.held_actions, "move": move,
+		"state": state}
 	JavaScriptBridge.eval("(function(e){var a=window.skybreakInputs=window.skybreakInputs||[];a.push(e);if(a.length>%d)a.shift();})(%s);"
 		% [MAX_ENTRIES, JSON.stringify(entry)])
