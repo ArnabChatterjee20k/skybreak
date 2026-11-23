@@ -94,6 +94,10 @@ godot --headless --path . --import
 # Run all tests (exits non-zero on failure). Includes the scripted playtest
 # (tests/playtest/): bot flights through the real arena with camera asserts.
 godot --headless --path . -s res://addons/gut/gut_cmdln.gd
+# A lane claiming "full GUT" bakes the zones first (game/world/voxel_zone_kit/README.md,
+# "Bakes") and runs with SKYBREAK_REQUIRE_BAKES=1: without bakes the zone camera,
+# flight clearance and bake tests go pending, and then they fail instead.
+SKYBREAK_REQUIRE_BAKES=1 godot --headless --path . -s res://addons/gut/gut_cmdln.gd
 # Only the scripted playtest
 godot --headless --path . -s res://addons/gut/gut_cmdln.gd -gdir=res://tests/playtest
 # Render the scripted flights for review by eye (contact sheets, key frames,

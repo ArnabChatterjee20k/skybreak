@@ -1,0 +1,5 @@
+    "console_errors": 0,
+  "common_state_hashes": 309,
+  "match_sim_seconds": 155,
+  "mismatched_hashes": 0,
+PASS: Duo host -> join -> match over WebRTC in two pages

@@ -1,0 +1,8 @@
+Scripts             202
+Tests              1973
+Passing Tests      1967
+Risky/Pending        10
+Asserts           294893
+Orphans              15
+Time              985.133s
+exit 0
