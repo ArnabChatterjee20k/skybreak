@@ -235,6 +235,11 @@ and `[desktop]` (cloud agents). See `AGENTS.md` for folder ownership.
   while she is in HITSTUN, then ESCAPING (air tech), then FLYING (seed-3 shattered_mesa visual QA,
   12-30 frames depending on run order, QA-17). Reached once specials landed on the escape merge;
   pending under QA-20 in `test_visual_qa.gd` (fails under run_qa.sh strict).
+  Open: QA-25 [desktop, characters] Brann's Heartstring Bow sinks 2.6-6.6 cm into his left
+  upper arm capsule in `heartstring/shot` (ATTACKING, ticks 1144-1148 of the seed-2 frozen_peaks
+  visual QA run, 5 frames, tolerance 1). Main's run never has Brann shoot it there; the #106 AI
+  string variety changes the fight and reaches it. Pending under QA-25 in `test_visual_qa.gd`
+  (fails under run_qa.sh strict).
   Open: T-DEF3-pop, Lyra RightUpperArm turns 1.21 rad in one frame entering hitstun hit_light
   (1 frame in QA quick; limit 1.2), characters lane.
 
