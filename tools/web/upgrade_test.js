@@ -248,7 +248,8 @@ async function chooseHigh(v, name) {
 	await click(v, AT.graphicsTab);
 	await click(v, AT.high);
 	await shot(v, `${name}_settings_high`);
-	await key(v, 'Escape', 2000);
+	// Godot syncs user:// to IndexedDB after the write; closing the browser sooner loses it.
+	await key(v, 'Escape', 10000);
 }
 
 async function visitBuild(profile, url, label, steps) {
