@@ -1,5 +1,14 @@
 # Skybreak status (2026-11-23 08:40 UTC, PF-ZONE-HANG lane)
 
+## Mouse controls merged (MOUSE-CONTROLS lane, 13:20 UTC): main needs a web build
+
+- "We can use the mouse as well right? LMB and RMB?": **yes, in every mode**. Left click = light,
+  right click = heavy (a MacBook trackpad's two-finger click is a right click), WASD moves, and the
+  old J/K/L/U/I/O keys still work. Merged into main with `--no-ff` (MAIN_SHA_PLACEHOLDER); GUT 0 failing,
+  det_check unchanged, QA quick and camera QA same as main. **Main needs a web build** (the
+  FINISH-AND-SHIP lane was still running; `web-build` is still 39c8784).
+- Table, what changed and evidence: `reports/controls/mouse/README.md`.
+
 ## Urgent fix: Pure Fight "stuck" on the zone select (PF-ZONE-HANG)
 
 - **Cause:** the web Settings screen offered LOW/MEDIUM/HIGH. With one of those saved (in the browser's
@@ -57,6 +66,11 @@ ones). Still open: #106 and #109.
 
 Same as before: Main menu -> Pure Fight, Play (Vs AI), or Duo (sign in, Host gives a 5-letter code,
 partner Joins). Escapes: tap Shift with a direction during a blocked string to dodge or sidestep out.
+**Mouse (after the next web build), one player per laptop:** Pure Fight: WASD, **left click light,
+right click heavy**, middle click or Q medium, F throw, R technique, C finisher, Left Shift dash,
+hold back or E block (J/K/L/U/I/O still work). 3D (vs AI, FFA, Training, Duo): WASD, Space / C fly
+up / down, **left click light, right click heavy**, mouse turns the camera (click once, Esc lets
+go), E block, Shift dash, F grab, Q ki blast (keyboard only: J light, L heavy).
 Pure Fight keys after the next web build (no numpad): P1 A/D, W or Space, S, J/K/L, U throw,
 I technique, O finisher, **Left** Shift + direction dash, hold back or E to block. P2 arrows,
 `, . /` light/medium/heavy, `;` throw, `'` technique, `]` finisher, **Right** Shift + direction dash,

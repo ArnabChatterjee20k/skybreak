@@ -1,0 +1,18 @@
+Scripts             204
+Tests              2013
+Passing Tests      2007
+Asserts           295916
+Time              1160.025s
+gut_exit=0
+---- 10 pending/risky tests. ----
+    [Pending]:  T-KI1-b: no beam in this duel; AI beams are covered by test_ai_ki.gd
+    [Pending]:  ground_contact: 690 violations in heartbloom_gardens, QA-12: Drawn soles off the visible ground in a few standing frames (foot grounding lane).
+    [Pending]:  fighter_vs_fighter: 20 violations in heartbloom_gardens, QA-11: Drawn bodies overlap: sim pushboxes are slimmer than the drawn core bodies (pushbox sizing lane).
+    [Pending]:  ground_contact: 908 violations in frozen_peaks, QA-12: Drawn soles off the visible ground in a few standing frames (foot grounding lane).
+    [Pending]:  fighter_vs_fighter: 74 violations in frozen_peaks, QA-11: Drawn bodies overlap: sim pushboxes are slimmer than the drawn core bodies (pushbox sizing lane).
+    [Pending]:  ground_contact: 801 violations in shattered_mesa, QA-12: Drawn soles off the visible ground in a few standing frames (foot grounding lane).
+    [Pending]:  fighter_vs_fighter: 42 violations in shattered_mesa, QA-11: Drawn bodies overlap: sim pushboxes are slimmer than the drawn core bodies (pushbox sizing lane).
+    [Pending]:  needs a renderer (xvfb + gl_compatibility)
+- test_hilly_frozen_peaks_pass_every_geometric_check
+- test_shattered_mesa_passes_every_geometric_check
+- test_the_ko_covers_at_most_30_percent_and_keeps_the_falling_loser_visible

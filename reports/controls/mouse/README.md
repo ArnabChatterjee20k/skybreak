@@ -104,4 +104,55 @@ trackpad has no middle click: medium is also on Q in Pure Fight, lock-on also on
 
 ## Evidence
 
-EVIDENCE_PLACEHOLDER
+Cloud container, 4 cores, lavapipe / swiftshader; Godot `4.7.2.stable.official.ed1daf0bf`
+(zip SHA-512 OK against `SHA512-SUMS.txt`), web templates `.tpz` SHA-512 OK.
+
+- **Zone bakes**: 7 zones x 4 tiers baked (xvfb + lavapipe, 3 jobs, 7/7 exit 0);
+  `voxel_zone_bake.gd --check` exit 0 (28 current).
+- **New tests** `tests/input/test_mouse_controls.gd`, 20 tests / 293 asserts, all pass. They cover:
+  LMB light / RMB heavy / MMB lock-on in the 3D reader; every 3D action reachable from each of its
+  default events and the keyboard-only J / L / U / I / O / Tab; the wheel is only target switch; a
+  held click stays one press while W / E / Shift change; a trackpad tap shorter than a tick still
+  attacks (3D and Pure Fight) and a stale tap never fires later; a left click starts a move in the
+  3D sim; Pure Fight P1's mouse scheme drives every button (LMB light, MMB medium, RMB heavy, F
+  throw, R technique, C finisher, E block, Q medium, Left Shift dash) and leaves P2 idle; P1's
+  J / K / L / U / I / O and A / D / W / Space / S still work; mouse buttons never reach P2; no key
+  clashes between P1 and P2 or with the dummy toggle; in a real Pure Fight sim LMB = J, MMB = K =
+  Q, RMB = L, F throws, R + down = 623, I + down still works, C finishes, 236 + LMB = Iron Lunge;
+  a clicked input survives the Duo wire unchanged and RMB sends the same bytes as L; Pure Fight
+  never captures the pointer while a 3D level does; mouse buttons are bindable (and move off other
+  actions, persist, reset), the controls screen binds a click; hints lead with the mouse; Pure
+  Fight's hint shows then fades; no numpad key in any default.
+- **Full GUT on the merge with main 6a731815 (be1d1763)**, bakes required
+  (`SKYBREAK_REQUIRE_BAKES=1`): **2013 tests, 2007 passing, 0 failing, 10 pending** (the known
+  QA-11 / QA-12 / renderer / T-KI1-b pendings), exit 0 (`gut_merge_be1d1763.txt`).
+- **det_check** on the merge: two runs identical, `det_check total b8bab850a4256dc7` (= main;
+  input mapping does not touch the sim) (`det_check_merge.txt`).
+- **Camera QA** (`voxel_camera_qa.gd -- 1200 7`): every zone identical to main's last log
+  (Verdant Falls 97.1 %, the other six 100 %, clip frames 0) (`camera_qa_branch.log`). No camera
+  file changed.
+- **QA quick, main vs merge, same machine, 3 jobs**: main (bbc45d0f; 6a731815 only adds Pure Fight
+  keys, not on the soak's path) and the merge be1d1763 give the same sections (sim PASS, view FAIL
+  with the same hits: foot_ground 4/21, camera_on_screen 1/21, pop 1/21; scenarios, golden replays
+  and the feel trend PASS; visual goldens not run on either) and **all 32 gameplay metrics
+  identical**. Only wall-clock ms differ between those two runs: sim 1.18 vs 1.44 ms/tick, view
+  1.33 vs 1.58 ms/frame. Main's own runs on these containers spread 1.16-1.37 / 1.28-1.56
+  (`reports/qa/*/metrics.json`), and the harness's trend check against the newest main-code run
+  (68eb50d1: 1.33 / 1.50) passes. A paired re-run of just the soak, alternating main 6a731815 and the merge (3 shards
+  each, nothing else running), settles it: **main 1.417 / 1.405 ms per tick, merge 1.353 /
+  1.476** (means 1.411 vs 1.415; view 1.572 vs 1.569 ms per frame) (`soak_ab_ms.txt`). No worse.
+  Reports: `reports/qa/2026-11-23-be1d1763-quick.md`, main's `qa_quick_main_bbc45d0f_3jobs.md`.
+- **Browser, real web export** (`node tools/web/controls_web.js mouse build/web`), headless
+  Chromium with swiftshader WebGL, branch builds b6559e2e (Pure Fight) and 0f5da979 (3D):
+  **every check PASS** (`web/mouse_branch_pf_run1.txt`, `web/mouse_branch_3d_run2.txt`).
+  - Pure Fight vs AI on Verdant Falls, real clicks on the canvas: left click started 5L, right
+    click 5H, middle click 5M, Q 5M, F the throw, J 5L, L 5H, and a left click held while D walks
+    5L; keyboard focus stayed on the canvas after every click; `pointerLockElement` stayed null;
+    the right click's `contextmenu` event was suppressed (no menu).
+  - Versus AI (3D) on Ember Rift: left click started light_1, right click smash, J light_1; the
+    first click took pointer lock for the mouse look, under which the browser shows no context
+    menu at all (0 contextmenu events). The first three right clicks landed while the AI had Kael
+    in hitstun (state 9), where no attack can start; the test now retries up to 6 times and logs
+    each try's state.
+- **Not tested here**: a real mouse and a real MacBook trackpad (headless Chromium sends real DOM
+  mouse events, but no hardware); the trackpad tap is covered by the latch test in GUT.
