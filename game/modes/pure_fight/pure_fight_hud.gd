@@ -38,8 +38,12 @@ var _advantage := 0
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Laid out in the 1920x1080 design and scaled to the window like MatchHud (a 1280x720 or
+	# MacBook browser window cut off P2's bar and the bottom hint before).
+	set_anchors_preset(Control.PRESET_TOP_LEFT)
+	size = MatchHud.DESIGN
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fit_to(get_viewport_rect().size)
 	for i in 2:
 		var left := i == 0
 		var x := 80.0 if left else 1920.0 - 80.0 - BAR_SIZE.x
@@ -123,6 +127,12 @@ func _ready() -> void:
 	add_child(_hint)
 
 
+## Scales the design to fit `screen`, centred across and pinned to the top.
+func fit_to(screen: Vector2) -> void:
+	scale = Vector2.ONE * MatchHud.design_scale(screen)
+	position = MatchHud.design_offset(screen)
+
+
 func show_callout(text: String) -> void:
 	_callout.text = text
 	_callout_time = 1.0
@@ -169,6 +179,7 @@ func _measure_advantage() -> void:
 
 
 func _process(delta: float) -> void:
+	fit_to(get_viewport_rect().size)
 	if sim == null:
 		return
 	for i in 2:
