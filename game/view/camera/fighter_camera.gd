@@ -127,6 +127,11 @@ const WALL_RADIUS := 4.0
 const WALL_MAX_PUSH := 4.0
 var _last_player := Vector3.ZERO
 const LAG_EXTRA_FOV := 10.0
+## The boom counts as clipped once an obstacle holds it this much (m) short.
+const BOOM_CLIPPED_SLACK := 0.5
+## Seconds to blend the goal to (and back from) aiming at the pair from a clipped spot.
+const PAIR_AIM_BLEND_SECONDS := 0.2
+var _pair_aim := 0.0
 ## Locked, the FOV widens at once to keep both fighters inside this fraction of
 ## the frame (a fast dash, a swing to the exchange angle), up to FIT_MAX_FOV.
 const FIT_MARGIN := 0.95
@@ -340,8 +345,11 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 		var blended := _blend_exchange(goal, fov_goal, player, target, delta)
 		goal = blended.goal
 		fov_goal = blended.fov
+		if _has_pose:
+			goal = _aim_pair_from_here(goal, player, real_target, delta)
 	else:
 		_exchange_weight = 0.0
+		_pair_aim = 0.0
 		if _was_locked and _has_pose:
 			_continue_free_orbit_from_here(player)
 		free_pitch = clampf(free_pitch, LockOnFraming.MIN_FREE_PITCH, LockOnFraming.MAX_FREE_PITCH)
@@ -386,6 +394,8 @@ func follow(player: Vector3, target: Vector3, locked: bool, delta: float) -> voi
 	var total := rotation_from.angle_to(kept)
 	if total > max_turn:
 		global_basis = Basis(rotation_from.slerp(kept, max_turn / total))
+	if locked and _boom_clipped():
+		_keep_pair_in_frame(_anchor, real_target, deg_to_rad(near_catch_up_turn_speed) * delta)
 	var turned := rotation_from.angle_to(global_basis.get_rotation_quaternion())
 	# angle_to reads ~0.0007 rad for identical float32 rotations; below this
 	# floor the view is still, so the ease-in allowance starts from zero.
@@ -570,6 +580,76 @@ func _keep_in_frame(point: Vector3) -> void:
 	var b := global_basis.rotated(Vector3.UP, -yaw)
 	b = b.rotated(b.x, pitch)
 	global_basis = b.orthonormalized()
+
+
+## Escape moves (a dodge out of a blocked string, an air tech, a knockback) can
+## leave the boom clipped short against terrain, where the aim planned for the
+## unclipped spot loses the opponent beside or under the lens. Then the goal turns
+## toward framing both from where the camera is (within the view pitch limits),
+## and eases back once the boom is free. Returns the goal to use.
+func _aim_pair_from_here(goal: Transform3D, player: Vector3, target: Vector3, delta: float) -> Transform3D:
+	var here := global_transform
+	if not _boom_clipped():
+		_pair_aim = move_toward(_pair_aim, 0.0, delta / PAIR_AIM_BLEND_SECONDS)
+	elif not (LockOnFraming.is_in_view(here, fov, player) and LockOnFraming.is_in_view(here, fov, target)):
+		_pair_aim = move_toward(_pair_aim, 1.0, delta / PAIR_AIM_BLEND_SECONDS)
+	if _pair_aim <= 0.0:
+		return goal
+	var to_player := (player - here.origin).normalized()
+	var to_target := (target - here.origin).normalized()
+	var look := LockOnFraming._clamp_pitch(to_player + to_target)
+	var aim := LockOnFraming._looking_at(here.origin, here.origin + look)
+	var w := smoothstep(0.0, 1.0, _pair_aim)
+	return Transform3D(Basis(goal.basis.get_rotation_quaternion().slerp(aim.basis.get_rotation_quaternion(), w)),
+		goal.origin)
+
+
+## True while terrain or a prop holds the boom well short of its length.
+func _boom_clipped() -> bool:
+	return obstacles != null and _clip_length < _offset.length() - BOOM_CLIPPED_SLACK
+
+
+## With the boom clipped and a fighter out of frame, turn (on top of the capped
+## turn, at most max_turn radians more) just enough that both fit the widest fit
+## view (FIT_MAX_FOV); never past the view pitch limits.
+func _keep_pair_in_frame(player: Vector3, target: Vector3, max_turn: float) -> void:
+	var view := global_transform
+	if LockOnFraming.is_in_view(view, fov, target) and LockOnFraming.is_in_view(view, fov, player):
+		return
+	var tan_v := tan(deg_to_rad(FIT_MAX_FOV) / 2.0) * FIT_MARGIN
+	var half_h := atan(tan_v * _aspect())
+	var half_v := atan(tan_v)
+	var inverse := view.affine_inverse()
+	var p := inverse * player
+	var t := inverse * target
+	var yaw := _pair_turn(atan2(p.x, -p.z), atan2(t.x, -t.z), half_h)
+	var p_flat := Vector2(p.x, p.z).length()
+	var t_flat := Vector2(t.x, t.z).length()
+	var pitch := _pair_turn(atan2(p.y, p_flat), atan2(t.y, t_flat), half_v)
+	var forward := -global_basis.z
+	var view_pitch := asin(clampf(forward.y, -1.0, 1.0))
+	pitch = clampf(view_pitch + pitch, -LockOnFraming.MAX_VIEW_PITCH_DOWN, LockOnFraming.MAX_VIEW_PITCH_UP) - view_pitch
+	var size := Vector2(yaw, pitch).length()
+	if size < 0.0001:
+		return
+	if size > max_turn:
+		yaw *= max_turn / size
+		pitch *= max_turn / size
+	var b := global_basis.rotated(Vector3.UP, -yaw)
+	b = b.rotated(b.x, pitch)
+	global_basis = b.orthonormalized()
+
+
+## The smallest turn (radians, toward +angle) that puts both angles inside
+## +-half; 0 when the target already is, or when the pair is too wide to fit.
+static func _pair_turn(player_angle: float, target_angle: float, half: float) -> float:
+	if absf(target_angle) <= half:
+		return 0.0
+	var lo := maxf(player_angle, target_angle) - half
+	var hi := minf(player_angle, target_angle) + half
+	if lo > hi:
+		return 0.0
+	return clampf(0.0, lo, hi)
 
 
 func _aspect() -> float:
