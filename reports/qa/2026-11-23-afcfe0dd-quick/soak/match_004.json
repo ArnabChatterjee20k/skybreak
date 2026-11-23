@@ -1,0 +1,107 @@
+{
+	"hitstops": {
+		"bow/projectile": {
+			"6": 9
+		},
+		"breaker": {
+			"7": 7,
+			"8": 3,
+			"10": 1
+		},
+		"breaker+counter": {
+			"11": 1
+		},
+		"kael_comet_drive": {
+			"9": 3
+		},
+		"launcher": {
+			"7": 1
+		},
+		"light_1": {
+			"3": 5,
+			"4": 3,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 5,
+			"8": 3
+		},
+		"light_2": {
+			"3": 9,
+			"4": 6,
+			"5": 1
+		},
+		"light_3": {
+			"3": 5,
+			"4": 4,
+			"5": 4,
+			"8": 1
+		},
+		"light_4": {
+			"6": 3
+		},
+		"smash": {
+			"10": 2
+		}
+	},
+	"id": "104:verdant_falls:ffa4:vexa,brann,lyra,kael:2243",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann",
+		"lyra",
+		"kael"
+	],
+	"levels": [
+		2,
+		2,
+		4,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 104,
+	"sim_ms_per_tick": 1.54229875,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0110938306897879,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.26601684709531,
+		"foot_slide_cm_per_frame": 0.063415434897811,
+		"foot_slide_frames": 569,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.995414756148395,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.65044416666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 3,
+			"detail": "lowest sole +6.6 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 3,
+			"first_tick": 1943,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1949,
+			"worst_value": 0.066050267569068
+		}
+	],
+	"wall_seconds": 22.594,
+	"zone": "verdant_falls"
+}

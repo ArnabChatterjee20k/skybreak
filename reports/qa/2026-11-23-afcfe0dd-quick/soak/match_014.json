@@ -1,0 +1,113 @@
+{
+	"hitstops": {
+		"beam": {
+			"14": 2
+		},
+		"blade/breaker": {
+			"8": 1
+		},
+		"blade/light_1": {
+			"4": 3
+		},
+		"blade/light_1+counter": {
+			"8": 1
+		},
+		"blade/light_2": {
+			"4": 3
+		},
+		"blade/light_3": {
+			"4": 1
+		},
+		"breaker": {
+			"7": 6,
+			"10": 1
+		},
+		"kael_skyfall": {
+			"10": 1
+		},
+		"ki_blast": {
+			"4": 4
+		},
+		"launcher": {
+			"9": 1
+		},
+		"light_1": {
+			"3": 11,
+			"4": 2,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 3,
+			"8": 1,
+			"9": 4
+		},
+		"light_2": {
+			"3": 10,
+			"5": 5
+		},
+		"light_3": {
+			"3": 4,
+			"5": 3,
+			"8": 5
+		},
+		"light_4": {
+			"4": 1
+		},
+		"vexa_razor_waltz": {
+			"5": 4
+		},
+		"vexa_razor_waltz+counter": {
+			"9": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "114:shattered_mesa:2v2:kael,vexa,brann,lyra:3355",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 2,
+		"blasts": 5,
+		"charged": 1,
+		"clashes": 0,
+		"ki_hits": 6,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		3,
+		3,
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 114,
+	"sim_ms_per_tick": 1.44508708333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0102246077731252,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.07963932915638,
+		"foot_slide_cm_per_frame": 0.0719505124347255,
+		"foot_slide_frames": 573,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.992731048805815,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.45455416666667,
+	"violations": [],
+	"wall_seconds": 20.171,
+	"zone": "shattered_mesa"
+}

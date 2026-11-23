@@ -1,0 +1,134 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 1,
+			"8": 1
+		},
+		"charged_blast": {
+			"10": 3
+		},
+		"kael_comet_drive": {
+			"9": 1
+		},
+		"kael_gale_riposte": {
+			"10": 2
+		},
+		"ki_blast": {
+			"4": 4
+		},
+		"ki_blast+counter": {
+			"8": 1
+		},
+		"lance/breaker": {
+			"9": 2
+		},
+		"lance/light_1": {
+			"4": 4
+		},
+		"lance/light_1+counter": {
+			"8": 5
+		},
+		"lance/light_2": {
+			"4": 4
+		},
+		"lance/light_3": {
+			"7": 2
+		},
+		"launcher": {
+			"7": 1,
+			"9": 1
+		},
+		"light_1": {
+			"3": 1,
+			"4": 3,
+			"5": 2
+		},
+		"light_1+counter": {
+			"7": 2,
+			"8": 2,
+			"9": 3
+		},
+		"light_2": {
+			"3": 3,
+			"4": 1,
+			"5": 4
+		},
+		"light_2+counter": {
+			"8": 1
+		},
+		"light_3": {
+			"4": 2,
+			"5": 1,
+			"8": 3
+		},
+		"repeater/projectile": {
+			"1": 6
+		},
+		"smash": {
+			"10": 1
+		},
+		"vexa_shade_flicker": {
+			"7": 2
+		}
+	},
+	"id": "102:stormfall_city:2v2:kael,vexa,brann,lyra:4455",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 7,
+		"charged": 5,
+		"clashes": 0,
+		"ki_hits": 8,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		4,
+		4,
+		5,
+		5
+	],
+	"match_over": false,
+	"mode": "2v2",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 102,
+	"sim_ms_per_tick": 1.52003333333333,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0125394025817513,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 1.10304466187827,
+		"foot_slide_cm_per_frame": 0.0349907601103075,
+		"foot_slide_frames": 533,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.986466165413534,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.53126333333333,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +5.6 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 3,
+			"first_tick": 1213,
+			"legend": "lyra",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 1213,
+			"worst_value": 0.0562718243639058
+		}
+	],
+	"wall_seconds": 25.157,
+	"zone": "stormfall_city"
+}

@@ -1,0 +1,105 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 5,
+			"8": 1
+		},
+		"breaker+counter": {
+			"11": 1,
+			"12": 1,
+			"14": 1
+		},
+		"kael_comet_drive": {
+			"9": 3
+		},
+		"launcher": {
+			"7": 3,
+			"9": 1
+		},
+		"light_1": {
+			"3": 11,
+			"4": 1,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 6,
+			"8": 1
+		},
+		"light_2": {
+			"3": 17,
+			"4": 2,
+			"5": 3
+		},
+		"light_3": {
+			"3": 9,
+			"4": 2,
+			"5": 4,
+			"8": 3
+		},
+		"light_4": {
+			"4": 1
+		},
+		"scythe/light_1": {
+			"5": 2
+		},
+		"scythe/light_2": {
+			"5": 2
+		},
+		"scythe/light_3": {
+			"7": 1
+		},
+		"smash+counter": {
+			"14": 1
+		},
+		"spike": {
+			"7": 1
+		}
+	},
+	"id": "113:heartbloom_gardens:ffa4:kael,vexa,brann,lyra:2553",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"kael",
+		"vexa",
+		"brann",
+		"lyra"
+	],
+	"levels": [
+		2,
+		5,
+		5,
+		3
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 113,
+	"sim_ms_per_tick": 1.52083125,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.010688723064959,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.994928064164924,
+		"foot_slide_cm_per_frame": 0.0148990530189392,
+		"foot_slide_frames": 538,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.999583159649854,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.69241375,
+	"violations": [],
+	"wall_seconds": 23.045,
+	"zone": "heartbloom_gardens"
+}

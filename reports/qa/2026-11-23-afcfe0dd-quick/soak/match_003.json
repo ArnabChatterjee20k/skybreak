@@ -1,0 +1,99 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 3,
+			"10": 1
+		},
+		"launcher": {
+			"7": 3,
+			"9": 1
+		},
+		"light_1": {
+			"3": 3,
+			"5": 3
+		},
+		"light_1+counter": {
+			"7": 8,
+			"9": 1
+		},
+		"light_2": {
+			"3": 8,
+			"5": 4
+		},
+		"light_3": {
+			"3": 5,
+			"8": 3
+		},
+		"light_4": {
+			"4": 1
+		},
+		"repeater/projectile": {
+			"1": 21
+		},
+		"repeater/projectile+counter": {
+			"5": 1
+		},
+		"revolver/projectile": {
+			"4": 6
+		},
+		"vexa_shade_flicker": {
+			"7": 2
+		}
+	},
+	"id": "103:frozen_peaks:1v1:vexa,brann:44",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 0,
+	"legends": [
+		"vexa",
+		"brann"
+	],
+	"levels": [
+		4,
+		4
+	],
+	"match_over": false,
+	"mode": "1v1",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 103,
+	"sim_ms_per_tick": 0.98675625,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.00727732433006167,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.947737742767174,
+		"foot_slide_cm_per_frame": 0.0825576865644049,
+		"foot_slide_frames": 266,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.999101930848675,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 1.39684416666667,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +6.1 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 0,
+			"first_tick": 896,
+			"legend": "vexa",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 896,
+			"worst_value": 0.0605959815275696
+		}
+	],
+	"wall_seconds": 20.305,
+	"zone": "frozen_peaks"
+}
