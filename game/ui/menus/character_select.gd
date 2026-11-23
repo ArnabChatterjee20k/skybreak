@@ -254,8 +254,8 @@ func refresh() -> void:
 	var subtitle := {
 		&"vs_ai": "VERSUS AI  ·  1 TO 3 AI OPPONENTS",
 		&"ffa": "FREE-FOR-ALL  ·  2 TO 4 FIGHTERS",
-		&"pure_fight": "PURE FIGHT  ·  1V1 HAND TO HAND  ·  P2: AI OR SECOND PLAYER (ARROWS + NUMPAD)",
-		&"pure_fight_training": "PURE FIGHT TRAINING  ·  DUMMY (F4 CYCLES BLOCKING)  ·  FRAME DATA ON SCREEN",
+		&"pure_fight": "PURE FIGHT  ·  1V1 HAND TO HAND  ·  P2: AI OR SECOND PLAYER (ARROWS + , . / ; ' ] [ + RIGHT SHIFT)",
+		&"pure_fight_training": "PURE FIGHT TRAINING  ·  DUMMY (T CYCLES BLOCKING)  ·  FRAME DATA ON SCREEN",
 		&"training": "TRAINING  ·  YOU AND A DUMMY",
 	}
 	_sub.text = subtitle.get(mode, String(mode).to_upper())

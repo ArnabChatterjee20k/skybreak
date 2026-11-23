@@ -629,17 +629,19 @@ Defaults chosen by the desktop controller; the owner can redirect any of them.
   the flight game's, so every other mode stays bit-identical. Integer state (mm, mm/tick), 60 Hz,
   snapshot/restore by reflection, so rollback (`RollbackSession`) takes it unchanged.
 
-### 16.2 Controls (keyboard; two players can share one)
+### 16.2 Controls (keyboard; two players can share one laptop)
+
+No numpad, F-keys or Ctrl/Cmd/Alt anywhere, so it works on a Mac laptop in a browser.
 
 | Action | P1 | P2 |
 |---|---|---|
-| Walk / jump / crouch | A D / W (or Space) / S | Arrows |
-| Light / medium / heavy | J / K / L | Num1 / Num2 / Num3 (or , . /) |
-| Throw | U | Num4 (or ;) |
-| Technique key | I | Num5 (or ') |
-| Finisher key | O | Num6 (or ]) |
-| Dash | Shift + direction, or tap forward/back twice | Num0 |
-| Block | hold back (down-back for lows); E blocks from the front | hold back |
+| Walk / jump / crouch | A D / W (or Space) / S | Left Right / Up / Down arrows |
+| Light / medium / heavy | J / K / L | , / . / / |
+| Throw | U | ; |
+| Technique key | I | ' |
+| Finisher key | O | ] |
+| Dash | Left Shift + direction, or tap forward/back twice | Right Shift + direction, or tap twice |
+| Block | hold back (down-back for lows); E blocks from the front | hold back; [ blocks from the front |
 
 - Normals: button alone (standing), with down (crouching), in the air (jump attacks). Command
   normals: forward + M (overhead), forward + H or back + H (legend), down-forward + H (sweep).
@@ -849,7 +851,7 @@ seed and never touches the sim's rng.
 ### 16.9 Modes
 
 Play > Pure Fight (vs AI or a second local player on the same keyboard), Training > Pure Fight
-Training (a dummy that stands, blocks all, crouch-blocks or jumps: F4; health refills, meter full,
+Training (a dummy that stands, blocks all, crouch-blocks or jumps: T or F4; health refills, meter full,
 frame data on screen), and Multiplayer > Duo with the host's **Game: Pure Fight 1v1** choice (16.10).
 
 ### 16.10 Online

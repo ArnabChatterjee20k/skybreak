@@ -33,6 +33,8 @@ const SOUNDS := {
 	PureFightSim.Ev.FINISHER_HIT: &"hit_heavy", PureFightSim.Ev.MATCH_WIN: &"victory",
 }
 const HIT_SOUNDS: Array[StringName] = [&"hit_light", &"hit_medium", &"hit_heavy", &"hit_heavy"]
+## Training: cycles the dummy. T works on laptops whose F-keys need Fn (Macs).
+const DUMMY_KEYS: Array[Key] = [KEY_T, KEY_F4]
 
 var config := {}
 var zone_id: StringName
@@ -253,7 +255,7 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if training and event.is_pressed() and (event as InputEventKey).physical_keycode == KEY_F4:
+	if training and event.is_pressed() and not event.is_echo() and (event as InputEventKey).physical_keycode in DUMMY_KEYS:
 		dummy_mode = (dummy_mode + 1) % 4
 		hud.show_callout(["DUMMY: STAND", "DUMMY: BLOCK ALL", "DUMMY: CROUCH BLOCK", "DUMMY: JUMP"][dummy_mode])
 
@@ -333,10 +335,10 @@ func _play_sounds(events: Array) -> void:
 
 ## Every legend's move list (pause menu).
 func move_list_text() -> String:
-	var lines: Array[String] = ["CONTROLS  P1: WASD move, J/K/L light/medium/heavy, U throw, I technique,",
-		"O finisher, Shift dash (or tap twice), hold back to block, E block key.",
-		"P2: arrows, Num1/2/3 attacks, Num4 throw, Num5 technique, Num6 finisher, Num0 dash.",
-		"Techniques: motion + attack, or technique key + direction (fwd 236, down 623, back 214).", ""]
+	var lines: Array[String] = ["CONTROLS", PureFightKeys.controls_text(0), PureFightKeys.controls_text(1),
+		"Techniques: motion + attack, or technique key + direction (fwd 236, down 623, back 214).",
+		"Motions are directions, not keypad keys: 2 down, 3 down-forward, 6 forward, 4 back, 1 down-back",
+		"(forward = toward the opponent; 236 = down, down-forward, forward). P2 does them on the arrows.", ""]
 	var seen := {}
 	for fighter in sim.pf:
 		if seen.has(fighter.legend):

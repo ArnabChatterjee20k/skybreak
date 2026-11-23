@@ -1,0 +1,127 @@
+{
+	"hitstops": {
+		"breaker": {
+			"7": 6,
+			"8": 2
+		},
+		"kael_comet_drive": {
+			"9": 1
+		},
+		"kael_comet_drive+counter": {
+			"13": 1
+		},
+		"lance/breaker": {
+			"9": 2
+		},
+		"lance/light_1": {
+			"4": 8
+		},
+		"lance/light_1+counter": {
+			"8": 4,
+			"20": 1
+		},
+		"lance/light_2": {
+			"4": 9
+		},
+		"lance/light_3": {
+			"7": 9
+		},
+		"launcher": {
+			"7": 2,
+			"8": 1
+		},
+		"light_1": {
+			"3": 8,
+			"5": 1
+		},
+		"light_1+counter": {
+			"7": 1,
+			"8": 2,
+			"9": 3
+		},
+		"light_2": {
+			"3": 9,
+			"4": 2,
+			"5": 3
+		},
+		"light_3": {
+			"3": 6,
+			"4": 2,
+			"5": 1,
+			"8": 3
+		},
+		"vexa_afterimage_burst": {
+			"8": 1
+		},
+		"vexa_shade_flicker": {
+			"7": 1
+		},
+		"vexa_shade_flicker+counter": {
+			"11": 1,
+			"20": 1
+		},
+		"weapon/thrown": {
+			"6": 1
+		}
+	},
+	"id": "107:shattered_mesa:ffa4:brann,lyra,kael,vexa:2445",
+	"ki": {
+		"beam_whiffs": 0,
+		"beams": 0,
+		"blasts": 0,
+		"charged": 0,
+		"clashes": 0,
+		"ki_hits": 0,
+		"reflects": 0,
+		"soaks": 0,
+		"ultimates": 0
+	},
+	"kos": 2,
+	"legends": [
+		"brann",
+		"lyra",
+		"kael",
+		"vexa"
+	],
+	"levels": [
+		2,
+		4,
+		4,
+		5
+	],
+	"match_over": false,
+	"mode": "ffa4",
+	"overlap_pending": false,
+	"phase": "FIGHT",
+	"rounds_started": 1,
+	"seed": 107,
+	"sim_ms_per_tick": 2.71691625,
+	"ticks": 2400,
+	"view": {
+		"camera_jerk_p95": 0.0102831767871976,
+		"finger_pops_per_fighter_minute": 0.0,
+		"foot_error_p95_cm": 0.756417017202438,
+		"foot_slide_cm_per_frame": 0.039551135723938,
+		"foot_slide_frames": 554,
+		"foot_slide_skipped_frames": 0,
+		"locked_on_screen_share": 0.988935721812434,
+		"pops_per_fighter_minute": 0.0
+	},
+	"view_ms_per_frame": 2.56329375,
+	"violations": [
+		{
+			"check": "foot_ground",
+			"count": 1,
+			"detail": "lowest sole +5.5 cm off the visible ground (BLOCKING, clip guard)",
+			"fighter": 2,
+			"first_tick": 782,
+			"legend": "kael",
+			"limit": 0.05,
+			"weapon": "",
+			"worst_tick": 782,
+			"worst_value": 0.0552409554856439
+		}
+	],
+	"wall_seconds": 40.585,
+	"zone": "shattered_mesa"
+}
