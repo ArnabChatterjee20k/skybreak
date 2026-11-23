@@ -54,19 +54,16 @@ static func match_scene_path() -> String:
 
 
 ## Starts the current config: the level gets configure() before it enters the
-## tree (zone_match requires that). A voxel zone's bake loads first on a
-## background thread behind a LoadingScreen. Returns the scene path, or "" on
-## failure.
+## tree (zone_match requires that). A zone level always starts behind a
+## LoadingScreen, which loads it (and a voxel zone's bake) on a background
+## thread, so the menu never sits frozen while a match starts. Returns the scene
+## path, or "" on failure.
 func launch() -> String:
 	var path := PURE_FIGHT_SCENE if MatchRules.is_pure_fight(mode) else match_scene_path()
 	var bake := zone_bake_path()
-	if bake != "" and (path == ZONE_MATCH_SCENE or path == PURE_FIGHT_SCENE) and not VoxelZoneBake.preloaded.has(bake) and is_inside_tree():
+	var screen := loading_screen(path, bake)
+	if screen != null and is_inside_tree():
 		_reset_engine_state()
-		var screen := LoadingScreen.new()
-		screen.title = String(zone).capitalize()
-		screen.paths.assign([path, bake])
-		if not ResourceLoader.exists(bake):
-			screen.download = ZoneBakeDownload.new(bake)
 		screen.done = func(loaded: Dictionary) -> void:
 			if loaded.get(bake) is PackedScene:
 				VoxelZoneBake.preloaded[bake] = loaded[bake]
@@ -76,6 +73,21 @@ func launch() -> String:
 			return _start(path)
 		return path
 	return _start(path)
+
+
+## The LoadingScreen a zone level starts behind (its done not set yet), or null
+## for other levels and an already loaded bake.
+func loading_screen(path: String, bake: String) -> LoadingScreen:
+	if not (path == ZONE_MATCH_SCENE or path == PURE_FIGHT_SCENE) or VoxelZoneBake.preloaded.has(bake):
+		return null
+	var screen := LoadingScreen.new()
+	screen.title = String(zone).capitalize()
+	screen.paths.assign([path] if bake == "" else [path, bake])
+	if bake != "" and not ResourceLoader.exists(bake):
+		screen.download = ZoneBakeDownload.new(bake)
+	elif bake == "" and ArtStyle.is_voxel() and VoxelZoneView.supports(zone):
+		screen.builds_live = true
+	return screen
 
 
 ## The zone's voxel bake for the saved quality when the match will draw it, else "".

@@ -56,6 +56,18 @@ func test_graphics_persist() -> void:
 	assert_false(loaded.vsync_enabled)
 
 
+func test_the_web_screen_offers_only_the_web_quality() -> void:
+	var web := SettingsScreen.new()
+	web.save_path = PATH
+	web.web = true
+	add_child_autofree(web)
+	web.show_tab(&"graphics")
+	var names := web.find_children("*", "Button", true, false).map(func(b: Button) -> String: return b.text)
+	assert_has(names, "WEB")
+	for other in ["LOW", "MEDIUM", "HIGH"]:
+		assert_does_not_have(names, other, "no %s on the web" % other)
+
+
 func test_art_style_persists_without_touching_the_running_style() -> void:
 	screen.set_art_style(ArtStyle.Kind.CLASSIC)
 	assert_eq(GraphicsSettings.load_saved(PATH).art_style, ArtStyle.Kind.CLASSIC)

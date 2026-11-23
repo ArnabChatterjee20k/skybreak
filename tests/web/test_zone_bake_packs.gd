@@ -16,6 +16,10 @@ class StaticServer extends Node:
 	## A tiny HTTP/1.0 file server on 127.0.0.1 for download tests.
 	var files := {}
 	var requests: Array[String] = []
+	## Requests with their query strings.
+	var raw: Array[String] = []
+	## Bodies served once in place of files[path] (then files[path] again).
+	var once := {}
 	var port := 0
 	var _tcp := TCPServer.new()
 	var _peers: Array[StreamPeerTCP] = []
@@ -41,9 +45,13 @@ class StaticServer extends Node:
 			var text := _bufs[i].get_string_from_ascii()
 			if not text.contains("\r\n\r\n"):
 				continue
-			var path := text.get_slice(" ", 1).uri_decode()
+			raw.append(text.get_slice(" ", 1).uri_decode())
+			var path := raw[-1].get_slice("?", 0)
 			requests.append(path)
 			var body: PackedByteArray = files.get(path, PackedByteArray())
+			if once.has(path):
+				body = once[path]
+				once.erase(path)
 			var head := "HTTP/1.0 %s\r\nContent-Length: %d\r\nConnection: close\r\n\r\n" % [
 				"200 OK" if files.has(path) else "404 Not Found", body.size()]
 			var reply := head.to_ascii_buffer()
@@ -265,6 +273,50 @@ func test_a_damaged_or_missing_pack_fails_and_leaves_nothing_behind() -> void:
 	assert_eq(result[0], false, "no manifest: the zone builds live")
 
 
+func test_a_pack_damaged_once_is_fetched_again_fresh_and_mounts() -> void:
+	var out := TMP + "retry"
+	var e := _packed(&"gut_retry", out)
+	var server := _serve(out)
+	var key := "/zones/" + String(e.file)
+	var bad: PackedByteArray = (server.files[key] as PackedByteArray).duplicate()
+	bad[0] ^= 0xff
+	server.once[key] = bad
+	var result: Array = await _download(e.bake, server.port)
+	assert_eq(result, [true, ""])
+	assert_eq(server.requests, ["/zones/manifest.json", key, "/zones/manifest.json", key], "one fresh retry")
+	assert_false(server.raw[0].contains("?"), "the first try may come from the cache")
+	assert_string_contains(server.raw[2], "?sbv=", "the retry bypasses the service worker cache")
+	assert_string_contains(server.raw[3], "?sbv=")
+	assert_true(ResourceLoader.exists(e.bake))
+
+
+func test_a_cached_pack_with_the_right_name_but_wrong_bytes_is_replaced() -> void:
+	var out := TMP + "badcache"
+	var e := _packed(&"gut_badcache", out)
+	var server := _serve(out)
+	DirAccess.make_dir_recursive_absolute(ZoneBakePacks.CACHE_DIR)
+	var cached := ZoneBakePacks.CACHE_DIR.path_join(e.file)
+	FileAccess.open(cached, FileAccess.WRITE).store_string("half written by an older visit")
+	var result: Array = await _download(e.bake, server.port)
+	assert_eq(result, [true, ""])
+	assert_eq(FileAccess.get_file_as_bytes(cached), server.files["/zones/" + String(e.file)], "replaced with the whole pack")
+
+
+func test_packs_the_current_manifest_does_not_name_are_pruned() -> void:
+	var out := TMP + "prune"
+	var e := _packed(&"gut_prune", out)
+	DirAccess.make_dir_recursive_absolute(ZoneBakePacks.CACHE_DIR)
+	for old in ["verdant_falls_web.5d568878920c.pck", "ember_rift_web.89435a5ad30b.pck"]:
+		FileAccess.open(ZoneBakePacks.CACHE_DIR.path_join(old), FileAccess.WRITE).store_string("old build")
+	var server := _serve(out)
+	var result: Array = await _download(e.bake, server.port)
+	assert_eq(result, [true, ""])
+	assert_eq(Array(DirAccess.get_files_at(ZoneBakePacks.CACHE_DIR)), [String(e.file)], "only the current build's pack is kept")
+	var text := FileAccess.get_file_as_string(out.path_join(ZoneBakePacks.DIR).path_join(ZoneBakePacks.MANIFEST))
+	assert_eq(ZoneBakePacks.files_in(text), PackedStringArray([e.file]))
+	assert_eq(ZoneBakePacks.files_in("not json"), PackedStringArray())
+
+
 func test_the_loading_screen_downloads_the_bake_before_loading_it() -> void:
 	var out := TMP + "screen"
 	var e := _packed(&"gut_screen", out)
@@ -295,6 +347,8 @@ func test_on_the_web_a_match_asks_for_the_web_bake_it_will_download() -> void:
 	ZoneBakePacks.remote = true
 	var bake := VoxelZoneBake.path_for(&"ember_rift", GraphicsSettings.load_saved().quality)
 	assert_eq(config.zone_bake_path(), bake if bake.ends_with("_web.scn") or ResourceLoader.exists(bake) else "")
+	assert_eq(GraphicsSettings.load_saved(GraphicsSettings.SAVE_PATH, true).quality, WEB,
+		"on the web the tier is always WEB, whatever was saved, so a match always has a pack")
 	assert_true(ZoneBakePacks.downloadable(VoxelZoneBake.path_for(&"ember_rift", WEB)))
 	assert_false(ZoneBakePacks.downloadable(VoxelZoneBake.path_for(&"ember_rift", GraphicsSettings.Quality.HIGH)))
 	ZoneBakePacks.remote = false
